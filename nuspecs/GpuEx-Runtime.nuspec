@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>GpuEx-Runtime</id>
+    <version>1.0.0</version>
+    <title>GpuStructs</title>
+    <authors>Contoso</authors>
+    <owners>Contoso</owners>
+    <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2010</copyright>
+    <tags>c++ cuda gpu gpgpu datastructures runtime</tags>
+    <language>en-US</language>
+  </metadata>
+  <files>
+    <file src="build\Runtime.*.lib" target="lib\native" />
+    <file src="src\Runtime\**\*.h" target="include" />
+    <file src="src\Runtime\**\*.cpp" target="src" />
+    <file src="src\Runtime\**\*.cu" target="src" />
+    <file src="src\Runtime\**\*.h" target="src" />
+  </files>
+</package>

@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug.cpu</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{31180E7B-AABE-4F33-9C2C-F8A447024674}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>System</RootNamespace>
+    <AssemblyName>SystemL.Data</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug.cpu|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;_LIB;TEST;THREADSAFE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;MAX_EXPR_DEPTH;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>0618</NoWarn>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.cpu|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <DefineConstants>DEBUG;THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;TEST;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetName>SystemL.Data$(LD)</TargetName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Core+Btree\BContext+Notify.cs" />
+    <Compile Include="Core+Btree\BContext.cs" />
+    <Compile Include="Core+Vdbe\Main+LoadExt.cs" />
+    <Compile Include="Core+Vdbe\Main+Legacy.cs" />
+    <Compile Include="Opcodes.cs" />
+    <Compile Include="Core+Btree\Btree.cs" />
+    <Compile Include="Core+Btree\BtreeInt_h.cs" />
+    <Compile Include="Core+Btree\Btree_h.cs" />
+    <Compile Include="Core+Btree\BContext_h.cs" />
+    <Compile Include="Core+Btree\Core+Btree_h.cs" />
+    <Compile Include="Core+Pager\Core+Pager_h.cs" />
+    <Compile Include="Core+Pager\Pager.cs" />
+    <Compile Include="Core+Pager\Pager_h.cs" />
+    <Compile Include="Core+Pager\PCache.cs" />
+    <Compile Include="Core+Pager\PCache1.cs" />
+    <Compile Include="Core+Pager\PCache_h.cs" />
+    <Compile Include="Core+Pager\Wal.cs" />
+    <Compile Include="Core+Pager\Wal_h.cs" />
+    <Compile Include="Core+Vdbe\Command\Date.cs" />
+    <Compile Include="Core+Vdbe\Command\Func.cs" />
+    <Compile Include="Core+Vdbe\Parse+FKey.cs" />
+    <Compile Include="Core+Vdbe\Parse+Complete.cs" />
+    <Compile Include="Core+Vdbe\Trigger.cs" />
+    <Compile Include="Core+Vdbe\Vdbe+Utf.cs" />
+    <Compile Include="Core+Vdbe\Vdbe+Api.cs" />
+    <Compile Include="Core+Vdbe\Vdbe+Aux.cs" />
+    <Compile Include="Core+Vdbe\Vdbe+Blob.cs" />
+    <Compile Include="Core+Vdbe\VdbeInt_h.cs" />
+    <Compile Include="Core+Vdbe\Vdbe+Mem.cs" />
+    <Compile Include="Core+Vdbe\Vdbe+Sort.cs" />
+    <Compile Include="Core+Vdbe\Vdbe+Trace.cs" />
+    <Compile Include="Core+Vdbe\Vdbe.cs" />
+    <Compile Include="Core+Vdbe\Vdbe_h.cs" />
+    <Compile Include="Core+Vdbe\Walker+Resolve.cs" />
+    <Compile Include="Core+Vdbe\Auth.cs" />
+    <Compile Include="Core+Vdbe\Backup.cs" />
+    <Compile Include="CompileTime.cs" />
+    <Compile Include="KeywordHash_h.cs" />
+    <Compile Include="Core+Vdbe\Main.cs" />
+    <Compile Include="Opcodes_h.cs" />
+    <None Include="Core+Btree\BContext+Notify.cu" />
+    <None Include="Core+Btree\BContext.cu" />
+    <None Include="Core+Vdbe\Command\Date.cu" />
+    <Content Include="Core+Vdbe\Context.cu.h" />
+    <None Include="Core+Vdbe\Backup.cu" />
+    <None Include="CompileTime.cu" />
+    <Content Include="Core+Vdbe\Core+Ext.cu.h" />
+    <Content Include="Core+Vdbe\Parse+Parser.orig.h" />
+    <Content Include="_hwtime.h" />
+    <Content Include="Core+Vdbe\VdbeInt.cu.h" />
+    <Content Include="Core+Vdbe\Vdbe.cu.h" />
+    <Content Include="KeywordHash.h" />
+    <Content Include="Opcodes.h" />
+    <Content Include="Core+Vdbe\Parse+Parser.cs">
+      <DependentUpon>Parse+Parser.y</DependentUpon>
+    </Content>
+    <Compile Include="Core+Vdbe\Parse+Build.cs" />
+    <Compile Include="Core+Vdbe\Callback.cs" />
+    <Compile Include="Core+Vdbe\Command\Alter.cs" />
+    <Compile Include="Core+Vdbe\Command\Analyze.cs" />
+    <Compile Include="Core+Vdbe\Command\Attach.cs" />
+    <Compile Include="Core+Vdbe\Command\Delete.cs" />
+    <Compile Include="Core+Vdbe\Command\Insert.cs" />
+    <Compile Include="Core+Vdbe\Command\Pragma.cs" />
+    <Compile Include="Core+Vdbe\Command\Select.cs" />
+    <Compile Include="Core+Vdbe\Command\Update.cs" />
+    <Compile Include="Core+Vdbe\Command\Vacuum.cs" />
+    <Compile Include="Core+Vdbe\Context_h.cs" />
+    <Compile Include="Core+Vdbe\Core+Vdbe_h.cs" />
+    <Compile Include="Core+Vdbe\Expr.cs" />
+    <Compile Include="Core+Vdbe\Prepare.cs" />
+    <Compile Include="Core+Vdbe\Rowset.cs" />
+    <Compile Include="Core+Vdbe\Table.cs" />
+    <Compile Include="Core+Vdbe\Parse+Tokenize.cs" />
+    <Compile Include="Core+Vdbe\VTable.cs" />
+    <Compile Include="Core+Vdbe\Walker.cs" />
+    <Compile Include="Core+Vdbe\Where.cs" />
+    <None Include="Core+Vdbe\Callback.cu" />
+    <None Include="Core+Vdbe\Command\Alter.cu" />
+    <None Include="Core+Vdbe\Command\Analyze.cu" />
+    <None Include="Core+Vdbe\Command\Attach.cu" />
+    <None Include="Core+Vdbe\Command\Delete.cu" />
+    <None Include="Core+Vdbe\Command\Func.cu" />
+    <None Include="Core+Vdbe\Command\Insert.cu" />
+    <None Include="Core+Vdbe\Command\Pragma.cu" />
+    <None Include="Core+Vdbe\Command\Select.cu" />
+    <None Include="Core+Vdbe\Command\Update.cu" />
+    <None Include="Core+Vdbe\Command\Vacuum.cu" />
+    <None Include="Core+Vdbe\Expr.cu" />
+    <None Include="Core+Vdbe\Main+LoadExt.cu" />
+    <None Include="Core+Vdbe\Main+Legacy.cu" />
+    <None Include="Core+Vdbe\Parse+Build.cu" />
+    <None Include="Core+Vdbe\Parse+FKey.cu" />
+    <Content Include="Core+Vdbe\Parse+Parser.h">
+      <DependentUpon>Parse+Parser.ycu</DependentUpon>
+    </Content>
+    <None Include="Core+Vdbe\Parse+Parser.out">
+      <DependentUpon>Parse+Parser.ycu</DependentUpon>
+    </None>
+    <None Include="Core+Vdbe\Parse+Parser.template">
+      <DependentUpon>Parse+Parser.ycu</DependentUpon>
+    </None>
+    <None Include="Core+Vdbe\Parse+Parser.cu">
+      <DependentUpon>Parse+Parser.ycu</DependentUpon>
+    </None>
+    <None Include="Core+Vdbe\Prepare.cu" />
+    <None Include="Core+Vdbe\Parse+Tokenize.cu" />
+    <None Include="Core+Vdbe\Trigger.cu" />
+    <None Include="Core+Vdbe\Vdbe+Utf.cu" />
+    <None Include="Core+Vdbe\Vdbe+Api.cu" />
+    <None Include="Core+Vdbe\Vdbe+Aux.cu" />
+    <None Include="Core+Vdbe\Vdbe+Blob.cu" />
+    <None Include="Core+Vdbe\Vdbe+Mem.cu" />
+    <None Include="Core+Vdbe\Vdbe+Sort.cu" />
+    <None Include="Core+Vdbe\Vdbe+Trace.cu" />
+    <None Include="Core+Vdbe\Vdbe.cu" />
+    <None Include="Core+Vdbe\Walker+Resolve.cu" />
+    <None Include="Core+Vdbe\Walker.cu" />
+    <None Include="Core+Vdbe\Where.cu" />
+    <None Include="Core+Vdbe\Parse+Complete.cu" />
+    <None Include="Core+Vdbe\Auth.cu" />
+    <Compile Include="Shell.cs" />
+    <None Include="Core+Vdbe\Main.cu" />
+    <None Include="Shell.cu" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Parse_h.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Core+Btree\Btree.cu.h" />
+    <Content Include="Core+Btree\BtreeInt.cu.h" />
+    <Content Include="Core+Btree\BContext.cu.h" />
+    <Content Include="Core+Btree\Core+Btree.cu.h" />
+    <Content Include="Core+Pager\Core+Pager.cu.h" />
+    <Content Include="Core+Pager\Pager.cu.h" />
+    <Content Include="Core+Pager\PCache.cu.h" />
+    <Content Include="Core+Pager\Wal.cu.h" />
+    <Content Include="Core+Vdbe\Core+Vdbe.cu.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Core+Btree\Btree.cu" />
+    <None Include="Core+Pager\Pager.cu" />
+    <None Include="Core+Pager\PCache.cu" />
+    <None Include="Core+Pager\PCache1.cu" />
+    <None Include="Core+Pager\Wal.cu" />
+    <None Include="Opcodes.cu" />
+    <None Include="Core+Vdbe\Parse+Parser.y">
+      <Generator>LALR</Generator>
+      <LastGenOutput>Parse+Parser.cs</LastGenOutput>
+    </None>
+    <None Include="Core+Vdbe\Parse+Parser.ycu">
+      <Generator>LALRC</Generator>
+      <LastGenOutput>Parse+Parser1.cu</LastGenOutput>
+    </None>
+    <None Include="Core+Vdbe\Rowset.cu" />
+    <None Include="Core+Vdbe\Table.cu" />
+    <None Include="Core+Vdbe\VTable.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Runtime.net\Runtime.net.csproj">
+      <Project>{06098f19-6185-43a5-ad77-b0e8c10ac885}</Project>
+      <Name>Runtime.net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\System.net\System.net.csproj">
+      <Project>{30180e7b-aabe-4f33-9c2c-f8a447024674}</Project>
+      <Name>SystemL.net</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
