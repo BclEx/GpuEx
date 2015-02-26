@@ -1438,7 +1438,7 @@ namespace Core { namespace Command
 			ReturnSingleInt(parse, "timeout",  ctx->BusyTimeout);
 		}
 
-#if defined(DEBUG) || defined(TEST)
+#if defined(_DEBUG) || defined(TEST)
 		// Report the current state of file logs for all databases
 		else if (!_strcmp(left, "lock_status"))
 		{

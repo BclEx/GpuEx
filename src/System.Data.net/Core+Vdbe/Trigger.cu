@@ -622,6 +622,7 @@ drop_trigger_cleanup:
 		Vdbe *v = subParse->GetVdbe(); // Temporary VM
 		if (v)
 		{
+#ifdef _DEBUG
 			v->Comment("Start: %s.%s (%s %s%s%s ON %s)", 
 				trigger->Name, OnErrorText(orconf),
 				(trigger->TRtm == TRIGGER_BEFORE ? "BEFORE" : "AFTER"),
@@ -629,6 +630,7 @@ drop_trigger_cleanup:
 				(trigger->OP == TK_INSERT ? "INSERT" : ""),
 				(trigger->OP == TK_DELETE ? "DELETE" : ""),
 				table->Name);
+#endif
 #ifndef OMIT_TRACE
 			v->ChangeP4(-1, _mtagprintf(ctx, "-- TRIGGER %s", trigger->Name), Vdbe::P4T_DYNAMIC);
 #endif
