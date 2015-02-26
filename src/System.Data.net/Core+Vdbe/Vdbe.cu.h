@@ -358,10 +358,6 @@ namespace Core
 #ifndef NDEBUG
 		__device__ void Comment(const char *fmt, va_list *args);
 		__device__ void NoopComment(const char *fmt, va_list *args);
-#else
-		__device__ inline void Comment(const char *fmt, va_list *args) { }
-		__device__ inline void NoopComment(const char *fmt, va_list *args) { }
-#endif
 #if __CUDACC__
 		__device__ inline static void Comment(const char *fmt) { va_list args; va_start(args, nullptr); Comment(fmt, args); va_end(args); }
 		template <typename T1> __device__ inline static void Comment(const char *fmt, T1 arg1) { va_list args; va_start(args, arg1); Comment(fmt, args); va_end(args); }
@@ -389,6 +385,10 @@ namespace Core
 #else
 		__device__ inline void Comment(const char *fmt, ...) { va_list args; va_start(args, fmt); Comment(fmt, &args); va_end(args); }
 		__device__ inline void NoopComment(const char *fmt, ...) { va_list args; va_start(args, fmt); NoopComment(fmt, &args); va_end(args); }
+#endif
+#else
+		__device__ inline void Comment(const char *fmt, va_list *args) { }
+		__device__ inline void NoopComment(const char *fmt, va_list *args) { }
 #endif
 		__device__ VdbeOp *GetOp(int addr);
 		__device__ void UsesBtree(int i);
