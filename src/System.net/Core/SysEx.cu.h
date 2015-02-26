@@ -8,8 +8,8 @@ namespace Core
 #define SysEx_LOG(RC, X, ...) { _printf(X, __VA_ARGS__); }
 #define SysEx_IOTRACE(X, ...) if (IOTrace) { _printf("IO: "X, __VA_ARGS__); }
 #else
-#define SysEx_LOG(RC, X, ...)
-#define SysEx_IOTRACE(X, ...)
+#define SysEx_LOG(RC, X, ...) ((void)0)
+#define SysEx_IOTRACE(X, ...) ((void)0)
 #endif
 
 	//#ifdef _DEBUG

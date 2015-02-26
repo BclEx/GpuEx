@@ -193,7 +193,7 @@ namespace Core
 		va_start(args, fmt);
 		char *z = _vmprintf(fmt, ap);
 		va_end(ap);
-		fprintf(iotrace, "%s", z);
+		_fprintf(iotrace, "%s", z);
 		_free(z);
 	}
 #endif
@@ -237,7 +237,7 @@ namespace Core
 		if (prompt && *prompt)
 		{
 			printf("%s", prompt);
-			fflush(stdout);
+			_fflush(stdout);
 		}
 		int lineLength = 100;
 		char *line = malloc(lineLength);
@@ -364,16 +364,16 @@ namespace Core
 	{
 		struct CallbackData *p = (struct CallbackData*)arg;
 		if (!p->Log) return;
-		fprintf(p->Log, "(%d) %s\n", errCode, msg);
-		fflush(p->Log);
+		_fprintf(p->Log, "(%d) %s\n", errCode, msg);
+		_fflush(p->Log);
 	}
 
 	static void OutputHexBlob(FILE *out_, const void *blob, int blobLength)
 	{
 		char *blob2 = (char *)blob;
-		fprintf(out_, "X'");
-		for(int i = 0; i < blobLength; i++) { fprintf(out_, "%02x", blob2[i]&0xff); }
-		fprintf(out_, "'");
+		_fprintf(out_, "X'");
+		for (int i = 0; i < blobLength; i++) { _fprintf(out_, "%02x", blob2[i]&0xff); }
+		_fprintf(out_, "'");
 	}
 
 	static void OutputQuotedString(FILE *out_, const char *z)
@@ -383,70 +383,70 @@ namespace Core
 		for (i = 0; z[i]; i++)
 			if (z[i] == '\'' ) singles++;
 		if (singles == 0)
-			fprintf(out_, "'%s'", z);
+			_fprintf(out_, "'%s'", z);
 		else
 		{
-			fprintf(out_, "'");
+			_fprintf(out_, "'");
 			while (*z)
 			{
 				for (i = 0; z[i] && z[i] != '\''; i++) { }
 				if (i == 0)
 				{
-					fprintf(out_, "''");
+					_fprintf(out_, "''");
 					z++;
 				}
 				else if (z[i] == '\'')
 				{
-					fprintf(out_, "%.*s''", i, z);
+					_fprintf(out_, "%.*s''", i, z);
 					z += i+1;
 				}
 				else
 				{
-					fprintf(out_, "%s", z);
+					_fprintf(out_, "%s", z);
 					break;
 				}
 			}
-			fprintf(out_, "'");
+			_fprintf(out_, "'");
 		}
 	}
 
 	static void OutputCString(FILE *out_, const char *z)
 	{
 		unsigned int c;
-		fputc('"', out_);
+		_fputc('"', out_);
 		while ((c = *(z++)) != 0)
 		{
 			if (c == '\\')
 			{
-				fputc(c, out_);
-				fputc(c, out_);
+				_fputc(c, out_);
+				_fputc(c, out_);
 			}
 			else if (c == '"')
 			{
-				fputc('\\', out_);
-				fputc('"', out_);
+				_fputc('\\', out_);
+				_fputc('"', out_);
 			}
 			else if (c == '\t')
 			{
-				fputc('\\', out_);
-				fputc('t', out_);
+				_fputc('\\', out_);
+				_fputc('t', out_);
 			}
 			else if (c == '\n')
 			{
-				fputc('\\', out_);
-				fputc('n', out_);
+				_fputc('\\', out_);
+				_fputc('n', out_);
 			}
 			else if (c == '\r')
 			{
-				fputc('\\', out_);
-				fputc('r', out_);
+				_fputc('\\', out_);
+				_fputc('r', out_);
 			}
 			else if (!isprint(c))
-				fprintf(out_, "\\%03o", c&0xff);
+				_fprintf(out_, "\\%03o", c&0xff);
 			else
-				fputc(c, out_);
+				_fputc(c, out_);
 		}
-		fputc('"', out_);
+		_fputc('"', out_);
 	}
 
 	static void OutputHtmlString(FILE *out_, const char *z)
@@ -456,17 +456,17 @@ namespace Core
 		{
 			for (i = 0; z[i] && z[i] != '<' && z[i] != '&' && z[i] != '>' && z[i] != '\"' && z[i] != '\''; i++) { }
 			if (i > 0)
-				fprintf(out_, "%.*s", i, z);
+				_fprintf(out_, "%.*s", i, z);
 			if (z[i] == '<')
-				fprintf(out_,"&lt;");
+				_fprintf(out_,"&lt;");
 			else if (z[i] == '&')
-				fprintf(out_,"&amp;");
+				_fprintf(out_,"&amp;");
 			else if (z[i] == '>')
-				fprintf(out_,"&gt;");
+				_fprintf(out_,"&gt;");
 			else if (z[i] == '\"')
-				fprintf(out_,"&quot;");
+				_fprintf(out_,"&quot;");
 			else if (z[i] == '\'')
-				fprintf(out_,"&#39;");
+				_fprintf(out_,"&#39;");
 			else
 				break;
 			z += i + 1;
@@ -496,7 +496,7 @@ namespace Core
 	{
 		FILE *out_ = p->Out;
 		if (!z)
-			fprintf(out_, "%s", p->Nullvalue);
+			_fprintf(out_, "%s", p->Nullvalue);
 		else
 		{
 			int i;
@@ -520,10 +520,10 @@ namespace Core
 				putc('"', out_);
 			}
 			else
-				fprintf(out_, "%s", z);
+				_fprintf(out_, "%s", z);
 		}
 		if (sep)
-			fprintf(p->out_, "%s", p->Separator);
+			_fprintf(p->out_, "%s", p->Separator);
 	}
 
 #ifdef SIGINT
@@ -550,11 +550,9 @@ namespace Core
 				int len = strlen30(azCol[i] ? azCol[i] : "");
 				if( len>w ) w = len;
 			}
-			if( p->cnt++>0 ) fprintf(p->out_,"\n");
-			for(i=0; i<nArg; i++){
-				fprintf(p->out_,"%*s = %s\n", w, azCol[i],
-					azArg[i] ? azArg[i] : p->nullvalue);
-			}
+			if( p->cnt++>0 ) _fprintf(p->out_,"\n");
+			for (i=0; i<nArg; i++)
+				_fprintf(p->out_,"%*s = %s\n", w, azCol[i], azArg[i] ? azArg[i] : p->nullvalue);
 			break;
 						}
 		case MODE_Explain:
@@ -577,11 +575,11 @@ namespace Core
 						p->actualWidth[i] = w;
 					}
 					if( p->showHeader ){
-						if( w<0 ){
-							fprintf(p->out_,"%*.*s%s",-w,-w,azCol[i], i==nArg-1 ? "\n": "  ");
-						}else{
-							fprintf(p->out_,"%-*.*s%s",w,w,azCol[i], i==nArg-1 ? "\n": "  ");
-						}
+						if ( w<0 )
+							_fprintf(p->out_,"%*.*s%s",-w,-w,azCol[i], i==nArg-1 ? "\n": "  ");
+						else
+							_fprintf(p->out_,"%-*.*s%s",w,w,azCol[i], i==nArg-1 ? "\n": "  ");
+						
 					}
 				}
 				if( p->showHeader ){
@@ -593,7 +591,7 @@ namespace Core
 						}else{
 							w = 10;
 						}
-						fprintf(p->out_,"%-*.*s%s",w,w,"-----------------------------------"
+						_fprintf(p->out_,"%-*.*s%s",w,w,"-----------------------------------"
 							"----------------------------------------------------------",
 							i==nArg-1 ? "\n": "  ");
 					}
@@ -612,10 +610,10 @@ namespace Core
 						w = strlen30(azArg[i]);
 				}
 				if( w<0 ){
-					fprintf(p->out_,"%*.*s%s",-w,-w,
+					_fprintf(p->out_,"%*.*s%s",-w,-w,
 						azArg[i] ? azArg[i] : p->nullvalue, i==nArg-1 ? "\n": "  ");
 				}else{
-					fprintf(p->out_,"%-*.*s%s",w,w,
+					_fprintf(p->out_,"%-*.*s%s",w,w,
 						azArg[i] ? azArg[i] : p->nullvalue, i==nArg-1 ? "\n": "  ");
 				}
 			}
@@ -625,58 +623,58 @@ namespace Core
 		case MODE_List: {
 			if( p->cnt++==0 && p->showHeader ){
 				for(i=0; i<nArg; i++){
-					fprintf(p->out_,"%s%s",azCol[i], i==nArg-1 ? "\n" : p->separator);
+					_fprintf(p->out_,"%s%s",azCol[i], i==nArg-1 ? "\n" : p->separator);
 				}
 			}
 			if( azArg==0 ) break;
 			for(i=0; i<nArg; i++){
 				char *z = azArg[i];
 				if( z==0 ) z = p->nullvalue;
-				fprintf(p->out_, "%s", z);
+				_fprintf(p->out_, "%s", z);
 				if( i<nArg-1 ){
-					fprintf(p->out_, "%s", p->separator);
+					_fprintf(p->out_, "%s", p->separator);
 				}else if( p->mode==MODE_Semi ){
-					fprintf(p->out_, ";\n");
+					_fprintf(p->out_, ";\n");
 				}else{
-					fprintf(p->out_, "\n");
+					_fprintf(p->out_, "\n");
 				}
 			}
 			break;
 						}
 		case MODE_Html: {
 			if( p->cnt++==0 && p->showHeader ){
-				fprintf(p->out_,"<TR>");
+				_fprintf(p->out_,"<TR>");
 				for(i=0; i<nArg; i++){
-					fprintf(p->out_,"<TH>");
+					_fprintf(p->out_,"<TH>");
 					output_html_string(p->out_, azCol[i]);
-					fprintf(p->out_,"</TH>\n");
+					_fprintf(p->out_,"</TH>\n");
 				}
-				fprintf(p->out_,"</TR>\n");
+				_fprintf(p->out_,"</TR>\n");
 			}
 			if( azArg==0 ) break;
-			fprintf(p->out_,"<TR>");
+			_fprintf(p->out_,"<TR>");
 			for(i=0; i<nArg; i++){
-				fprintf(p->out_,"<TD>");
+				_fprintf(p->out_,"<TD>");
 				output_html_string(p->out_, azArg[i] ? azArg[i] : p->nullvalue);
-				fprintf(p->out_,"</TD>\n");
+				_fprintf(p->out_,"</TD>\n");
 			}
-			fprintf(p->out_,"</TR>\n");
+			_fprintf(p->out_,"</TR>\n");
 			break;
 						}
 		case MODE_Tcl: {
 			if( p->cnt++==0 && p->showHeader ){
 				for(i=0; i<nArg; i++){
 					output_c_string(p->out_,azCol[i] ? azCol[i] : "");
-					if(i<nArg-1) fprintf(p->out_, "%s", p->separator);
+					if(i<nArg-1) _fprintf(p->out_, "%s", p->separator);
 				}
-				fprintf(p->out_,"\n");
+				_fprintf(p->out_,"\n");
 			}
 			if( azArg==0 ) break;
 			for(i=0; i<nArg; i++){
 				output_c_string(p->out_, azArg[i] ? azArg[i] : p->nullvalue);
-				if(i<nArg-1) fprintf(p->out_, "%s", p->separator);
+				if(i<nArg-1) _fprintf(p->out_, "%s", p->separator);
 			}
-			fprintf(p->out_,"\n");
+			_fprintf(p->out_,"\n");
 			break;
 					   }
 		case MODE_Csv: {
@@ -684,82 +682,75 @@ namespace Core
 				for(i=0; i<nArg; i++){
 					output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
 				}
-				fprintf(p->out_,"\n");
+				_fprintf(p->out_,"\n");
 			}
 			if( azArg==0 ) break;
 			for(i=0; i<nArg; i++){
 				output_csv(p, azArg[i], i<nArg-1);
 			}
-			fprintf(p->out_,"\n");
+			_fprintf(p->out_,"\n");
 			break;
 					   }
 		case MODE_Insert: {
 			p->cnt++;
 			if( azArg==0 ) break;
-			fprintf(p->out_,"INSERT INTO %s VALUES(",p->zDestTable);
+			_fprintf(p->out_,"INSERT INTO %s VALUES(",p->zDestTable);
 			for(i=0; i<nArg; i++){
 				char *zSep = i>0 ? ",": "";
 				if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
-					fprintf(p->out_,"%sNULL",zSep);
+					_fprintf(p->out_,"%sNULL",zSep);
 				}else if( aiType && aiType[i]==SQLITE_TEXT ){
-					if( zSep[0] ) fprintf(p->out_,"%s",zSep);
+					if( zSep[0] ) _fprintf(p->out_,"%s",zSep);
 					output_quoted_string(p->out_, azArg[i]);
 				}else if( aiType && (aiType[i]==SQLITE_INTEGER || aiType[i]==SQLITE_FLOAT) ){
-					fprintf(p->out_,"%s%s",zSep, azArg[i]);
+					_fprintf(p->out_,"%s%s",zSep, azArg[i]);
 				}else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
 					const void *pBlob = sqlite3_column_blob(p->pStmt, i);
 					int nBlob = sqlite3_column_bytes(p->pStmt, i);
-					if( zSep[0] ) fprintf(p->out_,"%s",zSep);
+					if( zSep[0] ) _fprintf(p->out_,"%s",zSep);
 					output_hex_blob(p->out_, pBlob, nBlob);
 				}else if( isNumber(azArg[i], 0) ){
-					fprintf(p->out_,"%s%s",zSep, azArg[i]);
+					_fprintf(p->out_,"%s%s",zSep, azArg[i]);
 				}else{
-					if( zSep[0] ) fprintf(p->out_,"%s",zSep);
+					if( zSep[0] ) _fprintf(p->out_,"%s",zSep);
 					output_quoted_string(p->out_, azArg[i]);
 				}
 			}
-			fprintf(p->out_,");\n");
+			_fprintf(p->out_,");\n");
 			break;
 						  }
 		}
 		return 0;
 	}
 
-	/*
-	** This is the callback routine that the SQLite library
-	** invokes for each row of a query result.
-	*/
-	static int callback(void *pArg, int nArg, char **azArg, char **azCol){
-		/* since we don't have type info, call the shell_callback with a NULL value */
+	static int callback(void *args, int argsLength, char **argNames, char **colNames)
+	{
+		// since we don't have type info, call the shell_callback with a NULL value
 		return shell_callback(pArg, nArg, azArg, azCol, NULL);
 	}
 
-	/*
-	** Set the destination table field of the callback_data structure to
-	** the name of the table given.  Escape any quote characters in the
-	** table name.
-	*/
-	static void set_table_name(struct callback_data *p, const char *zName){
-		int i, n;
-		int needQuote;
-		char *z;
-
-		if( p->zDestTable ){
-			free(p->zDestTable);
-			p->zDestTable = 0;
+	static void set_table_name(struct callback_data *p, const char *name)
+	{
+		if (p->zDestTable)
+		{
+			free(p->DestTable);
+			p->DestTable = nullptr;
 		}
-		if( zName==0 ) return;
-		needQuote = !isalpha((unsigned char)*zName) && *zName!='_';
-		for(i=n=0; zName[i]; i++, n++){
-			if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ){
-				needQuote = 1;
-				if( zName[i]=='\'' ) n++;
+		if (!name) return;
+		bool needQuote = (!isalpha((unsigned char)*name) && *name != '_');
+		int i, n;
+		for (i = n = 0; name[i]; i++, n++)
+		{
+			if (!isalnum((unsigned char)name[i]) && name[i] != '_')
+			{
+				needQuote = true;
+				if (name[i] == '\'') n++;
 			}
 		}
-		if( needQuote ) n += 2;
-		z = p->zDestTable = malloc( n+1 );
+		if (needQuote) n += 2;
+		char *z = p->DestTable = malloc(n+1);
 		if( z==0 ){
-			fprintf(stderr,"Error: out_ of memory\n");
+			_fprintf(stderr,"Error: out_ of memory\n");
 			exit(1);
 		}
 		n = 0;
@@ -840,7 +831,7 @@ namespace Core
 			const char *z;
 			rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
 			if( rc!=SQLITE_OK || !pSelect ){
-				fprintf(p->out_, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
+				_fprintf(p->out_, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
 				p->nErr++;
 				return rc;
 			}
@@ -848,26 +839,26 @@ namespace Core
 			nResult = sqlite3_column_count(pSelect);
 			while( rc==SQLITE_ROW ){
 				if( zFirstRow ){
-					fprintf(p->out_, "%s", zFirstRow);
+					_fprintf(p->out_, "%s", zFirstRow);
 					zFirstRow = 0;
 				}
 				z = (const char*)sqlite3_column_text(pSelect, 0);
-				fprintf(p->out_, "%s", z);
+				_fprintf(p->out_, "%s", z);
 				for(i=1; i<nResult; i++){ 
-					fprintf(p->out_, ",%s", sqlite3_column_text(pSelect, i));
+					_fprintf(p->out_, ",%s", sqlite3_column_text(pSelect, i));
 				}
 				if( z==0 ) z = "";
 				while( z[0] && (z[0]!='-' || z[1]!='-') ) z++;
 				if( z[0] ){
-					fprintf(p->out_, "\n;\n");
+					_fprintf(p->out_, "\n;\n");
 				}else{
-					fprintf(p->out_, ";\n");
+					_fprintf(p->out_, ";\n");
 				}    
 				rc = sqlite3_step(pSelect);
 			}
 			rc = sqlite3_finalize(pSelect);
 			if( rc!=SQLITE_OK ){
-				fprintf(p->out_, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
+				_fprintf(p->out_, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
 				p->nErr++;
 			}
 			return rc;
@@ -902,80 +893,80 @@ namespace Core
 
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Memory Used:                         %d (max %d) bytes\n", iCur, iHiwtr);
+				_fprintf(pArg->out_, "Memory Used:                         %d (max %d) bytes\n", iCur, iHiwtr);
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Number of Outstanding Allocations:   %d (max %d)\n", iCur, iHiwtr);
+				_fprintf(pArg->out_, "Number of Outstanding Allocations:   %d (max %d)\n", iCur, iHiwtr);
 				/*
 				** Not currently used by the CLI.
 				**    iHiwtr = iCur = -1;
 				**    sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
-				**    fprintf(pArg->out_, "Number of Pcache Pages Used:         %d (max %d) pages\n", iCur, iHiwtr);
+				**    _fprintf(pArg->out_, "Number of Pcache Pages Used:         %d (max %d) pages\n", iCur, iHiwtr);
 				*/
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n", iCur, iHiwtr);
+				_fprintf(pArg->out_, "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n", iCur, iHiwtr);
 				/*
 				** Not currently used by the CLI.
 				**    iHiwtr = iCur = -1;
 				**    sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
-				**    fprintf(pArg->out_, "Number of Scratch Allocations Used:  %d (max %d)\n", iCur, iHiwtr);
+				**    _fprintf(pArg->out_, "Number of Scratch Allocations Used:  %d (max %d)\n", iCur, iHiwtr);
 				*/
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n", iCur, iHiwtr);
+				_fprintf(pArg->out_, "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n", iCur, iHiwtr);
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_MALLOC_SIZE, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Largest Allocation:                  %d bytes\n", iHiwtr);
+				_fprintf(pArg->out_, "Largest Allocation:                  %d bytes\n", iHiwtr);
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_PAGECACHE_SIZE, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Largest Pcache Allocation:           %d bytes\n", iHiwtr);
+				_fprintf(pArg->out_, "Largest Pcache Allocation:           %d bytes\n", iHiwtr);
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Largest Scratch Allocation:          %d bytes\n", iHiwtr);
+				_fprintf(pArg->out_, "Largest Scratch Allocation:          %d bytes\n", iHiwtr);
 #ifdef YYTRACKMAXSTACKDEPTH
 				iHiwtr = iCur = -1;
 				sqlite3_status(SQLITE_STATUS_PARSER_STACK, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Deepest Parser Stack:                %d (max %d)\n", iCur, iHiwtr);
+				_fprintf(pArg->out_, "Deepest Parser Stack:                %d (max %d)\n", iCur, iHiwtr);
 #endif
 			}
 
 			if( pArg && pArg->out_ && db ){
 				iHiwtr = iCur = -1;
 				sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
+				_fprintf(pArg->out_, "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
 				sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Successful lookaside attempts:       %d\n", iHiwtr);
+				_fprintf(pArg->out_, "Successful lookaside attempts:       %d\n", iHiwtr);
 				sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Lookaside failures due to size:      %d\n", iHiwtr);
+				_fprintf(pArg->out_, "Lookaside failures due to size:      %d\n", iHiwtr);
 				sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Lookaside failures due to OOM:       %d\n", iHiwtr);
+				_fprintf(pArg->out_, "Lookaside failures due to OOM:       %d\n", iHiwtr);
 				iHiwtr = iCur = -1;
 				sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Pager Heap Usage:                    %d bytes\n", iCur);    iHiwtr = iCur = -1;
+				_fprintf(pArg->out_, "Pager Heap Usage:                    %d bytes\n", iCur);    iHiwtr = iCur = -1;
 				sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHiwtr, 1);
-				fprintf(pArg->out_, "Page cache hits:                     %d\n", iCur);
+				_fprintf(pArg->out_, "Page cache hits:                     %d\n", iCur);
 				iHiwtr = iCur = -1;
 				sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
-				fprintf(pArg->out_, "Page cache misses:                   %d\n", iCur); 
+				_fprintf(pArg->out_, "Page cache misses:                   %d\n", iCur); 
 				iHiwtr = iCur = -1;
 				sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
-				fprintf(pArg->out_, "Page cache writes:                   %d\n", iCur); 
+				_fprintf(pArg->out_, "Page cache writes:                   %d\n", iCur); 
 				iHiwtr = iCur = -1;
 				sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Schema Heap Usage:                   %d bytes\n", iCur); 
+				_fprintf(pArg->out_, "Schema Heap Usage:                   %d bytes\n", iCur); 
 				iHiwtr = iCur = -1;
 				sqlite3_db_status(db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHiwtr, bReset);
-				fprintf(pArg->out_, "Statement Heap/Lookaside Usage:      %d bytes\n", iCur); 
+				_fprintf(pArg->out_, "Statement Heap/Lookaside Usage:      %d bytes\n", iCur); 
 			}
 
 			if( pArg && pArg->out_ && db && pArg->pStmt ){
 				iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_FULLSCAN_STEP, bReset);
-				fprintf(pArg->out_, "Fullscan Steps:                      %d\n", iCur);
+				_fprintf(pArg->out_, "Fullscan Steps:                      %d\n", iCur);
 				iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_SORT, bReset);
-				fprintf(pArg->out_, "Sort Operations:                     %d\n", iCur);
+				_fprintf(pArg->out_, "Sort Operations:                     %d\n", iCur);
 				iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_AUTOINDEX, bReset);
-				fprintf(pArg->out_, "Autoindex Inserts:                   %d\n", iCur);
+				_fprintf(pArg->out_, "Autoindex Inserts:                   %d\n", iCur);
 			}
 
 			return 0;
@@ -1030,7 +1021,7 @@ namespace Core
 					/* echo the sql statement if echo on */
 					if( pArg && pArg->echoOn ){
 						const char *zStmtSql = sqlite3_sql(pStmt);
-						fprintf(pArg->out_, "%s\n", zStmtSql ? zStmtSql : zSql);
+						_fprintf(pArg->out_, "%s\n", zStmtSql ? zStmtSql : zSql);
 					}
 
 					/* Output TESTCTRL_EXPLAIN text of requested */
@@ -1038,7 +1029,7 @@ namespace Core
 						const char *zExplain = 0;
 						sqlite3_test_control(SQLITE_TESTCTRL_EXPLAIN_STMT, pStmt, &zExplain);
 						if( zExplain && zExplain[0] ){
-							fprintf(pArg->out_, "%s", zExplain);
+							_fprintf(pArg->out_, "%s", zExplain);
 						}
 					}
 
@@ -1146,24 +1137,24 @@ namespace Core
 		if( strcmp(zTable, "sqlite_sequence")==0 ){
 			zPrepStmt = "DELETE FROM sqlite_sequence;\n";
 		}else if( strcmp(zTable, "sqlite_stat1")==0 ){
-			fprintf(p->out_, "ANALYZE sqlite_master;\n");
+			_fprintf(p->out_, "ANALYZE sqlite_master;\n");
 		}else if( strncmp(zTable, "sqlite_", 7)==0 ){
 			return 0;
 		}else if( strncmp(zSql, "CREATE VIRTUAL TABLE", 20)==0 ){
 			char *zIns;
 			if( !p->writableSchema ){
-				fprintf(p->out_, "PRAGMA writable_schema=ON;\n");
+				_fprintf(p->out_, "PRAGMA writable_schema=ON;\n");
 				p->writableSchema = 1;
 			}
 			zIns = sqlite3_mprintf(
 				"INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
 				"VALUES('table','%q','%q',0,'%q');",
 				zTable, zTable, zSql);
-			fprintf(p->out_, "%s\n", zIns);
+			_fprintf(p->out_, "%s\n", zIns);
 			sqlite3_free(zIns);
 			return 0;
 		}else{
-			fprintf(p->out_, "%s;\n", zSql);
+			_fprintf(p->out_, "%s;\n", zSql);
 		}
 
 		if( strcmp(zType, "table")==0 ){
@@ -1240,9 +1231,9 @@ namespace Core
 			if( rc==SQLITE_CORRUPT ){
 				char *zQ2;
 				int len = strlen30(zQuery);
-				fprintf(p->out_, "/****** CORRUPTION ERROR *******/\n");
+				_fprintf(p->out_, "/****** CORRUPTION ERROR *******/\n");
 				if( zErr ){
-					fprintf(p->out_, "/****** %s ******/\n", zErr);
+					_fprintf(p->out_, "/****** %s ******/\n", zErr);
 					sqlite3_free(zErr);
 					zErr = 0;
 				}
@@ -1251,7 +1242,7 @@ namespace Core
 				sqlite3_snprintf(len+100, zQ2, "%s ORDER BY rowid DESC", zQuery);
 				rc = sqlite3_exec(p->db, zQ2, dump_callback, p, &zErr);
 				if( rc ){
-					fprintf(p->out_, "/****** ERROR: %s ******/\n", zErr);
+					_fprintf(p->out_, "/****** ERROR: %s ******/\n", zErr);
 				}else{
 					rc = SQLITE_CORRUPT;
 				}
@@ -1341,7 +1332,7 @@ namespace Core
 					shellstaticFunc, 0, 0);
 			}
 			if( db==0 || SQLITE_OK!=sqlite3_errcode(db) ){
-				fprintf(stderr,"Error: unable to open database \"%s\": %s\n", 
+				_fprintf(stderr,"Error: unable to open database \"%s\": %s\n", 
 					p->zDbFilename, sqlite3_errmsg(db));
 				exit(1);
 			}
@@ -1414,7 +1405,7 @@ namespace Core
 		if( sqlite3_stricmp(zArg, "off")==0 || sqlite3_stricmp(zArg,"no")==0 ){
 			return 0;
 		}
-		fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n",
+		_fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n",
 			zArg);
 		return 0;
 	}
@@ -1442,7 +1433,7 @@ namespace Core
 		}else{
 			f = fopen(zFile, "wb");
 			if( f==0 ){
-				fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
+				_fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
 			}
 		}
 		return f;
@@ -1453,7 +1444,7 @@ namespace Core
 	*/
 	static void sql_trace_callback(void *pArg, const char *z){
 		FILE *f = (FILE*)pArg;
-		if( f ) fprintf(f, "%s\n", z);
+		if( f ) _fprintf(f, "%s\n", z);
 	}
 
 	/*
@@ -1519,7 +1510,7 @@ namespace Core
 						zKey = azArg[++j];
 					}else
 					{
-						fprintf(stderr, "unknown option: %s\n", azArg[j]);
+						_fprintf(stderr, "unknown option: %s\n", azArg[j]);
 						return 1;
 					}
 				}else if( zDestFile==0 ){
@@ -1528,18 +1519,18 @@ namespace Core
 					zDb = zDestFile;
 					zDestFile = azArg[j];
 				}else{
-					fprintf(stderr, "too many arguments to .backup\n");
+					_fprintf(stderr, "too many arguments to .backup\n");
 					return 1;
 				}
 			}
 			if( zDestFile==0 ){
-				fprintf(stderr, "missing FILENAME argument on .backup\n");
+				_fprintf(stderr, "missing FILENAME argument on .backup\n");
 				return 1;
 			}
 			if( zDb==0 ) zDb = "main";
 			rc = sqlite3_open(zDestFile, &pDest);
 			if( rc!=SQLITE_OK ){
-				fprintf(stderr, "Error: cannot open \"%s\"\n", zDestFile);
+				_fprintf(stderr, "Error: cannot open \"%s\"\n", zDestFile);
 				sqlite3_close(pDest);
 				return 1;
 			}
@@ -1551,7 +1542,7 @@ namespace Core
 			open_db(p);
 			pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
 			if( pBackup==0 ){
-				fprintf(stderr, "Error: %s\n", sqlite3_errmsg(pDest));
+				_fprintf(stderr, "Error: %s\n", sqlite3_errmsg(pDest));
 				sqlite3_close(pDest);
 				return 1;
 			}
@@ -1560,7 +1551,7 @@ namespace Core
 			if( rc==SQLITE_DONE ){
 				rc = 0;
 			}else{
-				fprintf(stderr, "Error: %s\n", sqlite3_errmsg(pDest));
+				_fprintf(stderr, "Error: %s\n", sqlite3_errmsg(pDest));
 				rc = 1;
 			}
 			sqlite3_close(pDest);
@@ -1590,7 +1581,7 @@ namespace Core
 						data.cnt = 0;
 						sqlite3_exec(p->db, "PRAGMA database_list; ", callback, &data, &zErrMsg);
 						if( zErrMsg ){
-							fprintf(stderr,"Error: %s\n", zErrMsg);
+							_fprintf(stderr,"Error: %s\n", zErrMsg);
 							sqlite3_free(zErrMsg);
 							rc = 1;
 						}
@@ -1601,8 +1592,8 @@ namespace Core
 							/* When playing back a "dump", the content might appear in an order
 							** which causes immediate foreign key constraints to be violated.
 							** So disable foreign-key constraint enforcement to prevent problems. */
-							fprintf(p->out_, "PRAGMA foreign_keys=OFF;\n");
-							fprintf(p->out_, "BEGIN TRANSACTION;\n");
+							_fprintf(p->out_, "PRAGMA foreign_keys=OFF;\n");
+							_fprintf(p->out_, "BEGIN TRANSACTION;\n");
 							p->writableSchema = 0;
 							sqlite3_exec(p->db, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
 							p->nErr = 0;
@@ -1637,12 +1628,12 @@ namespace Core
 								}
 							}
 							if( p->writableSchema ){
-								fprintf(p->out_, "PRAGMA writable_schema=OFF;\n");
+								_fprintf(p->out_, "PRAGMA writable_schema=OFF;\n");
 								p->writableSchema = 0;
 							}
 							sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
 							sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
-							fprintf(p->out_, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
+							_fprintf(p->out_, p->nErr ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n");
 						}else
 
 							if( c=='e' && strncmp(azArg[0], "echo", n)==0 && nArg>1 && nArg<3 ){
@@ -1695,9 +1686,9 @@ namespace Core
 										}else
 
 											if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
-												fprintf(stderr,"%s",zHelp);
+												_fprintf(stderr,"%s",zHelp);
 												if( HAS_TIMER ){
-													fprintf(stderr,"%s",zTimerHelp);
+													_fprintf(stderr,"%s",zTimerHelp);
 												}
 											}else
 
@@ -1719,12 +1710,12 @@ namespace Core
 													open_db(p);
 													nSep = strlen30(p->separator);
 													if( nSep==0 ){
-														fprintf(stderr, "Error: non-null separator required for import\n");
+														_fprintf(stderr, "Error: non-null separator required for import\n");
 														return 1;
 													}
 													zSql = sqlite3_mprintf("SELECT * FROM %s", zTable);
 													if( zSql==0 ){
-														fprintf(stderr, "Error: out_ of memory\n");
+														_fprintf(stderr, "Error: out_ of memory\n");
 														return 1;
 													}
 													nByte = strlen30(zSql);
@@ -1732,7 +1723,7 @@ namespace Core
 													sqlite3_free(zSql);
 													if( rc ){
 														if (pStmt) sqlite3_finalize(pStmt);
-														fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
+														_fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
 														return 1;
 													}
 													nCol = sqlite3_column_count(pStmt);
@@ -1741,7 +1732,7 @@ namespace Core
 													if( nCol==0 ) return 0; /* no columns, no error */
 													zSql = malloc( nByte + 20 + nCol*2 );
 													if( zSql==0 ){
-														fprintf(stderr, "Error: out_ of memory\n");
+														_fprintf(stderr, "Error: out_ of memory\n");
 														return 1;
 													}
 													sqlite3_snprintf(nByte+20, zSql, "INSERT INTO %s VALUES(?", zTable);
@@ -1755,19 +1746,19 @@ namespace Core
 													rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
 													free(zSql);
 													if( rc ){
-														fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+														_fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
 														if (pStmt) sqlite3_finalize(pStmt);
 														return 1;
 													}
 													in = fopen(zFile, "rb");
 													if( in==0 ){
-														fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
+														_fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
 														sqlite3_finalize(pStmt);
 														return 1;
 													}
 													azCol = malloc( sizeof(azCol[0])*(nCol+1) );
 													if( azCol==0 ){
-														fprintf(stderr, "Error: out_ of memory\n");
+														_fprintf(stderr, "Error: out_ of memory\n");
 														fclose(in);
 														sqlite3_finalize(pStmt);
 														return 1;
@@ -1793,7 +1784,7 @@ namespace Core
 														} /* end for */
 														*z = 0;
 														if( i+1!=nCol ){
-															fprintf(stderr,
+															_fprintf(stderr,
 																"Error: %s line %d: expected %d columns of data but found %d\n",
 																zFile, lineno, nCol, i+1);
 															zCommit = "ROLLBACK";
@@ -1816,7 +1807,7 @@ namespace Core
 														rc = sqlite3_reset(pStmt);
 														free(line);
 														if( rc!=SQLITE_OK ){
-															fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
+															_fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
 															zCommit = "ROLLBACK";
 															rc = 1;
 															break; /* from while */
@@ -1859,11 +1850,11 @@ namespace Core
 															zShellStatic = 0;
 														}
 														if( zErrMsg ){
-															fprintf(stderr,"Error: %s\n", zErrMsg);
+															_fprintf(stderr,"Error: %s\n", zErrMsg);
 															sqlite3_free(zErrMsg);
 															rc = 1;
 														}else if( rc != SQLITE_OK ){
-															fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
+															_fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
 															rc = 1;
 														}
 													}else
@@ -1881,7 +1872,7 @@ namespace Core
 															}else{
 																iotrace = fopen(azArg[1], "w");
 																if( iotrace==0 ){
-																	fprintf(stderr, "Error: cannot open \"%s\"\n", azArg[1]);
+																	_fprintf(stderr, "Error: cannot open \"%s\"\n", azArg[1]);
 																	sqlite3IoTrace = 0;
 																	rc = 1;
 																}else{
@@ -1900,7 +1891,7 @@ namespace Core
 																open_db(p);
 																rc = sqlite3_load_extension(p->db, zFile, zProc, &zErrMsg);
 																if( rc!=SQLITE_OK ){
-																	fprintf(stderr, "Error: %s\n", zErrMsg);
+																	_fprintf(stderr, "Error: %s\n", zErrMsg);
 																	sqlite3_free(zErrMsg);
 																	rc = 1;
 																}
@@ -1940,7 +1931,7 @@ namespace Core
 																			p->mode = MODE_Insert;
 																			set_table_name(p, "table");
 																		}else {
-																			fprintf(stderr,"Error: mode should be one of: "
+																			_fprintf(stderr,"Error: mode should be one of: "
 																				"column csv html insert line list tabs tcl\n");
 																			rc = 1;
 																		}
@@ -1952,7 +1943,7 @@ namespace Core
 																				p->mode = MODE_Insert;
 																				set_table_name(p, azArg[2]);
 																			}else {
-																				fprintf(stderr, "Error: invalid arguments: "
+																				_fprintf(stderr, "Error: invalid arguments: "
 																					" \"%s\". Enter \".help\" for help\n", azArg[2]);
 																				rc = 1;
 																			}
@@ -1973,7 +1964,7 @@ namespace Core
 																					if( azArg[1][0]=='|' ){
 																						p->out_ = popen(&azArg[1][1], "w");
 																						if( p->out_==0 ){
-																							fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &azArg[1][1]);
+																							_fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &azArg[1][1]);
 																							p->out_ = stdout;
 																							rc = 1;
 																						}else{
@@ -1983,7 +1974,7 @@ namespace Core
 																						p->out_ = output_file_open(azArg[1]);
 																						if( p->out_==0 ){
 																							if( strcmp(azArg[1],"off")!=0 ){
-																								fprintf(stderr,"Error: cannot write to \"%s\"\n", azArg[1]);
+																								_fprintf(stderr,"Error: cannot write to \"%s\"\n", azArg[1]);
 																							}
 																							p->out_ = stdout;
 																							rc = 1;
@@ -1996,10 +1987,10 @@ namespace Core
 																					if( c=='p' && n>=3 && strncmp(azArg[0], "print", n)==0 ){
 																						int i;
 																						for(i=1; i<nArg; i++){
-																							if( i>1 ) fprintf(p->out_, " ");
-																							fprintf(p->out_, "%s", azArg[i]);
+																							if( i>1 ) _fprintf(p->out_, " ");
+																							_fprintf(p->out_, "%s", azArg[i]);
 																						}
-																						fprintf(p->out_, "\n");
+																						_fprintf(p->out_, "\n");
 																					}else
 
 																						if( c=='p' && strncmp(azArg[0], "prompt", n)==0 && (nArg==2 || nArg==3)){
@@ -2018,7 +2009,7 @@ namespace Core
 																								if( c=='r' && n>=3 && strncmp(azArg[0], "read", n)==0 && nArg==2 ){
 																									FILE *alt = fopen(azArg[1], "rb");
 																									if( alt==0 ){
-																										fprintf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
+																										_fprintf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
 																										rc = 1;
 																									}else{
 																										rc = process_input(p, alt);
@@ -2042,14 +2033,14 @@ namespace Core
 																										}
 																										rc = sqlite3_open(zSrcFile, &pSrc);
 																										if( rc!=SQLITE_OK ){
-																											fprintf(stderr, "Error: cannot open \"%s\"\n", zSrcFile);
+																											_fprintf(stderr, "Error: cannot open \"%s\"\n", zSrcFile);
 																											sqlite3_close(pSrc);
 																											return 1;
 																										}
 																										open_db(p);
 																										pBackup = sqlite3_backup_init(p->db, zDb, pSrc, "main");
 																										if( pBackup==0 ){
-																											fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
+																											_fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
 																											sqlite3_close(pSrc);
 																											return 1;
 																										}
@@ -2064,10 +2055,10 @@ namespace Core
 																										if( rc==SQLITE_DONE ){
 																											rc = 0;
 																										}else if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ){
-																											fprintf(stderr, "Error: source database is busy\n");
+																											_fprintf(stderr, "Error: source database is busy\n");
 																											rc = 1;
 																										}else{
-																											fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
+																											_fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
 																											rc = 1;
 																										}
 																										sqlite3_close(pSrc);
@@ -2138,11 +2129,11 @@ namespace Core
 																													);
 																											}
 																											if( zErrMsg ){
-																												fprintf(stderr,"Error: %s\n", zErrMsg);
+																												_fprintf(stderr,"Error: %s\n", zErrMsg);
 																												sqlite3_free(zErrMsg);
 																												rc = 1;
 																											}else if( rc != SQLITE_OK ){
-																												fprintf(stderr,"Error: querying schema information\n");
+																												_fprintf(stderr,"Error: querying schema information\n");
 																												rc = 1;
 																											}else{
 																												rc = 0;
@@ -2156,24 +2147,24 @@ namespace Core
 
 																												if( c=='s' && strncmp(azArg[0], "show", n)==0 && nArg==1 ){
 																													int i;
-																													fprintf(p->out_,"%9.9s: %s\n","echo", p->echoOn ? "on" : "off");
-																													fprintf(p->out_,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" :"off");
-																													fprintf(p->out_,"%9.9s: %s\n","headers", p->showHeader ? "on" : "off");
-																													fprintf(p->out_,"%9.9s: %s\n","mode", modeDescr[p->mode]);
-																													fprintf(p->out_,"%9.9s: ", "nullvalue");
+																													_fprintf(p->out_,"%9.9s: %s\n","echo", p->echoOn ? "on" : "off");
+																													_fprintf(p->out_,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" :"off");
+																													_fprintf(p->out_,"%9.9s: %s\n","headers", p->showHeader ? "on" : "off");
+																													_fprintf(p->out_,"%9.9s: %s\n","mode", modeDescr[p->mode]);
+																													_fprintf(p->out_,"%9.9s: ", "nullvalue");
 																													output_c_string(p->out_, p->nullvalue);
-																													fprintf(p->out_, "\n");
-																													fprintf(p->out_,"%9.9s: %s\n","output",
+																													_fprintf(p->out_, "\n");
+																													_fprintf(p->out_,"%9.9s: %s\n","output",
 																														strlen30(p->outfile) ? p->outfile : "stdout");
-																													fprintf(p->out_,"%9.9s: ", "separator");
+																													_fprintf(p->out_,"%9.9s: ", "separator");
 																													output_c_string(p->out_, p->separator);
-																													fprintf(p->out_, "\n");
-																													fprintf(p->out_,"%9.9s: %s\n","stats", p->statsOn ? "on" : "off");
-																													fprintf(p->out_,"%9.9s: ","width");
+																													_fprintf(p->out_, "\n");
+																													_fprintf(p->out_,"%9.9s: %s\n","stats", p->statsOn ? "on" : "off");
+																													_fprintf(p->out_,"%9.9s: ","width");
 																													for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
-																														fprintf(p->out_,"%d ",p->colWidth[i]);
+																														_fprintf(p->out_,"%d ",p->colWidth[i]);
 																													}
-																													fprintf(p->out_,"\n");
+																													_fprintf(p->out_,"\n");
 																												}else
 
 																													if( c=='s' && strncmp(azArg[0], "stats", n)==0 && nArg>1 && nArg<3 ){
@@ -2231,7 +2222,7 @@ namespace Core
 																																	int n = nAlloc*2 + 10;
 																																	azNew = sqlite3_realloc(azResult, sizeof(azResult[0])*n);
 																																	if( azNew==0 ){
-																																		fprintf(stderr, "Error: out_ of memory\n");
+																																		_fprintf(stderr, "Error: out_ of memory\n");
 																																		break;
 																																	}
 																																	nAlloc = n;
@@ -2296,7 +2287,7 @@ namespace Core
 																																		if( testctrl<0 ){
 																																			testctrl = aCtrl[i].ctrlCode;
 																																		}else{
-																																			fprintf(stderr, "ambiguous option name: \"%s\"\n", azArg[1]);
+																																			_fprintf(stderr, "ambiguous option name: \"%s\"\n", azArg[1]);
 																																			testctrl = -1;
 																																			break;
 																																		}
@@ -2304,7 +2295,7 @@ namespace Core
 																																}
 																																if( testctrl<0 ) testctrl = atoi(azArg[1]);
 																																if( (testctrl<SQLITE_TESTCTRL_FIRST) || (testctrl>SQLITE_TESTCTRL_LAST) ){
-																																	fprintf(stderr,"Error: invalid testctrl option: %s\n", azArg[1]);
+																																	_fprintf(stderr,"Error: invalid testctrl option: %s\n", azArg[1]);
 																																}else{
 																																	switch(testctrl){
 
@@ -2316,7 +2307,7 @@ namespace Core
 																																			rc = sqlite3_test_control(testctrl, p->db, opt);
 																																			printf("%d (0x%08x)\n", rc, rc);
 																																		} else {
-																																			fprintf(stderr,"Error: testctrl %s takes a single int option\n",
+																																			_fprintf(stderr,"Error: testctrl %s takes a single int option\n",
 																																				azArg[1]);
 																																		}
 																																		break;
@@ -2329,7 +2320,7 @@ namespace Core
 																																			rc = sqlite3_test_control(testctrl);
 																																			printf("%d (0x%08x)\n", rc, rc);
 																																		} else {
-																																			fprintf(stderr,"Error: testctrl %s takes no options\n", azArg[1]);
+																																			_fprintf(stderr,"Error: testctrl %s takes no options\n", azArg[1]);
 																																		}
 																																		break;
 
@@ -2340,7 +2331,7 @@ namespace Core
 																																			rc = sqlite3_test_control(testctrl, opt);
 																																			printf("%d (0x%08x)\n", rc, rc);
 																																		} else {
-																																			fprintf(stderr,"Error: testctrl %s takes a single unsigned"
+																																			_fprintf(stderr,"Error: testctrl %s takes a single unsigned"
 																																				" int option\n", azArg[1]);
 																																		}
 																																		break;
@@ -2353,7 +2344,7 @@ namespace Core
 																																			rc = sqlite3_test_control(testctrl, opt);
 																																			printf("%d (0x%08x)\n", rc, rc);
 																																		} else {
-																																			fprintf(stderr,"Error: testctrl %s takes a single int option\n",
+																																			_fprintf(stderr,"Error: testctrl %s takes a single int option\n",
 																																				azArg[1]);
 																																		}
 																																		break;
@@ -2366,7 +2357,7 @@ namespace Core
 																																			rc = sqlite3_test_control(testctrl, opt);
 																																			printf("%d (0x%08x)\n", rc, rc);
 																																		} else {
-																																			fprintf(stderr,"Error: testctrl %s takes a single char * option\n",
+																																			_fprintf(stderr,"Error: testctrl %s takes a single char * option\n",
 																																				azArg[1]);
 																																		}
 																																		break;
@@ -2377,7 +2368,7 @@ namespace Core
 																																	case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS: 
 																																	case SQLITE_TESTCTRL_SCRATCHMALLOC:       
 																																	default:
-																																		fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n",
+																																		_fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n",
 																																			azArg[1]);
 																																		break;
 																																	}
@@ -2441,7 +2432,7 @@ namespace Core
 																																						}else
 
 																																						{
-																																							fprintf(stderr, "Error: unknown command or invalid arguments: "
+																																							_fprintf(stderr, "Error: unknown command or invalid arguments: "
 																																								" \"%s\". Enter \".help\" for help\n", azArg[0]);
 																																							rc = 1;
 																																						}
@@ -2535,7 +2526,7 @@ namespace Core
 		int startline = 0;
 
 		while( errCnt==0 || !bail_on_error || (in==0 && stdin_is_interactive) ){
-			fflush(p->out_);
+			_fflush(p->out_);
 			free(line);
 			line = one_input_line(zSql, in);
 			if( line==0 ){
@@ -2570,7 +2561,7 @@ namespace Core
 					nSql = strlen30(line);
 					zSql = malloc( nSql+3 );
 					if( zSql==0 ){
-						fprintf(stderr, "Error: out_ of memory\n");
+						_fprintf(stderr, "Error: out_ of memory\n");
 						exit(1);
 					}
 					memcpy(zSql, line, nSql+1);
@@ -2580,7 +2571,7 @@ namespace Core
 				int len = strlen30(line);
 				zSql = realloc( zSql, nSql + len + 4 );
 				if( zSql==0 ){
-					fprintf(stderr,"Error: out_ of memory\n");
+					_fprintf(stderr,"Error: out_ of memory\n");
 					exit(1);
 				}
 				zSql[nSql++] = '\n';
@@ -2603,11 +2594,11 @@ namespace Core
 							sqlite3_snprintf(sizeof(zPrefix), zPrefix, "Error:");
 						}
 						if( zErrMsg!=0 ){
-							fprintf(stderr, "%s %s\n", zPrefix, zErrMsg);
+							_fprintf(stderr, "%s %s\n", zPrefix, zErrMsg);
 							sqlite3_free(zErrMsg);
 							zErrMsg = 0;
 						}else{
-							fprintf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
+							_fprintf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
 						}
 						errCnt++;
 					}
@@ -2618,7 +2609,7 @@ namespace Core
 		}
 		if( zSql ){
 			if( !_all_whitespace(zSql) ){
-				fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
+				_fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
 			}
 			free(zSql);
 		}
@@ -2709,7 +2700,7 @@ namespace Core
 				home_dir = find_home_dir();
 				if( home_dir==0 ){
 #if !defined(__RTP__) && !defined(_WRS_KERNEL)
-					fprintf(stderr,"%s: Error: cannot locate your home directory\n", Argv0);
+					_fprintf(stderr,"%s: Error: cannot locate your home directory\n", Argv0);
 #endif
 					return 1;
 				}
@@ -2720,7 +2711,7 @@ namespace Core
 			in = fopen(sqliterc,"rb");
 			if( in ){
 				if( stdin_is_interactive ){
-					fprintf(stderr,"-- Loading resources from %s\n",sqliterc);
+					_fprintf(stderr,"-- Loading resources from %s\n",sqliterc);
 				}
 				rc = process_input(p,in);
 				fclose(in);
@@ -2762,14 +2753,14 @@ namespace Core
 #endif
 		;
 	static void usage(int showDetail){
-		fprintf(stderr,
+		_fprintf(stderr,
 			"Usage: %s [OPTIONS] FILENAME [SQL]\n"  
 			"FILENAME is the name of an SQLite database. A new database is created\n"
 			"if the file does not previously exist.\n", Argv0);
 		if( showDetail ){
-			fprintf(stderr, "OPTIONS include:\n%s", zOptions);
+			_fprintf(stderr, "OPTIONS include:\n%s", zOptions);
 		}else{
-			fprintf(stderr, "Use the -help option for additional information\n");
+			_fprintf(stderr, "Use the -help option for additional information\n");
 		}
 		exit(1);
 	}
@@ -2795,7 +2786,7 @@ namespace Core
 	*/
 	static char *cmdline_option_value(int argc, char **argv, int i){
 		if( i==argc ){
-			fprintf(stderr, "%s: Error: missing argument to %s\n",
+			_fprintf(stderr, "%s: Error: missing argument to %s\n",
 				argv[0], argv[argc-1]);
 			exit(1);
 		}
@@ -2811,7 +2802,7 @@ namespace Core
 		int rc = 0;
 
 		if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
-			fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
+			_fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
 				sqlite3_sourceid(), SQLITE_SOURCE_ID);
 			exit(1);
 		}
@@ -2843,8 +2834,8 @@ namespace Core
 					zFirstCmd = z;
 					continue;
 				}
-				fprintf(stderr,"%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
-				fprintf(stderr,"Use -help for a list of options.\n");
+				_fprintf(stderr,"%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
+				_fprintf(stderr,"Use -help for a list of options.\n");
 				return 1;
 			}
 			if( z[1]=='-' ) z++;
@@ -2898,7 +2889,7 @@ namespace Core
 				if( pVfs ){
 					sqlite3_vfs_register(pVfs, 1);
 				}else{
-					fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]);
+					_fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]);
 					exit(1);
 				}
 			}
@@ -2907,7 +2898,7 @@ namespace Core
 #ifndef SQLITE_OMIT_MEMORYDB
 			data.zDbFilename = ":memory:";
 #else
-			fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
+			_fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
 			return 1;
 #endif
 		}
@@ -3000,16 +2991,16 @@ namespace Core
 					open_db(&data);
 					rc = shell_exec(data.db, z, shell_callback, &data, &zErrMsg);
 					if( zErrMsg!=0 ){
-						fprintf(stderr,"Error: %s\n", zErrMsg);
+						_fprintf(stderr,"Error: %s\n", zErrMsg);
 						if( bail_on_error ) return rc!=0 ? rc : 1;
 					}else if( rc!=0 ){
-						fprintf(stderr,"Error: unable to process SQL \"%s\"\n", z);
+						_fprintf(stderr,"Error: unable to process SQL \"%s\"\n", z);
 						if( bail_on_error ) return rc;
 					}
 				}
 			}else{
-				fprintf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
-				fprintf(stderr,"Use -help for a list of options.\n");
+				_fprintf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
+				_fprintf(stderr,"Use -help for a list of options.\n");
 				return 1;
 			}
 		}
@@ -3023,10 +3014,10 @@ namespace Core
 				open_db(&data);
 				rc = shell_exec(data.db, zFirstCmd, shell_callback, &data, &zErrMsg);
 				if( zErrMsg!=0 ){
-					fprintf(stderr,"Error: %s\n", zErrMsg);
+					_fprintf(stderr,"Error: %s\n", zErrMsg);
 					return rc!=0 ? rc : 1;
 				}else if( rc!=0 ){
-					fprintf(stderr,"Error: unable to process SQL \"%s\"\n", zFirstCmd);
+					_fprintf(stderr,"Error: unable to process SQL \"%s\"\n", zFirstCmd);
 					return rc;
 				}
 			}

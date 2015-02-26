@@ -763,10 +763,10 @@ namespace Core
 		{
 			memset(dbgBuf, 0, WIN32_DBG_BUF_SIZE);
 			memcpy(dbgBuf, buf, min);
-			fprintf(stderr, "%s", dbgBuf);
+			_fprintf(stderr, "%s", dbgBuf);
 		}
 		else
-			fprintf(stderr, "%s", buf);
+			_fprintf(stderr, "%s", buf);
 #endif
 	}
 

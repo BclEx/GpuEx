@@ -589,7 +589,7 @@ __device__ const void *Vdbe::Column_OriginName16(Vdbe *p, int n) { return Column
 
 #pragma region Bind
 
-static RC VdbeUnbind(Vdbe *p, int i)
+__device__ static RC VdbeUnbind(Vdbe *p, int i)
 {
 	Mem *var;
 	if (VdbeSafetyNotNull(p))

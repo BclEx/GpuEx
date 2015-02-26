@@ -62,7 +62,9 @@ namespace Core
 
 	__device__ RC SysEx::PreInitialize(MutexEx &masterMutex)
 	{
+#if _DEBUG
 		IOTrace = true;
+#endif
 		// If SQLite is already completely initialized, then this call to sqlite3_initialize() should be a no-op.  But the initialization
 		// must be complete.  So isInit must not be set until the very end of this routine.
 		if (SysEx_GlobalStatics.IsInit) return RC_OK;

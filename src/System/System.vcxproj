@@ -78,6 +78,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Bitvec.cu.obj" "$(IntDir)ConvertEx.cu.obj" "$(IntDir)GpuVSystem.cu.obj" "$(IntDir)Hash.cu.obj" "$(IntDir)MathEx.cu.obj" "$(IntDir)MutexEx.cu.obj" "$(IntDir)IO.JournalVFile.cu.obj" "$(IntDir)IO.MemoryVFile.cu.obj" "$(IntDir)IO.VFile.cu.obj" "$(IntDir)StatusEx.cu.obj" "$(IntDir)SysEx.cu.obj" "$(IntDir)SysEx+Random.cu.obj" "$(IntDir)VSystem.cu.obj" -o "$(OutDir)System.$(LC)$(LD)D.lib"</Command>
@@ -104,6 +105,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Bitvec.cu.obj" "$(IntDir)ConvertEx.cu.obj" "$(IntDir)GpuVSystem.cu.obj" "$(IntDir)Hash.cu.obj" "$(IntDir)MathEx.cu.obj" "$(IntDir)MutexEx.cu.obj" "$(IntDir)IO.JournalVFile.cu.obj" "$(IntDir)IO.MemoryVFile.cu.obj" "$(IntDir)IO.VFile.cu.obj" "$(IntDir)StatusEx.cu.obj" "$(IntDir)SysEx.cu.obj" "$(IntDir)SysEx+Random.cu.obj" "$(IntDir)VSystem.cu.obj" -o "$(OutDir)Systems.$(LC)$(LD).lib"</Command>

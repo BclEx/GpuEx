@@ -3,10 +3,6 @@
 #pragma region Preamble
 namespace Core {
 
-	// Properties of opcodes.  The OPFLG_INITIALIZER macro is created by mkopcodeh.awk during compilation.  Data is obtained
-	// from the comments following the "case OP_xxxx:" statements in the vdbe.c file.  
-	const unsigned char _opcodeProperty[] = OPFLG_INITIALIZER;
-
 #ifdef TEST
 	__device__ extern int g_search_count;
 #endif
@@ -246,7 +242,7 @@ __device__ static void ResolveP2Values(Vdbe *p, int *maxFuncArgs)
 	for (op = p->Ops, i = p->Ops.length-1; i >= 0; i--, op++)
 	{
 		OP opcode = op->Opcode;
-		op->Opflags = _opcodeProperty[opcode];
+		op->Opflags = g_opcodeProperty[opcode];
 		if (opcode == OP_Function || opcode == OP_AggStep)
 		{
 			if (op->P5 > maxArgs) maxArgs = op->P5;
@@ -321,7 +317,7 @@ __device__ int Vdbe::AddOpList(int opsLength, VdbeOpList const *ops)
 			VdbeOp *out_ = &Ops[i+addr];
 			out_->Opcode = in_->Opcode;
 			out_->P1 = in_->P1;
-			out_->P2 = (p2 < 0 && (_opcodeProperty[out_->Opcode] & OPFLG_JUMP) != 0 ? addr + ADDR(p2) : p2);
+			out_->P2 = (p2 < 0 && (g_opcodeProperty[out_->Opcode] & OPFLG_JUMP) != 0 ? addr + ADDR(p2) : p2);
 			out_->P3 = in_->P3;
 			out_->P4Type = Vdbe::P4T_NOTUSED;
 			out_->P4.P = nullptr;
@@ -675,15 +671,16 @@ __device__ void Vdbe::PrintOp(FILE *out_, int pc, Vdbe::VdbeOp *op)
 	if (!out_) out_ = stdout;
 	char ptr[50];
 	char *p4 = DisplayP4(op, ptr, sizeof(ptr));
-	fprintf(out_, "%4d %-13s %4d %4d %4d %-4s %.2X %s\n", pc,
-		OpcodeName(op->Opcode), op->P1, op->P2, op->P3, p4, op->P5,
 #ifdef _DEBUG
-		(op->Comment ? op->Comment : "")
+	_fprintf(out_, "%4d %-13s %4d %4d %4d %-4s %.2X %s\n", pc,
+		OpcodeName(op->Opcode), op->P1, op->P2, op->P3, p4, op->P5,
+		(op->Comment ? op->Comment : ""));
 #else
-		""
+	_fprintf(out_, "%4d %-13s %4d %4d %4d %-4s %.2X %s\n", pc,
+		OpcodeName(op->Opcode), op->P1, op->P2, op->P3, p4, op->P5,
+		"");
 #endif
-		);
-	fflush(out_);
+	_fflush(out_);
 }
 #endif
 
@@ -1736,20 +1733,20 @@ __device__ RC Vdbe::Reset()
 	// Save profiling information from this VDBE run.
 #ifdef VDBE_PROFILE
 	{
-		FILE *out_ = fopen("x64\\vdbe_profile.out", "a");
+		FILE *out_ = _fopen("x64\\vdbe_profile.out", "a");
 		if (out_)
 		{
 			int i;
-			fprintf(out_, "---- ");
+			_fprintf(out_, "---- ");
 			for (i = 0; i < Ops.length; i++)
-				fprintf(out_, "%02x", Ops[i].Opcode);
-			fprintf(out_, "\n");
+				_fprintf(out_, "%02x", Ops[i].Opcode);
+			_fprintf(out_, "\n");
 			for (i = 0; i < Ops.length; i++)
 			{
-				fprintf(out_, "%6d %10lld %8lld ", Ops[i].Cnt, Ops[i].Cycles, (Ops[i].Cnt > 0 ? Ops[i].Cycles/Ops[i].Cnt : 0));
+				_fprintf(out_, "%6d %10lld %8lld ", Ops[i].Cnt, Ops[i].Cycles, (Ops[i].Cnt > 0 ? Ops[i].Cycles/Ops[i].Cnt : 0));
 				PrintOp(out_, i, &Ops[i]);
 			}
-			fclose(out_);
+			_fclose(out_);
 		}
 	}
 #endif
@@ -1963,6 +1960,10 @@ __device__ uint32 Vdbe::SerialPut(uint8 *buf, int bufLength, Mem *mem, int fileF
 	return 0;
 }
 
+#if !defined(NDEBUG) && !defined(OMIT_FLOATING_POINT)
+__constant__ static const uint64 _t1 = ((uint64)0x3ff00000)<<32;
+__constant__ static const double _r1 = 1.0;
+#endif
 __device__ uint32 Vdbe::SerialGet(const unsigned char *buf, uint32 serialType, Mem *mem)
 {
 	switch (serialType)
@@ -2000,11 +2001,9 @@ __device__ uint32 Vdbe::SerialGet(const unsigned char *buf, uint32 serialType, M
 #if !defined(NDEBUG) && !defined(OMIT_FLOATING_POINT)
 		// Verify that integers and floating point values use the same byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
 		// defined that 64-bit floating point values really are mixed endian.
-		static const uint64 t1 = ((uint64)0x3ff00000)<<32;
-		static const double r1 = 1.0;
-		uint64 t2 = t1;
+		uint64 t2 = _t1;
 		SwapMixedEndianFloat(t2);
-		_assert(sizeof(r1) == sizeof(t2) && _memcmp(&r1, &t2, sizeof(r1)) == 0);
+		_assert(sizeof(_r1) == sizeof(t2) && _memcmp(&_r1, &t2, sizeof(_r1)) == 0);
 #endif
 		uint64 x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
 		uint32 y = (buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];

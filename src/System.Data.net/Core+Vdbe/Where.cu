@@ -375,7 +375,7 @@ namespace Core
 		return c;
 	}
 
-	static WhereTerm *FindTerm(WhereClause *wc, int cursor, int column, Bitmask notReady, WO op, Index *idx)
+	__device__ static WhereTerm *FindTerm(WhereClause *wc, int cursor, int column, Bitmask notReady, WO op, Index *idx)
 	{
 		WhereTerm *result = nullptr; // The answer to return
 		int origColumn = column;  // Original value of iColumn
@@ -841,12 +841,16 @@ findTerm_success:
 		else if (expr->OP == TK_BETWEEN && wc->OP ==TK_AND)
 		{
 			ExprList *list = expr->x.List;
-			static const uint8 ops[] = { TK_GE, TK_LE };
+#if __CUDACC__
+			const uint8 _ops[] = { TK_GE, TK_LE };
+#else
+			static const uint8 _ops[] = { TK_GE, TK_LE };
+#endif
 			_assert(list);
 			_assert(list->Exprs == 2);
 			for (int i = 0; i < 2; i++)
 			{
-				Expr *newExpr = Expr::PExpr_(parse, ops[i], Expr::Dup(ctx, expr->Left, 0), Expr::Dup(ctx, list->Ids[i].Expr, 0), nullptr);
+				Expr *newExpr = Expr::PExpr_(parse, _ops[i], Expr::Dup(ctx, expr->Left, 0), Expr::Dup(ctx, list->Ids[i].Expr, 0), nullptr);
 				int idxNew = WhereClauseInsert(wc, newExpr, TERM_VIRTUAL|TERM_DYNAMIC);
 				ASSERTCOVERAGE(idxNew == 0);
 				ExprAnalyze(src, wc, idxNew);
@@ -1764,7 +1768,7 @@ findTerm_success:
 		return RC_OK;
 	}
 
-	static RC ValueFromExpr(Parse *parse, Expr *expr, AFF aff, Mem **val)
+	__device__ static RC ValueFromExpr(Parse *parse, Expr *expr, AFF aff, Mem **val)
 	{
 		if (expr->OP == TK_VARIABLE || (expr->OP == TK_REGISTER && expr->OP2 == TK_VARIABLE))
 		{
@@ -2813,7 +2817,22 @@ cancel:
 #define ExplainOneScan(u, v, w, x, y, z)
 #endif
 
-	static Bitmask CodeOneLoopStart(WhereInfo *winfo, int levelId, uint16 wctrlFlags, Bitmask notReady)
+	__constant__ static const uint8 _startOps[] = {
+		0,
+		0,
+		OP_Rewind,           // 2: (!startConstraints && startEq &&  !bRev)
+		OP_Last,             // 3: (!startConstraints && startEq &&   bRev)
+		OP_SeekGt,           // 4: (startConstraints  && !startEq && !bRev)
+		OP_SeekLt,           // 5: (startConstraints  && !startEq &&  bRev)
+		OP_SeekGe,           // 6: (startConstraints  &&  startEq && !bRev)
+		OP_SeekLe            // 7: (startConstraints  &&  startEq &&  bRev)
+	};
+	__constant__ static const uint8 _endOps[] = {
+		OP_Noop,             // 0: (!end_constraints)
+		OP_IdxGE,            // 1: (end_constraints && !bRev)
+		OP_IdxLT             // 2: (end_constraints && bRev)
+	};
+	__device__ static Bitmask CodeOneLoopStart(WhereInfo *winfo, int levelId, uint16 wctrlFlags, Bitmask notReady)
 	{
 		int j, k;
 		int addrNxt; // Where to jump to continue with the next IN case
@@ -3024,21 +3043,6 @@ cancel:
 					//
 					//         This case is also used when there are no WHERE clause constraints but an index is selected anyway, in order
 					//         to force the output order to conform to an ORDER BY.
-					static const uint8 _startOps[] = {
-						0,
-						0,
-						OP_Rewind,           // 2: (!startConstraints && startEq &&  !bRev)
-						OP_Last,             // 3: (!startConstraints && startEq &&   bRev)
-						OP_SeekGt,           // 4: (startConstraints  && !startEq && !bRev)
-						OP_SeekLt,           // 5: (startConstraints  && !startEq &&  bRev)
-						OP_SeekGe,           // 6: (startConstraints  &&  startEq && !bRev)
-						OP_SeekLe            // 7: (startConstraints  &&  startEq &&  bRev)
-					};
-					static const uint8 _endOps[] = {
-						OP_Noop,             // 0: (!end_constraints)
-						OP_IdxGE,            // 1: (end_constraints && !bRev)
-						OP_IdxLT             // 2: (end_constraints && bRev)
-					};
 					int eqs = level->Plan.Eqs; // Number of == or IN terms
 					Index *index = level->Plan.u.Index; // The index we will be using
 					int idxCur = level->IdxCur; // The VDBE cursor for the index
@@ -3361,8 +3365,13 @@ cancel:
 #endif
 					{
 						// Case 5:  There is no usable index.  We must do a complete scan of the entire table.
+#if __CUDACC__
+						const OP _steps[] = { OP_Next, OP_Prev };
+						const OP _starts[] = { OP_Rewind, OP_Last };
+#else
 						static const OP _steps[] = { OP_Next, OP_Prev };
 						static const OP _starts[] = { OP_Rewind, OP_Last };
+#endif
 						_assert(rev == 0 || rev == 1);
 						_assert(omitTable == 0);
 						level->OP = _steps[rev];
@@ -3450,8 +3459,8 @@ cancel:
 	}
 
 #if defined(TEST)
-	char _queryPlan[BMS*2*40]; // Text of the join
-	static int _queryPlanIdx = 0; // Next free slow in _query_plan[]
+	__device__ char _queryPlan[BMS*2*40]; // Text of the join
+	__device__ static int _queryPlanIdx = 0; // Next free slow in _query_plan[]
 #endif
 
 	__device__ WhereInfo *WhereInfo::Begin(::Parse *parse, SrcList *tabList, Expr *where,  ExprList *orderBy, ExprList *distinct, WHERE wctrlFlags, int idxCur)

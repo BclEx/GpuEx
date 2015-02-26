@@ -153,10 +153,7 @@ typedef unsigned char OP;
 #define OP_Explain                            150
 
 
-/* Properties such as "out2" or "jump" that are specified in
-** comments following the "case" for each opcode in the vdbe.c
-** are encoded into bitvectors as follows:
-*/
+// Properties such as "out2" or "jump" that are specified in comments following the "case" for each opcode in the vdbe.c are encoded into bitvectors as follows:
 typedef unsigned short OPFLG;
 #define OPFLG_JUMP            0x0001  /* jump:  P2 holds jmp target */
 #define OPFLG_OUT2_PRERELEASE 0x0002  /* out2-prerelease: */
@@ -186,5 +183,8 @@ typedef unsigned short OPFLG;
 	/* 136 */ 0x01, 0x00, 0x01, 0x00, 0x00, 0x04, 0x04, 0x04,\
 	/* 144 */ 0x04, 0x04, 0x02, 0x02, 0x00, 0x00, 0x00,}
 
-extern const unsigned char g_opcodeProperty[];
-extern const char *OpcodeName(int i);
+extern __constant__ const unsigned char g_opcodeProperty[];
+
+#if !defined(OMIT_EXPLAIN) || !defined(NDEBUG) || defined(VDBE_PROFILE) || defined(_DEBUG)
+extern __device__ const char *OpcodeName(int i);
+#endif

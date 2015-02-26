@@ -455,7 +455,17 @@ __device__ inline static char *__snprintf(const char *buf, size_t bufLen, const 
 //////////////////////
 // FPRINTF
 #pragma region FPRINTF
+#if __CUDACC__
 #define _fprintf(f, ...) _printf(__VA_ARGS__)
+#define _fopen(f, b) 0
+#define _fflush(f)
+#define _fclose(f)
+#else
+#define _fprintf(f, ...) _printf(__VA_ARGS__)
+#define _fopen(f, b) fopen(f, b)
+#define _fflush(f) fflush(f)
+#define _fclose(f) fclose(f)
+#endif
 #pragma endregion
 
 //////////////////////

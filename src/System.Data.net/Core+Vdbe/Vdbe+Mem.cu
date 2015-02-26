@@ -239,7 +239,7 @@ namespace Core {
 		return (double)0; // (double)0 In case of SQLITE_OMIT_FLOATING_POINT...
 	}
 
-	void Vdbe::IntegerAffinity(Mem *mem)
+	__device__ void Vdbe::IntegerAffinity(Mem *mem)
 	{
 		_assert(mem->Flags & MEM_Real);
 		_assert((mem->Flags & MEM_RowSet) == 0);
@@ -417,7 +417,7 @@ namespace Core {
 		{
 			to->Flags &= ~(MEM_Dyn | MEM_Static | MEM_Ephem);
 			_assert(srcType == MEM_Ephem || srcType == MEM_Static);
-			to->Flags |= srcType;
+			to->Flags |= (MEM)srcType;
 		}
 	}
 

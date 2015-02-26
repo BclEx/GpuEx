@@ -1,7 +1,11 @@
+#if !__CUDACC__
+#define __constant__
+#define __device__
+#endif
 #include "Opcodes.h"
 
-/* Automatically generated.  Do not edit */
-/* See the mkopcodec.awk script for details. */
+// Automatically generated.  Do not edit
+// See the mkopcodec.awk script for details.
 #if !defined(OMIT_EXPLAIN) || !defined(NDEBUG) || defined(VDBE_PROFILE) || defined(_DEBUG)
 __constant__ static const char *const _name[] = { "?",
 	/*   1 */ "Goto",
@@ -161,4 +165,6 @@ __device__ const char *OpcodeName(int i)
 }
 #endif
 
+// Properties of opcodes.  The OPFLG_INITIALIZER macro is created by mkopcodeh.awk during compilation.  Data is obtained
+// from the comments following the "case OP_xxxx:" statements in the vdbe.c file. 
 __constant__ const unsigned char g_opcodeProperty[] = OPFLG_INITIALIZER;

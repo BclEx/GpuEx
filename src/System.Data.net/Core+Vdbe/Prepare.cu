@@ -46,7 +46,7 @@ namespace Core
 #if _DEBUG
 			int rcp = Prepare_(ctx, argv[2], -1, &stmt, nullptr);
 #else
-			Prepare(ctx, argv[2], -1, &stmt, nullptr);
+			Prepare_(ctx, argv[2], -1, &stmt, nullptr);
 #endif
 			RC rc = ctx->ErrCode;
 			_assert((rc&0xFF) == (rcp&0xFF));

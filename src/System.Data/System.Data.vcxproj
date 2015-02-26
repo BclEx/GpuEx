@@ -45,7 +45,7 @@
     <ClCompile Include="..\System.Data.net\CompileTime.cu" />
     <ClCompile Include="..\System.Data.net\Opcodes.cu" />
     <ClCompile Include="..\System.Data.net\Shell.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
@@ -99,7 +99,7 @@
     <CudaCompile Include="..\System.Data.net\CompileTime.cu" />
     <CudaCompile Include="..\System.Data.net\Opcodes.cu" />
     <CudaCompile Include="..\System.Data.net\Shell.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild>true</ExcludedFromBuild>
     </CudaCompile>
     <CudaCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <CudaCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
@@ -235,6 +235,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
