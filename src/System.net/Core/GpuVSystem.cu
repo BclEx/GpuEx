@@ -1,8 +1,8 @@
 ﻿// os_win.c
 #define OS_GPU 1
 #if OS_GPU
-#include <new.h>
 #include "Core.cu.h"
+#include <new.h>
 
 namespace Core
 {

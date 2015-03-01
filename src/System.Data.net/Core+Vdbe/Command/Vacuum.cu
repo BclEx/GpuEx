@@ -8,7 +8,7 @@ namespace Core { namespace Command
 	{
 		RC rc = stmt->Finalize();
 		if (rc)
-			_setstring(errMsg, ctx, Main::ErrMsg(ctx));
+			_mtagassignf(errMsg, ctx, Main::ErrMsg(ctx));
 		return rc;
 	}
 
@@ -18,7 +18,7 @@ namespace Core { namespace Command
 		Vdbe *stmt;
 		if (Prepare::Prepare_(ctx, sql, -1, &stmt, nullptr) != RC_OK)
 		{
-			_setstring(errMsg, ctx, Main::ErrMsg(ctx));
+			_mtagassignf(errMsg, ctx, Main::ErrMsg(ctx));
 			return Main::ErrCode(ctx);
 		}
 		ASSERTONLY(int rc =) stmt->Step();
@@ -65,12 +65,12 @@ namespace Core { namespace Command
 	{
 		if (!ctx->AutoCommit)
 		{
-			_setstring(errMsg, ctx, "cannot VACUUM from within a transaction");
+			_mtagassignf(errMsg, ctx, "cannot VACUUM from within a transaction");
 			return RC_ERROR;
 		}
 		if (ctx->ActiveVdbeCnt > 1)
 		{
-			_setstring(errMsg, ctx,"cannot VACUUM - SQL statements in progress");
+			_mtagassignf(errMsg, ctx, "cannot VACUUM - SQL statements in progress");
 			return RC_ERROR;
 		}
 

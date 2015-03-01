@@ -1,5 +1,10 @@
+///////////////////////////////////////////////////////////////////////////////
+// DEVICE SIDE
+// External function definitions for device-side code
+
 #ifndef __RUNTIME_CPU_H__
 #define __RUNTIME_CPU_H__
+
 #include <stdarg.h> // Needed for the definition of va_list
 #include <stdio.h>
 #include <process.h>
@@ -22,13 +27,10 @@
 #pragma warning(disable:4996)
 #include "RuntimeHost.h"
 
-///////////////////////////////////////////////////////////////////////////////
-// DEVICE SIDE
-// External function definitions for device-side code
-
 //////////////////////
 // ASSERT
 #pragma region ASSERT
+
 #undef _assert
 #ifndef NDEBUG
 #define _assert(X) assert(X)
@@ -45,22 +47,31 @@ __device__ inline void Coverage(int line) { }
 
 #pragma endregion
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////
 // HEAP
 #pragma region HEAP
 
 #define CURT_UNRESTRICTED -1
 
-#pragma endregion
-
-// Heap
 extern "C" __device__ inline static void _runtimeSetHeap(void *heap) { }
 extern "C" inline cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return cudaSuccess; }
 extern "C" __device__ inline static void runtimeRestrict(int threadid, int blockid) { }
+// embed
+extern "C" const unsigned char __curtUpperToLower[256];
+extern "C" const unsigned char __curtCtypeMap[256];
 
-///////////////////////////////////////////////////////////////////////////////
-// DEVICE SIDE
-// External function definitions for device-side code
+#pragma endregion
+
+//////////////////////
+// STDARG
+#pragma region STDARG
+
+//included in stdargs.h
+//#define va_start _crt_va_start
+//#define va_arg _crt_va_arg
+//#define va_end _crt_va_end
+
+#pragma endregion
 
 //////////////////////
 // PRINTF
@@ -105,15 +116,6 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 #pragma endregion
 
 //////////////////////
-// STDARG
-#pragma region STDARG
-//included in stdargs.h
-//#define va_start _crt_va_start
-//#define va_arg _crt_va_arg
-//#define va_end _crt_va_end
-#pragma endregion
-
-//////////////////////
 // THROW
 #pragma region THROW
 
@@ -124,8 +126,5 @@ template <typename T1, typename T2, typename T3> __device__ inline void _throw(c
 template <typename T1, typename T2, typename T3, typename T4> __device__ inline void _throw(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { printf(fmt, arg1, arg2, arg3, arg4); exit(0); }
 
 #pragma endregion
-
-extern "C" const unsigned char __curtUpperToLower[256];
-extern "C" const unsigned char __curtCtypeMap[256];
 
 #endif // __RUNTIME_CPU_H__

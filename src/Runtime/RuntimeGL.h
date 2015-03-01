@@ -1,5 +1,6 @@
 #ifndef __RUNTIMEGL_H__
 #define __RUNTIMEGL_H__
+
 #include <cstdio>
 
 #ifdef _WIN32

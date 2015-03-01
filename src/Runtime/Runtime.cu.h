@@ -1,5 +1,10 @@
+///////////////////////////////////////////////////////////////////////////////
+// DEVICE SIDE
+// External function definitions for device-side code
+
 #ifndef __RUNTIME_CU_H__
 #define __RUNTIME_CU_H__
+
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ == 100
 #error Atomics only used with > sm_10 architecture
 #endif
@@ -8,10 +13,6 @@
 #endif
 #include <assert.h>
 #include "RuntimeHost.h"
-
-///////////////////////////////////////////////////////////////////////////////
-// DEVICE SIDE
-// External function definitions for device-side code
 
 //////////////////////
 // ASSERT
@@ -41,7 +42,7 @@ __device__ __forceinline__ void Coverage(int line) { }
 
 #pragma endregion
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////
 // HEAP
 #pragma region HEAP
 
@@ -53,35 +54,21 @@ __device__ __forceinline__ void Coverage(int line) { }
 #define __HEAP_HEADER_ASSERT 4
 #define __HEAP_HEADER_THROW 5
 
-#pragma endregion
-
 #if defined(__EMBED__) || (defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 200)
 #ifndef __EMBED__
 #define __static__ static
 #endif
 #include "Runtime.cu+native.h"
 #else
-
-// Heap
-extern "C" __device__ char *__heap_movenext(char *&end, char *&bufptr);
+extern "C" __device__ char *__heap_movenext(char *&end, char *&bufptr); 
 extern "C" __device__ void __heap_writeheader(unsigned short type, char *ptr, char *fmtptr);
 extern "C" __device__ char *__heap_write(char *dest, const char *src, int maxLength, char *end);
 extern "C" __device__ void _runtimeSetHeap(void *heap);
 extern "C" __device__ void runtimeRestrict(int threadid, int blockid);
-
-// Embed
+// embed
 extern __constant__ unsigned char __curtUpperToLower[256];
-extern __constant__ unsigned char __curtCtypeMap[256];
-
-#endif // __CUDA_ARCH__
-
-///////////////////////////////////////////////////////////////////////////////
-// DEVICE SIDE
-// External function definitions for device-side code
-
-///////////////////////////////////////////////////////////////////////////////
-// HEAP
-#pragma region HEAP
+extern __constant__ unsigned char __curtCtypeMap[256]; 
+#endif
 
 __device__ static char *__copyArg(char *ptr, const char *arg, char *end)
 {
@@ -118,122 +105,97 @@ template <typename T> __device__ static char *__copyArg(char *ptr, T &arg, char 
 #undef va_arg
 #undef va_end
 
-typedef char *va_list;
-#define _INTSIZEOF(n) ((sizeof(n) + sizeof(int) - 1) & ~(sizeof(int) - 1))
-//#define va_start(ap, v)  (ap = (va_list)_ADDRESSOF(v) + _INTSIZEOF(v))
-#define va_arg(ap, t) (*(t *)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
-#define va_end(ap) (ap = (va_list)0)
+struct va_list0 { char *i; };
+template <typename T1> struct va_list1 : va_list0 { T1 v1; };
+template <typename T1, typename T2> struct va_list2 : va_list0 { T1 v1; T2 v2; };
+template <typename T1, typename T2, typename T3> struct va_list3 : va_list0 { T1 v1; T2 v2; T3 v3; };
+template <typename T1, typename T2, typename T3, typename T4> struct va_list4 : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5> struct va_list5 : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> struct va_list6 : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> struct va_list7 : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> struct va_list8 : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> struct va_list9 : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; T9 v9; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> struct va_listA : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; T9 v9; TA vA; };
+// extended
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB> struct va_listB : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; T9 v9; TA vA; TB vB; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC> struct va_listC : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; T9 v9; TA vA; TB vB; TC vC; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD> struct va_listD : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; T9 v9; TA vA; TB vB; TC vC; TD vD; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE> struct va_listE : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; T9 v9; TA vA; TB vB; TC vC; TD vD; TE vE; };
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE, typename TF> struct va_listF : va_list0 { T1 v1; T2 v2; T3 v3; T4 v4; T5 v5; T6 v6; T7 v7; T8 v8; T9 v9; TA vA; TB vB; TC vC; TD vD; TE vE; TF vF; };
+#define va_list va_list0 
+#define va_arg(ap, t) (*(t *)((ap.i += sizeof(t)) - sizeof(t)))
+#define va_end(ap) (ap.i = nullptr);
 
-#define STDARG_PREAMBLE \
-	char *start, *end, *bufptr, *fmtstart; \
-	if ((start = __heap_movenext(end, bufptr)) == nullptr) return;
-#define STDARG_ARG(argname) \
-	bufptr = __copyArg(bufptr, argname, end);
-#define STDARG_POSTAMBLE \
-	fmtstart = bufptr; \
-	__heap_writeheader(__HEAP_HEADER_RAW, start, (end ? fmtstart : nullptr)); \
-	args = (end ? (va_list)(end - start) : 0);
+//#define _INTSIZEOF(n) ((sizeof(n) + sizeof(int) - 1) & ~(sizeof(int) - 1))
+//#define va_start(ap, v, ...)  (ap = (va_list)_ADDRESSOF(v) + _INTSIZEOF(v))
+//#define va_arg(ap, t) (*(t *)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
+//#define va_end(ap) (ap = (va_list)0)
 
-__device__ static void va_start(va_list &args)
+__device__ inline static void va_start(va_list &args)
 {
-	STDARG_PREAMBLE;
-	STDARG_POSTAMBLE;
+	args.i = nullptr;
 }
-template <typename T1> __device__ static void va_start(va_list &args, T1 arg1)
+template <typename T1> __device__ inline static void va_start(va_list1<T1> &args, T1 arg1)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1;
 }
-template <typename T1, typename T2> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2)
+template <typename T1, typename T2> __device__ inline static void va_start(va_list2<T1,T2> &args, T1 arg1, T2 arg2)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2;
 }
-template <typename T1, typename T2, typename T3> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3)
+template <typename T1, typename T2, typename T3> __device__ inline static void va_start(va_list3<T1,T2,T3> &args, T1 arg1, T2 arg2, T3 arg3)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3;
 }
-template <typename T1, typename T2, typename T3, typename T4> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void va_start(va_list4<T1,T2,T3,T4> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static void va_start(va_list5<T1,T2,T3,T4,T5> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline static void va_start(va_list6<T1,T2,T3,T4,T5,T6> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline static void va_start(va_list7<T1,T2,T3,T4,T5,T6,T7> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline static void va_start(va_list8<T1,T2,T3,T4,T5,T6,T7,T8> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline static void va_start(va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8); STDARG_ARG(arg9);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8; args.v9 = arg9;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline static void va_start(va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8); STDARG_ARG(arg9); STDARG_ARG(argA);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8; args.v9 = arg9; args.vA = argA;
 }
 // extended
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB> __device__ inline static void va_start(va_listB<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8); STDARG_ARG(arg9); STDARG_ARG(argA); STDARG_ARG(argB);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8; args.v9 = arg9; args.vA = argA; args.vB = argB;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC> __device__ inline static void va_start(va_listC<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8); STDARG_ARG(arg9); STDARG_ARG(argA); STDARG_ARG(argB); STDARG_ARG(argC);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8; args.v9 = arg9; args.vA = argA; args.vB = argB; args.vC = argC;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD> __device__ inline static void va_start(va_listD<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8); STDARG_ARG(arg9); STDARG_ARG(argA); STDARG_ARG(argB); STDARG_ARG(argC); STDARG_ARG(argD);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8; args.v9 = arg9; args.vA = argA; args.vB = argB; args.vC = argC; args.vD = argD;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE> __device__ inline static void va_start(va_listE<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8); STDARG_ARG(arg9); STDARG_ARG(argA); STDARG_ARG(argB); STDARG_ARG(argC); STDARG_ARG(argD); STDARG_ARG(argE);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8; args.v9 = arg9; args.vA = argA; args.vB = argB; args.vC = argC; args.vD = argD; args.vE = argE;
 }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE, typename TF> __device__ static void va_start(va_list &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE, TF argF)
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE, typename TF> __device__ inline static void va_start(va_listF<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE,TF> &args, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE, TF argF)
 {
-	STDARG_PREAMBLE;
-	STDARG_ARG(arg1); STDARG_ARG(arg2); STDARG_ARG(arg3); STDARG_ARG(arg4); STDARG_ARG(arg5); STDARG_ARG(arg6); STDARG_ARG(arg7); STDARG_ARG(arg8); STDARG_ARG(arg9); STDARG_ARG(argA); STDARG_ARG(argB); STDARG_ARG(argC); STDARG_ARG(argD); STDARG_ARG(argE); STDARG_ARG(argF);
-	STDARG_POSTAMBLE;
+	args.i = (char *)&args.v1; args.v1 = arg1; args.v2 = arg2; args.v3 = arg3; args.v4 = arg4; args.v5 = arg5; args.v6 = arg6; args.v7 = arg7; args.v8 = arg8; args.v9 = arg9; args.vA = argA; args.vB = argB; args.vC = argC; args.vD = argD; args.vE = argE; args.vF = argF;
 }
-
-#undef STDARG_PREAMBLE
-#undef STDARG_ARG
-#undef STDARG_POSTAMBLE
 
 #pragma endregion
 

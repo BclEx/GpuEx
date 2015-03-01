@@ -12,7 +12,7 @@ namespace Core
             if (!ctx.MallocFailed && (ctx.Flags & Context.FLAG.RecoveryMode) == 0)
             {
                 if (obj == null) obj = "?";
-                C._setstring(ref data.ErrMsg, ctx, "malformed database schema (%s)", obj);
+                C._mtagassignf(ref data.ErrMsg, ctx, "malformed database schema (%s)", obj);
                 if (extra == null)
                     data.ErrMsg = C._mtagappendf(ctx, data.ErrMsg, "%s - %s", data.ErrMsg, extra);
                 data.RC = (ctx.MallocFailed ? RC.NOMEM : SysEx.CORRUPT_BKPT());
@@ -168,7 +168,7 @@ namespace Core
                 rc = dbAsObj.Bt.BeginTrans(0);
                 if (rc != RC.OK)
                 {
-                    C._setstring(ref errMsg, ctx, "%s", Main.ErrStr(rc));
+                    C._mtagassignf(ref errMsg, ctx, "%s", Main.ErrStr(rc));
                     goto initone_error_out;
                 }
                 openedTransaction = true;
@@ -212,7 +212,7 @@ namespace Core
                     // If opening an attached database, the encoding much match ENC(db)
                     if ((TEXTENCODE)meta[(int)Btree.META.TEXT_ENCODING - 1] != E.CTXENCODE(ctx))
                     {
-                        C._setstring(ref errMsg, ctx, "attached databases must use the same text encoding as main database");
+                        C._mtagassignf(ref errMsg, ctx, "attached databases must use the same text encoding as main database");
                         rc = RC.ERROR;
                         goto initone_error_out;
                     }
@@ -237,7 +237,7 @@ namespace Core
                 dbAsObj.Schema.FileFormat = 1;
             if (dbAsObj.Schema.FileFormat > MAX_FILE_FORMAT)
             {
-                C._setstring(ref errMsg, ctx, "unsupported file format");
+                C._mtagassignf(ref errMsg, ctx, "unsupported file format");
                 rc = RC.ERROR;
                 goto initone_error_out;
             }

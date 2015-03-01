@@ -1,5 +1,6 @@
-#ifndef _VISUAL_H__
-#define _VISUAL_H__
+#ifndef _VISUALHOST_H__
+#define _VISUALHOST_H__
+
 #pragma warning(disable: 4996)
 #include "RuntimeGL.h"
 
@@ -89,4 +90,4 @@ public:
 	static bool InitGL(IVisualRender* render, int *argc, char **argv);
 };
 
-#endif // __VISUAL_H__
+#endif // _VISUALHOST_H__

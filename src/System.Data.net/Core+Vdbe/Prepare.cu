@@ -8,7 +8,7 @@ namespace Core
 		if (!ctx->MallocFailed && (ctx->Flags & Context::FLAG_RecoveryMode) == 0)
 		{
 			if (!obj) obj = "?";
-			_setstring(data->ErrMsg, ctx, "malformed database schema (%s)", obj);
+			_mtagassignf(data->ErrMsg, ctx, "malformed database schema (%s)", obj);
 			if (extra)
 				*data->ErrMsg = _mtagappendf(ctx, *data->ErrMsg, "%s - %s", *data->ErrMsg, extra);
 		}
@@ -161,7 +161,7 @@ namespace Core
 			rc = dbAsObj->Bt->BeginTrans(0);
 			if (rc != RC_OK)
 			{
-				_setstring(errMsg, ctx, "%s", Main::ErrStr(rc));
+				_mtagassignf(errMsg, ctx, "%s", Main::ErrStr(rc));
 				goto initone_error_out;
 			}
 			openedTransaction = true;
@@ -205,7 +205,7 @@ namespace Core
 				// If opening an attached database, the encoding much match CTXENCODE(ctx)
 				if (meta[Btree::META_TEXT_ENCODING-1] != CTXENCODE(ctx))
 				{
-					_setstring(errMsg, ctx, "attached databases must use the same text encoding as main database");
+					_mtagassignf(errMsg, ctx, "attached databases must use the same text encoding as main database");
 					rc = RC_ERROR;
 					goto initone_error_out;
 				}
@@ -230,7 +230,7 @@ namespace Core
 			dbAsObj->Schema->FileFormat = 1;
 		if (dbAsObj->Schema->FileFormat > MAX_FILE_FORMAT)
 		{
-			_setstring(errMsg, ctx, "unsupported file format");
+			_mtagassignf(errMsg, ctx, "unsupported file format");
 			rc = RC_ERROR;
 			goto initone_error_out;
 		}

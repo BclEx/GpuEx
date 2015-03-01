@@ -559,7 +559,7 @@ namespace Core
                             if (op.P4.Z != null)
                             {
                                 Debug.Assert(RC_ != RC.OK);
-                                C._setstring(ref ErrMsg, ctx, "%s", op.P4.Z);
+                                C._mtagassignf(ref ErrMsg, ctx, "%s", op.P4.Z);
                                 C.ASSERTCOVERAGE(SysEx._GlobalStatics.Log != null);
                                 SysEx.LOG((RC)op.P1, "abort at %d in [%s]: %s", pc, Sql_, op.P4.Z);
                             }
@@ -1125,7 +1125,7 @@ namespace Core
                             // If the function returned an error, throw an exception
                             if (fctx.IsError != 0)
                             {
-                                C._setstring(ref ErrMsg, ctx, Vdbe.Value_Text(fctx.S));
+                                C._mtagassignf(ref ErrMsg, ctx, Vdbe.Value_Text(fctx.S));
                                 rc = fctx.IsError;
                             }
 
@@ -2137,7 +2137,7 @@ namespace Core
                                 if (ctx.WriteVdbeCnt > 0)
                                 {
                                     // A new savepoint cannot be created if there are active write statements (i.e. open read/write incremental blob handles).
-                                    C._setstring(ref ErrMsg, ctx, "cannot open savepoint - SQL statements in progress");
+                                    C._mtagassignf(ref ErrMsg, ctx, "cannot open savepoint - SQL statements in progress");
                                     rc = RC.BUSY;
                                 }
                                 else
@@ -2182,13 +2182,13 @@ namespace Core
                                     savepointId++;
                                 if (savepoint == null)
                                 {
-                                    C._setstring(ref ErrMsg, ctx, "no such savepoint: %s", name);
+                                    C._mtagassignf(ref ErrMsg, ctx, "no such savepoint: %s", name);
                                     rc = RC.ERROR;
                                 }
                                 else if (ctx.WriteVdbeCnt > 0 || (p1 == IPager.SAVEPOINT.ROLLBACK && ctx.ActiveVdbeCnt > 1))
                                 {
                                     // It is not possible to release (commit) a savepoint if there are active write statements.
-                                    C._setstring(ref ErrMsg, ctx, "cannot %s savepoint - SQL statements in progress");
+                                    C._mtagassignf(ref ErrMsg, ctx, "cannot %s savepoint - SQL statements in progress");
                                     rc = RC.BUSY;
                                 }
                                 else
@@ -2275,7 +2275,7 @@ namespace Core
                             {
                                 // If this instruction implements a ROLLBACK and other VMs are still running, and a transaction is active, return an error indicating
                                 // that the other VMs must complete first. 
-                                C._setstring(ref ErrMsg, ctx, "cannot rollback transaction - SQL statements in progress");
+                                C._mtagassignf(ref ErrMsg, ctx, "cannot rollback transaction - SQL statements in progress");
                                 rc = RC.BUSY;
                             }
                             else
@@ -2283,7 +2283,7 @@ namespace Core
                             if (turnOnAC && 0 == rollbackId && ctx.WriteVdbeCnt > 0)
                             {
                                 // If this instruction implements a COMMIT and other VMs are writing return an error indicating that the other VMs must complete first. 
-                                C._setstring(ref ErrMsg, ctx, "cannot commit transaction - SQL statements in progress");
+                                C._mtagassignf(ref ErrMsg, ctx, "cannot commit transaction - SQL statements in progress");
                                 rc = RC.BUSY;
                             }
                             else if (desiredAutoCommit != ctx.AutoCommit)
@@ -2314,7 +2314,7 @@ namespace Core
                             }
                             else
                             {
-                                C._setstring(ref ErrMsg, ctx, (desiredAutoCommit == 0 ? "cannot start a transaction within a transaction" : (rollbackId != 0 ? "cannot rollback - no transaction is active" : "cannot commit - no transaction is active")));
+                                C._mtagassignf(ref ErrMsg, ctx, (desiredAutoCommit == 0 ? "cannot start a transaction within a transaction" : (rollbackId != 0 ? "cannot rollback - no transaction is active" : "cannot commit - no transaction is active")));
                                 rc = RC.ERROR;
                             }
                             break;
@@ -4175,7 +4175,7 @@ namespace Core
                             if (FramesLength >= ctx.Limits[(int)LIMIT.TRIGGER_DEPTH])
                             {
                                 rc = RC.ERROR;
-                                C._setstring(ref ErrMsg, ctx, "too many levels of trigger recursion");
+                                C._mtagassignf(ref ErrMsg, ctx, "too many levels of trigger recursion");
                                 break;
                             }
 
@@ -4412,7 +4412,7 @@ namespace Core
                             fctx.Func.Step(fctx, n, vals); // IMP: R-24505-23230
                             if (fctx.IsError != 0)
                             {
-                                C._setstring(ref ErrMsg, fctx, Value_Text(fctx.S));
+                                C._mtagassignf(ref ErrMsg, fctx, Value_Text(fctx.S));
                                 rc = fctx.IsError;
                             }
                             if (fctx.SkipFlag)
@@ -4439,7 +4439,7 @@ namespace Core
                             rc = MemFinalize(mem, op.P4.Func);
                             mems[op.P1] = mem;
                             if (rc != 0)
-                                C._setstring(ref ErrMsg, ctx, Value_Text(mem));
+                                C._mtagassignf(ref ErrMsg, ctx, Value_Text(mem));
                             ChangeEncoding(mem, encoding);
                             UPDATE_MAX_BLOBSIZE(mem);
                             if (MemTooBig(mem))
@@ -4508,7 +4508,7 @@ namespace Core
                                 if (ctx.AutoCommit == 0 || ctx.ActiveVdbeCnt > 1)
                                 {
                                     rc = RC.ERROR;
-                                    C._setstring(&ErrMsg, ctx, "cannot change %s wal mode from within a transaction", (newMode == IPager.JOURNALMODE.WAL ? "into" : "out of"));
+                                    C._mtagassignf(&ErrMsg, ctx, "cannot change %s wal mode from within a transaction", (newMode == IPager.JOURNALMODE.WAL ? "into" : "out of"));
                                     break;
                                 }
                                 else
@@ -4610,7 +4610,7 @@ namespace Core
                                 if ((rc & 0xFF) == RC.LOCKED)
                                 {
                                     string z = op.P4.Z;
-                                    C._setstring(ref ErrMsg, ctx, "database table is locked: ", z);
+                                    C._mtagassignf(ref ErrMsg, ctx, "database table is locked: ", z);
                                 }
                             }
                             break;
@@ -4999,14 +4999,14 @@ PrintOp(Console.Out, origPc, ops[origPc]);
 
         // Jump to here if a string or blob larger than CORE_MAX_LENGTH is encountered.
         too_big:
-            C._setstring(ref ErrMsg, ctx, "string or blob too big");
+            C._mtagassignf(ref ErrMsg, ctx, "string or blob too big");
             rc = RC.TOOBIG;
             goto vdbe_error_halt;
 
         // Jump to here if a malloc() fails.
         no_mem:
             ctx.MallocFailed = true;
-            C._setstring(ref ErrMsg, ctx, "out of memory");
+            C._mtagassignf(ref ErrMsg, ctx, "out of memory");
             rc = RC.NOMEM;
             goto vdbe_error_halt;
 
@@ -5015,7 +5015,7 @@ PrintOp(Console.Out, origPc, ops[origPc]);
             Debug.Assert(ErrMsg != null);
             if (ctx.MallocFailed) rc = RC.NOMEM;
             if (rc != RC.IOERR_NOMEM)
-                C._setstring(ref ErrMsg, ctx, "%s", Main.ErrStr(rc));
+                C._mtagassignf(ref ErrMsg, ctx, "%s", Main.ErrStr(rc));
             goto vdbe_error_halt;
 
         // Jump to here if the sqlite3_interrupt() API sets the interrupt flag.
@@ -5023,7 +5023,7 @@ PrintOp(Console.Out, origPc, ops[origPc]);
             Debug.Assert(ctx.u1.IsInterrupted);
             rc = RC.INTERRUPT;
             RC_ = rc;
-            C._setstring(ref ErrMsg, ctx, Main.ErrStr(rc));
+            C._mtagassignf(ref ErrMsg, ctx, Main.ErrStr(rc));
             goto vdbe_error_halt;
         }
 

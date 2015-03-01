@@ -149,6 +149,9 @@ static int executeRuntime(cudaAssertHandler assertHandler, size_t blockSize, cha
 				error = !outputPrintfData(_stream, blockSize, b + hdr->fmtoffset, b + sizeof(runtimeBlockHeader));
 			break;
 		case __HEAP_HEADER_TRANSFER:
+			if (headings)
+				fprintf(_stream, "[%d, %d]: ", hdr->blockid, hdr->threadid);
+			fprintf(_stream, "TRANSFER\n");
 			break;
 		case __HEAP_HEADER_ASSERT:
 			if (headings)
@@ -169,7 +172,7 @@ static int executeRuntime(cudaAssertHandler assertHandler, size_t blockSize, cha
 				fprintf(_stream, "printf buffer overflow\n");
 			else
 				error = !outputPrintfData(_stream, blockSize, b + hdr->fmtoffset, b + sizeof(runtimeBlockHeader));
-			fprintf(_stream, "\n");
+			//fprintf(_stream, "\n");
 			break;
 		}
 		if (error)

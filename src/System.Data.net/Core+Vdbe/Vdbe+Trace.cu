@@ -151,7 +151,7 @@ namespace Core {
 				if (n > _lengthof(p->Indents)) n = _lengthof(p->Indents);
 				p->Str.AppendSpace(p->Indents[n-1]);
 			}   
-			p->Str.AppendFormat(true, format, args);
+			p->Str.AppendFormat(true, format, *args);
 		}
 	}
 

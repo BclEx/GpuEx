@@ -25,7 +25,11 @@
   <ItemGroup>
     <ClCompile Include="Program.cpp" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
+    <None Include="TestFalloc.cu" />
+    <ClCompile Include="TestRuntime.cu" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="TestFalloc.cu" />
     <CudaCompile Include="TestRuntime.cu" />
   </ItemGroup>

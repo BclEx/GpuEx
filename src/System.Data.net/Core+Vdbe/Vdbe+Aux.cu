@@ -792,7 +792,7 @@ __device__ RC Vdbe::List()
 	{
 		RC_ = RC_INTERRUPT;
 		rc = RC_ERROR;
-		_setstring(&ErrMsg, ctx, "%s", Main::ErrStr(RC_));
+		_mtagassignf(&ErrMsg, ctx, "%s", Main::ErrStr(RC_));
 	}
 	else
 	{
@@ -1481,7 +1481,7 @@ __device__ RC Vdbe::CheckFk(bool deferred)
 	{
 		RC_ = RC_CONSTRAINT_FOREIGNKEY;
 		ErrorAction = OE_Abort;
-		_setstring(&ErrMsg, ctx, "foreign key constraint failed");
+		_mtagassignf(&ErrMsg, ctx, "foreign key constraint failed");
 		return RC_ERROR;
 	}
 	return RC_OK;

@@ -1152,6 +1152,7 @@ namespace Core
         //////////////////////
         // MPRINTF
         #region MPRINTF
+
         public static string _mprintf(string fmt, params object[] args)
         {
             //: if (!RuntimeInitialize()) return null;
@@ -1172,18 +1173,11 @@ namespace Core
             return z;
         }
 
-        public static string _mtagassignf(object tag, ref string src, string fmt, params object[] args)
+        public static void _mtagassignf(ref string src, object tag, string fmt, params object[] args)
         {
             string z = _vmtagprintf(tag, fmt, args);
             _tagfree(tag, ref src);
-            return z;
-        }
-
-        public static void _setstring(ref string z, object tag, string fmt, params object[] args)
-        {
-            string z2 = _vmtagprintf(tag, fmt, args);
-            _tagfree(tag, ref z);
-            z = z2;
+            src = z;
         }
 
         #endregion

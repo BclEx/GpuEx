@@ -64,12 +64,12 @@ __global__ void main(int argc, char **argv) {
 	Main::Shutdown();
 }
 
-
 #if __CUDACC__
 void __main(cudaDeviceHeap &r)
 {	
 	cudaDeviceHeapSelect(r);
 	GMain<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+	
 }
 
 int main(int argc, char **argv)
@@ -83,6 +83,7 @@ int main(int argc, char **argv)
 
 	// test
 	__main(runtimeHost);
+	//cudaRuntimeExecute(runtimeHost);
 
 	// run
 	//Visual::Main();

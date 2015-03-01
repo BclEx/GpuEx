@@ -553,7 +553,7 @@ namespace Core
 				if (op->P4.Z)
 				{
 					_assert(RC_ != RC_OK);
-					_setstring(&ErrMsg, ctx, "%s", op->P4.Z);
+					_mtagassignf(&ErrMsg, ctx, "%s", op->P4.Z);
 					ASSERTCOVERAGE(SysEx_GlobalStatics.Log != nullptr);
 					SysEx_LOG((RC)op->P1, "abort at %d in [%s]: %s", pc, Sql_, op->P4.Z);
 				}
@@ -1044,7 +1044,7 @@ arithmetic_result_is_null:
 				// If the function returned an error, throw an exception
 				if (fctx.IsError)
 				{
-					_setstring(&ErrMsg, ctx, "%s", Vdbe::Value_Text(&fctx.S));
+					_mtagassignf(&ErrMsg, ctx, "%s", Vdbe::Value_Text(&fctx.S));
 					rc = fctx.IsError;
 				}
 
@@ -1992,7 +1992,7 @@ op_column_out:
 					if (ctx->WriteVdbeCnt > 0)
 					{
 						// A new savepoint cannot be created if there are active write statements (i.e. open read/write incremental blob handles).
-						_setstring(&ErrMsg, ctx, "cannot open savepoint - SQL statements in progress");
+						_mtagassignf(&ErrMsg, ctx, "cannot open savepoint - SQL statements in progress");
 						rc = RC_BUSY;
 					}
 					else
@@ -2039,13 +2039,13 @@ op_column_out:
 						savepointId++;
 					if (!savepoint)
 					{
-						_setstring(&ErrMsg, ctx, "no such savepoint: %s", name);
+						_mtagassignf(&ErrMsg, ctx, "no such savepoint: %s", name);
 						rc = RC_ERROR;
 					}
 					else if (ctx->WriteVdbeCnt > 0 && p1 == IPager::SAVEPOINT_RELEASE)
 					{
 						// It is not possible to release (commit) a savepoint if there are active write statements.
-						_setstring(&ErrMsg, ctx, "cannot release savepoint - SQL statements in progress");
+						_mtagassignf(&ErrMsg, ctx, "cannot release savepoint - SQL statements in progress");
 						rc = RC_BUSY;
 					}
 					else
@@ -2136,7 +2136,7 @@ op_column_out:
 				{
 					// If this instruction implements a ROLLBACK and other VMs are still running, and a transaction is active, return an error indicating
 					// that the other VMs must complete first. 
-					_setstring(&ErrMsg, ctx, "cannot rollback transaction - SQL statements in progress");
+					_mtagassignf(&ErrMsg, ctx, "cannot rollback transaction - SQL statements in progress");
 					rc = RC_BUSY;
 				}
 				else
@@ -2144,7 +2144,7 @@ op_column_out:
 					if (turnOnAC && !rollbackId && ctx->WriteVdbeCnt > 0)
 					{
 						// If this instruction implements a COMMIT and other VMs are writing return an error indicating that the other VMs must complete first. 
-						_setstring(&ErrMsg, ctx, "cannot commit transaction - SQL statements in progress");
+						_mtagassignf(&ErrMsg, ctx, "cannot commit transaction - SQL statements in progress");
 						rc = RC_BUSY;
 					}
 					else if (desiredAutoCommit != ctx->AutoCommit)
@@ -2175,7 +2175,7 @@ op_column_out:
 					}
 					else
 					{
-						_setstring(&ErrMsg, ctx, (!desiredAutoCommit ? "cannot start a transaction within a transaction" : (rollbackId ? "cannot rollback - no transaction is active" : "cannot commit - no transaction is active")));
+						_mtagassignf(&ErrMsg, ctx, (!desiredAutoCommit ? "cannot start a transaction within a transaction" : (rollbackId ? "cannot rollback - no transaction is active" : "cannot commit - no transaction is active")));
 						rc = RC_ERROR;
 					}
 					break; }
@@ -3940,7 +3940,7 @@ op_column_out:
 				if (FramesLength >= ctx->Limits[LIMIT_TRIGGER_DEPTH])
 				{
 					rc = RC_ERROR;
-					_setstring(&ErrMsg, ctx, "too many levels of trigger recursion");
+					_mtagassignf(&ErrMsg, ctx, "too many levels of trigger recursion");
 					break;
 				}
 
@@ -4154,7 +4154,7 @@ op_column_out:
 				fctx.Func->Step(&fctx, n, vals); // IMP: R-24505-23230
 				if (fctx.IsError)
 				{
-					_setstring(&ErrMsg, ctx, "%s", Value_Text(&fctx.S));
+					_mtagassignf(&ErrMsg, ctx, "%s", Value_Text(&fctx.S));
 					rc = fctx.IsError;
 				}
 				if (fctx.SkipFlag)
@@ -4178,7 +4178,7 @@ op_column_out:
 				_assert((mem->Flags & ~(MEM_Null|MEM_Agg)) == 0);
 				rc = MemFinalize(mem, op->P4.Func);
 				if (rc)
-					_setstring(&ErrMsg, ctx, "%s", Value_Text(mem));
+					_mtagassignf(&ErrMsg, ctx, "%s", Value_Text(mem));
 				ChangeEncoding(mem, encoding);
 				UPDATE_MAX_BLOBSIZE(mem);
 				if (MemTooBig(mem))
@@ -4240,7 +4240,7 @@ op_column_out:
 					if (!ctx->AutoCommit || ctx->ActiveVdbeCnt > 1)
 					{
 						rc = RC_ERROR;
-						_setstring(&ErrMsg, ctx, "cannot change %s wal mode from within a transaction", (newMode == IPager::JOURNALMODE_WAL ? "into" : "out of"));
+						_mtagassignf(&ErrMsg, ctx, "cannot change %s wal mode from within a transaction", (newMode == IPager::JOURNALMODE_WAL ? "into" : "out of"));
 						break;
 					}
 					else
@@ -4334,7 +4334,7 @@ op_column_out:
 					if ((rc&0xFF) == RC_LOCKED)
 					{
 						const char *z = op->P4.Z;
-						_setstring(&ErrMsg, ctx, "database table is locked: %s", z);
+						_mtagassignf(&ErrMsg, ctx, "database table is locked: %s", z);
 					}
 				}
 				break; }
@@ -4697,14 +4697,14 @@ vdbe_return:
 
 		// Jump to here if a string or blob larger than CORE_MAX_LENGTH is encountered.
 too_big:
-		_setstring(&ErrMsg, ctx, "string or blob too big");
+		_mtagassignf(&ErrMsg, ctx, "string or blob too big");
 		rc = RC_TOOBIG;
 		goto vdbe_error_halt;
 
 		// Jump to here if a malloc() fails.
 no_mem:
 		ctx->MallocFailed = true;
-		_setstring(&ErrMsg, ctx, "out of memory");
+		_mtagassignf(&ErrMsg, ctx, "out of memory");
 		rc = RC_NOMEM;
 		goto vdbe_error_halt;
 
@@ -4713,7 +4713,7 @@ abort_due_to_error:
 		_assert(!ErrMsg);
 		if (ctx->MallocFailed) rc = RC_NOMEM;
 		if (rc != RC_IOERR_NOMEM)
-			_setstring(&ErrMsg, ctx, "%s", Main::ErrStr(rc));
+			_mtagassignf(&ErrMsg, ctx, "%s", Main::ErrStr(rc));
 		goto vdbe_error_halt;
 
 		// Jump to here if the sqlite3_interrupt() API sets the interrupt flag.
@@ -4721,7 +4721,7 @@ abort_due_to_interrupt:
 		_assert(ctx->u1.IsInterrupted);
 		rc = RC_INTERRUPT;
 		RC_ = rc;
-		_setstring(&ErrMsg, ctx, "%s", Main::ErrStr(rc));
+		_mtagassignf(&ErrMsg, ctx, "%s", Main::ErrStr(rc));
 		goto vdbe_error_halt;
 	}
 

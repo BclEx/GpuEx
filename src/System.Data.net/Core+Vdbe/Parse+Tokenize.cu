@@ -361,7 +361,7 @@ abort_parse:
 		if (ctx->MallocFailed)
 			RC = RC_NOMEM;
 		if (RC != RC_OK && RC != RC_DONE && !ErrMsg)
-			_setstring(&ErrMsg, ctx, "%s", Main::ErrStr(RC));
+			_mtagassignf(&ErrMsg, ctx, "%s", Main::ErrStr(RC));
 		_assert(errMsg);
 		if (ErrMsg)
 		{

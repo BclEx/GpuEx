@@ -1,4 +1,7 @@
-﻿#include <Runtime.h>
+﻿#ifndef __CORE_CU_H__
+#define __CORE_CU_H__
+
+#include <Runtime.h>
 #include <RuntimeTypes.h>
 
 #if defined(__GNUC__) && 0
@@ -22,3 +25,5 @@
 #include "IO\IO.VFile.cu.h"
 using namespace Core;
 using namespace Core::IO;
+
+#endif // __CORE_CU_H__

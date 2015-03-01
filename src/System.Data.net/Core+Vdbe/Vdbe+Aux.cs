@@ -973,7 +973,7 @@ namespace Core
             {
                 RC_ = RC.INTERRUPT;
                 rc = RC.ERROR;
-                C._setstring(ref ErrMsg, ctx, sqlite3ErrStr(RC_));
+                C._mtagassignf(ref ErrMsg, ctx, sqlite3ErrStr(RC_));
             }
             else
             {
@@ -1674,7 +1674,7 @@ namespace Core
             {
                 RC_ = RC.CONSTRAINT;
                 ErrorAction = OE.Abort;
-                C._setstring(ref ErrMsg, ctx, "foreign key constraint failed");
+                C._mtagassignf(ref ErrMsg, ctx, "foreign key constraint failed");
                 return RC.ERROR;
             }
             return RC.OK;

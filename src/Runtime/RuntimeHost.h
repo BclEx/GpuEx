@@ -1,5 +1,6 @@
-#ifndef __RUNTIME_H__
-#define __RUNTIME_H__
+#ifndef __RUNTIMEHOST_H__
+#define __RUNTIMEHOST_H__
+
 #include <cuda_runtime.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -170,4 +171,4 @@ public:
 #endif
 #pragma endregion
 
-#endif // __RUNTIME_H__
+#endif // __RUNTIMEHOST_H__

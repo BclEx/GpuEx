@@ -1,5 +1,6 @@
-#ifndef __FALLOC_H__
-#define __FALLOC_H__
+#ifndef __FALLOCHOST_H__
+#define __FALLOCHOST_H__
+
 #include <cuda_runtime.h>
 
 /*
@@ -107,4 +108,4 @@ public:
 #endif
 #pragma endregion
 
-#endif // __FALLOC_H__
+#endif // __FALLOCHOST_H__

@@ -30,7 +30,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -65,14 +65,14 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_LIB;TEST;ENABLE_ATOMIC_WRITE;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_xLIB;TEST;ENABLE_ATOMIC_WRITE;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;cudart.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">
       <TargetMachinePlatform>64</TargetMachinePlatform>
@@ -81,7 +81,8 @@
       <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Bitvec.cu.obj" "$(IntDir)ConvertEx.cu.obj" "$(IntDir)GpuVSystem.cu.obj" "$(IntDir)Hash.cu.obj" "$(IntDir)MathEx.cu.obj" "$(IntDir)MutexEx.cu.obj" "$(IntDir)IO.JournalVFile.cu.obj" "$(IntDir)IO.MemoryVFile.cu.obj" "$(IntDir)IO.VFile.cu.obj" "$(IntDir)StatusEx.cu.obj" "$(IntDir)SysEx.cu.obj" "$(IntDir)SysEx+Random.cu.obj" "$(IntDir)VSystem.cu.obj" -o "$(OutDir)System.$(LC)$(LD)D.lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='xDebug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" -o "$(OutDir)System.$(LC)$(LD)D.lib"</Command>
+      <!--<Command Condition="'$(Configuration)|$(Platform)'=='xDebug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Bitvec.cu.obj" "$(IntDir)ConvertEx.cu.obj" "$(IntDir)GpuVSystem.cu.obj" "$(IntDir)Hash.cu.obj" "$(IntDir)MathEx.cu.obj" "$(IntDir)MutexEx.cu.obj" "$(IntDir)IO.JournalVFile.cu.obj" "$(IntDir)IO.MemoryVFile.cu.obj" "$(IntDir)IO.VFile.cu.obj" "$(IntDir)StatusEx.cu.obj" "$(IntDir)SysEx.cu.obj" "$(IntDir)SysEx+Random.cu.obj" "$(IntDir)VSystem.cu.obj" -o "$(OutDir)System.$(LC)$(LD)D.lib"</Command>-->
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -99,7 +100,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(LC)$(LD).lib;cudart.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">
       <TargetMachinePlatform>64</TargetMachinePlatform>
@@ -126,6 +127,7 @@
     <ClInclude Include="..\System.net\Core\IO\IO.VFile.cu.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
+    <None Include="Bundle.cu" />
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.net\Core\SysEx.cu" />
     <ClCompile Include="..\System.net\Core\Bitvec.cu" />
@@ -143,20 +145,21 @@
     <ClCompile Include="..\System.net\Core\WinVSystem.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <CudaCompile Include="System.cu" />
     <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="..\System.net\Core\SysEx.cu" />
-    <CudaCompile Include="..\System.net\Core\Bitvec.cu" />
-    <CudaCompile Include="..\System.net\Core\Hash.cu" />
-    <CudaCompile Include="..\System.net\Core\MathEx.cu" />
-    <CudaCompile Include="..\System.net\Core\MutexEx.cu" />
-    <CudaCompile Include="..\System.net\Core\ConvertEx.cu" />
-    <CudaCompile Include="..\System.net\Core\StatusEx.cu" />
-    <CudaCompile Include="..\System.net\Core\SysEx+Random.cu" />
-    <CudaCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
-    <CudaCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
-    <CudaCompile Include="..\System.net\Core\IO\IO.VFile.cu" />
-    <CudaCompile Include="..\System.net\Core\VSystem.cu" />
-    <CudaCompile Include="..\System.net\Core\GpuVSystem.cu" />
+    <None Include="..\System.net\Core\SysEx.cu" />
+    <None Include="..\System.net\Core\Bitvec.cu" />
+    <None Include="..\System.net\Core\Hash.cu" />
+    <None Include="..\System.net\Core\MathEx.cu" />
+    <None Include="..\System.net\Core\MutexEx.cu" />
+    <None Include="..\System.net\Core\ConvertEx.cu" />
+    <None Include="..\System.net\Core\StatusEx.cu" />
+    <None Include="..\System.net\Core\SysEx+Random.cu" />
+    <None Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
+    <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
+    <None Include="..\System.net\Core\IO\IO.VFile.cu" />
+    <None Include="..\System.net\Core\VSystem.cu" />
+    <None Include="..\System.net\Core\GpuVSystem.cu" />
     <None Include="..\System.net\Core\WinVSystem.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
