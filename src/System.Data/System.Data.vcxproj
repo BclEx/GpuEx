@@ -97,60 +97,60 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Where.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
-    <None Include="System.Data.cu" />
-    <None Include="System.Data+Btree.cu" />
-    <None Include="System.Data+Pager.cu" />
-    <None Include="System.Data+Vdbe.cu" />
+    <CudaCompile Include="System.Data.cu" />
+    <CudaCompile Include="System.Data+Btree.cu" />
+    <CudaCompile Include="System.Data+Pager.cu" />
+    <CudaCompile Include="System.Data+Vdbe.cu" />
     <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="..\System.Data.net\CompileTime.cu" />
-    <CudaCompile Include="..\System.Data.net\Opcodes.cu" />
+    <None Include="..\System.Data.net\CompileTime.cu" />
+    <None Include="..\System.Data.net\Opcodes.cu" />
     <None Include="..\System.Data.net\Shell.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Btree\Btree.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Pager\Pager.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Pager\PCache.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Pager\PCache1.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Pager\Wal.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Alter.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Analyze.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Attach.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Date.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Delete.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Func.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Insert.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Pragma.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Select.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Update.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Vacuum.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Auth.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Backup.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Callback.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Expr.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Main.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Main+LoadExt.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Build.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Complete.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+FKey.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Tokenize.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Parser.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Prepare.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Rowset.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Table.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Trigger.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Api.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Aux.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Blob.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Mem.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Sort.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Trace.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Utf.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\VTable.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Walker.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Where.cu" />
+    <None Include="..\System.Data.net\Core+Btree\BContext.cu" />
+    <None Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
+    <None Include="..\System.Data.net\Core+Btree\Btree.cu" />
+    <None Include="..\System.Data.net\Core+Pager\Pager.cu" />
+    <None Include="..\System.Data.net\Core+Pager\PCache.cu" />
+    <None Include="..\System.Data.net\Core+Pager\PCache1.cu" />
+    <None Include="..\System.Data.net\Core+Pager\Wal.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Alter.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Analyze.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Attach.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Date.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Delete.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Func.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Insert.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Pragma.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Select.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Update.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Command\Vacuum.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Auth.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Backup.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Callback.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Expr.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Main.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Main+LoadExt.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Parse+Build.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Parse+Complete.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Parse+FKey.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Parse+Tokenize.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Prepare.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Rowset.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Table.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Trigger.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe+Api.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe+Aux.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe+Blob.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe+Mem.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe+Sort.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe+Trace.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Vdbe+Utf.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\VTable.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Walker.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Where.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu" />
@@ -215,7 +215,8 @@
       <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
+      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>-->
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -243,7 +244,8 @@
       <Keep Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
+      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>-->
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

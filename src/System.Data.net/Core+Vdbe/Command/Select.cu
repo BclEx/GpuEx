@@ -1016,7 +1016,7 @@ namespace Core
 	{
 		Context *ctx = parse->Ctx;
 		Context::FLAG savedFlags = ctx->Flags;
-		ctx->Flags &= ~Context::FLAG_FullColNames;
+		ctx->Flags &= (Context::FLAG)~Context::FLAG_FullColNames;
 		ctx->Flags |= Context::FLAG_ShortColNames;
 		Select *select = this;
 		select->Prep(parse, nullptr);

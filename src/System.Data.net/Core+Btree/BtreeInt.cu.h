@@ -1,4 +1,7 @@
 // btreeInt.h
+#ifndef __BTREEINT_CU_H__
+#define __BTREEINT_CU_H__
+
 namespace Core
 {
 
@@ -182,3 +185,5 @@ namespace Core
 	__device__ inline void operator|=(BTS &a, int b) { a = (BTS)(a | b); }
 	__device__ inline void operator&=(BTS &a, int b) { a = (BTS)(a & b); }
 }
+
+#endif // __BTREEINT_CU_H__

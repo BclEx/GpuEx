@@ -1,4 +1,7 @@
-﻿#include <Core/Core.cu.h>
+﻿#ifndef __CORE_PAGER_CU_H__
+#define __CORE_PAGER_CU_H__
+
+#include <Core/Core.cu.h>
 
 #define Pid uint32
 
@@ -16,3 +19,5 @@ public:
 #include "Pager.cu.h"
 #include "PCache.cu.h"
 #include "Wal.cu.h"
+
+#endif // __CORE_PAGER_CU_H__

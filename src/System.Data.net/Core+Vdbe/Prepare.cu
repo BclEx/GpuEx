@@ -238,7 +238,7 @@ namespace Core
 		// Ticket #2804:  When we open a database in the newer file format, clear the legacy_file_format pragma flag so that a VACUUM will
 		// not downgrade the database and thus invalidate any descending indices that the user might have created.
 		if (db == 0 && meta[Btree::META_FILE_FORMAT-1] >= 4)
-			ctx->Flags &= ~Context::FLAG_LegacyFileFmt;
+			ctx->Flags &= (Context::FLAG)~Context::FLAG_LegacyFileFmt;
 
 		// Read the schema information out of the schema tables
 		_assert(ctx->Init.Busy);

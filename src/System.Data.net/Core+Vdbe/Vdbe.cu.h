@@ -544,10 +544,10 @@ namespace Core
 
 #if __CUDACC__
 		__device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt) { va_list args; va_start(args); ExplainPrintf_(p, fmt, args); va_end(args); }
-		template <typename T1> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1) { va_list args; va_start(args, arg1); ExplainPrintf_(p, fmt, args); va_end(args); }
-		template <typename T1, typename T2> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1, T2 arg2) { va_list args; va_start(args, arg1, arg2); ExplainPrintf_(p, fmt, args); va_end(args); }
-		template <typename T1, typename T2, typename T3> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list args; va_start(args, arg1, arg2, arg3); ExplainPrintf_(p, fmt, args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list args; va_start(args, arg1, arg2, arg3, arg4); ExplainPrintf_(p, fmt, args); va_end(args); }
+		template <typename T1> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); ExplainPrintf_(p, fmt, args); va_end(args); }
+		template <typename T1, typename T2> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); ExplainPrintf_(p, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); ExplainPrintf_(p, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); ExplainPrintf_(p, fmt, args); va_end(args); }
 #else
 		__device__ inline static void ExplainPrintf(Vdbe *p, const char *fmt, ...) { va_list args; va_start(args, fmt); ExplainPrintf_(p, fmt, args); va_end(args); }
 #endif

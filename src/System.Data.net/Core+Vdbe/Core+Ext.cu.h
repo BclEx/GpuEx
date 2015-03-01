@@ -1,5 +1,6 @@
-#ifndef CORE_EXT_H_
-#define CORE_EXT_H_
+#ifndef __CORE_EXT_CU_H__
+#define __CORE_EXT_CU_H__
+
 #include "Core+Vdbe.cu.h"
 
 typedef struct core_api_routines core_api_routines;
@@ -414,4 +415,4 @@ struct core_api_routines
 #define EXTENSION_INIT1     const core_api_routines *g_api = nullptr;
 #define EXTENSION_INIT2(v)  g_api = v;
 
-#endif
+#endif // __CORE_EXT_CU_H__

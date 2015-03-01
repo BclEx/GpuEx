@@ -5,6 +5,7 @@
 // NATIVE
 #pragma region NATIVE
 
+#include <stdio.h>
 #if __CUDACC__
 #include "Runtime.cu.h"
 #else

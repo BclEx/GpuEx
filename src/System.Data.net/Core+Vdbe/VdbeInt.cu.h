@@ -1,6 +1,10 @@
 // vdbeint.h
+#ifndef __VDBEINT_CU_H__
+#define __VDBEINT_CU_H__
+
 #include "Core+Vdbe.cu.h"
 #include "..\Core+Btree\BtreeInt.cu.h"
+
 namespace Core
 {
 	struct VTableCursor;
@@ -200,3 +204,5 @@ namespace Core
 #define SCHEMA_TABLE(x)  (!E_OMIT_TEMPDB && (x) == 1 ? TEMP_MASTER_NAME : MASTER_NAME) // The name of the schema table.
 
 }
+
+#endif // __VDBEINT_CU_H__

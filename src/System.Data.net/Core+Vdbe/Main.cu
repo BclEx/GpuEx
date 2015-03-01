@@ -243,7 +243,7 @@ namespace Core
 					if (set)
 						ctx->Flags |= _flagOps[i].Mask;
 					else
-						ctx->Flags &= ~_flagOps[i].Mask;
+						ctx->Flags &= (Context::FLAG)~_flagOps[i].Mask;
 					if (oldFlags != ctx->Flags)
 						Vdbe::ExpirePreparedStatements(ctx);
 					if (r)
@@ -1703,7 +1703,7 @@ error_out:
 	extern __device__ void Random_PrngRestoreState();
 	extern __device__ void Random_PrngResetState();
 	extern __device__ int Bitvec_BuiltinTest(int size, int *ops);
-	__device__ RC Main::TestControl(TESTCTRL op, va_list *args)
+	__device__ RC Main::TestControl_(TESTCTRL op, va_list &args)
 	{
 		int rc = 0;
 #ifndef OMIT_BUILTIN_TEST

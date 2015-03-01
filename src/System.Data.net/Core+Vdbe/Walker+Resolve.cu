@@ -1,7 +1,5 @@
 // resolve.c
 #include "Core+Vdbe.cu.h"
-//#include <stdlib.h>
-//#include <string.h>
 
 namespace Core
 {

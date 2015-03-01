@@ -429,7 +429,7 @@ namespace Core
 		if (onoff)
 			ctx->Flags |= Context::FLAG_LoadExtension;
 		else
-			ctx->Flags &= ~Context::FLAG_LoadExtension;
+			ctx->Flags &= (Context::FLAG)~Context::FLAG_LoadExtension;
 		MutexEx::Leave(ctx->Mutex);
 		return RC_OK;
 	}

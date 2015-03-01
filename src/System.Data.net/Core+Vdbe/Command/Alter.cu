@@ -1,6 +1,7 @@
 // alter.c
 #pragma region OMIT_ALTERTABLE
 #ifndef OMIT_ALTERTABLE
+
 #include "..\VdbeInt.cu.h"
 
 namespace Core { namespace Command
@@ -586,5 +587,6 @@ exit_begin_add_column:
 	}
 
 } }
+
 #endif
 #pragma endregion

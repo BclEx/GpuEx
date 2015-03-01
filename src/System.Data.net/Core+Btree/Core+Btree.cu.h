@@ -1,4 +1,7 @@
-﻿#include "../Core+Pager/Core+Pager.cu.h"
+﻿#ifndef __CORE_BTREE_CU_H__
+#define __CORE_BTREE_CU_H__
+
+#include "../Core+Pager/Core+Pager.cu.h"
 namespace Core
 {
 #pragma region CollSeq
@@ -69,3 +72,5 @@ namespace Core
 
 #pragma endregion
 }
+
+#endif // __CORE_BTREE_CU_H__

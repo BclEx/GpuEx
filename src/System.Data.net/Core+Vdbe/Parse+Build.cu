@@ -1,6 +1,5 @@
 #include "VdbeInt.cu.h"
 #include "..\KeywordHash.h"
-//#include <stddef.h>
 
 namespace Core
 {
@@ -326,7 +325,7 @@ namespace Core
 			if (db->Schema)
 				Callback::SchemaClear(db->Schema);
 		}
-		ctx->Flags &= ~Context::FLAG_InternChanges;
+		ctx->Flags &= (Context::FLAG)~Context::FLAG_InternChanges;
 		VTable::UnlockList(ctx);
 		Btree::LeaveAll(ctx);
 		CollapseDatabaseArray(ctx);
@@ -334,7 +333,7 @@ namespace Core
 
 	__device__ void Parse::CommitInternalChanges(Context *ctx)
 	{
-		ctx->Flags &= ~Context::FLAG_InternChanges;
+		ctx->Flags &= (Context::FLAG)~Context::FLAG_InternChanges;
 	}
 
 	__device__ static void DeleteColumnNames(Context *ctx, Table *table)

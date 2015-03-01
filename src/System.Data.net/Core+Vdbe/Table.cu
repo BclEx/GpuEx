@@ -1,6 +1,7 @@
 // table.c
 #pragma region OMIT_GET_TABLE
 #ifndef OMIT_GET_TABLE
+
 #include "Core+Vdbe.cu.h"
 #include <stdlib.h>
 #include <string.h>

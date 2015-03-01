@@ -1,5 +1,6 @@
 #pragma region OMIT_AUTHORIZATION
 #ifndef OMIT_AUTHORIZATION
+
 #include "Core+Vdbe.cu.h"
 
 namespace Core
@@ -121,5 +122,6 @@ namespace Core
 		}
 	}
 }
+
 #endif
 #pragma endregion

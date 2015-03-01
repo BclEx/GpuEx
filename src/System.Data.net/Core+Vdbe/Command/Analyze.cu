@@ -1,6 +1,7 @@
 // analyze.c
 #pragma region OMIT_ANALYZE
 #ifndef OMIT_ANALYZE
+
 #include "..\VdbeInt.cu.h"
 
 namespace Core { namespace Command
@@ -776,5 +777,6 @@ namespace Core { namespace Command
 	}
 
 } }
+
 #endif
 #pragma endregion

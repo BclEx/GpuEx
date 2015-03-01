@@ -1,7 +1,10 @@
-﻿#include "../Core+Btree/Core+Btree.cu.h"
+﻿#ifndef __CORE_VDBE_CU_H__
+#define __CORE_VDBE_CU_H__
+
+#include "../Core+Btree/Core+Btree.cu.h"
 #include "Parse+Parser.orig.h"
 #include "../Opcodes.h"
-#include <stdio.h>
+
 namespace Core
 {
 #pragma region Limit Types
@@ -1769,7 +1772,7 @@ namespace Core {
 		};
 		__device__ static RC Config_(CONFIG op, va_list &args);
 #if __CUDACC__
-		__device__ inline static RC Config(CONFIG op) { va_list0 args; va_start(args); RC r = Config_(op, args); va_end(args); return r; }
+		__device__ inline static RC Config(CONFIG op) { va_list args; va_start(args); RC r = Config_(op, args); va_end(args); return r; }
 		template <typename T1> __device__ inline static RC Config(CONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = Config_(op, args); va_end(args); return r; }
 		template <typename T1, typename T2> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = Config_(op, args); va_end(args); return r; }
 		template <typename T1, typename T2, typename T3> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = Config_(op, args); va_end(args); return r; }
@@ -1787,7 +1790,7 @@ namespace Core {
 		};
 		__device__ static RC CtxConfig_(Context *ctx, CTXCONFIG op, va_list &args);
 #if __CUDACC__
-		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op) { va_list0 args; va_start(args); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
+		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op) { va_list args; va_start(args); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
 		template <typename T1> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
 		template <typename T1, typename T2> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
 		template <typename T1, typename T2, typename T3> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
@@ -1885,7 +1888,7 @@ namespace Core {
 			TESTCTRL_EXPLAIN_STMT            =19,
 			TESTCTRL_LAST                    =19,
 		};
-		__device__ RC Main::TestControl(TESTCTRL op, va_list *args);
+		__device__ RC Main::TestControl_(TESTCTRL op, va_list &args);
 		__device__ static Btree *DbNameToBtree(Context *ctx, const char *dbName);
 		__device__ static const char *CtxFilename(Context *ctx, const char *dbName);
 		__device__ static int CtxReadonly(Context *ctx, const char *dbName);
@@ -1904,3 +1907,5 @@ namespace Core {
 #pragma endregion
 }
 using namespace Core::Command;
+
+#endif // __CORE_VDBE_CU_H__
