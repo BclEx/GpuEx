@@ -758,7 +758,7 @@ namespace Core
                         // database table or a subquery.
                         Table table = null; // Table structure column is extracted from
                         Select s = null; // Select the column is extracted from
-                        int colId = expr.ColumnIdx; // Index of column in pTab
+                        int colId = expr.ColumnId; // Index of column in pTab
                         C.ASSERTCOVERAGE(expr.OP == TK.AGG_COLUMN);
                         C.ASSERTCOVERAGE(expr.OP == TK.COLUMN);
                         while (nc != null && table == null)
@@ -913,7 +913,7 @@ namespace Core
                 }
                 else if ((p.OP == TK.COLUMN || p.OP == TK.AGG_COLUMN) && tabList != null)
                 {
-                    int colId = p.ColumnIdx;
+                    int colId = p.ColumnId;
                     int j;
                     for (j = 0; C._ALWAYS(j < tabList.Srcs); j++)
                         if (tabList.Ids[j].Cursor == p.TableId) break;
@@ -982,7 +982,7 @@ namespace Core
                     if (colExpr.OP == TK.COLUMN && C._ALWAYS(colExpr.Table != null))
                     {
                         // For columns use the column name name
-                        int colId = colExpr.ColumnIdx;
+                        int colId = colExpr.ColumnId;
                         Table table = colExpr.Table; // Table associated with this expression
                         if (colId < 0) colId = table.PKey;
                         name = C._mtagprintf(ctx, "%s", (colId >= 0 ? table.Cols[colId].Name : "rowid"));
@@ -1895,13 +1895,13 @@ namespace Core
             if (expr == null) return null;
             if (expr.op == TK.COLUMN && expr.TableId == tableId)
             {
-                if (expr.ColumnIdx < 0)
+                if (expr.ColumnId < 0)
                     expr.OP = TK_NULL;
                 else
                 {
-                    Debug.Assert(list != null && expr.ColumnIdx < list.Exprs);
+                    Debug.Assert(list != null && expr.ColumnId < list.Exprs);
                     Debug.Assert(expr.Left == null && expr.Right == null);
-                    Expr newExpr = Expr.Dup(ctx, list.Ids[expr.ColumnIdx].Expr, 0);
+                    Expr newExpr = Expr.Dup(ctx, list.Ids[expr.ColumnId].Expr, 0);
                     Expr.Delete(ctx, ref expr);
                     expr = newExpr;
                 }

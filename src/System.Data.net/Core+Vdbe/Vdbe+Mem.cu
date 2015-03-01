@@ -469,9 +469,8 @@ namespace Core {
 			_assert(encode != 0);
 			if (encode == TEXTENCODE_UTF8)
 				for (bytes = 0; bytes <= limit && z[bytes]; bytes++) { }
-			else
-				for (bytes = 0; bytes <= limit && (z[bytes] | z[bytes + 1]); bytes += 2) { }
-				flags |= MEM_Term;
+			else for (bytes = 0; bytes <= limit && (z[bytes] | z[bytes + 1]); bytes += 2) { }
+			flags |= MEM_Term;
 		}
 
 		// The following block sets the new values of Mem.z and Mem.xDel. It also sets a flag in local variable "flags" to indicate the memory

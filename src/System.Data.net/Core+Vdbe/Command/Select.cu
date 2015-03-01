@@ -717,7 +717,7 @@ namespace Core
 			// database table or a subquery.
 			Table *table = nullptr; // Table structure column is extracted from
 			Select *s = nullptr; // Select the column is extracted from
-			int colId = expr->ColumnIdx; // Index of column in pTab
+			int colId = expr->ColumnId; // Index of column in pTab
 			ASSERTCOVERAGE(expr->OP == TK_AGG_COLUMN);
 			ASSERTCOVERAGE(expr->OP == TK_COLUMN);
 			while (nc && !table)
@@ -870,7 +870,7 @@ namespace Core
 			}
 			else if ((p->OP == TK_COLUMN || p->OP == TK_AGG_COLUMN) && tabList)
 			{
-				int colId = p->ColumnIdx;
+				int colId = p->ColumnId;
 				int j;
 				for (j = 0; _ALWAYS(j < tabList->Srcs); j++)
 					if (tabList->Ids[j].Cursor == p->TableId) break;
@@ -936,7 +936,7 @@ namespace Core
 				if (colExpr->OP == TK_COLUMN && _ALWAYS(colExpr->Table != nullptr))
 				{
 					// For columns use the column name name
-					int colId = colExpr->ColumnIdx;
+					int colId = colExpr->ColumnId;
 					Table *table = colExpr->Table; // Table associated with this expression
 					if (colId < 0) colId = table->PKey;
 					name = _mtagprintf(ctx, "%s", (col >= 0 ? table->Cols[colId].Name : "rowid"));
@@ -1832,13 +1832,13 @@ multi_select_end:
 		if (!expr) return nullptr;
 		if (expr->OP == TK_COLUMN && expr->TableId == tableId)
 		{
-			if (expr->ColumnIdx < 0)
+			if (expr->ColumnId < 0)
 				expr->OP = TK_NULL;
 			else
 			{
-				_assert(list && expr->ColumnIdx < list->Exprs);
+				_assert(list && expr->ColumnId < list->Exprs);
 				_assert(!expr->Left && !expr->Right);
-				Expr *newExpr = Expr::Dup(ctx, list->Ids[expr->ColumnIdx].Expr, 0);
+				Expr *newExpr = Expr::Dup(ctx, list->Ids[expr->ColumnId].Expr, 0);
 				Expr::Delete(ctx, expr);
 				expr = newExpr;
 			}

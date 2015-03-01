@@ -143,7 +143,7 @@ namespace Core
 								cnt++;
 								cntTab = 2;
 								match = item;
-								expr->ColumnIdx = j;
+								expr->ColumnId = j;
 								hit = true;
 							}
 						}
@@ -175,7 +175,7 @@ namespace Core
 							cnt++;
 							match = item;
 							// Substitute the rowid (column -1) for the INTEGER PRIMARY KEY
-							expr->ColumnIdx = (j == table->PKey ? -1 : (int16)j);
+							expr->ColumnId = (j == table->PKey ? -1 : (int16)j);
 							break;
 						}
 					}
@@ -239,7 +239,7 @@ namespace Core
 							ASSERTCOVERAGE(colId == 32);
 							parse->Newmask |= (colId >= 32 ? 0xffffffff : (((uint32)1) << colId));
 						}
-						expr->ColumnIdx = (int16)colId;
+						expr->ColumnId = (int16)colId;
 						expr->Table = table;
 						isTrigger = true;
 					}
@@ -251,7 +251,7 @@ namespace Core
 			if (cnt == 0 && cntTab == 1 && Expr::IsRowid(colName))
 			{
 				cnt = 1;
-				expr->ColumnIdx = -1; // IMP: R-44911-55124
+				expr->ColumnId = -1; // IMP: R-44911-55124
 				expr->Aff = AFF_INTEGER;
 			}
 
@@ -324,9 +324,9 @@ namespace Core
 		// If a column from a table in pSrcList is referenced, then record this fact in the pSrcList.a[].colUsed bitmask.  Column 0 causes
 		// bit 0 to be set.  Column 1 sets bit 1.  And so forth.  If the column number is greater than the number of bits in the bitmask
 		// then set the high-order bit of the bitmask.
-		if (expr->ColumnIdx >= 0 && match != nullptr)
+		if (expr->ColumnId >= 0 && match != nullptr)
 		{
-			int n = expr->ColumnIdx;
+			int n = expr->ColumnId;
 			ASSERTCOVERAGE(n == BMS-1);
 			if (n >= BMS)
 				n = BMS-1;
@@ -367,10 +367,10 @@ lookupname_end:
 			p->Table = item->Table;
 			p->TableId = item->Cursor;
 			if (p->Table->PKey == colId)
-				p->ColumnIdx = -1;
+				p->ColumnId = -1;
 			else
 			{
-				p->ColumnIdx = (yVars)colId;
+				p->ColumnId = (yVars)colId;
 				ASSERTCOVERAGE(colId == BMS);
 				ASSERTCOVERAGE(colId == BMS-1);
 				item->ColUsed |= ((Bitmask)1)<<(colId >= BMS ? BMS-1 : colId);
@@ -411,7 +411,7 @@ lookupname_end:
 			expr->OP = TK_COLUMN;
 			expr->Table = item->Table;
 			expr->TableId = item->Cursor;
-			expr->ColumnIdx = -1;
+			expr->ColumnId = -1;
 			expr->Affinity = AFF_INTEGER;
 			break; }
 #endif

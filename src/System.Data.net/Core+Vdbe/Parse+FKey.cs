@@ -269,7 +269,7 @@ namespace Core
                     left.TableId = regDataId;
                     left.Aff = AFF.INTEGER;
                     right.TableId = src.Ids[0].Cursor;
-                    right.ColumnIdx = -1;
+                    right.ColumnId = -1;
                 }
                 Expr eq = Expr.PExpr(parse, TK.NE, left, right, 0); // Expression (pLeft = pRight)
                 where_ = Expr.And(ctx, where_, eq);

@@ -60,7 +60,7 @@ namespace Core
 					break;
 				}
 		}
-		int col = expr->ColumnIdx; // Index of column in table
+		int col = expr->ColumnId; // Index of column in table
 		if (_NEVER(table)) return;
 
 		const char *colName; // Name of the column of the table

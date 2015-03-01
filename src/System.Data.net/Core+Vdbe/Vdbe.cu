@@ -394,7 +394,7 @@ namespace Core
 			// On any opcode with the "out2-prerelease" tag, free any external allocations out of mem[p2] and set mem[p2] to be
 			// an undefined integer.  Opcodes will either fill in the integer value or convert mem[p2] to a different type.
 			_assert(op->Opflags == g_opcodeProperty[op->Opcode]);
-			if (op->Opflags & OPFLG_OUT2_PRERELEASE)
+			if ((op->Opflags & OPFLG_OUT2_PRERELEASE) != 0)
 			{
 				_assert(op->P2 > 0);
 				_assert(op->P2 <= Mems.length);
@@ -2216,7 +2216,7 @@ op_column_out:
 						goto abort_due_to_error;
 					if (op->P2 && UsesStmtJournal && (ctx->AutoCommit == 0 || ctx->ActiveVdbeCnt > 1))
 					{
-						_assert(bt->IsInTrans());
+						_assert(bt && bt->IsInTrans());
 						if (StatementID == 0)
 						{
 							_assert(ctx->Statements >= 0 && ctx->SavepointsLength >= 0);
@@ -4257,7 +4257,7 @@ op_column_out:
 							pager->SetJournalMode(IPager::JOURNALMODE_OFF); // Cannot transition directly from MEMORY to WAL.  Use mode OFF as an intermediate
 
 						// Open a transaction on the database file. Regardless of the journal mode, this transaction always uses a rollback journal.
-						_assert(!bt-IsInTrans());
+						_assert(!bt || !bt-IsInTrans());
 						if (rc == RC_OK)
 							rc = bt->SetVersion(newMode == IPager::JOURNALMODE_WAL ? 2 : 1);
 					}

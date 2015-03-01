@@ -467,7 +467,7 @@ namespace Core
 		to->Enter();
 		from->Enter();
 
-		_assert(to->IsInTrans());
+		_assert(to && to->IsInTrans());
 		RC rc;
 		VFile *fd = to->get_Pager()->get_File(); // File descriptor for database pTo
 		if (fd->Type)
@@ -498,7 +498,7 @@ namespace Core
 		else
 			b.Dest->get_Pager()->ClearCache();
 
-		_assert(!to->IsInTrans());
+		_assert(!to || !to->IsInTrans());
 copy_finished:
 		from->Leave();
 		to->Leave();

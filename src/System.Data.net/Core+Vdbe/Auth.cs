@@ -63,7 +63,7 @@ namespace Core
                         break;
                     }
             }
-            int col = expr.ColumnIdx; // Index of column in table
+            int col = expr.ColumnId; // Index of column in table
             if (C._NEVER(table == null)) return;
 
             string colName; // Name of the column of the table

@@ -14,10 +14,10 @@ namespace Core
 
 #pragma region From: Util_c
 
-	__device__ void Parse::ErrorMsg(const char *fmt, va_list *args)
+	__device__ void Parse::ErrorMsg_(const char *fmt, va_list &args)
 	{
 		Context *ctx = Ctx;
-		char *msg = _vmtagprintf(ctx, fmt, args, nullptr);
+		char *msg = _vmtagprintf(ctx, fmt, &args, nullptr);
 		if (ctx->SuppressErr)
 			_tagfree(ctx, msg);
 		else
@@ -29,14 +29,14 @@ namespace Core
 		}
 	}
 
-	__device__ void Main::Error(Context *ctx, RC errCode, const char *fmt, va_list *args)
+	__device__ void Main::Error_(Context *ctx, RC errCode, const char *fmt, va_list &args)
 	{
 		if (ctx && (ctx->Err || (ctx->Err = Vdbe::ValueNew(ctx)) != nullptr))
 		{
 			ctx->ErrCode = errCode;
 			if (fmt)
 			{
-				char *z = _vmtagprintf(ctx, fmt, args, nullptr);
+				char *z = _vmtagprintf(ctx, fmt, &args, nullptr);
 				Vdbe::ValueSetStr(ctx->Err, -1, z, TEXTENCODE_UTF8, DESTRUCTOR_DYNAMIC);
 			}
 			else
@@ -179,9 +179,9 @@ namespace Core
 		return RC_OK;
 	}
 
-	__device__ RC Main::Config(CONFIG op, va_list &args)
+	__device__ RC Main::Config_(CONFIG op, va_list &args)
 	{
-		if (op < CONFIG_PAGECACHE) return SysEx::Config((SysEx::CONFIG)op, args);
+		if (op < CONFIG_PAGECACHE) return SysEx::Config_((SysEx::CONFIG)op, args);
 		RC rc = RC_OK;
 		switch (op)
 		{
@@ -220,7 +220,7 @@ namespace Core
 		{ Main::CTXCONFIG_ENABLE_FKEY,    Context::FLAG_ForeignKeys   },
 		{ Main::CTXCONFIG_ENABLE_TRIGGER, Context::FLAG_EnableTrigger },
 	};
-	__device__ RC Main::CtxConfig(Context *ctx, CTXCONFIG op, va_list &args)
+	__device__ RC Main::CtxConfig_(Context *ctx, CTXCONFIG op, va_list &args)
 	{
 		RC rc;
 		switch (op)

@@ -26,7 +26,6 @@ namespace Core
 	__device__ inline void operator&=(SCHEMA &a, int b) { a = (SCHEMA)(a & b); }
 	__device__ inline SCHEMA operator|(SCHEMA a, SCHEMA b) { return (SCHEMA)((int)a | (int)b); }
 	__device__ inline SCHEMA operator&(SCHEMA a, SCHEMA b) { return (SCHEMA)((int)a & (int)b); }
-	//__device__ inline SCHEMA operator~(SCHEMA a) { return (SCHEMA)(~(int)a); }
 
 #define DbHasProperty(D,I,P)     (((D)->DBs[I].Schema->Flags&(P))==(P))
 #define DbHasAnyProperty(D,I,P)  (((D)->DBs[I].Schema->Flags&(P))!=0)

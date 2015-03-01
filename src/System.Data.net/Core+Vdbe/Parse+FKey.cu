@@ -262,7 +262,7 @@ namespace Core
 				left->TableId = regDataId;
 				left->Aff = AFF_INTEGER;
 				right->TableId = src->Ids[0].Cursor;
-				right->ColumnIdx= -1;
+				right->ColumnId= -1;
 			}
 			Expr *eq = Expr::PExpr_(parse, TK_NE, left, right, 0); // Expression (left = right)
 			where_ = Expr::And(ctx, where_, eq);

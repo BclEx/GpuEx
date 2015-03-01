@@ -204,8 +204,8 @@ namespace Core { namespace Command
 			// This array determines which meta meta values are preserved in the vacuum.  Even entries are the meta value number and odd entries
 			// are an increment to apply to the meta value after the vacuum. The increment is used to increase the schema cookie so that other
 			// connections to the same database will know to reread the schema.
-			_assert(temp->IsInTrans());
-			_assert(main->IsInTrans());
+			_assert(temp && temp->IsInTrans());
+			_assert(main && main->IsInTrans());
 
 			// Copy Btree meta values
 			for (int i = 0; i < _lengthof(_runVacuum_copy); i+=2)

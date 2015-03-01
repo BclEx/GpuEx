@@ -26,7 +26,7 @@ namespace Core
 		if ((op == TK_AGG_COLUMN || op == TK_COLUMN || op == TK_REGISTER) && expr->Table)
 		{
 			// op == TK_REGISTER && expr->Table happens when pExpr was originally a TK_COLUMN but was previously evaluated and cached in a register
-			int j = expr->ColumnIdx;
+			int j = expr->ColumnId;
 			if (j < 0)
 				return AFF_INTEGER;
 			_assert(expr->Table && j < expr->Table->Cols.length);
@@ -92,7 +92,7 @@ namespace Core
 			if (p->Table && (op == TK_AGG_COLUMN || op == TK_COLUMN || op == TK_REGISTER || op == TK_TRIGGER))
 			{
 				// op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally a TK_COLUMN but was previously evaluated and cached in a register
-				int j = p->ColumnIdx;
+				int j = p->ColumnId;
 				if (j >= 0)
 				{
 					const char *nameColl = p->Table->Cols[j].Coll;
@@ -408,7 +408,7 @@ namespace Core
 		{
 			_assert(z[0] == '?');
 			// Wildcard of the form "?".  Assign the next variable number
-			expr->ColumnIdx = (yVars)(++parse->VarsSeen);
+			expr->ColumnId = (yVars)(++parse->VarsSeen);
 		}
 		else
 		{
@@ -419,7 +419,7 @@ namespace Core
 				// Wildcard of the form "?nnn".  Convert "nnn" to an integer and use it as the variable number
 				int64 i;
 				bool ok = !ConvertEx::Atoi64(&z[1], &i, length-1, TEXTENCODE_UTF8);
-				expr->ColumnIdx = x = (yVars)i;
+				expr->ColumnId = x = (yVars)i;
 				ASSERTCOVERAGE(i == 0);
 				ASSERTCOVERAGE(i == 1);
 				ASSERTCOVERAGE(i == ctx->Limits[LIMIT_VARIABLE_NUMBER]-1);
@@ -441,12 +441,12 @@ namespace Core
 				{
 					if (parse->Vars[i] && !_strcmp(parse->Vars[i], z))
 					{
-						expr->ColumnIdx = x = (yVars)i + 1;
+						expr->ColumnId = x = (yVars)i + 1;
 						break;
 					}
 				}
 				if (x == 0)
-					expr->ColumnIdx = x = (yVars)(++parse->VarsSeen);
+					expr->ColumnId = x = (yVars)(++parse->VarsSeen);
 			}
 			if (x > 0)
 			{
@@ -962,7 +962,7 @@ no_mem:
 		case TK_BLOB: return true;
 		case TK_COLUMN:
 			_assert(expr->TableId >= 0); // p cannot be part of a CHECK constraint
-			return expr->ColumnIdx < 0 && (aff == AFF_INTEGER || aff == AFF_NUMERIC);
+			return expr->ColumnId < 0 && (aff == AFF_INTEGER || aff == AFF_NUMERIC);
 		default: return false;
 		}
 	}
@@ -1029,7 +1029,7 @@ no_mem:
 			Context *ctx = parse->Ctx; // Database connection
 			Core::Table *table = select->Src->Ids[0].Table; // Table <table>.
 			Expr *expr2 = select->EList->Ids[0].Expr; // Expression <column>
-			int col = expr2->ColumnIdx; // Index of column <column>
+			int col = expr2->ColumnId; // Index of column <column>
 
 			// Code an OP_VerifyCookie and OP_TableLock for <table>.
 			int db = Prepare::SchemaToIndex(ctx, table->Schema); // Database idx for pTab
@@ -1087,7 +1087,7 @@ no_mem:
 			{
 				ASSERTCOVERAGE(parse->QueryLoops > (double)1);
 				parse->QueryLoops = (double)1;
-				if (expr->Left->ColumnIdx < 0 && !ExprHasAnyProperty(expr, EP_xIsSelect))
+				if (expr->Left->ColumnId < 0 && !ExprHasAnyProperty(expr, EP_xIsSelect))
 					type = IN_INDEX_ROWID;
 			}
 			CodeSubselect(parse, expr, mayHaveNull, type == IN_INDEX_ROWID);
@@ -1634,10 +1634,10 @@ no_mem:
 			{
 				// This only happens when coding check constraints
 				_assert(parse->CkBase > 0);
-				inReg = expr->ColumnIdx + parse->CkBase;
+				inReg = expr->ColumnId + parse->CkBase;
 			}
 			else
-				inReg = CodeGetColumn(parse, expr->Table, expr->ColumnIdx, expr->TableId, target, expr->OP2);
+				inReg = CodeGetColumn(parse, expr->Table, expr->ColumnId, expr->TableId, target, expr->OP2);
 			break; }
 
 		case TK_INTEGER: {
@@ -1677,11 +1677,11 @@ no_mem:
 			_assert(!ExprHasProperty(expr, EP_IntValue));
 			_assert(expr->u.Token != 0);
 			_assert(expr->u.Token[0] != 0);
-			v->AddOp2(OP_Variable, expr->ColumnIdx, target);
+			v->AddOp2(OP_Variable, expr->ColumnId, target);
 			if (expr->u.Token[1] != 0)
 			{
-				_assert(expr->u.Token[0] == '?' || !_strcmp(expr->u.Token, parse->Vars[expr->ColumnIdx-1]));
-				v->ChangeP4(-1, parse->Vars[expr->ColumnIdx-1], Vdbe::P4T_STATIC);
+				_assert(expr->u.Token[0] == '?' || !_strcmp(expr->u.Token, parse->Vars[expr->ColumnId-1]));
+				v->ChangeP4(-1, parse->Vars[expr->ColumnId-1], Vdbe::P4T_STATIC);
 			}
 			break; }
 
@@ -2035,17 +2035,17 @@ no_mem:
 			//   p1==1   ->    old.a         p1==4   ->    new.a
 			//   p1==2   ->    old.b         p1==5   ->    new.b       
 			Core::Table *table = expr->Table;
-			int p1 = expr->TableId * (table->Cols.length + 1) + 1 + expr->ColumnIdx;
+			int p1 = expr->TableId * (table->Cols.length + 1) + 1 + expr->ColumnId;
 			_assert(expr->TableId == 0 || expr->TableId == 1);
-			_assert(expr->ColumnIdx >= -1 && expr->ColumnIdx < table->Cols.length);
-			_assert(table->PKey < 0 || expr->ColumnIdx != table->PKey);
+			_assert(expr->ColumnId >= -1 && expr->ColumnId < table->Cols.length);
+			_assert(table->PKey < 0 || expr->ColumnId != table->PKey);
 			_assert(p1 >= 0 && p1 < (table->Cols.length*2+2));
 			v->AddOp2(OP_Param, p1, target);
-			v->Comment("%s.%s -> $%d", (expr->TableId ? "new" : "old"), (expr->ColumnIdx < 0 ? "rowid" : expr->Table->Cols[expr->ColumnIdx].Name), target);
+			v->Comment("%s.%s -> $%d", (expr->TableId ? "new" : "old"), (expr->ColumnId < 0 ? "rowid" : expr->Table->Cols[expr->ColumnId].Name), target);
 
 #ifndef OMIT_FLOATING_POINT
 			// If the column has REAL affinity, it may currently be stored as an integer. Use OP_RealAffinity to make sure it is really real.
-			if (expr->ColumnIdx >= 0 && table->Cols[expr->ColumnIdx].Affinity == AFF_REAL)
+			if (expr->ColumnId >= 0 && table->Cols[expr->ColumnId].Affinity == AFF_REAL)
 				v->AddOp1(OP_RealAffinity, target);
 #endif
 			break; }
@@ -2211,14 +2211,14 @@ no_mem:
 		switch (op)
 		{
 		case TK_AGG_COLUMN: {
-			Vdbe::ExplainPrintf(v, "AGG{%d:%d}", expr->TableId, expr->ColumnIdx);
+			Vdbe::ExplainPrintf(v, "AGG{%d:%d}", expr->TableId, expr->ColumnId);
 			break; }
 
 		case TK_COLUMN: {
 			if (expr->TableId < 0) // This only happens when coding check constraints
-				Vdbe::ExplainPrintf(v, "COLUMN(%d)", expr->ColumnIdx);
+				Vdbe::ExplainPrintf(v, "COLUMN(%d)", expr->ColumnId);
 			else
-				Vdbe::ExplainPrintf(v, "{%d:%d}", expr->Table, expr->ColumnIdx);
+				Vdbe::ExplainPrintf(v, "{%d:%d}", expr->Table, expr->ColumnId);
 			break; }
 
 		case TK_INTEGER: {
@@ -2247,7 +2247,7 @@ no_mem:
 			break; }
 #endif
 		case TK_VARIABLE: {
-			Vdbe::ExplainPrintf(v, "VARIABLE(%s,%d)", expr->u.Token, expr->ColumnIdx);
+			Vdbe::ExplainPrintf(v, "VARIABLE(%s,%d)", expr->u.Token, expr->ColumnId);
 			break; }
 
 		case TK_REGISTER: {
@@ -2370,7 +2370,7 @@ no_mem:
 			// If the opcode is TK_TRIGGER, then the expression is a reference to a column in the new.* or old.* pseudo-tables available to
 			// trigger programs. In this case Expr.iTable is set to 1 for the new.* pseudo-table, or 0 for the old.* pseudo-table. Expr.iColumn
 			// is set to the column of the pseudo-table to read, or to -1 to read the rowid field.
-			Vdbe::ExplainPrintf(v, "%s(%d)", (expr->TableId ? "NEW" : "OLD"), expr->ColumnIdx);
+			Vdbe::ExplainPrintf(v, "%s(%d)", (expr->TableId ? "NEW" : "OLD"), expr->ColumnId);
 			break; }
 
 		case TK_CASE: {
@@ -2839,7 +2839,7 @@ no_mem:
 		if (Compare(a->Left, b->Left)) return 2;
 		if (Compare(a->Right, b->Right)) return 2;
 		if (ListCompare(a->x.List, b->x.List)) return 2;
-		if (a->TableId != b->TableId || a->ColumnIdx != b->ColumnIdx) return 2;
+		if (a->TableId != b->TableId || a->ColumnId != b->ColumnId) return 2;
 		if (ExprHasProperty(a, EP_IntValue))
 		{
 			if (!ExprHasProperty(b, EP_IntValue) || a->u.I != b->u.I) return 2;
@@ -2953,14 +2953,14 @@ no_mem:
 						int k;
 						AggInfo::AggInfoColumn *col;
 						for (k = 0, col = aggInfo->Columns.data; k < aggInfo->Columns.length; k++, col++)
-							if (col->TableID == expr->TableId && col->Column == expr->ColumnIdx)
+							if (col->TableID == expr->TableId && col->Column == expr->ColumnId)
 								break;
 						if ((k >= aggInfo->Columns.length) && (k = AddAggInfoColumn(ctx, aggInfo)) >= 0)
 						{
 							col = &aggInfo->Columns[k];
 							col->Table = expr->Table;
 							col->TableID = expr->TableId;
-							col->Column = expr->ColumnIdx;
+							col->Column = expr->ColumnId;
 							col->Mem = ++parse->Mems;
 							col->SorterColumn = -1;
 							col->Expr = expr;
@@ -2972,7 +2972,7 @@ no_mem:
 								for (int j = 0; j < n; j++, term++)
 								{
 									Expr *e = term->Expr;
-									if (e->OP == TK_COLUMN && e->TableId == expr->TableId && e->ColumnIdx == expr->ColumnIdx)
+									if (e->OP == TK_COLUMN && e->TableId == expr->TableId && e->ColumnId == expr->ColumnId)
 									{
 										col->SorterColumn = j;
 										break;

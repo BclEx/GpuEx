@@ -122,9 +122,9 @@ namespace Core
 		// Get the VDBE program ready for execution
 		if (v && _ALWAYS(Errs == 0) && !ctx->MallocFailed)
 		{
-#ifdef DEBUG
-			FILE *trace = ((ctx->Flags & BContext::FLAG_VdbeTrace) != 0 ? stdout : 0);
-			v.Trace(trace);
+#ifdef _DEBUG
+			FILE *trace = ((ctx->Flags & BContext::FLAG_VdbeTrace) != 0 ? stdout : nullptr);
+			v->set_Trace(trace);
 #endif
 			_assert(CacheLevel == 0);  // Disables and re-enables match
 			// A minimum of one cursor is required if autoincrement is used See ticket [a696379c1f08866]
@@ -144,12 +144,13 @@ namespace Core
 		CookieGoto = 0;
 	}
 
-	__device__ void Parse::NestedParse(const char *format, va_list *args)
+	__device__ void Parse::NestedParse_(const char *fmt, va_list &args)
 	{
 		if (Errs)
 			return;
 		_assert(Nested < 10); // Nesting should only be of limited depth
-		char *sql = nullptr; //char *sql = sqlite3VMPrintf(ctx, format, args);
+		Context *ctx = Ctx;
+		char *sql = _vmtagprintf(ctx, fmt, &args, nullptr);
 		if (!sql)
 			return; // A malloc must have failed
 		Nested++;
@@ -159,7 +160,6 @@ namespace Core
 		_memset(&VarsSeen, 0, SAVE_SZ);
 		char *errMsg = nullptr;
 		RunParser(sql, &errMsg);
-		Context *ctx = Ctx;
 		_tagfree(ctx, errMsg);
 		_tagfree(ctx, sql);
 		_memcpy((char *)&VarsSeen, saveBuf, SAVE_SZ);
@@ -658,7 +658,7 @@ begin_table_error:
 		return;
 	}
 
-	#define FSTRCMP(x, y) (__curtCtypeMap[*(unsigned char *)(x)] == __curtCtypeMap[*(unsigned char *)(y)] && !_strcmp((x)+1,(y)+1))
+#define FSTRCMP(x, y) (__curtCtypeMap[*(unsigned char *)(x)] == __curtCtypeMap[*(unsigned char *)(y)] && !_strcmp((x)+1,(y)+1))
 	__device__ void Parse::AddColumn(Token *name)
 	{
 		Table *table;

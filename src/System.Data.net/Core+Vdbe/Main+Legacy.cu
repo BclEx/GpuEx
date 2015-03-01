@@ -77,7 +77,7 @@ namespace Core
 
 				if (rc != RC_ROW)
 				{
-					stmt->Finalize2();
+					rc = stmt->Finalize2();
 					stmt = nullptr;
 					if (rc != RC_SCHEMA)
 					{

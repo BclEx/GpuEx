@@ -266,7 +266,7 @@ namespace Core
 			rc = RC_NOMEM;
 			Parse::ResetAllSchemasOfConnection(ctx);
 		}
-		if (rc == RC_OK || (ctx->Flags&Context::FLAG_RecoveryMode))
+		if (rc == RC_OK || (ctx->Flags & Context::FLAG_RecoveryMode) != 0)
 		{
 			// Black magic: If the SQLITE_RecoveryMode flag is set, then consider the schema loaded, even if errors occurred. In this situation the 
 			// current sqlite3_prepare() operation will fail, but the following one will attempt to compile the supplied statement against whatever subset

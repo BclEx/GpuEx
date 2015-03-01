@@ -568,7 +568,6 @@ namespace Core
 	};
 	__device__ inline void operator|=(NC &a, int b) { a = (NC)(a | b); }
 	__device__ inline void operator&=(NC &a, int b) { a = (NC)(a & b); }
-	__device__ inline NC operator~(NC a) { return (NC)(~(int)a); }
 
 	struct NameContext
 	{
@@ -595,11 +594,10 @@ namespace Core
 		SF_Materialize = 0x0100,	// Force materialization of views
 		SF_NestedFrom = 0x0200,		// Part of a parenthesized FROM clause
 	};
-	__device__ inline void operator|=(SF &a, SF b) { a = (SF)(a | b); }
-	__device__ inline void operator&=(SF &a, SF b) { a = (SF)(a & b); }
+	__device__ inline void operator|=(SF &a, int b) { a = (SF)(a | b); }
+	__device__ inline void operator&=(SF &a, int b) { a = (SF)(a & b); }
 	__device__ inline SF operator|(SF a, SF b) { return (SF)((int)a | (int)b); }
 	__device__ inline SF operator&(SF a, SF b) { return (SF)((int)a & (int)b); }
-	__device__ inline SF operator~(SF a) { return (SF)(~(int)a); }
 
 	enum SRT : uint8
 	{
@@ -735,7 +733,7 @@ namespace Core
 		int TableId;            
 		// TK_COLUMN: column index.  -1 for rowid.
 		// TK_VARIABLE: variable number (always >= 1).
-		yVars ColumnIdx;
+		yVars ColumnId;
 		int16 Agg;					// Which entry in pAggInfo->aCol[] or ->aFunc[]
 		int16 RightJoinTable;		// If EP_FromJoin, the right table of the join
 		EP2 Flags2;					// Second set of flags.  EP2_...
@@ -1089,21 +1087,21 @@ namespace Core
 		TriggerPrg *TriggerPrg;		// Linked list of coded triggers
 
 #pragma region From: Main_c
-		__device__ void ErrorMsg(const char *fmt, va_list *args);
+		__device__ void ErrorMsg_(const char *fmt, va_list &args);
 #if __CUDACC__
-		__device__ inline void ErrorMsg(const char *fmt) { va_list0 args; va_start(args); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1> __device__ inline void ErrorMsg(const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); ErrorMsg(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); ErrorMsg(fmt, &args); va_end(args); }
+		__device__ inline void ErrorMsg(const char *fmt) { va_list args; va_start(args); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1> __device__ inline void ErrorMsg(const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); ErrorMsg_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void ErrorMsg(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); ErrorMsg_(fmt, args); va_end(args); }
 #else
-		__device__ inline void ErrorMsg(const char *fmt, ...) { va_list args; va_start(args, fmt); ErrorMsg(fmt, &args); va_end(args); }
+		__device__ inline void ErrorMsg(const char *fmt, ...) { va_list args; va_start(args, fmt); ErrorMsg_(fmt, args); va_end(args); }
 #endif
 #pragma endregion
 
@@ -1117,21 +1115,21 @@ namespace Core
 		__device__ void TableLock(int db, int table, bool isWriteLock, const char *name);
 #endif
 		__device__ void FinishCoding();
-		__device__ void NestedParse(const char *fmt, va_list *args);
+		__device__ void NestedParse_(const char *fmt, va_list &args);
 #if __CUDACC__
-		__device__ inline void NestedParse(const char *fmt) { va_list0 args; va_start(args); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1> __device__ inline void NestedParse(const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); NestedParse(fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); NestedParse(fmt, &args); va_end(args); }
+		__device__ inline void NestedParse(const char *fmt) { va_list args; va_start(args); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1> __device__ inline void NestedParse(const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); NestedParse_(fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void NestedParse(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); NestedParse_(fmt, args); va_end(args); }
 #else
-		__device__ inline void NestedParse(const char *fmt, ...) { va_list args; va_start(args, fmt); NestedParse(fmt, &args); va_end(args); }
+		__device__ inline void NestedParse(const char *fmt, ...) { va_list args; va_start(args, fmt); NestedParse_(fmt, args); va_end(args); }
 #endif
 		__device__ static Table *FindTable(Context *ctx, const char *name, const char *dbName);
 		__device__ Table *LocateTable(bool isView, const char *name, const char *dbName);
@@ -1704,21 +1702,21 @@ namespace Core {
 			return (RC)(rc & (ctx ? ctx->ErrMask : 0xff));
 		}
 
-		__device__ static void Error(Context *ctx, RC errCode, const char *fmt, va_list *args);
+		__device__ static void Error_(Context *ctx, RC errCode, const char *fmt, va_list &args);
 #if __CUDACC__
-		__device__ inline static void Error(Context *ctx, RC errCode, const char *fmt) { va_list0 args; va_start(args); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); Error(ctx, errCode, fmt, &args); va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); Error(ctx, errCode, fmt, &args); va_end(args); }
+		__device__ inline static void Error(Context *ctx, RC errCode, const char *fmt) { va_list args; va_start(args); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); Error_(ctx, errCode, fmt, args); va_end(args); }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline static void Error(Context *ctx, RC errCode, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); Error_(ctx, errCode, fmt, args); va_end(args); }
 #else
-		__device__ inline void static Error(Context *ctx, RC errCode, const char *fmt, ...) { va_list args; va_start(args, fmt); Error(ctx, errCode, fmt, &args); va_end(args); }
+		__device__ inline void static Error(Context *ctx, RC errCode, const char *fmt, ...) { va_list args; va_start(args, fmt); Error_(ctx, errCode, fmt, args); va_end(args); }
 #endif
 		__device__ static bool SafetyCheckOk(Context *ctx);
 		__device__ static bool SafetyCheckSickOrOk(Context *ctx);
@@ -1769,16 +1767,16 @@ namespace Core {
 			CONFIG_GETPCACHE2 = 19,				// sqlite3_pcache_methods2*
 			CONFIG_COVERING_INDEX_SCAN = 20,	// int
 		};
-		__device__ static RC Config(CONFIG op, va_list &args);
+		__device__ static RC Config_(CONFIG op, va_list &args);
 #if __CUDACC__
-		__device__ inline static RC Config(CONFIG op) { va_list0 args; va_start(args); RC r = Config(op, args); va_end(args); return r; }
-		template <typename T1> __device__ inline static RC Config(CONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = Config(op, args); va_end(args); return r; }
-		template <typename T1, typename T2> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = Config(op, args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = Config(op, args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = Config(op, args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = Config(op, args); va_end(args); return r; }
+		__device__ inline static RC Config(CONFIG op) { va_list0 args; va_start(args); RC r = Config_(op, args); va_end(args); return r; }
+		template <typename T1> __device__ inline static RC Config(CONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = Config_(op, args); va_end(args); return r; }
+		template <typename T1, typename T2> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = Config_(op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = Config_(op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = Config_(op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = Config_(op, args); va_end(args); return r; }
 #else
-		__device__ inline static RC Config(CONFIG op, ...) { va_list args; va_start(args, op); RC r = Config(op, args); va_end(args); return r; }
+		__device__ inline static RC Config(CONFIG op, ...) { va_list args; va_start(args, op); RC r = Config_(op, args); va_end(args); return r; }
 #endif
 
 		enum CTXCONFIG
@@ -1787,16 +1785,16 @@ namespace Core {
 			CTXCONFIG_ENABLE_FKEY = 1002,  // int int*
 			CTXCONFIG_ENABLE_TRIGGER = 1003,  // int int*
 		};
-		__device__ static RC CtxConfig(Context *ctx, CTXCONFIG op, va_list &args);
+		__device__ static RC CtxConfig_(Context *ctx, CTXCONFIG op, va_list &args);
 #if __CUDACC__
-		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op) { va_list0 args; va_start(args); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
-		template <typename T1> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
-		template <typename T1, typename T2> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
+		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op) { va_list0 args; va_start(args); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
+		template <typename T1> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
 #else
-		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, ...) { va_list args; va_start(args, op); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
+		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, ...) { va_list args; va_start(args, op); RC r = CtxConfig_(ctx, op, args); va_end(args); return r; }
 #endif
 
 #pragma endregion

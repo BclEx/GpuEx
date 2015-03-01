@@ -31,7 +31,7 @@ namespace Core
             if ((op == TK.AGG_COLUMN || op == TK.COLUMN || op == TK.REGISTER) && expr.Table != null)
             {
                 // op == TK_REGISTER && expr->Table happens when pExpr was originally a TK_COLUMN but was previously evaluated and cached in a register
-                int j = expr.ColumnIdx;
+                int j = expr.ColumnId;
                 if (j < 0)
                     return AFF.INTEGER;
                 Debug.Assert(expr.Table != null && j < expr.Table.Cols.length);
@@ -98,7 +98,7 @@ namespace Core
                 if (p.Table != null && (op == TK.AGG_COLUMN || op == TK.COLUMN || op == TK.REGISTER || op == TK.TRIGGER))
                 {
                     // op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally a TK_COLUMN but was previously evaluated and cached in a register
-                    int j = p.ColumnIdx;
+                    int j = p.ColumnId;
                     if (j >= 0)
                     {
                         string nameColl = p.Table.Cols[j].Coll;
@@ -424,7 +424,7 @@ namespace Core
             {
                 Debug.Assert(z[0] == '?');
                 // Wildcard of the form "?".  Assign the next variable number
-                expr.ColumnIdx = (yVars)(++parse.VarsSeen);
+                expr.ColumnId = (yVars)(++parse.VarsSeen);
             }
             else
             {
@@ -435,7 +435,7 @@ namespace Core
                     // Wildcard of the form "?nnn".  Convert "nnn" to an integer and use it as the variable number
                     long i = 0;
                     bool ok = !ConvertEx.Atoi64(z.Substring(1), out i, length - 1, TEXTENCODE.UTF8);
-                    expr.ColumnIdx = x = (yVars)i;
+                    expr.ColumnId = x = (yVars)i;
                     C.ASSERTCOVERAGE(i == 0);
                     C.ASSERTCOVERAGE(i == 1);
                     C.ASSERTCOVERAGE(i == ctx.Limits[(int)LIMIT.VARIABLE_NUMBER] - 1);
@@ -457,12 +457,12 @@ namespace Core
                     {
                         if (parse.Vars[i] != null && string.Equals(z, parse.Vars[i], StringComparison.OrdinalIgnoreCase))
                         {
-                            expr.ColumnIdx = x = (yVars)(i + 1);
+                            expr.ColumnId = x = (yVars)(i + 1);
                             break;
                         }
                     }
                     if (x == 0)
-                        expr.ColumnIdx = x = (yVars)(++parse.VarsSeen);
+                        expr.ColumnId = x = (yVars)(++parse.VarsSeen);
                 }
                 if (x > 0)
                 {
@@ -954,7 +954,7 @@ namespace Core
                 case TK.COLUMN:
                     {
                         Debug.Assert(expr.TableId >= 0); // p cannot be part of a CHECK constraint
-                        return expr.ColumnIdx < 0 && (aff == AFF.INTEGER || aff == AFF.NUMERIC);
+                        return expr.ColumnId < 0 && (aff == AFF.INTEGER || aff == AFF.NUMERIC);
                     }
                 default: return false;
             }
@@ -1022,7 +1022,7 @@ namespace Core
                 Context ctx = parse.Ctx; // Database connection
                 Table table = select.Src.Ids[0].Table; // Table <table>.
                 Expr expr2 = select.EList.Ids[0].Expr; // Expression <column>
-                int col = expr2.ColumnIdx; // Index of column <column>
+                int col = expr2.ColumnId; // Index of column <column>
 
                 // Code an OP_VerifyCookie and OP_TableLock for <table>.
                 int db = SchemaToIndex(ctx, table.Schema); // Database idx for pTab
@@ -1080,7 +1080,7 @@ namespace Core
                 {
                     C.ASSERTCOVERAGE(parse.QueryLoops > (double)1);
                     parse.QueryLoops = (double)1;
-                    if (expr.Left.ColumnIdx < 0 && !E.ExprHasAnyProperty(expr, EP.xIsSelect))
+                    if (expr.Left.ColumnId < 0 && !E.ExprHasAnyProperty(expr, EP.xIsSelect))
                         type = IN_INDEX.ROWID;
                 }
                 CodeSubselect(parse, expr, mayHaveNull, type == IN_INDEX.ROWID);
@@ -1630,10 +1630,10 @@ namespace Core
                         {
                             // This only happens when coding check constraints
                             Debug.Assert(parse.CkBase > 0);
-                            inReg = expr.ColumnIdx + parse.CkBase;
+                            inReg = expr.ColumnId + parse.CkBase;
                         }
                         else
-                            inReg = CodeGetColumn(parse, expr.Table, expr.ColumnIdx, expr.TableId, target, (byte)expr->OP2);
+                            inReg = CodeGetColumn(parse, expr.Table, expr.ColumnId, expr.TableId, target, (byte)expr->OP2);
                         break;
                     }
 
@@ -1685,11 +1685,11 @@ namespace Core
                         Debug.Assert(!E.ExprHasProperty(expr, EP.IntValue));
                         Debug.Assert(expr.u.Token != null);
                         Debug.Assert(expr.u.Token.Length != 0);
-                        v.AddOp2(OP.Variable, expr.ColumnIdx, target);
+                        v.AddOp2(OP.Variable, expr.ColumnId, target);
                         if (expr.u.Token.Length > 1)
                         {
-                            Debug.Assert(expr.u.Token[0] == '?' || string.Equals(expr.u.Token, parse.Vars[expr.ColumnIdx - 1], StringComparison.OrdinalIgnoreCase));
-                            v.ChangeP4(-1, parse.Vars[expr.ColumnIdx - 1], Vdbe.P4T.STATIC);
+                            Debug.Assert(expr.u.Token[0] == '?' || string.Equals(expr.u.Token, parse.Vars[expr.ColumnId - 1], StringComparison.OrdinalIgnoreCase));
+                            v.ChangeP4(-1, parse.Vars[expr.ColumnId - 1], Vdbe.P4T.STATIC);
                         }
                         break;
                     }
@@ -2058,18 +2058,18 @@ namespace Core
                         //   p1==1   ->    old.a         p1==4   ->    new.a
                         //   p1==2   ->    old.b         p1==5   ->    new.b  
                         Table table = expr.Table;
-                        int p1 = expr.TableId * (table.Cols.length + 1) + 1 + expr.ColumnIdx;
+                        int p1 = expr.TableId * (table.Cols.length + 1) + 1 + expr.ColumnId;
                         Debug.Assert(expr.TableId == 0 || expr.TableId == 1);
-                        Debug.Assert(expr.ColumnIdx >= -1 && expr.ColumnIdx < table.Cols.length);
-                        Debug.Assert(table.PKey < 0 || expr.ColumnIdx != table.PKey);
+                        Debug.Assert(expr.ColumnId >= -1 && expr.ColumnId < table.Cols.length);
+                        Debug.Assert(table.PKey < 0 || expr.ColumnId != table.PKey);
                         Debug.Assert(p1 >= 0 && p1 < (table.Cols.length * 2 + 2)); //? Is this suppose to be different
 
                         v.AddOp2(OP.Param, p1, target);
-                        VdbeComment(v, "%s.%s -> $%d", (expr.TableId != 0 ? "new" : "old"), (expr.ColumnIdx < 0 ? "rowid" : expr.Table.Cols[expr.ColumnIdx].Name), target);
+                        VdbeComment(v, "%s.%s -> $%d", (expr.TableId != 0 ? "new" : "old"), (expr.ColumnId < 0 ? "rowid" : expr.Table.Cols[expr.ColumnId].Name), target);
 
 #if !OMIT_FLOATING_POINT
                         // If the column has REAL affinity, it may currently be stored as an integer. Use OP_RealAffinity to make sure it is really real.
-                        if (expr.ColumnIdx >= 0 && table.Cols[expr.ColumnIdx].Affinity == AFF.REAL)
+                        if (expr.ColumnId >= 0 && table.Cols[expr.ColumnId].Affinity == AFF.REAL)
                             v.AddOp1(OP.RealAffinity, target);
 #endif
                         break;
@@ -2241,16 +2241,16 @@ namespace Core
             {
                 case TK.AGG_COLUMN:
                     {
-                        Vdbe.ExplainPrintf(v, "AGG{%d:%d}", expr.TableId, expr.ColumnIdx);
+                        Vdbe.ExplainPrintf(v, "AGG{%d:%d}", expr.TableId, expr.ColumnId);
                         break;
                     }
 
                 case TK.COLUMN:
                     {
                         if (expr.TableId < 0) // This only happens when coding check constraints
-                            Vdbe.ExplainPrintf(v, "COLUMN(%d)", expr.ColumnIdx);
+                            Vdbe.ExplainPrintf(v, "COLUMN(%d)", expr.ColumnId);
                         else
-                            Vdbe.ExplainPrintf(v, "{%d:%d}", expr.Table, expr.ColumnIdx);
+                            Vdbe.ExplainPrintf(v, "{%d:%d}", expr.Table, expr.ColumnId);
                         break;
                     }
 
@@ -2291,7 +2291,7 @@ namespace Core
 #endif
                 case TK.VARIABLE:
                     {
-                        Vdbe.ExplainPrintf(v, "VARIABLE(%s,%d)", expr.u.Token, expr.ColumnIdx);
+                        Vdbe.ExplainPrintf(v, "VARIABLE(%s,%d)", expr.u.Token, expr.ColumnId);
                         break;
                     }
 
@@ -2434,7 +2434,7 @@ namespace Core
                         // If the opcode is TK_TRIGGER, then the expression is a reference to a column in the new.* or old.* pseudo-tables available to
                         // trigger programs. In this case Expr.iTable is set to 1 for the new.* pseudo-table, or 0 for the old.* pseudo-table. Expr.iColumn
                         // is set to the column of the pseudo-table to read, or to -1 to read the rowid field.
-                        Vdbe.ExplainPrintf(v, "%s(%d)", (expr.TableId ? "NEW" : "OLD"), expr.ColumnIdx);
+                        Vdbe.ExplainPrintf(v, "%s(%d)", (expr.TableId ? "NEW" : "OLD"), expr.ColumnId);
                         break;
                     }
 
@@ -2940,7 +2940,7 @@ namespace Core
             if (Compare(a.Left, b.Left) != 0) return 2;
             if (Compare(a.Right, b.Right) != 0) return 2;
             if (ListCompare(a.x.List, b.x.List) != 0) return 2;
-            if (a.TableId != b.TableId || a.ColumnIdx != b.ColumnIdx) return 2;
+            if (a.TableId != b.TableId || a.ColumnId != b.ColumnId) return 2;
             if (E.ExprHasProperty(a, EP.IntValue))
             {
                 if (!E.ExprHasProperty(b, EP.IntValue) || a.u.I != b.u.I) return 2;
@@ -3054,14 +3054,14 @@ namespace Core
                                     int k;
                                     AggInfo.AggInfoColumn col;
                                     for (k = 0, col = aggInfo.Columns.data[0]; k < aggInfo.Columns.length; k++, col = aggInfo.Columns.data[k])
-                                        if (col.TableID == expr.TableId && col.Column == expr.ColumnIdx)
+                                        if (col.TableID == expr.TableId && col.Column == expr.ColumnId)
                                             break;
                                     if ((k >= aggInfo->Columns.length) && (k = AddAggInfoColumn(ctx, aggInfo)) >= 0)
                                     {
                                         col = aggInfo.Cols[k];
                                         col.Table = expr.Table;
                                         col.TableID = expr.TableId;
-                                        col.Column = expr.ColumnIdx;
+                                        col.Column = expr.ColumnId;
                                         col.Mem = ++parse.Mems;
                                         col.SorterColumn = -1;
                                         col.Expr = expr;

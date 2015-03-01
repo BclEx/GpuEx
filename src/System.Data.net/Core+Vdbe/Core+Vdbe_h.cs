@@ -650,7 +650,7 @@ namespace Core
         public int TableId;
         // TK_COLUMN: column index.  -1 for rowid.
         // TK_VARIABLE: variable number (always >= 1).
-        public yVars ColumnIdx;
+        public yVars ColumnId;
         public short Agg;					// Which entry in pAggInfo->aCol[] or ->aFunc[]
         public short RightJoinTable;		// If EP_FromJoin, the right table of the join
         public EP2 Flags2;					// Second set of flags.  EP2_...
@@ -679,7 +679,7 @@ namespace Core
             p.Height = Height;
 #endif
             p.TableId = TableId;
-            p.ColumnIdx = ColumnIdx;
+            p.ColumnId = ColumnId;
             p.Agg = Agg;
             p.RightJoinTable = RightJoinTable;
             p.Flags2 = Flags2;

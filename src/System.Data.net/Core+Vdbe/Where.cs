@@ -437,11 +437,11 @@ namespace Core
                                 Expr x = term.Expr.Right.SkipCollate();
                                 Debug.Assert(x.OP == TK.COLUMN);
                                 for (j = 0; j < equivsLength; j += 2)
-                                    if (equivs[j] == x.TableId && equivs[j + 1] == x.ColumnIdx) break;
+                                    if (equivs[j] == x.TableId && equivs[j + 1] == x.ColumnId) break;
                                 if (j == equivsLength)
                                 {
                                     equivs[j] = x.TableId;
-                                    equivs[j + 1] = x.ColumnIdx;
+                                    equivs[j + 1] = x.ColumnId;
                                     equivsLength += 2;
                                 }
                             }
@@ -475,7 +475,7 @@ namespace Core
             Expr left = list.Ids[1].Expr; // Right and left size of LIKE operator
             if (left.OP != TK.COLUMN || left.Affinity() != AFF.TEXT || E.IsVirtual(left.Table))
                 return 0; // IMP: R-02065-49465 The left-hand side of the LIKE or GLOB operator must be the name of an indexed column with TEXT affinity.
-            Debug.Assert(left.ColumnIdx != -1); // Because IPK never has AFF_TEXT
+            Debug.Assert(left.ColumnId != -1); // Because IPK never has AFF_TEXT
 
             Expr right = list.Ids[0].Expr; // Right and left size of LIKE operator
             TK op = right.OP; // Opcode of pRight
@@ -485,7 +485,7 @@ namespace Core
             if (op == TK.VARIABLE)
             {
                 Vdbe reprepare = parse.Reprepare;
-                int column = right.ColumnIdx;
+                int column = right.ColumnId;
                 val = Vdbe.GetValue(reprepare, column, (byte)AFF.NONE);
                 if (val != null && Vdbe.Value_Type(val) == TYPE.TEXT)
                     z = Vdbe.Value_Text(val);
@@ -509,7 +509,7 @@ namespace Core
                     if (op == TK.VARIABLE)
                     {
                         Vdbe v = parse.V;
-                        Vdbe.SetVarmask(v, right.ColumnIdx); // IMP: R-23257-02778
+                        Vdbe.SetVarmask(v, right.ColumnId); // IMP: R-23257-02778
                         if (isComplete && right.u.Token.Length > 1)
                         {
                             // If the rhs of the LIKE expression is a variable, and the current value of the variable means there is no need to invoke the LIKE
@@ -793,7 +793,7 @@ namespace Core
                 if (left.OP == TK.COLUMN)
                 {
                     term.LeftCursor = left.TableId;
-                    term.u.LeftColumn = left.ColumnIdx;
+                    term.u.LeftColumn = left.ColumnId;
                     term.EOperator = OperatorMask(op) & opMask;
                 }
                 if (right != null && right.OP == TK.COLUMN)
@@ -830,7 +830,7 @@ namespace Core
                     ExprCommute(parse, dup);
                     left = dup.Left;
                     newTerm.LeftCursor = left.TableId;
-                    newTerm.u.LeftColumn = left.ColumnIdx;
+                    newTerm.u.LeftColumn = left.ColumnId;
                     C.ASSERTCOVERAGE((prereqLeft | extraRight) != prereqLeft);
                     newTerm.PrereqRight = prereqLeft | extraRight;
                     newTerm.PrereqAll = prereqAll;
@@ -942,7 +942,7 @@ namespace Core
                     WhereTerm newTerm = wc.Slots[idxNew];
                     newTerm.PrereqRight = prereqExpr;
                     newTerm.LeftCursor = left.TableId;
-                    newTerm.u.LeftColumn = left.ColumnIdx;
+                    newTerm.u.LeftColumn = left.ColumnId;
                     newTerm.EOperator = WO.MATCH;
                     newTerm.Parent = idxTerm;
                     term = wc.Slots[idxTerm];
@@ -958,7 +958,7 @@ namespace Core
             //
             // Note that the virtual term must be tagged with TERM_VNULL.  This TERM_VNULL tag will suppress the not-null check at the beginning
             // of the loop.  Without the TERM_VNULL flag, the not-null check at the start of the loop will prevent any results from being returned.
-            if (expr.OP == TK.NOTNULL && expr.Left.OP == TK.COLUMN && expr.Left.ColumnIdx >= 0)
+            if (expr.OP == TK.NOTNULL && expr.Left.OP == TK.COLUMN && expr.Left.ColumnId >= 0)
             {
                 Expr left = expr.Left;
                 Expr newExpr = Expr.PExpr_(parse, TK.GT, Expr.Dup(ctx, left, 0), Expr.PExpr_(parse, TK.NULL, 0, 0, 0), 0);
@@ -968,7 +968,7 @@ namespace Core
                     WhereTerm newTerm = wc.Slots[idxNew];
                     newTerm.PrereqRight = 0;
                     newTerm.LeftCursor = left.TableId;
-                    newTerm.u.LeftColumn = left.ColumnIdx;
+                    newTerm.u.LeftColumn = left.ColumnId;
                     newTerm.EOperator = WO.GT;
                     newTerm.Parent = idxTerm;
                     term = wc.Slots[idxTerm];
@@ -989,7 +989,7 @@ namespace Core
             for (int i = 0; i < list.Exprs; i++)
             {
                 Expr expr = list.Ids[i].Expr.SkipCollate();
-                if (expr.OP == TK.COLUMN && expr.ColumnIdx == index.Columns[column] && expr.TableId == baseId)
+                if (expr.OP == TK.COLUMN && expr.ColumnId == index.Columns[column] && expr.TableId == baseId)
                 {
                     CollSeq coll = list.Ids[i].Expr.CollSeq(parse);
                     if (C._ALWAYS(coll != null) && string.Equals(coll.Name, collName))
@@ -1015,7 +1015,7 @@ namespace Core
             {
                 Expr expr = distinct.Ids[i].Expr.SkipCollate();
                 if (expr.OP != TK.COLUMN) return false;
-                WhereTerm term = FindTerm(wc, expr.TableId, expr.ColumnIdx, ~(Bitmask)0, WO.EQ, 0);
+                WhereTerm term = FindTerm(wc, expr.TableId, expr.ColumnId, ~(Bitmask)0, WO.EQ, 0);
                 if (term != null)
                 {
                     Expr x = term.Expr;
@@ -1049,7 +1049,7 @@ namespace Core
             for (i = 0; i < distinct.Exprs; i++)
             {
                 Expr expr = distinct.Ids[i].Expr.SkipCollate();
-                if (expr.OP == TK.COLUMN && expr.TableId == baseId && expr.ColumnIdx < 0) return true;
+                if (expr.OP == TK.COLUMN && expr.TableId == baseId && expr.ColumnId < 0) return true;
             }
 
             // Loop through all indices on the table, checking each to see if it makes the DISTINCT qualifier redundant. It does so if:
@@ -1486,7 +1486,7 @@ namespace Core
                 Expr expr = orderBy.Ids[i].Expr;
                 if (idxOrderBy[i] == null)
                     idxOrderBy[i] = new IIndexInfo.Orderby();
-                idxOrderBy[i].Column = expr.ColumnIdx;
+                idxOrderBy[i].Column = expr.ColumnId;
                 idxOrderBy[i].Desc = (orderBy.Ids[i].SortOrder != 0);
             }
             return idxInfo;
@@ -1794,7 +1794,7 @@ namespace Core
         {
             if (expr.OP == TK.VARIABLE || (expr.OP == TK.REGISTER && expr.OP2 == TK.VARIABLE))
             {
-                int varId = expr.ColumnIdx;
+                int varId = expr.ColumnId;
                 parse.V.SetVarmask(varId);
                 val = parse.Reprepare.GetValue(varId, aff);
                 return RC.OK;
@@ -2032,7 +2032,7 @@ namespace Core
                 // Check to see if the column number and collating sequence of the index match the column number and collating sequence of the ORDER BY
                 // clause entry.  Set isMatch to 1 if they both match.
                 bool isMatch; // ORDER BY term matches the index term
-                if (obExpr.ColumnIdx != column)
+                if (obExpr.ColumnId != column)
                 {
                     if (collName != null)
                     {
@@ -2062,8 +2062,8 @@ namespace Core
                     Expr right = constraint.Expr.Right;
                     if (right.OP == TK.COLUMN)
                     {
-                        WHERETRACE("       .. isOrderedColumn(tab=%d,col=%d)", right.TableId, right.ColumnIdx);
-                        isEq = IsOrderedColumn(p, right.TableId, right.ColumnIdx);
+                        WHERETRACE("       .. isOrderedColumn(tab=%d,col=%d)", right.TableId, right.ColumnId);
+                        isEq = IsOrderedColumn(p, right.TableId, right.ColumnId);
                         WHERETRACE(" -> isEq=%d\n", isEq);
                         // If the constraint is of the form X=Y where Y is an ordered value in an outer loop, then make sure the sort order of Y matches the
                         // sort order required for X.

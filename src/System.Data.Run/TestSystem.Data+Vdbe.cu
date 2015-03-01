@@ -5,14 +5,20 @@ __device__ static bool MyCallback(void *args, int argsLength, char **args2, char
 	return true;
 }
 
+//__device__ static void Trace(void *args, const char *text)
+//{
+//	printf(text);
+//}
+
 __device__ static void TestDB()
 {
 	//SysEx_LOG(RC_OK, "START\n");
-	ParserTrace(stderr, "p: ");
+	//ParserTrace(stderr, "p: ");
 
 	// open
 	Context *ctx;
 	Main::Open("C:\\T_\\Test2.db", &ctx);
+	//ctx->Trace = Trace;
 
 	// run query
 	char *errMsg = nullptr;

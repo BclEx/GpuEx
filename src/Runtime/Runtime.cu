@@ -356,7 +356,7 @@ __device__ void TextBuilder::AppendSpace(int length)
 }
 
 __constant__ static const char _ord[] = "thstndrd";
-__device__ void TextBuilder::AppendFormat(bool useExtended, const char *fmt, va_list &args) //: was: vxprintf
+__device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va_list &args) //: was: vxprintf
 {
 	char buf[BUFSIZE]; // Conversion buffer
 	char *bufpt = nullptr; // Pointer to the conversion buffer
@@ -932,7 +932,7 @@ __device__ char *_vmtagprintf(void *tag, const char *fmt, va_list *args, int *le
 	TextBuilder b;
 	TextBuilder::Init(&b, base, sizeof(base), 0); //? tag->Limit[LIMIT_LENGTH]);
 	b.Tag = tag;
-	b.AppendFormat(true, fmt, *args);
+	b.AppendFormat_(true, fmt, *args);
 	if (length) *length = b.Index;
 	char *z = b.ToString();
 	//? if (b.AllocFailed) _tagallocfailed(tag);
@@ -946,7 +946,7 @@ __device__ char *_vmprintf(const char *fmt, va_list *args, int *length)
 	TextBuilder b;
 	TextBuilder::Init(&b, base, sizeof(base), CORE_MAX_LENGTH);
 	b.AllocType = 2;
-	b.AppendFormat(false, fmt, *args);
+	b.AppendFormat_(false, fmt, *args);
 	if (length) *length = b.Index;
 	return b.ToString();
 }
@@ -957,7 +957,7 @@ __device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, va
 	TextBuilder b;
 	TextBuilder::Init(&b, (char *)buf, (int)bufLen, 0);
 	b.AllocType = 0;
-	b.AppendFormat(false, fmt, *args);
+	b.AppendFormat_(false, fmt, *args);
 	if (length) *length = b.Index;
 	return b.ToString();
 }

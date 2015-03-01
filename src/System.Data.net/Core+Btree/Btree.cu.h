@@ -120,7 +120,7 @@ namespace Core
 		__device__ RC Rollback(RC tripCode);
 		__device__ RC BeginStmt(int statement);
 		__device__ RC CreateTable(int *tableID, int flags);
-		__device__ bool IsInTrans();
+		__device__ bool IsInTrans(); // need to test != nullptr
 		__device__ bool IsInReadTrans();
 		__device__ bool IsInBackup();
 		__device__ Schema *Schema(int bytes, void (*free)(void *));

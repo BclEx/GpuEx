@@ -428,11 +428,11 @@ namespace Core
 							Expr *x = term->Expr->Right->SkipCollate();
 							_assert(x->OP == TK_COLUMN);
 							for (j = 0; j < equivsLength; j+=2)
-								if (equivs[j] == x->TableId && equivs[j+1] == x->ColumnIdx) break;
+								if (equivs[j] == x->TableId && equivs[j+1] == x->ColumnId) break;
 							if (j == equivsLength)
 							{
 								equivs[j] = x->TableId;
-								equivs[j+1] = x->ColumnIdx;
+								equivs[j+1] = x->ColumnId;
 								equivsLength += 2;
 							}
 						}
@@ -467,7 +467,7 @@ findTerm_success:
 		Expr *left = list->Ids[1].Expr; // Right and left size of LIKE operator
 		if (left->OP != TK_COLUMN || left->Affinity() != AFF_TEXT || IsVirtual(left->Table))
 			return 0; // IMP: R-02065-49465 The left-hand side of the LIKE or GLOB operator must be the name of an indexed column with TEXT affinity.
-		_assert(left->ColumnIdx != -1); // Because IPK never has AFF_TEXT
+		_assert(left->ColumnId != -1); // Because IPK never has AFF_TEXT
 
 		Expr *right = list->Ids[0].Expr; // Right and left size of LIKE operator
 		int op = right->OP; // Opcode of pRight
@@ -477,7 +477,7 @@ findTerm_success:
 		if (op == TK_VARIABLE)
 		{
 			Vdbe *reprepare = parse->Reprepare;
-			int column = right->ColumnIdx;
+			int column = right->ColumnId;
 			val = reprepare->GetValue(column, AFF_NONE);
 			if (val && Vdbe::Value_Type(val) == TYPE_TEXT)
 				z = (char *)Vdbe::Value_Type(val);
@@ -500,7 +500,7 @@ findTerm_success:
 				if (op == TK_VARIABLE)
 				{
 					Vdbe *v = parse->V;
-					v->SetVarmask(right->ColumnIdx);
+					v->SetVarmask(right->ColumnId);
 					if (*isComplete && right->u.Token[1])
 					{
 						// If the rhs of the LIKE expression is a variable, and the current value of the variable means there is no need to invoke the LIKE
@@ -783,7 +783,7 @@ findTerm_success:
 			if (left->OP == TK_COLUMN)
 			{
 				term->LeftCursor = left->TableId;
-				term->u.LeftColumn = left->ColumnIdx;
+				term->u.LeftColumn = left->ColumnId;
 				term->EOperator = OperatorMask(op) & opMask;
 			}
 			if (right && right->OP == TK_COLUMN)
@@ -821,7 +821,7 @@ findTerm_success:
 				ExprCommute(parse, dup);
 				left = dup->Left->SkipCollate();
 				newTerm->LeftCursor = left->TableId;
-				newTerm->u.LeftColumn = left->ColumnIdx;
+				newTerm->u.LeftColumn = left->ColumnId;
 				ASSERTCOVERAGE((prereqLeft | extraRight) != prereqLeft);
 				newTerm->PrereqRight = prereqLeft | extraRight;
 				newTerm->PrereqAll = prereqAll;
@@ -936,7 +936,7 @@ findTerm_success:
 				WhereTerm *newTerm = &wc->Slots[idxNew];
 				newTerm->PrereqRight = prereqExpr;
 				newTerm->LeftCursor = left->TableId;
-				newTerm->u.LeftColumn = left->ColumnIdx;
+				newTerm->u.LeftColumn = left->ColumnId;
 				newTerm->EOperator = WO_MATCH;
 				newTerm->Parent = idxTerm;
 				term = &wc->Slots[idxTerm];
@@ -952,7 +952,7 @@ findTerm_success:
 		//
 		// Note that the virtual term must be tagged with TERM_VNULL.  This TERM_VNULL tag will suppress the not-null check at the beginning
 		// of the loop.  Without the TERM_VNULL flag, the not-null check at the start of the loop will prevent any results from being returned.
-		if (expr->OP == TK_NOTNULL && expr->Left->OP == TK_COLUMN && expr->Left->ColumnIdx >= 0)
+		if (expr->OP == TK_NOTNULL && expr->Left->OP == TK_COLUMN && expr->Left->ColumnId >= 0)
 		{
 			Expr *left = expr->Left;
 			Expr *newExpr = Expr::PExpr_(parse, TK_GT, Expr::Dup(ctx, left, 0), Expr::PExpr_(parse, TK_NULL, 0, 0, 0), 0);
@@ -962,7 +962,7 @@ findTerm_success:
 				WhereTerm *newTerm = &wc->Slots[idxNew];
 				newTerm->PrereqRight = 0;
 				newTerm->LeftCursor = left->TableId;
-				newTerm->u.LeftColumn = left->ColumnIdx;
+				newTerm->u.LeftColumn = left->ColumnId;
 				newTerm->EOperator = WO_GT;
 				newTerm->Parent = idxTerm;
 				term = &wc->Slots[idxTerm];
@@ -983,7 +983,7 @@ findTerm_success:
 		for (int i = 0; i < list->Exprs; i++)
 		{
 			Expr *expr = list->Ids[i].Expr->SkipCollate();
-			if (expr->OP == TK_COLUMN && expr->ColumnIdx == index->Columns[column] && expr->TableId == baseId)
+			if (expr->OP == TK_COLUMN && expr->ColumnId == index->Columns[column] && expr->TableId == baseId)
 			{
 				CollSeq *coll = list->Ids[i].Expr->CollSeq(parse);
 				if (_ALWAYS(coll) && !_strcmp(coll->Name, collName))
@@ -1009,7 +1009,7 @@ findTerm_success:
 		{
 			Expr *expr = distinct->Ids[i].Expr->SkipCollate();
 			if (expr->OP != TK_COLUMN) return false;
-			WhereTerm *term = FindTerm(wc, expr->TableId, expr->ColumnIdx, ~(Bitmask)0, WO_EQ, 0);
+			WhereTerm *term = FindTerm(wc, expr->TableId, expr->ColumnId, ~(Bitmask)0, WO_EQ, 0);
 			if (term)
 			{
 				Expr *x = term->Expr;
@@ -1043,7 +1043,7 @@ findTerm_success:
 		for (i = 0; i < distinct->Exprs; i++)
 		{
 			Expr *expr = distinct->Ids[i].Expr->SkipCollate();
-			if (expr->OP == TK_COLUMN && expr->TableId == baseId && expr->ColumnIdx < 0) return true;
+			if (expr->OP == TK_COLUMN && expr->TableId == baseId && expr->ColumnId < 0) return true;
 		}
 
 		// Loop through all indices on the table, checking each to see if it makes the DISTINCT qualifier redundant. It does so if:
@@ -1465,7 +1465,7 @@ findTerm_success:
 		for (i = 0; i < orderBys; i++)
 		{
 			Expr *expr = orderBy->Ids[i].Expr;
-			idxOrderBy[i].Column = expr->ColumnIdx;
+			idxOrderBy[i].Column = expr->ColumnId;
 			idxOrderBy[i].Desc = (orderBy->Ids[i].SortOrder != 0);
 		}
 		return idxInfo;
@@ -1772,7 +1772,7 @@ findTerm_success:
 	{
 		if (expr->OP == TK_VARIABLE || (expr->OP == TK_REGISTER && expr->OP2 == TK_VARIABLE))
 		{
-			int varId = expr->ColumnIdx;
+			int varId = expr->ColumnId;
 			parse->V->SetVarmask(varId);
 			*val = parse->Reprepare->GetValue(varId, aff);
 			return RC_OK;
@@ -2007,7 +2007,7 @@ cancel:
 			// Check to see if the column number and collating sequence of the index match the column number and collating sequence of the ORDER BY
 			// clause entry.  Set isMatch to 1 if they both match.
 			bool isMatch; // ORDER BY term matches the index term
-			if (obExpr->ColumnIdx == column)
+			if (obExpr->ColumnId == column)
 			{
 				if (collName)
 				{
@@ -2037,8 +2037,8 @@ cancel:
 				Expr *right = constraint->Expr->Right;
 				if (right->OP == TK_COLUMN)
 				{
-					WHERETRACE("       .. isOrderedColumn(tab=%d,col=%d)", right->TableId, right->ColumnIdx);
-					isEq = IsOrderedColumn(p, right->TableId, right->ColumnIdx);
+					WHERETRACE("       .. isOrderedColumn(tab=%d,col=%d)", right->TableId, right->ColumnId);
+					isEq = IsOrderedColumn(p, right->TableId, right->ColumnId);
 					WHERETRACE(" -> isEq=%d\n", isEq);
 					// If the constraint is of the form X=Y where Y is an ordered value in an outer loop, then make sure the sort order of Y matches the
 					// sort order required for X.

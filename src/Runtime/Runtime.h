@@ -301,7 +301,7 @@ __device__ inline static void _tagfree(void *tag, void *p) { if (p != nullptr) f
 __device__ inline static size_t _allocsize(void *p) { return 0; }
 __device__ inline static size_t _tagallocsize(void *tag, void *p) { return 0; }
 __device__ inline static void *_stackalloc(void *tag, size_t size, bool clear) { char *b = (char *)malloc(size); if (clear) _memset(b, 0, size); return b; }
-__device__ inline static void _stackfree(void *tag, void *p) { free(p); }
+__device__ inline static void _stackfree(void *tag, void *p) { if (p != nullptr) free(p); }
 __device__ inline static void *_realloc(void *old, size_t newSize)
 {
 	void *new_ = malloc(newSize);
@@ -317,20 +317,20 @@ __device__ inline static void *_tagrealloc(void *tag, void *old, size_t newSize)
 	return new_;
 }
 #else
-__device__ inline static size_t _allocsize(void *p) { return 0; }
+__device__ inline static size_t _allocsize(void *p) { return (p ? _msize(p) : 0); }
 //{
 //	_assert(_memdbg_hastype(p, MEMTYPE_HEAP));
 //	_assert(_memdbg_nottype(p, MEMTYPE_DB));
 //	return 0; 
 //}
-__device__ inline static size_t _tagallocsize(void *tag, void *p) { return _msize(p); }
+__device__ inline static size_t _tagallocsize(void *tag, void *p) { return (p ? _msize(p) : 0); }
 //{
 //	_assert(_memdbg_hastype(p, MEMTYPE_HEAP));
 //	_assert(_memdbg_nottype(p, MEMTYPE_DB));
 //	return 0; 
 //}
 __device__ inline static void *_stackalloc(void *tag, size_t size, bool clear) { char *b = (char *)malloc(size); if (clear) _memset(b, 0, size); return b; }
-__device__ inline static void _stackfree(void *tag, void *p) { free(p); }
+__device__ inline static void _stackfree(void *tag, void *p) { if (p != nullptr) free(p); }
 __device__ inline static void *_realloc(void *old, size_t newSize) { return realloc(old, newSize); }
 __device__ inline static void *_tagrealloc(void *tag, void *old, size_t newSize) { return realloc(old, newSize); }
 #endif
@@ -393,30 +393,30 @@ public:
 	bool Overflowed;    // Becomes true if string size exceeds limits
 
 	__device__ void AppendSpace(int length);
-	__device__ void AppendFormat(bool useExtended, const char *fmt, va_list &args);
+	__device__ void AppendFormat_(bool useExtended, const char *fmt, va_list &args);
 	__device__ void Append(const char *z, int length);
 	__device__ char *ToString();
 	__device__ void Reset();
 	__device__ static void Init(TextBuilder *b, char *text, int capacity, int maxAlloc);
 	//
 #if __CUDACC__
-	__device__ inline void AppendFormat(const char *fmt) { va_list args; va_start(args); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1> __device__ inline void AppendFormat(const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3, typename T4> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); AppendFormat(true, fmt, args); va_end(args); }
-	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); AppendFormat(true, fmt, args); va_end(args); }
+	__device__ inline void AppendFormat(const char *fmt) { va_list args; va_start(args); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1> __device__ inline void AppendFormat(const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3, typename T4> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); AppendFormat_(true, fmt, args); va_end(args); }
+	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); AppendFormat_(true, fmt, args); va_end(args); }
 #else
 	__device__ inline void AppendFormat(const char *fmt, ...)
 	{
 		va_list args;
 		va_start(args, fmt);
-		AppendFormat(true, fmt, args);
+		AppendFormat_(true, fmt, args);
 		va_end(args);
 	}
 #endif

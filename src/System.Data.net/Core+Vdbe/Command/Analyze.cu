@@ -485,7 +485,6 @@ namespace Core { namespace Command
 		int statCurId = parse->Tabs;
 		parse->Tabs += 3;
 		if (onlyIdx)
-
 			OpenStatTable(parse, db, statCurId, onlyIdx->Name, "idx");
 		else
 			OpenStatTable(parse, db, statCurId, table->Name, "tbl");
@@ -746,7 +745,7 @@ namespace Core { namespace Command
 		AnalysisInfo sInfo;
 		sInfo.Ctx = ctx;
 		sInfo.Database = ctx->DBs[db].Name;
-		if (Parse::FindTable(ctx, "sqlite_stat1", sInfo.Database) == 0)
+		if (!Parse::FindTable(ctx, "sqlite_stat1", sInfo.Database))
 			return RC_ERROR;
 
 		// Load new statistics out of the sqlite_stat1 table
