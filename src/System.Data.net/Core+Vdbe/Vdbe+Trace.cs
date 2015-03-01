@@ -173,9 +173,9 @@ namespace Core
 				const char *z = p->str.zText;
 				int i = p->str.nChar-1;
 				int x;
-				while( i>=0 && z[i]!='\n' ){ i--; }
+				while (i >= 0 && z[i] != '\n'){ i--; }
 				x = (p->str.nChar - 1) - i;
-				if( p->nIndent && x<p->aIndent[p->nIndent-1] ){
+				if (p->nIndent && x<p->aIndent[p->nIndent-1] ){
 					x = p->aIndent[p->nIndent-1];
 				}
 				p->aIndent[p->nIndent] = x;

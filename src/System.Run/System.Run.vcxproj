@@ -24,16 +24,16 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <ClCompile Include="Program.cu" />
-    <None Include="TestFalloc.cu" />
-    <ClCompile Include="TestRuntime.cu" />
+    <ClCompile Include="TestSystem.cu" />
+    <ClCompile Include="TestSystem.IO.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="TestFalloc.cu" />
-    <CudaCompile Include="TestRuntime.cu" />
+    <CudaCompile Include="TestSystem.cu" />
+    <CudaCompile Include="TestSystem.IO.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A38430CF-CB26-43F0-94B7-6E78A0950FF5}</ProjectGuid>
+    <ProjectGuid>{124785AA-C3FD-4814-B2AB-4B0E52A2BB67}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RuntimeExample</RootNamespace>
   </PropertyGroup>
@@ -82,13 +82,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions Condition="'$(LD)'!='V'">WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">WIN32;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;System.$(LC)$(LD)D.lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
@@ -111,7 +111,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions Condition="'$(LD)'!='V'">WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">WIN32;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,7 +119,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;System.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>

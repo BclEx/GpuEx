@@ -30,7 +30,7 @@ __device__ RC Vdbe::Finalize(Vdbe *p)
 	Context *ctx = p->Ctx;
 	if (VdbeSafety(p)) return SysEx_MISUSE_BKPT;
 	MutexEx::Enter(ctx->Mutex);
-	RC rc = p->Finalize();
+	RC rc = p->Finalize2();
 	rc = Main::ApiExit(ctx, rc);
 	Main::LeaveMutexAndCloseZombie(ctx);
 	return rc;

@@ -944,7 +944,7 @@ namespace Core
 
 	struct Prepare
 	{
-		__device__ static bool InitCallback(void *init, int argc, char **argv, char **notUsed1);
+		__device__ static bool InitCallback(void *init, int argc, char *argv[], char **notUsed1);
 		__device__ static RC InitOne(Context *ctx, int db, char **errMsg);
 		__device__ static RC Init(Context *ctx, char **errMsg);
 		__device__ static RC ReadSchema(Parse *parse);
@@ -1769,16 +1769,16 @@ namespace Core {
 			CONFIG_GETPCACHE2 = 19,				// sqlite3_pcache_methods2*
 			CONFIG_COVERING_INDEX_SCAN = 20,	// int
 		};
-		__device__ static RC Config(CONFIG op, va_list *args);
+		__device__ static RC Config(CONFIG op, va_list &args);
 #if __CUDACC__
-		__device__ inline static RC Config(CONFIG op) { va_list0 args; va_start(args); RC r = Config(op, &args); va_end(args); return r; }
-		template <typename T1> __device__ inline static RC Config(CONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = Config(op, &args); va_end(args); return r; }
-		template <typename T1, typename T2> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = Config(op, &args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = Config(op, &args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = Config(op, &args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = Config(op, &args); va_end(args); return r; }
+		__device__ inline static RC Config(CONFIG op) { va_list0 args; va_start(args); RC r = Config(op, args); va_end(args); return r; }
+		template <typename T1> __device__ inline static RC Config(CONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = Config(op, args); va_end(args); return r; }
+		template <typename T1, typename T2> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = Config(op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = Config(op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = Config(op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = Config(op, args); va_end(args); return r; }
 #else
-		__device__ inline static RC Config(CONFIG op, ...) { va_list args; va_start(args, op); RC r = Config(op, &args); va_end(args); return r; }
+		__device__ inline static RC Config(CONFIG op, ...) { va_list args; va_start(args, op); RC r = Config(op, args); va_end(args); return r; }
 #endif
 
 		enum CTXCONFIG
@@ -1787,16 +1787,16 @@ namespace Core {
 			CTXCONFIG_ENABLE_FKEY = 1002,  // int int*
 			CTXCONFIG_ENABLE_TRIGGER = 1003,  // int int*
 		};
-		__device__ static RC CtxConfig(Context *ctx, CTXCONFIG op, va_list *args);
+		__device__ static RC CtxConfig(Context *ctx, CTXCONFIG op, va_list &args);
 #if __CUDACC__
-		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op) { va_list0 args; va_start(args); RC r = CtxConfig(ctx, op, &args); va_end(args); return r; }
-		template <typename T1> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = CtxConfig(ctx, op, &args); va_end(args); return r; }
-		template <typename T1, typename T2> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = CtxConfig(ctx, op, &args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = CtxConfig(ctx, op, &args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = CtxConfig(ctx, op, &args); va_end(args); return r; }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = CtxConfig(ctx, op, &args); va_end(args); return r; }
+		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op) { va_list0 args; va_start(args); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
+		template <typename T1> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
 #else
-		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, ...) { va_list args; va_start(args, op); RC r = CtxConfig(ctx, op, &args); va_end(args); return r; }
+		__device__ inline static RC CtxConfig(Context *ctx, CTXCONFIG op, ...) { va_list args; va_start(args, op); RC r = CtxConfig(ctx, op, args); va_end(args); return r; }
 #endif
 
 #pragma endregion

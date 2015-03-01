@@ -202,7 +202,7 @@
     </ProjectReference>
     <ProjectReference Include="..\System.net\System.net.csproj">
       <Project>{30180e7b-aabe-4f33-9c2c-f8a447024674}</Project>
-      <Name>SystemL.net</Name>
+      <Name>System.net</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

@@ -243,14 +243,14 @@ namespace Core {
 				goto blob_open_out;
 			Vdbe::Bind_Int64(blob->Stmt, 1, row);
 			rc = BlobSeekToRow(blob, row, &err);
-		} while((++attempts) < 5 && rc == RC_SCHEMA);
+		} while ((++attempts) < 5 && rc == RC_SCHEMA);
 
 blob_open_out:
 		if (rc == RC_OK && !ctx->MallocFailed)
 			*blobOut = (Blob *)blob;
 		else
 		{
-			if (blob && blob->Stmt) Vdbe::Finalize(blob->Stmt);
+			if (blob && blob->Stmt) blob->Stmt->Finalize2();
 			_tagfree(ctx, blob);
 		}
 		Main::Error(ctx, rc, (err ? "%s" : nullptr), err);
@@ -300,7 +300,7 @@ blob_open_out:
 			p->Cursor->LeaveCursor();
 			if (rc == RC_ABORT)
 			{
-				Vdbe::Finalize(v);
+				v->Finalize2();
 				p->Stmt = nullptr;
 			}
 			else

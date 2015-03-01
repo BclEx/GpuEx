@@ -86,7 +86,7 @@ namespace Core
             //if( pMem->enc==SQLITE_UTF8 ){
             //  if( desiredEnc==SQLITE_UTF16LE ){
             //    /* UTF-8 -> UTF-16 Little-endian */
-            //    while( zIn<zTerm ){
+            //    while ( zIn<zTerm ){
             ///* c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn); */
             //READ_UTF8(zIn, zTerm, c);
             //      WRITE_UTF16LE(z, c);
@@ -94,7 +94,7 @@ namespace Core
             //  }else{
             //    Debug.Assert( desiredEnc==SQLITE_UTF16BE );
             //    /* UTF-8 -> UTF-16 Big-endian */
-            //    while( zIn<zTerm ){
+            //    while ( zIn<zTerm ){
             ///* c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn); */
             //READ_UTF8(zIn, zTerm, c);
             //      WRITE_UTF16BE(z, c);
@@ -106,13 +106,13 @@ namespace Core
             //  Debug.Assert( desiredEnc==SQLITE_UTF8 );
             //  if( pMem->enc==SQLITE_UTF16LE ){
             //    /* UTF-16 Little-endian -> UTF-8 */
-            //    while( zIn<zTerm ){
+            //    while ( zIn<zTerm ){
             //      READ_UTF16LE(zIn, zIn<zTerm, c); 
             //      WRITE_UTF8(z, c);
             //    }
             //  }else{
             //    /* UTF-16 Big-endian -> UTF-8 */
-            //    while( zIn<zTerm ){
+            //    while ( zIn<zTerm ){
             //      READ_UTF16BE(zIn, zIn<zTerm, c); 
             //      WRITE_UTF8(z, c);
             //    }

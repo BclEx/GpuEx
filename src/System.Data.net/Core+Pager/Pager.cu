@@ -1800,7 +1800,7 @@ end_playback:
 		do
 		{
 			rc = PagerLockDb(pager, locktype);
-		} while(rc == RC_BUSY && pager->BusyHandler(pager->BusyHandlerArg));
+		} while (rc == RC_BUSY && pager->BusyHandler(pager->BusyHandlerArg));
 		return rc;
 	}
 

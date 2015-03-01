@@ -15,7 +15,7 @@ namespace Core
 		data->RC = (ctx->MallocFailed ? RC_NOMEM : SysEx_CORRUPT_BKPT);
 	}
 
-	__device__ bool Prepare::InitCallback(void *init, int argc, char **argv, char **notUsed1)
+	__device__ bool Prepare::InitCallback(void *init, int argc, char *argv[], char **notUsed1)
 	{
 		InitData *data = (InitData *)init;
 		Context *ctx = data->Ctx;
@@ -44,7 +44,7 @@ namespace Core
 			ctx->Init.OrphanTrigger = false;
 			Vdbe *stmt;
 #if _DEBUG
-			int rcp = Prepare_(ctx, argv[2], -1, &stmt, nullptr);
+			RC rcp = Prepare_(ctx, argv[2], -1, &stmt, nullptr);
 #else
 			Prepare_(ctx, argv[2], -1, &stmt, nullptr);
 #endif
@@ -64,7 +64,7 @@ namespace Core
 						CorruptSchema(data, argv[0], Main::ErrMsg(ctx));
 				}
 			}
-			stmt->Finalize();
+			Vdbe::Finalize(stmt);
 		}
 		else if (argv[0] == 0)
 			CorruptSchema(data, nullptr, nullptr);
@@ -514,7 +514,7 @@ error_out:
 			Vdbe::SetSql(v, sql, (int)(parse->Tail - sql), isPrepareV2);
 		if (v && (rc != RC_OK || ctx->MallocFailed))
 		{
-			v->Finalize();
+			v->Finalize2();
 			_assert(!(*stmtOut));
 		}
 		else
@@ -554,7 +554,7 @@ end_prepare:
 		RC rc = Prepare_(ctx, sql, bytes, isPrepareV2, reprepare, stmtOut, tailOut);
 		if (rc == RC_SCHEMA)
 		{
-			(*stmtOut)->Finalize();
+			Vdbe::Finalize(*stmtOut);
 			rc = Prepare_(ctx, sql, bytes, isPrepareV2, reprepare, stmtOut, tailOut);
 		}
 		Btree::LeaveAll(ctx);
@@ -583,7 +583,7 @@ end_prepare:
 		Vdbe::Swap(newVdbe, p);
 		Vdbe::TransferBindings(newVdbe, p);
 		newVdbe->ResetStepResult();
-		newVdbe->Finalize();
+		newVdbe->Finalize2();
 		return RC_OK;
 	}
 

@@ -1,12 +1,13 @@
 #include <Falloc.cu.h>
 
-__global__ static void fallocExample(void *f)
+// FALLOC
+__global__ static void falloc0(void *f)
 {
 	void *b = fallocGetBlock((fallocHeap *)f);
 	fallocFreeBlock((fallocHeap *)f, b);
 }
 
-void __fallocExample(cudaDeviceFalloc &f)
+void __testFalloc(cudaDeviceFalloc &f)
 {
-	fallocExample<<<1, 1>>>(f.heap);
+	falloc0<<<1, 1>>>(f.heap);
 }

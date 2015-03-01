@@ -508,7 +508,7 @@ namespace Core
 			parse->DeclareVTable = false;
 
 			if (parse->V)
-				parse->V->Finalize();
+				parse->V->Finalize2();
 			Parse::DeleteTable(ctx, parse->NewTable);
 			_stackfree(ctx, parse);
 		}

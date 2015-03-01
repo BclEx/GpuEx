@@ -2699,7 +2699,7 @@ multi_select_end:
 #endif
 
 		Context *ctx = parse->Ctx; // The database connection
-		if (p == 0 || ctx->MallocFailed || parse->Errs)
+		if (!p || ctx->MallocFailed || parse->Errs)
 			return RC_ERROR;
 		if (Auth::Check(parse, AUTH_SELECT, nullptr, nullptr, nullptr)) return RC_ERROR;
 		AggInfo sAggInfo; // Information used by aggregate queries

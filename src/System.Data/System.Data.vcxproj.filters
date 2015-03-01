@@ -16,7 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System.Data.net\Opcodes.h" />
-    <ClInclude Include="..\System.Data.net\KeywordHash.h" />
     <ClInclude Include="..\System.Data.net\Core+Btree\BContext.cu.h">
       <Filter>Core+Btree</Filter>
     </ClInclude>
@@ -59,6 +58,9 @@
     <ClInclude Include="..\System.Data.net\Core+Vdbe\VdbeInt.cu.h">
       <Filter>Core+Vdbe</Filter>
     </ClInclude>
+    <ClInclude Include="..\System.Data.net\KeywordHash.h">
+      <Filter>Core+Vdbe</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu">
@@ -66,147 +68,147 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="..\System.Data.net\Opcodes.cu" />
-    <CudaCompile Include="..\System.Data.net\Shell.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Auth.cu">
+    <ClCompile Include="..\System.Data.net\CompileTime.cu" />
+    <ClCompile Include="..\System.Data.net\Opcodes.cu" />
+    <ClCompile Include="..\System.Data.net\Shell.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Auth.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Backup.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Backup.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Callback.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Callback.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Expr.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Expr.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Main+LoadExt.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Main+LoadExt.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Main.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Main.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Build.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Build.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Complete.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Complete.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+FKey.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+FKey.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Parser.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Parser.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Parse+Tokenize.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Tokenize.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Prepare.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Prepare.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Rowset.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Rowset.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Table.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Table.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Trigger.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Trigger.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Api.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Api.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Aux.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Aux.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Blob.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Blob.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Mem.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Mem.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Sort.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Sort.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Trace.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Trace.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Utf.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe+Utf.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Vdbe.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Vdbe.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\VTable.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\VTable.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Walker.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Walker.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Where.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Where.cu">
       <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\CompileTime.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Btree\BContext.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Pager\Wal.cu">
+      <Filter>Core+Pager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Pager\PCache1.cu">
+      <Filter>Core+Pager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Pager\PCache.cu">
+      <Filter>Core+Pager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu">
       <Filter>Core+Btree</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu">
       <Filter>Core+Btree</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Btree\Btree.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Alter.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Analyze.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Attach.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Btree\Btree.cu">
       <Filter>Core+Btree</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Pager\Pager.cu">
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Date.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Delete.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Func.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Insert.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Pragma.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Select.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Update.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Vacuum.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Pager\Pager.cu">
       <Filter>Core+Pager</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Pager\PCache.cu">
-      <Filter>Core+Pager</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Pager\PCache1.cu">
-      <Filter>Core+Pager</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Pager\Wal.cu">
-      <Filter>Core+Pager</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Alter.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Analyze.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Attach.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Date.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Delete.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Func.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Insert.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Pragma.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Select.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Update.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Command\Vacuum.cu">
-      <Filter>Core+Vdbe\Command</Filter>
-    </CudaCompile>
+    </ClCompile>
+    <ClCompile Include="Program.cu" />
   </ItemGroup>
 </Project>

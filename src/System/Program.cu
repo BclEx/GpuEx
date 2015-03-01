@@ -1,11 +1,10 @@
 #ifndef _LIB
 
-#define VISUAL
+//#define VISUAL
 #include "..\System.net\Core\Core.cu.h"
-#include <stdio.h>
 #include <string.h>
-using namespace Core;
-using namespace Core::IO;
+
+#pragma region TESTS
 
 __device__ static void TestVFS()
 {
@@ -16,18 +15,15 @@ __device__ static void TestVFS()
 	file->Close();
 }
 
-//namespace Core { int Bitvec_BuiltinTest(int size, int *ops); }
 //void TestBitvec()
 //{
 //	int ops[] = { 5, 1, 1, 1, 0 };
 //	Core::Bitvec_BuiltinTest(400, ops);
 //}
 
-#if __CUDACC__
-__global__ void GMain(void *r) { _runtimeSetHeap(r);
-#else
-__global__ void main(int argc, char **argv) {
-#endif
+__global__ static void Tests(void *r)
+{
+	_runtimeSetHeap(r);
 	MutexEx masterMutex;
 	RC rc = SysEx::PreInitialize(masterMutex);
 	SysEx::PostInitialize(masterMutex);
@@ -38,10 +34,32 @@ __global__ void main(int argc, char **argv) {
 }
 
 #if __CUDACC__
+void __tests(cudaDeviceHeap &r)
+{
+	Tests<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+}
+#else
+void __tests(cudaDeviceHeap &r)
+{
+	Tests(r.heap);
+}
+#endif
+
+#pragma endregion
+
+#if __CUDACC__
+void GMain(cudaDeviceHeap &r) {
+#else
+void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
+#endif
+	__tests(r);
+}
+
+#if __CUDACC__
 void __main(cudaDeviceHeap &r)
 {	
 	cudaDeviceHeapSelect(r);
-	GMain<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+	GMain(r); cudaDeviceHeapSynchronize(r);
 }
 
 int main(int argc, char **argv)

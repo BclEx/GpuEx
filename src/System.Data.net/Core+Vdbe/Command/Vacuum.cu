@@ -6,7 +6,7 @@ namespace Core { namespace Command
 {
 	__device__ static RC VacuumFinalize(Context *ctx, Vdbe *stmt, char **errMsg)
 	{
-		RC rc = stmt->Finalize();
+		RC rc = stmt->Finalize2();
 		if (rc)
 			_mtagassignf(errMsg, ctx, Main::ErrMsg(ctx));
 		return rc;

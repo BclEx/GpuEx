@@ -68,7 +68,7 @@ namespace Core
 					if (callback(arg, cols, colsValues, colsNames))
 					{
 						rc = RC_ABORT;
-						stmt->Finalize();
+						stmt->Finalize2();
 						stmt = nullptr;
 						Error(ctx, RC_ABORT, nullptr);
 						goto exec_out;
@@ -77,7 +77,7 @@ namespace Core
 
 				if (rc != RC_ROW)
 				{
-					stmt->Finalize();
+					stmt->Finalize2();
 					stmt = nullptr;
 					if (rc != RC_SCHEMA)
 					{
@@ -94,7 +94,7 @@ namespace Core
 		}
 
 exec_out:
-		if (stmt) stmt->Finalize();
+		if (stmt) stmt->Finalize2();
 		_tagfree(ctx, colsNames);
 
 		rc = ApiExit(ctx, rc);

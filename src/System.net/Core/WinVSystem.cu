@@ -2786,7 +2786,7 @@ shmpage_out:
 					rc = RC_ERROR; // No more retries.
 					break;
 				}
-			} while(1);
+			} while (1);
 #ifdef WIN32_HAS_ANSI
 		else
 			do {
@@ -2812,7 +2812,7 @@ shmpage_out:
 					rc = RC_ERROR; // No more retries.
 					break;
 				}
-			} while(1);
+			} while (1);
 #endif
 		if (rc && rc != RC_IOERR_DELETE_NOENT)
 			rc = winLogError(RC_IOERR_DELETE, lastErrno, "winDelete", filename);

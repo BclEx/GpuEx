@@ -1,23 +1,23 @@
 #include <RuntimeHost.h>
 #include <FallocHost.h>
 
-//void __fallocExample(cudaDeviceFalloc &f);
-void __runtimeExample(cudaDeviceHeap &r);
+void __testFalloc(cudaDeviceFalloc &f);
+void __testRuntime(cudaDeviceHeap &r);
 
 #if __CUDACC__
-__global__ void GMain(void *r) { _runtimeSetHeap(r);
+void GMain(cudaDeviceHeap &r) {
 #else
-__global__ void main(int argc, char **argv) { cudaDeviceHeap r;
+void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
-	//__fallocExample(fallocHost);
-	__runtimeExample(r);
+	//__testFalloc(f);
+	__testRuntime(r);
 }
 
 #if __CUDACC__
 void __main(cudaDeviceHeap &r)
 {	
 	cudaDeviceHeapSelect(r);
-	GMain(r.heap); cudaDeviceHeapSynchronize(r);
+	GMain(r); cudaDeviceHeapSynchronize(r);
 }
 
 int main(int argc, char **argv)

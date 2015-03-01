@@ -41,12 +41,14 @@
     <ClInclude Include="..\System.Data.net\Core+Vdbe\VdbeInt.cu.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
+    <None Include="System.Data.cu" />
+    <None Include="System.Data+Btree.cu" />
+    <None Include="System.Data+Pager.cu" />
+    <None Include="System.Data+Vdbe.cu" />
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.Data.net\CompileTime.cu" />
     <ClCompile Include="..\System.Data.net\Opcodes.cu" />
-    <ClCompile Include="..\System.Data.net\Shell.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <None Include="..\System.Data.net\Shell.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\Btree.cu" />
@@ -95,12 +97,14 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Where.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <None Include="System.Data.cu" />
+    <None Include="System.Data+Btree.cu" />
+    <None Include="System.Data+Pager.cu" />
+    <None Include="System.Data+Vdbe.cu" />
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="..\System.Data.net\CompileTime.cu" />
     <CudaCompile Include="..\System.Data.net\Opcodes.cu" />
-    <CudaCompile Include="..\System.Data.net\Shell.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </CudaCompile>
+    <None Include="..\System.Data.net\Shell.cu" />
     <CudaCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <CudaCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
     <CudaCompile Include="..\System.Data.net\Core+Btree\Btree.cu" />
@@ -159,7 +163,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -194,7 +198,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_xLIB;TEST;THREADSAFE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;MAX_EXPR_DEPTH;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;TEST;THREADSAFE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;MAX_EXPR_DEPTH;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -211,7 +215,7 @@
       <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='xDebug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">

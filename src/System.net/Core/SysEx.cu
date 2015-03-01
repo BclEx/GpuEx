@@ -183,7 +183,7 @@ namespace Core
 		return RC_OK;
 	}
 
-	__device__ RC SysEx::Config(CONFIG op, va_list *args)
+	__device__ RC SysEx::Config(CONFIG op, va_list &args)
 	{
 		// sqlite3_config() shall return SQLITE_MISUSE if it is invoked while the SQLite library is in use.
 		if (SysEx_GlobalStatics.IsInit) return SysEx_MISUSE_BKPT;

@@ -1754,7 +1754,7 @@ __device__ RC Vdbe::Reset()
 	return (RC)(RC_ & ctx->ErrMask);
 }
 
-__device__ RC Vdbe::Finalize()
+__device__ RC Vdbe::Finalize2()
 {
 	RC rc = RC_OK;
 	if (Magic == VDBE_MAGIC_RUN || Magic == VDBE_MAGIC_HALT)

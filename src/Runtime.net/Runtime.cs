@@ -802,7 +802,7 @@ namespace Core
                             //: {                                           
                             //:     *(--bufpt) = cset[longvalue % base];
                             //:     longvalue = longvalue / base;
-                            //: } while(longvalue > 0);
+                            //: } while (longvalue > 0);
                             char[] buf_;
                             switch (info.Base)
                             {

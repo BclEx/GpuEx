@@ -179,7 +179,7 @@ namespace Core
 		return RC_OK;
 	}
 
-	__device__ RC Main::Config(CONFIG op, va_list *args)
+	__device__ RC Main::Config(CONFIG op, va_list &args)
 	{
 		if (op < CONFIG_PAGECACHE) return SysEx::Config((SysEx::CONFIG)op, args);
 		RC rc = RC_OK;
@@ -220,7 +220,7 @@ namespace Core
 		{ Main::CTXCONFIG_ENABLE_FKEY,    Context::FLAG_ForeignKeys   },
 		{ Main::CTXCONFIG_ENABLE_TRIGGER, Context::FLAG_EnableTrigger },
 	};
-	__device__ RC Main::CtxConfig(Context *ctx, CTXCONFIG op, va_list *args)
+	__device__ RC Main::CtxConfig(Context *ctx, CTXCONFIG op, va_list &args)
 	{
 		RC rc;
 		switch (op)

@@ -837,7 +837,8 @@ namespace Core
 			}
 			rc = sqlite3_step(pSelect);
 			nResult = sqlite3_column_count(pSelect);
-			while( rc==SQLITE_ROW ){
+			while (rc == SQLITE_ROW)
+			{
 				if( zFirstRow ){
 					_fprintf(p->out_, "%s", zFirstRow);
 					zFirstRow = 0;
@@ -848,7 +849,7 @@ namespace Core
 					_fprintf(p->out_, ",%s", sqlite3_column_text(pSelect, i));
 				}
 				if( z==0 ) z = "";
-				while( z[0] && (z[0]!='-' || z[1]!='-') ) z++;
+				while (z[0] && (z[0]!='-' || z[1]!='-') ) z++;
 				if( z[0] ){
 					_fprintf(p->out_, "\n;\n");
 				}else{
@@ -998,7 +999,7 @@ namespace Core
 				*pzErrMsg = NULL;
 			}
 
-			while( zSql[0] && (SQLITE_OK == rc) ){
+			while (zSql[0] && (SQLITE_OK == rc) ){
 				rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
 				if( SQLITE_OK != rc ){
 					if( pzErrMsg ){
@@ -1008,7 +1009,7 @@ namespace Core
 					if( !pStmt ){
 						/* this happens for a comment or white-space */
 						zSql = zLeftover;
-						while( IsSpace(zSql[0]) ) zSql++;
+						while (IsSpace(zSql[0]) ) zSql++;
 						continue;
 					}
 
@@ -1076,13 +1077,13 @@ namespace Core
 											rc = sqlite3_step(pStmt);
 										}
 									}
-								} while( SQLITE_ROW == rc );
+								} while (SQLITE_ROW == rc );
 								sqlite3_free(pData);
 							}
 						}else{
 							do{
 								rc = sqlite3_step(pStmt);
-							} while( rc == SQLITE_ROW );
+							} while (rc == SQLITE_ROW );
 						}
 					}
 
@@ -1098,7 +1099,7 @@ namespace Core
 					if( rc!=SQLITE_NOMEM ) rc = rc2;
 					if( rc==SQLITE_OK ){
 						zSql = zLeftover;
-						while( IsSpace(zSql[0]) ) zSql++;
+						while (IsSpace(zSql[0])) zSql++;
 					}else if( pzErrMsg ){
 						*pzErrMsg = save_err_msg(db);
 					}
@@ -1184,7 +1185,8 @@ namespace Core
 			}
 			zSelect = appendText(zSelect, " || ' VALUES(' || ", 0);
 			rc = sqlite3_step(pTableInfo);
-			while( rc==SQLITE_ROW ){
+			while (rc == SQLITE_ROW)
+			{
 				const char *zText = (const char *)sqlite3_column_text(pTableInfo, 1);
 				zSelect = appendText(zSelect, "quote(", 0);
 				zSelect = appendText(zSelect, zText, '"');
@@ -1472,19 +1474,19 @@ namespace Core
 		/* Parse the input line into tokens.
 		*/
 		while( line[i] && nArg<ArraySize(azArg) ){
-			while( IsSpace(line[i]) ){ i++; }
+			while (IsSpace(line[i])) { i++; }
 			if( line[i]==0 ) break;
 			if( line[i]=='\'' || line[i]=='"' ){
 				int delim = line[i++];
 				azArg[nArg++] = &line[i];
-				while( line[i] && line[i]!=delim ){ i++; }
+				while (line[i] && line[i]!=delim) { i++; }
 				if( line[i]==delim ){
 					line[i++] = 0;
 				}
 				if( delim=='"' ) resolve_backslashes(azArg[nArg-1]);
 			}else{
 				azArg[nArg++] = &line[i];
-				while( line[i] && !IsSpace(line[i]) ){ i++; }
+				while (line[i] && !IsSpace(line[i])) { i++; }
 				if( line[i] ) line[i++] = 0;
 				resolve_backslashes(azArg[nArg-1]);
 			}
@@ -1505,7 +1507,7 @@ namespace Core
 			for(j=1; j<nArg; j++){
 				const char *z = azArg[j];
 				if( z[0]=='-' ){
-					while( z[0]=='-' ) z++;
+					while (z[0]=='-') z++;
 					if( strcmp(z,"key")==0 && j<nArg-1 ){
 						zKey = azArg[++j];
 					}else
@@ -1546,7 +1548,7 @@ namespace Core
 				sqlite3_close(pDest);
 				return 1;
 			}
-			while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){}
+			while ((rc = sqlite3_backup_step(pBackup,100)) == SQLITE_OK) { }
 			sqlite3_backup_finish(pBackup);
 			if( rc==SQLITE_DONE ){
 				rc = 0;
@@ -1765,7 +1767,8 @@ namespace Core
 													}
 													sqlite3_exec(p->db, "BEGIN", 0, 0, 0);
 													zCommit = "COMMIT";
-													while( (line = local_getline(0, in, 1))!=0 ){
+													while ((line = local_getline(0, in, 1))!=0)
+													{
 														char *z, c;
 														int inQuote = 0;
 														lineno++;
@@ -2044,8 +2047,8 @@ namespace Core
 																											sqlite3_close(pSrc);
 																											return 1;
 																										}
-																										while( (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK
-																											|| rc==SQLITE_BUSY  ){
+																										while ((rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK
+																											|| rc==SQLITE_BUSY){
 																												if( rc==SQLITE_BUSY ){
 																													if( nTimeout++ >= 3 ) break;
 																													sqlite3_sleep(100);
@@ -2185,7 +2188,8 @@ namespace Core
 																																" WHERE type IN ('table','view')"
 																																"   AND name NOT LIKE 'sqlite_%%'"
 																																"   AND name LIKE ?1");
-																															while( sqlite3_step(pStmt)==SQLITE_ROW ){
+																															while (sqlite3_step(pStmt)==SQLITE_ROW)
+																															{
 																																const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
 																																if( zDbName==0 || strcmp(zDbName,"main")==0 ) continue;
 																																if( strcmp(zDbName,"temp")==0 ){
@@ -2216,7 +2220,8 @@ namespace Core
 																															}else{
 																																sqlite3_bind_text(pStmt, 1, "%", -1, SQLITE_STATIC);
 																															}
-																															while( sqlite3_step(pStmt)==SQLITE_ROW ){
+																															while (sqlite3_step(pStmt)==SQLITE_ROW)
+																															{
 																																if( nRow>=nAlloc ){
 																																	char **azNew;
 																																	int n = nAlloc*2 + 10;
@@ -2458,14 +2463,14 @@ namespace Core
 			if( IsSpace(z[0]) ) continue;
 			if( *z=='/' && z[1]=='*' ){
 				z += 2;
-				while( *z && (*z!='*' || z[1]!='/') ){ z++; }
+				while (*z && (*z!='*' || z[1]!='/')) { z++; }
 				if( *z==0 ) return 0;
 				z++;
 				continue;
 			}
 			if( *z=='-' && z[1]=='-' ){
 				z += 2;
-				while( *z && *z!='\n' ){ z++; }
+				while (*z && *z!='\n') { z++; }
 				if( *z==0 ) return 1;
 				continue;
 			}
@@ -2480,7 +2485,7 @@ namespace Core
 	** as is the Oracle "/".
 	*/
 	static int _is_command_terminator(const char *line){
-		while( IsSpace(line[0]) ){ line++; };
+		while (IsSpace(line[0])) { line++; };
 		if( line[0]=='/' && _all_whitespace(&line[1]) ){
 			return 1;  /* Oracle */
 		}
@@ -2525,7 +2530,8 @@ namespace Core
 		int lineno = 0;
 		int startline = 0;
 
-		while( errCnt==0 || !bail_on_error || (in==0 && stdin_is_interactive) ){
+		while (errCnt==0 || !bail_on_error || (in==0 && stdin_is_interactive))
+		{
 			_fflush(p->out_);
 			free(line);
 			line = one_input_line(zSql, in);

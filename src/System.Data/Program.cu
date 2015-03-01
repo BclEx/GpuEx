@@ -4,8 +4,6 @@
 #include "..\System.Data.net\Core+Vdbe\Core+Vdbe.cu.h"
 #include <stdio.h>
 #include <string.h>
-using namespace Core;
-using namespace Core::IO;
 
 __device__ static bool MyCallback(void *args, int argsLength, char **args2, char **cols)
 {

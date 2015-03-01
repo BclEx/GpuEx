@@ -428,7 +428,7 @@ namespace Core
 		__device__ void ResetStepResult();
 		__device__ RC TransferError();
 		__device__ RC Reset();
-		__device__ RC Finalize();
+		__device__ RC Finalize2();
 		__device__ static void DeleteAuxData(VdbeFunc *func, int mask);
 		__device__ void ClearObject(Context *ctx);
 		__device__ static void Delete(Vdbe *p);

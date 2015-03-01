@@ -569,7 +569,7 @@ __device__ void TextBuilder::AppendFormat(bool useExtended, const char *fmt, va_
 				{                                           
 					*(--bufpt) = cset[longvalue % base];
 					longvalue = longvalue / base;
-				} while(longvalue > 0);
+				} while (longvalue > 0);
 			}
 			length = (int)(&out_[outLength-1]-bufpt);
 			for (i = precision - length; i > 0; i--) *(--bufpt) = '0'; // Zero pad
