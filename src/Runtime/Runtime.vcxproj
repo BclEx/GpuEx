@@ -116,7 +116,6 @@
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)FallocHost.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>
-      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)FallocHost.obj" "$(IntDir)Falloc.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)Runtime.cu.obj" "$(IntDir)Runtime+Fault.cu.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>-->
     </PostBuildEvent>
     <CudaLink>
       <UseHostLibraryDependencies Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">false</UseHostLibraryDependencies>
@@ -149,7 +148,6 @@
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)FallocHost.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD).lib"</Command>
-      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)FallocHost.obj" "$(IntDir)Falloc.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)Runtime.cu.obj" "$(IntDir)Runtime+Fault.cu.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD).lib"</Command>-->
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

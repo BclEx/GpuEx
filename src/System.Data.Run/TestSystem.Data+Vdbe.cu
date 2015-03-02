@@ -19,8 +19,8 @@ __device__ static void TestDB()
 
 	// open
 	Context *ctx;
-	//Main::Open("C:\\T_\\Test2.db", &ctx);
-	Main::Open(":memory:", &ctx);
+	Main::Open("C:\\T_\\Test2.db", &ctx);
+	//Main::Open(":memory:", &ctx);
 	//ctx->Trace = Trace;
 
 	// run query

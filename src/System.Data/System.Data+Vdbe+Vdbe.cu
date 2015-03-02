@@ -1,0 +1,8 @@
+#include "..\System.Data.net\Core+Vdbe\Vdbe.cu"
+#include "..\System.Data.net\Core+Vdbe\Vdbe+Api.cu"
+#include "..\System.Data.net\Core+Vdbe\Vdbe+Aux.cu"
+#include "..\System.Data.net\Core+Vdbe\Vdbe+Blob.cu"
+#include "..\System.Data.net\Core+Vdbe\Vdbe+Mem.cu"
+#include "..\System.Data.net\Core+Vdbe\Vdbe+Sort.cu"
+#include "..\System.Data.net\Core+Vdbe\Vdbe+Trace.cu"
+#include "..\System.Data.net\Core+Vdbe\Vdbe+Utf.cu"

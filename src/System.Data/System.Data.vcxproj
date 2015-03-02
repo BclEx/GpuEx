@@ -45,6 +45,8 @@
     <None Include="System.Data+Btree.cu" />
     <None Include="System.Data+Pager.cu" />
     <None Include="System.Data+Vdbe.cu" />
+    <None Include="System.Data+Vdbe+Parse.cu" />
+    <None Include="System.Data+Vdbe+Vdbe.cu" />
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.Data.net\CompileTime.cu" />
     <ClCompile Include="..\System.Data.net\Opcodes.cu" />
@@ -101,6 +103,8 @@
     <CudaCompile Include="System.Data+Btree.cu" />
     <CudaCompile Include="System.Data+Pager.cu" />
     <CudaCompile Include="System.Data+Vdbe.cu" />
+    <CudaCompile Include="System.Data+Vdbe+Parse.cu" />
+    <CudaCompile Include="System.Data+Vdbe+Vdbe.cu" />
     <CudaCompile Include="Program.cu" />
     <None Include="..\System.Data.net\CompileTime.cu" />
     <None Include="..\System.Data.net\Opcodes.cu" />
@@ -215,8 +219,7 @@
       <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
-      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>-->
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" "$(IntDir)System.Data+Vdbe+Parse.cu.obj" "$(IntDir)System.Data+Vdbe+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -244,8 +247,7 @@
       <Keep Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
-      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)Btree.cu.obj" "$(IntDir)Pager.cu.obj" "$(IntDir)PCache.cu.obj" "$(IntDir)PCache1.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>-->
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" "$(IntDir)System.Data+Vdbe+Parse.cu.obj" "$(IntDir)System.Data+Vdbe+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

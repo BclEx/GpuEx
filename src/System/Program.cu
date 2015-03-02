@@ -52,7 +52,7 @@ void GMain(cudaDeviceHeap &r) {
 #else
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
-	__tests(r);
+__tests(r);
 }
 
 #if __CUDACC__
@@ -64,12 +64,18 @@ void __main(cudaDeviceHeap &r)
 
 int main(int argc, char **argv)
 {
+	cudaThreadSetLimit(cudaLimitStackSize, 1024*6);
+	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost), return -1);
+	int deviceId = gpuGetMaxGflopsDeviceId();
+	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
+	cudaDeviceReset();
+
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
 	//IVisualRender *render = new RuntimeVisualRender(runtimeHost);
 	//if (!Visual::InitGL(render, &argc, argv)) return 0;
-	cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId());
+	//cudaCheckErrors(cudaGLSetGLDevice(deviceId), return -3);
 
 	// run
 	__main(deviceHeap);
@@ -79,8 +85,7 @@ int main(int argc, char **argv)
 	cudaDeviceHeapDestroy(deviceHeap);
 
 	cudaDeviceReset();
-	//printf("End.");
-	//char c; scanf("%c", &c);
+	printf("\nEnd"); char c; scanf("%c", &c);
 	return 0;
 }
 #endif

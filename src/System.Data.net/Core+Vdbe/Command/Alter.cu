@@ -130,7 +130,7 @@ namespace Core { namespace Command
 	}
 #endif
 
-	__constant__ static _WSD FuncDef g_alterTableFuncs[] = {
+	__device__ static _WSD FuncDef g_alterTableFuncs[] = {
 		FUNCTION(sqlite_rename_table,   2, 0, 0, RenameTableFunc),
 #ifndef OMIT_TRIGGER
 		FUNCTION(sqlite_rename_trigger, 2, 0, 0, RenameTriggerFunc),

@@ -46,8 +46,7 @@ int main(int argc, char **argv)
 	//cudaDeviceFallocDestroy(fallocHost);
 
 	cudaDeviceReset();
-	printf("End.");
-	char c; scanf("%c", &c);
+	printf("\nEnd."); char c; scanf("%c", &c);
 	return 0;
 }
 #endif

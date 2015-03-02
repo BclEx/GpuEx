@@ -1173,7 +1173,7 @@ namespace Core { namespace Command
 	// The following array holds FuncDef structures for all of the functions defined in this file.
 	//
 	// The array cannot be constant since changes are made to the FuncDef.pHash elements at start-time.  The elements of this array are read-only after initialization is complete.
-	__constant__ static _WSD FuncDef g_builtinFuncs[] =
+	__device__ static _WSD FuncDef g_builtinFuncs[] =
 	{
 		FUNCTION(ltrim,              1, 1, 0, TrimFunc			),
 		FUNCTION(ltrim,              2, 1, 0, TrimFunc			),
