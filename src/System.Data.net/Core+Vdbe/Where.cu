@@ -1361,7 +1361,7 @@ findTerm_success:
 		KeyInfo *keyinfo = parse->IndexKeyinfo(index); // Key information for the index
 		_assert(level->IdxCur >= 0);
 		v->AddOp4(OP_OpenAutoindex, level->IdxCur, columns+1, 0, (char *)keyinfo, Vdbe::P4T_KEYINFO_HANDOFF);
-		v->Comment("for %s", table->Name);
+		Vdbe_Comment(v, "for %s", table->Name);
 
 		// Fill the automatic index with content
 		int addrTop = v->AddOp1(OP_Rewind, level->TabCur); // Top of the index fill loop
@@ -2863,7 +2863,7 @@ cancel:
 		{
 			level->LeftJoin = ++parse->Mems;
 			v->AddOp2(OP_Integer, 0, level->LeftJoin);
-			v->Comment("init LEFT JOIN no-match flag");
+			Vdbe_Comment(v, "init LEFT JOIN no-match flag");
 		}
 
 		// Special case of a FROM clause subquery implemented as a co-routine
@@ -2872,7 +2872,7 @@ cancel:
 			int regYield = item->RegReturn;
 			v->AddOp2(OP_Integer, item->AddrFillSub-1, regYield);
 			level->P2 = v->AddOp1(OP_Yield, regYield);
-			v->Comment("next row of co-routine %s", item->Table->Name);
+			Vdbe_Comment(v, "next row of co-routine %s", item->Table->Name);
 			v->AddOp2(OP_If, regYield+1, addrBrk);
 			level->OP = OP_Goto;
 		}
@@ -2946,7 +2946,7 @@ cancel:
 					v->AddOp3(OP_NotExists, cur, addrNxt, rowidRegId);
 					Expr::CacheAffinityChange(parse, rowidRegId, 1);
 					Expr::CacheStore(parse, cur, -1, rowidRegId);
-					v->Comment("pk");
+					Vdbe_Comment(v, "pk");
 					level->OP = OP_Noop;
 				}
 				else if (level->Plan.WsFlags & WHERE_ROWID_RANGE)
@@ -2983,7 +2983,7 @@ cancel:
 						int tempId; // Registers for holding the start boundary
 						int r1 = Expr::CodeTemp(parse, x->Right, &tempId); // Registers for holding the start boundary
 						v->AddOp3(_moveOps[x->OP-TK_GT], cur, addrBrk, r1);
-						v->Comment("pk");
+						Vdbe_Comment(v, "pk");
 						Expr::CacheAffinityChange(parse, r1, 1);
 						Expr::ReleaseTempReg(parse, tempId);
 						DisableTerm(level, start);
@@ -3409,7 +3409,7 @@ cancel:
 		{
 			level->AddrFirst = v->CurrentAddr();
 			v->AddOp2(OP_Integer, 1, level->LeftJoin);
-			v->Comment("record LEFT JOIN hit");
+			Vdbe_Comment(v, "record LEFT JOIN hit");
 			Expr::CacheClear(parse);
 			for (term = wc->Slots, j = 0; j < wc->Terms; j++, term++)
 			{
@@ -3829,7 +3829,7 @@ cancel:
 						_assert(index->Schema == table->Schema);
 						_assert(indexCur >= 0);
 						v->AddOp4(OP_OpenRead, indexCur, index->Id, db, (char *)keyInfo, Vdbe::P4T_KEYINFO_HANDOFF);
-						v->Comment("%s", index->Name);
+						Vdbe_Comment(v, "%s", index->Name);
 					}
 					parse->CodeVerifySchema(db);
 					notReady &= ~GetMask(sWBI.WC->MaskSet, tabItem->Cursor);

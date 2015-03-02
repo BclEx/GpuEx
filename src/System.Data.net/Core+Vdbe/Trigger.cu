@@ -622,7 +622,7 @@ drop_trigger_cleanup:
 		Vdbe *v = subParse->GetVdbe(); // Temporary VM
 		if (v)
 		{
-			v->Comment("Start: %s.%s (%s %s%s%s ON %s)", 
+			Vdbe_Comment(v, "Start: %s.%s (%s %s%s%s ON %s)", 
 				trigger->Name, OnErrorText(orconf),
 				(trigger->TRtm == TRIGGER_BEFORE ? "BEFORE" : "AFTER"),
 				(trigger->OP == TK_UPDATE ? "UPDATE" : ""),
@@ -653,7 +653,7 @@ drop_trigger_cleanup:
 			if (endTrigger)
 				v->ResolveLabel(endTrigger);
 			v->AddOp0(OP_Halt);
-			v->Comment("End: %s.%s", trigger->Name, OnErrorText(orconf));
+			Vdbe_Comment(v, "End: %s.%s", trigger->Name, OnErrorText(orconf));
 
 			TransferParseError(parse, subParse);
 			if (!ctx->MallocFailed)
@@ -703,7 +703,7 @@ drop_trigger_cleanup:
 			v->AddOp3(OP_Program, reg, ignoreJump, ++parse->Mems);
 			v->ChangeP4(-1, (const char *)prg->Program, Vdbe::P4T_SUBPROGRAM);
 #if _DEBUG
-			v->Comment("Call: %s.%s", (Name ? Name : "fkey"), OnErrorText(orconf));
+			Vdbe_Comment(v, "Call: %s.%s", (Name ? Name : "fkey"), OnErrorText(orconf));
 #endif
 
 			// Set the P5 operand of the OP_Program instruction to non-zero if recursive invocation of this trigger program is disallowed. Recursive

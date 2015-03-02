@@ -33,6 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Data.net", "src\Syst
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "System.Data", "src\System.Data\System.Data.vcxproj", "{AADAB731-E71B-406B-B023-6A3FD7957591}"
 	ProjectSection(ProjectDependencies) = postProject
+		{821AFA21-3738-4DFC-985B-0F5C080E15E4} = {821AFA21-3738-4DFC-985B-0F5C080E15E4}
 		{ACDAB731-E71B-406B-B023-6A3FD7957591} = {ACDAB731-E71B-406B-B023-6A3FD7957591}
 	EndProjectSection
 EndProject
@@ -44,10 +45,16 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Runtime.net", "src\Runtime.net\Runtime.net.csproj", "{06098F19-6185-43A5-AD77-B0E8C10AC885}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "System.Run", "src\System.Run\System.Run.vcxproj", "{124785AA-C3FD-4814-B2AB-4B0E52A2BB67}"
+	ProjectSection(ProjectDependencies) = postProject
+		{ACDAB731-E71B-406B-B023-6A3FD7957591} = {ACDAB731-E71B-406B-B023-6A3FD7957591}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "System.Data", "System.Data", "{13E1E01A-69CF-4BD0-ADC3-8F8291399885}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "System.Data.Run", "src\System.Data.Run\System.Data.Run.vcxproj", "{4CBB97BC-16C4-4698-BC63-16F2499254B3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AADAB731-E71B-406B-B023-6A3FD7957591} = {AADAB731-E71B-406B-B023-6A3FD7957591}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,6 +103,7 @@ Global
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Release.cpu|Mixed Platforms.ActiveCfg = Release.cpu|x64
+		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Release.cpu|Mixed Platforms.Build.0 = Release.cpu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Release.cu|Mixed Platforms.ActiveCfg = Release.cu|x64

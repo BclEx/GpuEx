@@ -17,20 +17,25 @@ void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #if __CUDACC__
 void __main(cudaDeviceHeap &r)
 {	
-	cudaDeviceHeapSelect(r);
+	cudaCheckErrors(cudaDeviceHeapSelect(r), );
 	GMain(r); cudaDeviceHeapSynchronize(r);
 }
 
 int main(int argc, char **argv)
 {
+	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax), return -1);
+	int deviceId = gpuGetMaxGflopsDeviceId();
+	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
+	cudaDeviceReset();
+
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	//cudaDeviceFalloc fallocHost = cudaDeviceFallocCreate(100, 1024);
 
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
-	IVisualRender *render = new RuntimeVisualRender(deviceHeap);
+	//IVisualRender *render = new RuntimeVisualRender(deviceHeap);
 	//IVisualRender *render = new FallocVisualRender(fallocHost);
-	if (!Visual::InitGL(render, &argc, argv)) return 0;
-	cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId());
+	//if (!Visual::InitGL(render, &argc, argv)) return 0;
+	//cudaCheckErrors(cudaGLSetGLDevice(deviceId), return -3);
 
 	// run
 	__main(deviceHeap);
@@ -41,8 +46,8 @@ int main(int argc, char **argv)
 	//cudaDeviceFallocDestroy(fallocHost);
 
 	cudaDeviceReset();
-	//printf("End.");
-	//char c; scanf("%c", &c);
+	printf("End.");
+	char c; scanf("%c", &c);
 	return 0;
 }
 #endif

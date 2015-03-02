@@ -11,7 +11,7 @@ namespace Core { namespace Command
 		p->TableLock(db, table->Id, (opcode == OP_OpenWrite), table->Name);
 		v->AddOp3(opcode, cur, table->Id, db);
 		v->ChangeP4(-1, (char *)INT_TO_PTR(table->Cols.length), Vdbe::P4T_INT32);
-		v->Comment("%s", table->Name);
+		Vdbe_Comment(v, "%s", table->Name);
 	}
 
 	__device__ const char *Insert::IndexAffinityStr(Vdbe *v, Index *index)
@@ -203,9 +203,9 @@ namespace Core { namespace Command
 		Vdbe *v = parse->GetVdbe(); // VDBE under construction
 		int addrTop = v->CurrentAddr();					// Top of the co-routine
 		v->AddOp2(OP_Integer, addrTop+2, regYield);		// X <- A
-		v->Comment("Co-routine entry point");
+		Vdbe_Comment(v, "Co-routine entry point");
 		v->AddOp2(OP_Integer, 0, regEof);				// EOF <- 0
-		v->Comment("Co-routine completion flag");
+		Vdbe_Comment(v, "Co-routine completion flag");
 		Select::DestInit(dest, SRT_Coroutine, regYield);
 		int j1 = v->AddOp2(OP_Goto, 0, 0);				// Jump instruction
 		RC rc = Select::Select_(parse, select, dest);
@@ -215,7 +215,7 @@ namespace Core { namespace Command
 		v->AddOp2(OP_Integer, 1, regEof);				// EOF <- 1
 		v->AddOp1(OP_Yield, regYield);					// yield X
 		v->AddOp2(OP_Halt, RC_INTERNAL, OE_Abort);
-		v->Comment("End of coroutine");
+		Vdbe_Comment(v, "End of coroutine");
 		v->JumpHere(j1);								// label B:
 		return rc;
 	}
@@ -994,7 +994,7 @@ insert_cleanup:
 			KeyInfo *key = parse->IndexKeyinfo(index);
 			_assert(index->Schema == table->Schema);
 			v->AddOp4(op, i+baseCur, index->Id, db, (char *)key, Vdbe::P4T_KEYINFO_HANDOFF);
-			v->Comment("%s", index->Name);
+			Vdbe_Comment(v, "%s", index->Name);
 		}
 		if (parse->Tabs < baseCur+i)
 			parse->Tabs = baseCur+i;
@@ -1162,10 +1162,10 @@ insert_cleanup:
 			v->AddOp2(OP_Close, destId, 0);
 			KeyInfo *key = parse->IndexKeyinfo(srcIdx); // Key information for an index
 			v->AddOp4(OP_OpenRead, srcId, srcIdx->Id, dbSrcId, (char *)key, Vdbe::P4T_KEYINFO_HANDOFF);
-			v->Comment("%s", srcIdx->Name);
+			Vdbe_Comment(v, "%s", srcIdx->Name);
 			key = parse->IndexKeyinfo(destIdx);
 			v->AddOp4(OP_OpenWrite, destId, destIdx->Id, dbDestId, (char *)key, Vdbe::P4T_KEYINFO_HANDOFF);
-			v->Comment("%s", destIdx->Name);
+			Vdbe_Comment(v, "%s", destIdx->Name);
 			addr1 = v->AddOp2(OP_Rewind, srcId, 0);
 			v->AddOp2(OP_RowKey, srcId, regData);
 			v->AddOp3(OP_IdxInsert, destId, regData, 1);

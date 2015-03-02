@@ -5,11 +5,11 @@ namespace Core
 {
 #pragma region Preamble
 
-	//#ifdef _DEBUG
-	//#define MemAboutToChange(P, M) Vdbe::MemAboutToChange(P, M)
-	//#else
-	//#define MemAboutToChange(P, M)
-	//#endif
+#ifdef _DEBUG
+#define MemAboutToChange(P, M) Vdbe::MemAboutToChange(P, M)
+#else
+#define MemAboutToChange(P, M)
+#endif
 
 #ifdef TEST
 	__device__ int g_search_count = 0;
@@ -254,9 +254,16 @@ namespace Core
 		_fprintf(out, "\n");
 	}
 
+#define REGISTER_TRACE(R, M) if (Trace) RegisterTrace(Trace, R, M)
+#else
+#define REGISTER_TRACE(R, M)
+#endif
+
 #ifdef VDBE_PROFILE
 #include "../_hwtime.h" // hwtime.h contains inline assembler code for implementing high-performance timing routines.
 #endif
+
+#define CHECK_FOR_INTERRUPT if (ctx->u1.IsInterrupted) goto abort_due_to_interrupt;
 
 #ifndef NDEBUG
 	__device__ static int CheckSavepointCount(Context *ctx)
@@ -280,12 +287,6 @@ namespace Core
 #pragma endregion
 
 #pragma region Main
-
-#define CHECK_FOR_INTERRUPT if (ctx->u1.IsInterrupted) goto abort_due_to_interrupt;
-#define REGISTER_TRACE(R, M) if (Trace) RegisterTrace(Trace, R, M)
-#else
-#define REGISTER_TRACE(R, M)
-#endif
 
 	__constant__ static const unsigned char _and_logic[] = { 0, 0, 0, 0, 1, 2, 0, 2, 2 };
 	__constant__ static const unsigned char _or_logic[] = { 0, 1, 2, 1, 1, 1, 2, 1, 2 };

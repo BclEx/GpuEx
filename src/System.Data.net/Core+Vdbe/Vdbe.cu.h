@@ -192,11 +192,6 @@ namespace Core
 #endif
 		__device__ RC Exec();
 
-		// not sure
-		//__device__ void PopStack(int);
-		//__device__ static int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-		//__device__ int CloseStatement(Vdbe *, int);
-
 #pragma region Vdbe+Api
 		// name1
 		__device__ static RC Finalize(Vdbe *p);
@@ -355,7 +350,10 @@ namespace Core
 #endif
 		__device__ void ChangeToNoop(int addr);
 		__device__ void ChangeP4(int addr, const char *p4, int n);
+
 #ifndef NDEBUG
+#define Vdbe_Comment(v, fmt, ...) v->Comment(fmt, __VA_ARGS__)
+#define Vdbe_NoopComment(v, fmt, ...) v->NoopComment(fmt, __VA_ARGS__)
 		__device__ void Comment_(const char *fmt, va_list &args);
 		__device__ void NoopComment_(const char *fmt, va_list &args);
 #if __CUDACC__
@@ -387,8 +385,8 @@ namespace Core
 		__device__ inline void NoopComment(const char *fmt, ...) { va_list args; va_start(args, fmt); NoopComment_(fmt, args); va_end(args); }
 #endif
 #else
-		__device__ inline void Comment_(const char *fmt, va_list &args) { }
-		__device__ inline void NoopComment_(const char *fmt, va_list &args) { }
+#define Vdbe_Comment(v, fmt, ...)
+#define Vdbe_NoopComment(v, fmt, ...)
 #endif
 		__device__ VdbeOp *GetOp(int addr);
 		__device__ void UsesBtree(int i);

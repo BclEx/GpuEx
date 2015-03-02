@@ -1699,6 +1699,7 @@ error_out:
 	}
 
 #pragma region TEST
+#ifdef TEST
 	extern __device__ void Random_PrngSaveState();
 	extern __device__ void Random_PrngRestoreState();
 	extern __device__ void Random_PrngResetState();
@@ -1857,6 +1858,7 @@ error_out:
 #endif
 		return (RC)rc;
 	}
+#endif
 #pragma endregion
 
 	__device__ Btree *Main::DbNameToBtree(Context *ctx, const char *dbName)

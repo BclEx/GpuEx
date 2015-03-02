@@ -83,20 +83,16 @@ namespace Core
 		uint8 Chars;    // Length of the keyword in characters
 		JT Code;     // Join type mask
 	};
-#if __CUDACC__
-	__constant__ static keywords_t _keywords[7];
-	static const keywords_t h_keywords[7] =
-#else
-	static const keywords_t _keywords[7] =
-#endif
+
+	__constant__ static const keywords_t _keywords[7] =
 	{
-		{ 0,  7, JT_NATURAL                },	// natural
-		{ 6,  4, JT_LEFT|JT_OUTER          },	// left
-		{ 10, 5, JT_OUTER                  },	// outer
-		{ 14, 5, JT_RIGHT|JT_OUTER         },	// right
-		{ 19, 4, JT_LEFT|JT_RIGHT|JT_OUTER },	// full
-		{ 23, 5, JT_INNER                  },	// inner
-		{ 28, 5, JT_INNER|JT_CROSS         },	// cross
+		{ 0,  7, JT_NATURAL							},			// natural
+		{ 6,  4, (JT)((int)JT_LEFT|(int)JT_OUTER)	},			// left
+		{ 10, 5, JT_OUTER							},			// outer
+		{ 14, 5, (JT)((int)JT_RIGHT|(int)JT_OUTER)	},			// right
+		{ 19, 4, (JT)((int)JT_LEFT|(int)JT_RIGHT|(int)JT_OUTER) },	// full
+		{ 23, 5, JT_INNER							},			// inner
+		{ 28, 5, (JT)((int)JT_INNER|(int)JT_CROSS)	},			// cross
 	};
 
 	__device__ JT Select::JoinType(Parse *parse, Token *a, Token *b, Token *c)
@@ -308,7 +304,7 @@ namespace Core
 			v->AddOp2(OP_AddImm, p->OffsetId, -1);
 			int addr = v->AddOp1(OP_IfNeg, p->OffsetId);
 			v->AddOp2(OP_Goto, 0, continueId);
-			v->Comment("skip OFFSET records");
+			Vdbe_Comment(v, "skip OFFSET records");
 			v->JumpHere(addr);
 		}
 	}
@@ -1075,7 +1071,7 @@ namespace Core
 			if (p->Limit->IsInteger(&n))
 			{
 				v->AddOp2(OP_Integer, n, limitId);
-				v->Comment("LIMIT counter");
+				Vdbe_Comment(v, "LIMIT counter");
 				if (n == 0)
 					v->AddOp2(OP_Goto, 0, breakId);
 				else if (p->SelectRows > (double)n)
@@ -1085,7 +1081,7 @@ namespace Core
 			{
 				Expr::Code(parse, p->Limit, limitId);
 				v->AddOp1(OP_MustBeInt, limitId);
-				v->Comment("LIMIT counter");
+				Vdbe_Comment(v, "LIMIT counter");
 				v->AddOp2(OP_IfZero, limitId, breakId);
 			}
 			if (p->Offset)
@@ -1094,12 +1090,12 @@ namespace Core
 				parse->Mems++; // Allocate an extra register for limit+offset
 				Expr::Code(parse, p->Offset, offsetId);
 				v->AddOp1(OP_MustBeInt, offsetId);
-				v->Comment("OFFSET counter");
+				Vdbe_Comment(v, "OFFSET counter");
 				int addr1 = v->AddOp1(OP_IfPos, offsetId);
 				v->AddOp2(OP_Integer, 0, offsetId);
 				v->JumpHere(addr1);
 				v->AddOp3(OP_Add, limitId, offsetId, offsetId+1);
-				v->Comment("LIMIT+OFFSET");
+				Vdbe_Comment(v, "LIMIT+OFFSET");
 				addr1 = v->AddOp1(OP_IfPos, limitId);
 				v->AddOp2(OP_Integer, -1, offsetId+1);
 				v->JumpHere(addr1);
@@ -1200,7 +1196,7 @@ namespace Core
 			if (p->LimitId)
 			{
 				addr = v->AddOp1(OP_IfZero, p->LimitId);
-				v->Comment("Jump ahead if LIMIT reached");
+				Vdbe_Comment(v, "Jump ahead if LIMIT reached");
 			}
 			ExplainSetInteger(sub2Id, parse->NextSelectId);
 			rc = Select::Select_(parse, p, &dest2);
@@ -1684,17 +1680,17 @@ multi_select_end:
 		int addrSelectA = v->CurrentAddr(); // Address of the select-A coroutine
 
 		// Generate a coroutine to evaluate the SELECT statement to the left of the compound operator - the "A" select.
-		v->NoopComment("Begin coroutine for left SELECT");
+		Vdbe_NoopComment(v, "Begin coroutine for left SELECT");
 		prior->LimitId = regLimitA;
 		ExplainSetInteger(sub1Id, parse->NextSelectId);
 		Select::Select_(parse, prior, &destA);
 		v->AddOp2(OP_Integer, 1, regEofA);
 		v->AddOp1(OP_Yield, regAddrA);
-		v->NoopComment("End coroutine for left SELECT");
+		Vdbe_NoopComment(v, "End coroutine for left SELECT");
 
 		// Generate a coroutine to evaluate the SELECT statement on the right - the "B" select
 		int addrSelectB = v->CurrentAddr(); // Address of the select-B coroutine
-		v->NoopComment("Begin coroutine for right SELECT");
+		Vdbe_NoopComment(v, "Begin coroutine for right SELECT");
 		int savedLimit = p->LimitId; // Saved value of p->iLimit
 		int savedOffset = p->OffsetId; // Saved value of p->iOffset
 		p->LimitId = regLimitB;
@@ -1705,23 +1701,23 @@ multi_select_end:
 		p->OffsetId = savedOffset;
 		v->AddOp2(OP_Integer, 1, regEofB);
 		v->AddOp1(OP_Yield, regAddrB);
-		v->NoopComment("End coroutine for right SELECT");
+		Vdbe_NoopComment(v, "End coroutine for right SELECT");
 
 		// Generate a subroutine that outputs the current row of the A select as the next output row of the compound select.
-		v->NoopComment("Output routine for A");
+		Vdbe_NoopComment(v, "Output routine for A");
 		int addrOutA = GenerateOutputSubroutine(parse, p, &destA, dest, regOutA, regPrev, keyDup, Vdbe::P4T_KEYINFO_HANDOFF, labelEnd); // Address of the output-A subroutine
 		int addrOutB = 0; // Address of the output-B subroutine
 
 		// Generate a subroutine that outputs the current row of the B select as the next output row of the compound select.
 		if (op == TK_ALL || op == TK_UNION)
 		{
-			v->NoopComment("Output routine for B");
+			Vdbe_NoopComment(v, "Output routine for B");
 			addrOutB = GenerateOutputSubroutine(parse, p, &destB, dest, regOutB, regPrev, keyDup, Vdbe::P4T_KEYINFO_STATIC, labelEnd);
 		}
 
 		// Generate a subroutine to run when the results from select A are exhausted and only data in select B remains.
 		int addrEofA; // Address of the select-A-exhausted subroutine
-		v->NoopComment("eof-A subroutine");
+		Vdbe_NoopComment(v, "eof-A subroutine");
 		if (op == TK_EXCEPT || op == TK_INTERSECT)
 			addrEofA = v->AddOp2(OP_Goto, 0, labelEnd);
 		else
@@ -1742,7 +1738,7 @@ multi_select_end:
 		}
 		else
 		{  
-			v->NoopComment("eof-B subroutine");
+			Vdbe_NoopComment(v, "eof-B subroutine");
 			addrEofB = v->AddOp2(OP_If, regEofA, labelEnd);
 			v->AddOp2(OP_Gosub, regOutA, addrOutA);
 			v->AddOp1(OP_Yield, regAddrA);
@@ -1751,7 +1747,7 @@ multi_select_end:
 
 		// Generate code to handle the case of A<B
 		int addrAltB; // Address of the A<B subroutine
-		v->NoopComment("A-lt-B subroutine");
+		Vdbe_NoopComment(v, "A-lt-B subroutine");
 		addrAltB = v->AddOp2(OP_Gosub, regOutA, addrOutA);
 		v->AddOp1(OP_Yield, regAddrA);
 		v->AddOp2(OP_If, regEofA, addrEofA);
@@ -1770,7 +1766,7 @@ multi_select_end:
 		}
 		else
 		{
-			v->NoopComment("A-eq-B subroutine");
+			Vdbe_NoopComment(v, "A-eq-B subroutine");
 			addrAeqB = v->AddOp1(OP_Yield, regAddrA);
 			v->AddOp2(OP_If, regEofA, addrEofA);
 			v->AddOp2(OP_Goto, 0, labelCmpr);
@@ -1778,7 +1774,7 @@ multi_select_end:
 
 		// Generate code to handle the case of A>B
 		int addrAgtB; // Address of the A>B subroutine
-		v->NoopComment("A-gt-B subroutine");
+		Vdbe_NoopComment(v, "A-gt-B subroutine");
 		addrAgtB = v->CurrentAddr();
 		if (op == TK_ALL || op == TK_UNION)
 			v->AddOp2(OP_Gosub, regOutB, addrOutB);
@@ -2783,7 +2779,7 @@ multi_select_end:
 				v->AddOp0(OP_Goto);
 				int addrTop = v->AddOp1(OP_OpenPseudo, item->Cursor);
 				v->ChangeP5(1);
-				v->Comment("coroutine for %s", item->Table->Name);
+				Vdbe_Comment(v, "coroutine for %s", item->Table->Name);
 				item->AddrFillSub = addrTop;
 				v->AddOp2(OP_Integer, 0, addrEof);
 				v->ChangeP5(1);
@@ -2796,7 +2792,7 @@ multi_select_end:
 				v->ChangeP3(addrTop, sDest.Sdsts);
 				v->AddOp2(OP_Integer, 1, addrEof);
 				v->AddOp1(OP_Yield, item->RegReturn);
-				v->Comment("end %s", item->Table->Name);
+				Vdbe_Comment(v, "end %s", item->Table->Name);
 				v->JumpHere(addrTop-1);
 				Expr::ClearTempRegCache(parse);
 			}
@@ -2808,7 +2804,7 @@ multi_select_end:
 				item->RegReturn = ++parse->Mems;
 				int topAddr = v->AddOp2(OP_Integer, 0, item->RegReturn);
 				item->AddrFillSub = topAddr+1;
-				v->NoopComment("materialize %s", item->Table->Name);
+				Vdbe_NoopComment(v, "materialize %s", item->Table->Name);
 				int onceAddr = 0;
 				if (item->IsCorrelated == 0)
 					onceAddr = Expr::CodeOnce(parse); // If the subquery is no correlated and if we are not inside of a trigger, then we only need to compute the value of the subquery once.
@@ -2818,7 +2814,7 @@ multi_select_end:
 				item->Table->RowEst = (unsigned)sub->SelectRows;
 				if (onceAddr) v->JumpHere(onceAddr);
 				int retAddr = v->AddOp1(OP_Return, item->RegReturn);
-				v->Comment("end %s", item->Table->Name);
+				Vdbe_Comment(v, "end %s", item->Table->Name);
 				v->ChangeP1(topAddr, retAddr);
 				Expr::ClearTempRegCache(parse);
 			}
@@ -3026,9 +3022,9 @@ multi_select_end:
 				bmemId = parse->Mems + 1;
 				parse->Mems += groupBy->Exprs;
 				v->AddOp2(OP_Integer, 0, abortFlagId);
-				v->Comment("clear abort flag");
+				Vdbe_Comment(v, "clear abort flag");
 				v->AddOp2(OP_Integer, 0, useFlagId);
-				v->Comment("indicate accumulator empty");
+				Vdbe_Comment(v, "indicate accumulator empty");
 				v->AddOp3(OP_Null, 0, amemId, amemId + groupBy->Exprs - 1);
 
 				// Begin a loop that will extract all source rows in GROUP BY order. This might involve two separate loops with an OP_Sort in between, or
@@ -3083,7 +3079,7 @@ multi_select_end:
 					sortOut = Expr::GetTempReg(parse);
 					v->AddOp3(OP_OpenPseudo, sortPTab, sortOut, cols);
 					v->AddOp2(OP_SorterSort, sAggInfo.SortingIdx, addrEnd);
-					v->Comment("GROUP BY sort");
+					Vdbe_Comment(v, "GROUP BY sort");
 					sAggInfo.UseSortingIdx = 1;
 					Expr::CacheClear(parse);
 				}
@@ -3118,17 +3114,17 @@ multi_select_end:
 				// and resets the aggregate accumulator registers in preparation for the next GROUP BY batch.
 				Expr::CodeMove(parse, bmemId, amemId, groupBy->Exprs);
 				v->AddOp2(OP_Gosub, regOutputRow, addrOutputRow);
-				v->Comment("output one row");
+				Vdbe_Comment(v, "output one row");
 				v->AddOp2(OP_IfPos, abortFlagId, addrEnd);
-				v->Comment("check abort flag");
+				Vdbe_Comment(v, "check abort flag");
 				v->AddOp2(OP_Gosub, regReset, addrReset);
-				v->Comment("reset accumulator");
+				Vdbe_Comment(v, "reset accumulator");
 
 				// Update the aggregate accumulators based on the content of the current row
 				v->JumpHere(j1);
 				UpdateAccumulator(parse, &sAggInfo);
 				v->AddOp2(OP_Integer, 1, useFlagId);
-				v->Comment("indicate data in accumulator");
+				Vdbe_Comment(v, "indicate data in accumulator");
 
 				// End of the loop
 				if (groupBySort)
@@ -3141,7 +3137,7 @@ multi_select_end:
 
 				// Output the final row of result
 				v->AddOp2(OP_Gosub, regOutputRow, addrOutputRow);
-				v->Comment("output final row");
+				Vdbe_Comment(v, "output final row");
 
 				// Jump over the subroutines
 				v->AddOp2(OP_Goto, 0, addrEnd);
@@ -3151,18 +3147,18 @@ multi_select_end:
 				// increments the iAbortFlag memory location before returning in order to signal the caller to abort.
 				int addrSetAbort = v->CurrentAddr(); // Set the abort flag and return
 				v->AddOp2(OP_Integer, 1, abortFlagId);
-				v->Comment("set abort flag");
+				Vdbe_Comment(v, "set abort flag");
 				v->AddOp1(OP_Return, regOutputRow);
 				v->ResolveLabel(addrOutputRow);
 				addrOutputRow = v->CurrentAddr();
 				v->AddOp2(OP_IfPos, useFlagId, addrOutputRow+2);
-				v->Comment("Groupby result generator entry point");
+				Vdbe_Comment(v, "Groupby result generator entry point");
 				v->AddOp1(OP_Return, regOutputRow);
 				FinalizeAggFunctions(parse, &sAggInfo);
 				if (having != nullptr) having->IfFalse(parse, addrOutputRow+1, AFF_BIT_JUMPIFNULL);
 				SelectInnerLoop(parse, p, p->EList, 0, 0, orderBy, &sDistinct, dest, addrOutputRow+1, addrSetAbort);
 				v->AddOp1(OP_Return, regOutputRow);
-				v->Comment("end groupby result generator");
+				Vdbe_Comment(v, "end groupby result generator");
 
 				// Generate a subroutine that will reset the group-by accumulator
 				v->ResolveLabel(addrReset);
@@ -3271,7 +3267,7 @@ multi_select_end:
 					if (winfo->OBSats > 0)
 					{
 						v->AddOp2(OP_Goto, 0, winfo->BreakId);
-						v->Comment("%s() by index", (flag == WHERE_ORDERBY_MIN ? "min" : "max"));
+						Vdbe_Comment(v, "%s() by index", (flag == WHERE_ORDERBY_MIN ? "min" : "max"));
 					}
 					WhereInfo::End(winfo);
 					FinalizeAggFunctions(parse, &sAggInfo);

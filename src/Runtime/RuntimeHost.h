@@ -115,6 +115,7 @@ inline int gpuGetMaxGflopsDeviceId()
 	int deviceCount = 0;
 	cudaDeviceProp deviceProp;
 	cudaGetDeviceCount(&deviceCount);
+	if (deviceCount == 1) return 0;
 	// Find the best major SM Architecture GPU device
 	int bestMajor = 0;
 	for (int i = 0; i < deviceCount; i++)

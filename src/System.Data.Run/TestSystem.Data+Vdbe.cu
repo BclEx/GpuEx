@@ -12,12 +12,15 @@ __device__ static bool MyCallback(void *args, int argsLength, char **args2, char
 
 __device__ static void TestDB()
 {
-	//SysEx_LOG(RC_OK, "START\n");
+	SysEx_LOG(RC_OK, "START\n");
+#if _DEBUG
 	//ParserTrace(stderr, "p: ");
+#endif
 
 	// open
 	Context *ctx;
-	Main::Open("C:\\T_\\Test2.db", &ctx);
+	//Main::Open("C:\\T_\\Test2.db", &ctx);
+	Main::Open(":memory:", &ctx);
 	//ctx->Trace = Trace;
 
 	// run query

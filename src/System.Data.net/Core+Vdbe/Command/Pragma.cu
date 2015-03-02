@@ -99,12 +99,7 @@ namespace Core { namespace Command
 		const char *Name; // Name of the pragma
 		Context::FLAG Mask; // Mask for the db->flags value
 	};
-#if __CUDACC__
-	__constant__ static sPragmaType _pragmas[19];
-	static const sPragmaType h_pragmas[19] =
-#else
-	static const sPragmaType _pragmas[19] =
-#endif
+	__constant__ static const sPragmaType _pragmas[] =
 	{
 		{"full_column_names",        Context::FLAG_FullColNames},
 		{"short_column_names",       Context::FLAG_ShortColNames},
@@ -122,13 +117,13 @@ namespace Core { namespace Command
 		{"vdbe_listing",             Context::FLAG_VdbeListing},
 		{"vdbe_trace",               Context::FLAG_VdbeTrace},
 		{"vdbe_addoptrace",          Context::FLAG_VdbeAddopTrace},
-		{"vdbe_debug",               Context::FLAG_SqlTrace|Context::FLAG_VdbeListing|Context::FLAG_VdbeTrace},
+		{"vdbe_debug",               (Context::FLAG)((int)Context::FLAG_SqlTrace|(int)Context::FLAG_VdbeListing|(int)Context::FLAG_VdbeTrace)},
 #endif
 #ifndef OMIT_CHECK
 		{"ignore_check_constraints", Context::FLAG_IgnoreChecks},
 #endif
 		// The following is VERY experimental
-		{"writable_schema",          Context::FLAG_WriteSchema|Context::FLAG_RecoveryMode},
+		{"writable_schema",          (Context::FLAG)((int)Context::FLAG_WriteSchema|(int)Context::FLAG_RecoveryMode)},
 
 		// TODO: Maybe it shouldn't be possible to change the ReadUncommitted flag if there are any active statements.
 		{"read_uncommitted",         Context::FLAG_ReadUncommitted},

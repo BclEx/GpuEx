@@ -171,11 +171,11 @@ namespace Core
 	//     Used to create a scalar function definition of a function zName that accepts nArg arguments and is implemented by a call to C 
 	//     function likeFunc. Argument arg is cast to a (void *) and made available as the function user-data (sqlite3_user_data()). The
 	//     FuncDef.flags variable is set to the value passed as the flags parameter.
-#define FUNCTION(name, args, arg, nc, func) {args, TEXTENCODE_UTF8, (FUNC)(nc*FUNC_NEEDCOLL), INT_TO_PTR(arg), 0, func, 0, 0, #name, 0, 0}
-#define FUNCTION2(name, args, arg, nc, func, extraFlags) {args, TEXTENCODE_UTF8, (FUNC)(nc*FUNC_NEEDCOLL)|extraFlags, INT_TO_PTR(arg), 0, func, 0, 0, #name, 0, 0}
-#define STR_FUNCTION(name, args, arg, nc, func) {args, TEXTENCODE_UTF8, (FUNC)(nc*FUNC_NEEDCOLL), arg, 0, func, 0, 0, #name, 0, 0}
+#define FUNCTION(name, args, arg, nc, func) {args, TEXTENCODE_UTF8, (FUNC)(nc*(int)FUNC_NEEDCOLL), INT_TO_PTR(arg), 0, func, 0, 0, #name, 0, 0}
+#define FUNCTION2(name, args, arg, nc, func, extraFlags) {args, TEXTENCODE_UTF8, (FUNC)((nc*(int)FUNC_NEEDCOLL)|(int)extraFlags), INT_TO_PTR(arg), 0, func, 0, 0, #name, 0, 0}
+#define STR_FUNCTION(name, args, arg, nc, func) {args, TEXTENCODE_UTF8, (FUNC)(nc*(int)FUNC_NEEDCOLL), arg, 0, func, 0, 0, #name, 0, 0}
 #define LIKEFUNC(name, args, arg, flags) {args, TEXTENCODE_UTF8, (FUNC)flags, (void *)arg, 0, LikeFunc, 0, 0, #name, 0, 0}
-#define AGGREGATE(name, args, arg, nc, step, final) {args, TEXTENCODE_UTF8, (FUNC)(nc*FUNC_NEEDCOLL), INT_TO_PTR(arg), 0, 0, step,final,#name,0,0}
+#define AGGREGATE(name, args, arg, nc, step, final) {args, TEXTENCODE_UTF8, (FUNC)(nc*(int)FUNC_NEEDCOLL), INT_TO_PTR(arg), 0, 0, step, final, #name, 0, 0}
 
 #pragma endregion
 
@@ -1868,6 +1868,7 @@ namespace Core {
 		__device__ static int Sleep(int ms);
 		__device__ static RC ExtendedResultCodes(Context *ctx, bool onoff);
 		__device__ static RC FileControl(Context *ctx, const char *dbName, VFile::FCNTL op, void *arg);
+#ifdef TEST
 		enum TESTCTRL
 		{
 			TESTCTRL_FIRST                   = 5,
@@ -1889,6 +1890,7 @@ namespace Core {
 			TESTCTRL_LAST                    =19,
 		};
 		__device__ RC Main::TestControl_(TESTCTRL op, va_list &args);
+#endif
 		__device__ static Btree *DbNameToBtree(Context *ctx, const char *dbName);
 		__device__ static const char *CtxFilename(Context *ctx, const char *dbName);
 		__device__ static int CtxReadonly(Context *ctx, const char *dbName);

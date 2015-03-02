@@ -14,7 +14,7 @@ namespace Core { namespace Command
 		{
 			TEXTENCODE encode = CTXENCODE(v->Ctx);
 			Column *col = &table->Cols[i];
-			v->Comment("%s.%s", table->Name, col->Name);
+			Vdbe_Comment(v, "%s.%s", table->Name, col->Name);
 			_assert(i < table->Cols.length);
 			Mem *value;
 			Vdbe::ValueFromExpr(v->Ctx, col->Dflt, encode, col->Affinity, &value);

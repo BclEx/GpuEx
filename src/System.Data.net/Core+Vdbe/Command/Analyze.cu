@@ -275,7 +275,7 @@ namespace Core { namespace Command
 		for (Index *idx = table->Index; idx; idx = idx->Next) // An index to being analyzed
 		{
 			if (onlyIdx && onlyIdx != idx) continue;
-			v->NoopComment("Begin analysis of %s", idx->Name);
+			Vdbe_NoopComment(v, "Begin analysis of %s", idx->Name);
 			int cols = idx->Columns.length;
 			int *chngAddrs = (int *)_tagalloc(ctx, sizeof(int)*cols); // Array of jump instruction addresses
 			if (!chngAddrs) continue;
@@ -286,7 +286,7 @@ namespace Core { namespace Command
 			// Open a cursor to the index to be analyzed.
 			_assert(db == Prepare::SchemaToIndex(ctx, idx->Schema));
 			v->AddOp4(OP_OpenRead, idxCurId, idx->Id, db, (char *)key, Vdbe::P4T_KEYINFO_HANDOFF);
-			v->Comment("%s", idx->Name);
+			Vdbe_Comment(v, "%s", idx->Name);
 
 			// Populate the register containing the index name.
 			v->AddOp4(OP_String8, 0, regIdxname, 0, idx->Name, 0);
@@ -342,12 +342,12 @@ namespace Core { namespace Command
 				CollSeq *coll = parse->LocateCollSeq(idx->CollNames[i]);
 				chngAddrs[i] = v->AddOp4(OP_Ne, regCol, 0, memId+cols+i+1, (char *)coll, Vdbe::P4T_COLLSEQ);
 				v->ChangeP5(AFF_BIT_NULLEQ);
-				v->Comment("jump if column %d changed", i);
+				Vdbe_Comment(v, "jump if column %d changed", i);
 #ifdef ENABLE_STAT3
 				if (i == 0)
 				{
 					v->AddOp2(OP_AddImm, regNumEq, 1);
-					v->Comment("incr repeat count");
+					Vdbe_Comment(v, "incr repeat count");
 				}
 #endif
 			}
@@ -434,7 +434,7 @@ namespace Core { namespace Command
 		if (!table->Index)
 		{
 			v->AddOp3(OP_OpenRead, idxCurId, table->Id, db);
-			v->Comment("%s", table->Name);
+			Vdbe_Comment(v, "%s", table->Name);
 			v->AddOp2(OP_Count, idxCurId, regStat1);
 			v->AddOp1(OP_Close, idxCurId);
 			zeroRows = v->AddOp1(OP_IfNot, regStat1);

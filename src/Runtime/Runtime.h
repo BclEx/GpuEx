@@ -466,8 +466,12 @@ __device__ inline static char *__snprintf(const char *buf, size_t bufLen, const 
 #pragma region FPRINTF
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 200
+#undef stdin
 #undef stdout
+#undef stderr
+#define stdin nullptr
 #define stdout nullptr
+#define stderr nullptr
 #endif
 
 #if __CUDACC__

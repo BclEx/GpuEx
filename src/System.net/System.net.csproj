@@ -8,12 +8,12 @@
     <ProjectGuid>{30180E7B-AABE-4F33-9C2C-F8A447024674}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>System</RootNamespace>
-    <AssemblyName>System</AssemblyName>
+    <AssemblyName>System.net</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug.cpu|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;TEST;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
+    <DefineConstants>DEBUG;THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;TEST;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -27,10 +27,10 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <DefineConstants>DEBUG;THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;TEST;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
+    <DefineConstants>THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetName>SystemL$(LD)</TargetName>
+    <TargetName>System$(LD).net</TargetName>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

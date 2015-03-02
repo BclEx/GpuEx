@@ -1059,7 +1059,7 @@ no_mem:
 						KeyInfo *key = parse->IndexKeyinfo(index);
 						int addr = CodeOnce(parse);
 						v->AddOp4(OP_OpenRead, tableIdx, index->Id, db, (char *)key, Vdbe::P4T_KEYINFO_HANDOFF);
-						v->Comment("%s", index->Name);
+						Vdbe_Comment(v, "%s", index->Name);
 						_assert(IN_INDEX_INDEX_DESC == IN_INDEX_INDEX_ASC+1);
 						type = (IN_INDEX)(IN_INDEX_INDEX_ASC + index->SortOrders[0]);
 						v->JumpHere(addr);
@@ -1229,13 +1229,13 @@ no_mem:
 			{
 				dest.Dest = SRT_Mem;
 				v->AddOp2(OP_Null, 0, dest.SDParmId);
-				v->Comment("Init subquery result");
+				Vdbe_Comment(v, "Init subquery result");
 			}
 			else
 			{
 				dest.Dest = SRT_Exists;
 				v->AddOp2(OP_Integer, 0, dest.SDParmId);
-				v->Comment("Init EXISTS result");
+				Vdbe_Comment(v, "Init EXISTS result");
 			}
 			Expr::Delete(parse->Ctx, sel->Limit);
 			sel->Limit = PExpr_(parse, TK_INTEGER, 0, 0, &g_intTokens[1]);
@@ -1257,7 +1257,7 @@ no_mem:
 		// Compute the RHS. After this step, the table with cursor expr->TableId will contains the values that make up the RHS.
 		Vdbe *v = parse->V; // Statement under construction
 		_assert(v); // OOM detected prior to this routine
-		v->NoopComment("begin IN expr");
+		Vdbe_NoopComment(v, "begin IN expr");
 		int rhsHasNull = 0; // Register that is true if RHS contains NULL values
 		int type = FindInIndex(parse, expr, &rhsHasNull); // Type of the RHS
 
@@ -1333,7 +1333,7 @@ no_mem:
 		}
 		ReleaseTempReg(parse, r1);
 		CachePop(parse, 1);
-		v->Comment("end IN expr");
+		Vdbe_Comment(v, "end IN expr");
 	}
 
 #endif
@@ -2041,7 +2041,7 @@ no_mem:
 			_assert(table->PKey < 0 || expr->ColumnId != table->PKey);
 			_assert(p1 >= 0 && p1 < (table->Cols.length*2+2));
 			v->AddOp2(OP_Param, p1, target);
-			v->Comment("%s.%s -> $%d", (expr->TableId ? "new" : "old"), (expr->ColumnId < 0 ? "rowid" : expr->Table->Cols[expr->ColumnId].Name), target);
+			Vdbe_Comment(v, "%s.%s -> $%d", (expr->TableId ? "new" : "old"), (expr->ColumnId < 0 ? "rowid" : expr->Table->Cols[expr->ColumnId].Name), target);
 
 #ifndef OMIT_FLOATING_POINT
 			// If the column has REAL affinity, it may currently be stored as an integer. Use OP_RealAffinity to make sure it is really real.

@@ -1905,12 +1905,7 @@ end_playback:
 
 #pragma region Main
 
-//#if __CUDACC__
-//	__constant__ uint8 _zerobyte = 0;
-//#else
-//	static const uint8 _zerobyte = 0;
-//#endif
-	__constant__ uint8 _zerobyte = 0;
+	__constant__ static const uint8 _zerobyte = 0;
 	__device__ static RC SyncJournal(Pager *pager, bool newHeader)
 	{
 		_assert(pager->State == Pager::PAGER_WRITER_CACHEMOD || pager->State == Pager::PAGER_WRITER_DBMOD);

@@ -8,7 +8,7 @@
     <ProjectGuid>{31180E7B-AABE-4F33-9C2C-F8A447024674}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>System</RootNamespace>
-    <AssemblyName>System.Data</AssemblyName>
+    <AssemblyName>System.Data.net</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug.cpu|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,10 +28,10 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <DefineConstants>DEBUG;THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;TEST;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
+    <DefineConstants>_LIB;THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetName>SystemL.Data$(LD)</TargetName>
+    <TargetName>System.Data$(LD).net</TargetName>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

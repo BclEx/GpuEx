@@ -87,14 +87,14 @@ namespace Core
 		VSystem::OPEN Mode;
 	};
 
-	__constant__ static OpenMode _cacheModes[3] =
+	__constant__ static OpenMode _cacheModes[] =
 	{
 		{ "shared",  VSystem::OPEN_SHAREDCACHE },
 		{ "private", VSystem::OPEN_PRIVATECACHE },
 		{ nullptr, (VSystem::OPEN)0 }
 	};
 
-	__constant__ static OpenMode _openModes[5] =
+	__constant__ static OpenMode _openModes[] =
 	{
 		{ "ro",  VSystem::OPEN_READONLY },
 		{ "rw",  VSystem::OPEN_READWRITE }, 
