@@ -178,7 +178,7 @@ __global__ static void runtime12(void *r)
 	char *a6 = __snprintf(buf, sizeof(buf), "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(!_strcmp(a6, "t6 1 2 3 4 5 6\n"));
 	char *a7 = __snprintf(buf, sizeof(buf), "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(!_strcmp(a7, "t7 1 2 3 4 5 6 7\n"));
 	char *a8 = __snprintf(buf, sizeof(buf), "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(!_strcmp(a8, "t8 1 2 3 4 5 6 7 8\n"));
-	//char *a9 = __snprintf(buf, sizeof(buf), "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(a9, "t9 1 2 3 4 5 6 7 8 9\n")); //: errors with %s
+	char *a9 = __snprintf(buf, sizeof(buf), "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(a9, "t9 1 2 3 4 5 6 7 8 9\n")); //: errors with %s
 	char *aA = __snprintf(buf, sizeof(buf), "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(!_strcmp(aA, "ta 1 2 3 4 5 6 7 8 9 A\n"));
 	// extended
 	char *aB = __snprintf(buf, sizeof(buf), "tb %s %d %d %d %d %d %d %d %d %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B"); _assert(!_strcmp(aB, "tb 1 2 3 4 5 6 7 8 9 A B\n"));
@@ -214,7 +214,7 @@ __global__ static void runtime14(void *r)
 	char *a6 = _mprintf("t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(!_strcmp(a6, "t6 1 2 3 4 5 6\n")); _free(a6);
 	char *a7 = _mprintf("t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(!_strcmp(a7, "t7 1 2 3 4 5 6 7\n")); _free(a7);
 	char *a8 = _mprintf("t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(!_strcmp(a8, "t8 1 2 3 4 5 6 7 8\n")); _free(a8);
-	//char *a9 = _mprintf("t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(a9, "t9 1 2 3 4 5 6 7 8 9\n")); _free(a9);
+	char *a9 = _mprintf("t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(a9, "t9 1 2 3 4 5 6 7 8 9\n")); _free(a9);
 	char *aA = _mprintf("ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(!_strcmp(aA, "ta 1 2 3 4 5 6 7 8 9 A\n")); _free(aA);
 	//
 	char *b0 = _mtagprintf(tag, "t0\n"); _assert(!_strcmp(b0, "t0\n")); _tagfree(tag, b0);
@@ -226,7 +226,7 @@ __global__ static void runtime14(void *r)
 	char *b6 = _mtagprintf(tag, "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(!_strcmp(b6, "t6 1 2 3 4 5 6\n")); _tagfree(tag, b6);
 	char *b7 = _mtagprintf(tag, "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(!_strcmp(b7, "t7 1 2 3 4 5 6 7\n")); _tagfree(tag, b7);
 	char *b8 = _mtagprintf(tag, "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(!_strcmp(b8, "t8 1 2 3 4 5 6 7 8\n")); _tagfree(tag, b8);
-	//char *b9 = _mtagprintf(tag, "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(b9, "t9 1 2 3 4 5 6 7 8 9\n")); _tagfree(tag, b9);
+	char *b9 = _mtagprintf(tag, "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(b9, "t9 1 2 3 4 5 6 7 8 9\n")); _tagfree(tag, b9);
 	char *bA = _mtagprintf(tag, "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(!_strcmp(bA, "ta 1 2 3 4 5 6 7 8 9 A\n")); _tagfree(tag, bA);
 	//
 	char *c0 = _mtagappendf(tag, nullptr, "t0\n"); _assert(!_strcmp(c0, "t0\n")); _tagfree(tag, c0);
@@ -238,7 +238,7 @@ __global__ static void runtime14(void *r)
 	char *c6 = _mtagappendf(tag, nullptr, "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(!_strcmp(c6, "t6 1 2 3 4 5 6\n")); _tagfree(tag, c6);
 	char *c7 = _mtagappendf(tag, nullptr, "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(!_strcmp(c7, "t7 1 2 3 4 5 6 7\n")); _tagfree(tag, c7);
 	char *c8 = _mtagappendf(tag, nullptr, "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(!_strcmp(c8, "t8 1 2 3 4 5 6 7 8\n")); _tagfree(tag, c8);
-	//char *c9 = _mtagappendf(tag, nullptr, "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(c9, "t9 1 2 3 4 5 6 7 8 9\n")); _tagfree(tag, c9);
+	char *c9 = _mtagappendf(tag, nullptr, "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(c9, "t9 1 2 3 4 5 6 7 8 9\n")); _tagfree(tag, c9);
 	char *cA = _mtagappendf(tag, nullptr, "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(!_strcmp(cA, "ta 1 2 3 4 5 6 7 8 9 A\n")); _tagfree(tag, cA);
 	//
 	char *d0 = (char *)_tagalloc(tag, 1);
@@ -251,7 +251,7 @@ __global__ static void runtime14(void *r)
 	_mtagassignf(&d0, tag, "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(!_strcmp(d0, "t6 1 2 3 4 5 6\n"));
 	_mtagassignf(&d0, tag, "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(!_strcmp(d0, "t7 1 2 3 4 5 6 7\n"));
 	_mtagassignf(&d0, tag, "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(!_strcmp(d0, "t8 1 2 3 4 5 6 7 8\n"));
-	//_mtagassignf(&d0, tag, "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(d0, "t9 1 2 3 4 5 6 7 8 9\n"));
+	_mtagassignf(&d0, tag, "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(d0, "t9 1 2 3 4 5 6 7 8 9\n"));
 	_mtagassignf(&d0, tag, "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(!_strcmp(d0, "ta 1 2 3 4 5 6 7 8 9 A\n"));
 	_tagfree(tag, d0);
 	printf("Example: 14\n");

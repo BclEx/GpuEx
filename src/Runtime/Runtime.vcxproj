@@ -55,6 +55,11 @@
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\Runtime.Run\TestRuntime.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{821AFA21-3738-4DFC-985B-0F5C080E15E4}</ProjectGuid>
     <RootNamespace>Runtime</RootNamespace>
@@ -99,7 +104,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions Condition="'$(LD)'!='V'">_LC$(LC);_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LC$(LC);_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

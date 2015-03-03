@@ -5,8 +5,6 @@
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
-    <ClCompile Include="Falloc.cu" />
-    <ClCompile Include="Runtime.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RuntimeGL.h" />
@@ -21,5 +19,14 @@
     <ClInclude Include="Runtime.h" />
     <ClInclude Include="FallocHost.h" />
     <ClInclude Include="RuntimeTypes.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="RT.cu" />
+    <CudaCompile Include="..\Runtime.Run\TestRuntime.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Falloc.cu" />
+    <None Include="Runtime.cu" />
+    <None Include="Runtime+Fault.cu" />
   </ItemGroup>
 </Project>
