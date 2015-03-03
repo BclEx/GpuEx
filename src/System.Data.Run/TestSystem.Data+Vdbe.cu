@@ -14,7 +14,7 @@ __device__ static void TestDB()
 {
 	SysEx_LOG(RC_OK, "START\n");
 #if _DEBUG
-	//ParserTrace(stderr, "p: ");
+	ParserTrace(stderr, "p: ");
 #endif
 
 	// open

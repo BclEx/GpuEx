@@ -12,6 +12,7 @@
 #define unlikely(X) !!(X)
 #endif
 
+#define _dprintf printf
 #include "ConvertEx.cu.h"
 #include "RC.cu.h"
 #include "VAlloc.cu.h"

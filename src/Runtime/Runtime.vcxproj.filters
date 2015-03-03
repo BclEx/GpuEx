@@ -22,7 +22,6 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RT.cu" />
-    <CudaCompile Include="..\Runtime.Run\TestRuntime.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Falloc.cu" />

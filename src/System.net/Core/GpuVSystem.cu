@@ -10,12 +10,29 @@ namespace Core
 
 #if defined(TEST) || defined(_DEBUG)
 	__device__ bool OsTrace = true;
-#define OSTRACE(X, ...) if (OsTrace) { _fprintf(nullptr, X, __VA_ARGS__); }
+#define OSTRACE(X, ...) if (OsTrace) { _dprintf(X, __VA_ARGS__); }
 #else
 #define OSTRACE(X, ...)
 #endif
 
+#define HANDLE int
+#define DWORD unsigned long
 #define INVALID_HANDLE_VALUE -1
+
+	// When testing, keep a count of the number of open files.
+#ifdef TEST
+	__device__ int g_open_file_count = 0;
+#define OpenCounter(X) g_open_file_count += (X)
+#else
+#define OpenCounter(X)
+#endif
+
+#define MAX_PATH 100
+#define GENERIC_READ                     (0x80000000L)
+#define GENERIC_WRITE                    (0x40000000L)
+#define GENERIC_EXECUTE                  (0x20000000L)
+#define GENERIC_ALL                      (0x10000000L)
+#define NO_ERROR 0L // dderror
 
 #pragma endregion
 
@@ -26,9 +43,9 @@ namespace Core
 	{
 	public:
 		VSystem *Vfs;			// The VFS used to open this file
-		int H;					// Handle for accessing the file
+		HANDLE H;				// Handle for accessing the file
 		LOCK Lock_;				// Type of lock currently held on this file
-		int	LastErrno;			// The Windows errno from the last I/O error
+		DWORD LastErrno;		// The Windows errno from the last I/O error
 		const char *Path;		// Full pathname of this file
 		int SizeChunk;          // Chunk size configured by FCNTL_CHUNK_SIZE
 
@@ -56,7 +73,7 @@ namespace Core
 	class GpuVSystem : public VSystem
 	{
 	public:
-		__device__ GpuVSystem() { }
+		//__device__ GpuVSystem() { }
 		__device__ virtual VFile *_AttachFile(void *buffer);
 		__device__ virtual RC Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags);
 		__device__ virtual RC Delete(const char *path, bool syncDirectory);
@@ -250,65 +267,64 @@ namespace Core
 
 	__device__ RC GpuVSystem::Open(const char *name, VFile *id, OPEN flags, OPEN *outFlags)
 	{
-		//		// 0x87f7f is a mask of SQLITE_OPEN_ flags that are valid to be passed down into the VFS layer.  Some SQLITE_OPEN_ flags (for example,
-		//		// SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before reaching the VFS.
-		//		flags = (OPEN)((uint)flags & 0x87f7f);
+		// 0x87f7f is a mask of SQLITE_OPEN_ flags that are valid to be passed down into the VFS layer.  Some SQLITE_OPEN_ flags (for example,
+		// SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before reaching the VFS.
+		flags = (OPEN)((uint)flags & 0x87f7f);
+
+		RC rc = RC_OK;
+		OPEN type = (OPEN)(flags & 0xFFFFFF00);  // Type of file to open
+		bool isExclusive = ((flags & OPEN_EXCLUSIVE) != 0);
+		bool isDelete = ((flags & OPEN_DELETEONCLOSE) != 0);
+		bool isCreate = ((flags & OPEN_CREATE) != 0);
+		bool isReadonly = ((flags & OPEN_READONLY) != 0);
+		bool isReadWrite = ((flags & OPEN_READWRITE) != 0);
+		//bool isOpenJournal = (isCreate && (type == OPEN_MASTER_JOURNAL || type == OPEN_MAIN_JOURNAL || type == OPEN_WAL));
+
+		// Check the following statements are true: 
 		//
-		//		RC rc = RC_OK;
-		//		OPEN type = (OPEN)(flags & 0xFFFFFF00);  // Type of file to open
-		//		bool isExclusive = (flags & OPEN_EXCLUSIVE);
-		//		bool isDelete = (flags & OPEN_DELETEONCLOSE);
-		//		bool isCreate = (flags & OPEN_CREATE);
-		//		bool isReadonly = (flags & OPEN_READONLY);
-		//		bool isReadWrite = (flags & OPEN_READWRITE);
-		//		bool isOpenJournal = (isCreate && (type == OPEN_MASTER_JOURNAL || type == OPEN_MAIN_JOURNAL || type == OPEN_WAL));
-		//
-		//		// Check the following statements are true: 
-		//		//
-		//		//   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
-		//		//   (b) if CREATE is set, then READWRITE must also be set, and
-		//		//   (c) if EXCLUSIVE is set, then CREATE must also be set.
-		//		//   (d) if DELETEONCLOSE is set, then CREATE must also be set.
-		//		_assert((!isReadonly || !isReadWrite) && (isReadWrite || isReadonly));
-		//		_assert(!isCreate || isReadWrite);
-		//		_assert(!isExclusive || isCreate);
-		//		_assert(!isDelete || isCreate);
-		//
-		//		// The main DB, main journal, WAL file and master journal are never automatically deleted. Nor are they ever temporary files.
-		//		_assert((!isDelete && name) || type != OPEN_MAIN_DB);
-		//		_assert((!isDelete && name) || type != OPEN_MAIN_JOURNAL);
-		//		_assert((!isDelete && name) || type != OPEN_MASTER_JOURNAL);
-		//		_assert((!isDelete && name) || type != OPEN_WAL);
-		//
-		//		// Assert that the upper layer has set one of the "file-type" flags.
-		//		_assert(type == OPEN_MAIN_DB || type == OPEN_TEMP_DB ||
-		//			type == OPEN_MAIN_JOURNAL || type == OPEN_TEMP_JOURNAL ||
-		//			type == OPEN_SUBJOURNAL || type == OPEN_MASTER_JOURNAL ||
-		//			type == OPEN_TRANSIENT_DB || type == OPEN_WAL);
-		//
-		//		GpuVFile *file = (GpuVFile *)id;
-		//		_assert(file != nullptr);
-		//		_memset(file, 0, sizeof(GpuVFile));
-		//		file = new (file) GpuVFile();
-		//		file->H = INVALID_HANDLE_VALUE;
-		//
-		//		// If the second argument to this function is NULL, generate a temporary file name to use 
-		//		const char *utf8Name = name; // Filename in UTF-8 encoding
-		//		//char tmpname[MAX_PATH+2];     // Buffer used to create temp filename
-		//		//if (!utf8Name)
-		//		//{
-		//		//	_assert(isDelete && !isOpenJournal);
-		//		//	_memset(tmpname, 0, MAX_PATH+2);
-		//		//	rc = getTempname(MAX_PATH+2, tmpname);
-		//		//	if (rc != RC_OK)
-		//		//		return rc;
-		//		//	utf8Name = tmpname;
-		//		//}
-		//
-		//		// Database filenames are double-zero terminated if they are not URIs with parameters.  Hence, they can always be passed into
-		//		// sqlite3_uri_parameter().
-		//		_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[_strlen30(utf8Name)+1]==0);
-		//
+		//   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
+		//   (b) if CREATE is set, then READWRITE must also be set, and
+		//   (c) if EXCLUSIVE is set, then CREATE must also be set.
+		//   (d) if DELETEONCLOSE is set, then CREATE must also be set.
+		_assert((!isReadonly || !isReadWrite) && (isReadWrite || isReadonly));
+		_assert(!isCreate || isReadWrite);
+		_assert(!isExclusive || isCreate);
+		_assert(!isDelete || isCreate);
+
+		// The main DB, main journal, WAL file and master journal are never automatically deleted. Nor are they ever temporary files.
+		_assert((!isDelete && name) || type != OPEN_MAIN_DB);
+		_assert((!isDelete && name) || type != OPEN_MAIN_JOURNAL);
+		_assert((!isDelete && name) || type != OPEN_MASTER_JOURNAL);
+		_assert((!isDelete && name) || type != OPEN_WAL);
+
+		// Assert that the upper layer has set one of the "file-type" flags.
+		_assert(type == OPEN_MAIN_DB || type == OPEN_TEMP_DB ||
+			type == OPEN_MAIN_JOURNAL || type == OPEN_TEMP_JOURNAL ||
+			type == OPEN_SUBJOURNAL || type == OPEN_MASTER_JOURNAL ||
+			type == OPEN_TRANSIENT_DB || type == OPEN_WAL);
+
+		GpuVFile *file = (GpuVFile *)id;
+		_assert(file != nullptr);
+		_memset(file, 0, sizeof(GpuVFile));
+		file = new (file) GpuVFile();
+		file->H = INVALID_HANDLE_VALUE;
+
+		// If the second argument to this function is NULL, generate a temporary file name to use 
+		//const char *utf8Name = name; // Filename in UTF-8 encoding
+		//char tmpname[MAX_PATH+2];     // Buffer used to create temp filename
+		//if (!utf8Name)
+		//{
+		//	_assert(isDelete && !isOpenJournal);
+		//	_memset(tmpname, 0, MAX_PATH+2);
+		//	rc = getTempname(MAX_PATH+2, tmpname);
+		//	if (rc != RC_OK)
+		//		return rc;
+		//	utf8Name = tmpname;
+		//}
+
+		// Database filenames are double-zero terminated if they are not URIs with parameters.  Hence, they can always be passed into sqlite3_uri_parameter().
+		//_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[strlen(utf8Name)+1]==0);
+
 		//		// Convert the filename to the system encoding.
 		//		void *converted = ConvertUtf8Filename(utf8Name); // Filename in OS encoding
 		//		if (!converted)
@@ -319,13 +335,14 @@ namespace Core
 		//			_free(converted);
 		//			return RC_CANTOPEN_ISDIR;
 		//		}
-		//
-		//		DWORD dwDesiredAccess;
-		//		if (isReadWrite)
-		//			dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
-		//		else
-		//			dwDesiredAccess = GENERIC_READ;
-		//
+
+
+		DWORD dwDesiredAccess;
+		if (isReadWrite)
+			dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
+		else
+			dwDesiredAccess = GENERIC_READ;
+
 		//		// SQLITE_OPEN_EXCLUSIVE is used to make sure that a new file is created. SQLite doesn't use it to indicate "exclusive access"
 		//		// as it is usually understood.
 		//		DWORD dwCreationDisposition;
@@ -344,8 +361,8 @@ namespace Core
 		//		else
 		//			dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
 		//
-		//		HANDLE h;
-		//		DWORD lastErrno;
+		HANDLE h = 1;
+		DWORD lastErrno = 0;
 		//		int cnt = 0;
 		//		if (isNT())
 		//			while ((h = osCreateFileW((LPCWSTR)converted, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, NULL)) == INVALID_HANDLE_VALUE && retryIoerr(&cnt, &lastErrno)) { }
@@ -355,31 +372,30 @@ namespace Core
 		//#endif
 		//			logIoerr(cnt);
 		//
-		//			OSTRACE("OPEN %d %s 0x%lx %s\n", h, name, dwDesiredAccess, h == INVALID_HANDLE_VALUE ? "failed" : "ok");
-		//			if (h == INVALID_HANDLE_VALUE)
-		//			{
-		//				file->LastErrno = lastErrno;
-		//				winLogError(RC_CANTOPEN, file->LastErrno, "winOpen", utf8Name);
-		//				_free(converted);
-		//				if (isReadWrite && !isExclusive)
-		//					return Open(name, id, (OPEN)((flags|OPEN_READONLY) & ~(OPEN_CREATE|OPEN_READWRITE)), outFlags);
-		//				else
-		//					return SysEx_CANTOPEN_BKPT;
-		//			}
-		//
-		//			if (outFlags)
-		//				*outFlags = (isReadWrite ? OPEN_READWRITE : OPEN_READONLY);
-		//			_free(converted);
-		//			file->Opened = true;
-		//			file->Vfs = this;
-		//			file->H = h;
-		//			//if (sqlite3_uri_boolean(name, "psow", POWERSAFE_OVERWRITE))
-		//			//	file->CtrlFlags |= WinVFile::WINFILE_PSOW;
-		//			file->LastErrno = NO_ERROR;
-		//			file->Path = name;
-		//			OpenCounter(+1);
-		//			return rc;
-		return RC_ERROR;
+		OSTRACE("OPEN %d %s 0x%lx %s\n", h, name, dwDesiredAccess, h == INVALID_HANDLE_VALUE ? "failed" : "ok");
+		if (h == INVALID_HANDLE_VALUE)
+		{
+			file->LastErrno = lastErrno;
+			//winLogError(RC_CANTOPEN, file->LastErrno, "winOpen", utf8Name);
+			//_free(converted);
+			if (isReadWrite && !isExclusive)
+				return Open(name, id, (OPEN)((flags|OPEN_READONLY) & ~(OPEN_CREATE|OPEN_READWRITE)), outFlags);
+			else
+				return SysEx_CANTOPEN_BKPT;
+		}
+
+		if (outFlags)
+			*outFlags = (isReadWrite ? OPEN_READWRITE : OPEN_READONLY);
+		//_free(converted);
+		file->Opened = true;
+		file->Vfs = this;
+		file->H = h;
+		//if (VSystem::UriBoolean(name, "psow", POWERSAFE_OVERWRITE))
+		//	file->CtrlFlags |= WinVFile::WINFILE_PSOW;
+		file->LastErrno = NO_ERROR;
+		file->Path = name;
+		OpenCounter(+1);
+		return rc;
 	}
 
 	__device__ RC GpuVSystem::Delete(const char *filename, bool syncDir)
@@ -461,12 +477,12 @@ namespace Core
 		return nullptr;
 	}
 
-	__device__ static char _gpuVfsBuf[sizeof(GpuVSystem)];
+	__device__ static unsigned char _gpuVfsBuf[sizeof(GpuVSystem)];
 	__device__ static GpuVSystem *_gpuVfs;
 	__device__ RC VSystem::Initialize()
 	{
 		_gpuVfs = new (_gpuVfsBuf) GpuVSystem();
-		_gpuVfs->SizeOsFile = 0;
+		_gpuVfs->SizeOsFile = sizeof(GpuVFile);
 		_gpuVfs->MaxPathname = 260;
 		_gpuVfs->Name = "gpu";
 		RegisterVfs(_gpuVfs, true);
@@ -474,7 +490,7 @@ namespace Core
 	}
 
 	__device__ void VSystem::Shutdown()
-	{ 
+	{
 	}
 
 #pragma endregion

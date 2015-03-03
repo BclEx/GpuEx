@@ -8,9 +8,9 @@ namespace Core
 
 #ifdef _DEBUG
 	bool WalTrace = false;
-#define WALTRACE(X) if (WalTrace) printf(X)
+#define WALTRACE(X, ...) if (WalTrace) _dprintf("WA: "X, __VA_ARGS__)
 #else
-#define WALTRACE(X)
+#define WALTRACE(X, ...) ((void)0)
 #endif
 
 #pragma region Struct

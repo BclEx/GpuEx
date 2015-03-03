@@ -12,7 +12,7 @@ namespace Core
 
 #if defined(TEST) || defined(_DEBUG)
 	bool OsTrace = true;
-#define OSTRACE(X, ...) if (OsTrace) { _fprintf(nullptr, "OS: "X, __VA_ARGS__); }
+#define OSTRACE(X, ...) if (OsTrace) { _dprintf("OS: "X, __VA_ARGS__); }
 #else
 #define OSTRACE(X, ...)
 #endif
@@ -41,8 +41,8 @@ namespace Core
 
 	// When testing, keep a count of the number of open files.
 #ifdef TEST
-	int open_file_count = 0;
-#define OpenCounter(X) open_file_count += (X)
+	int g_open_file_count = 0;
+#define OpenCounter(X) g_open_file_count += (X)
 #else
 #define OpenCounter(X)
 #endif
@@ -2625,8 +2625,7 @@ shmpage_out:
 			utf8Name = tmpname;
 		}
 
-		// Database filenames are double-zero terminated if they are not URIs with parameters.  Hence, they can always be passed into
-		// sqlite3_uri_parameter().
+		// Database filenames are double-zero terminated if they are not URIs with parameters.  Hence, they can always be passed into sqlite3_uri_parameter().
 		_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[strlen(utf8Name)+1]==0);
 
 		// Convert the filename to the system encoding.
@@ -2698,45 +2697,47 @@ shmpage_out:
 		}
 #ifdef WIN32_HAS_ANSI
 		else
+		{
 			while ((h = osCreateFileA((LPCSTR)converted, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, NULL)) == INVALID_HANDLE_VALUE && retryIoerr(&cnt, &lastErrno)) { }
+		}
 #endif
-			logIoerr(cnt);
+		logIoerr(cnt);
 
-			OSTRACE("OPEN %d %s 0x%lx %s\n", h, name, dwDesiredAccess, h == INVALID_HANDLE_VALUE ? "failed" : "ok");
-			if (h == INVALID_HANDLE_VALUE)
-			{
-				file->LastErrno = lastErrno;
-				winLogError(RC_CANTOPEN, file->LastErrno, "winOpen", utf8Name);
-				_free(converted);
-				if (isReadWrite && !isExclusive)
-					return Open(name, id, (OPEN)((flags|OPEN_READONLY) & ~(OPEN_CREATE|OPEN_READWRITE)), outFlags);
-				else
-					return SysEx_CANTOPEN_BKPT;
-			}
-
-			if (outFlags)
-				*outFlags = (isReadWrite ? OPEN_READWRITE : OPEN_READONLY);
-#if OS_WINCE
-			if (isReadWrite && type == OPEN_MAIN_DB && (rc = winceCreateLock(name, file)) != RC_OK)
-			{
-				osCloseHandle(h);
-				_free(converted);
-				return rc;
-			}
-			if (isTemp)
-				file->DeleteOnClose = converted;
+		OSTRACE("OPEN %d %s 0x%lx %s\n", h, name, dwDesiredAccess, h == INVALID_HANDLE_VALUE ? "failed" : "ok");
+		if (h == INVALID_HANDLE_VALUE)
+		{
+			file->LastErrno = lastErrno;
+			winLogError(RC_CANTOPEN, file->LastErrno, "winOpen", utf8Name);
+			_free(converted);
+			if (isReadWrite && !isExclusive)
+				return Open(name, id, (OPEN)((flags|OPEN_READONLY) & ~(OPEN_CREATE|OPEN_READWRITE)), outFlags);
 			else
-#endif
-				_free(converted);
-			file->Opened = true;
-			file->Vfs = this;
-			file->H = h;
-			if (VSystem::UriBoolean(name, "psow", POWERSAFE_OVERWRITE))
-				file->CtrlFlags |= WinVFile::WINFILE_PSOW;
-			file->LastErrno = NO_ERROR;
-			file->Path = name;
-			OpenCounter(+1);
+				return SysEx_CANTOPEN_BKPT;
+		}
+
+		if (outFlags)
+			*outFlags = (isReadWrite ? OPEN_READWRITE : OPEN_READONLY);
+#if OS_WINCE
+		if (isReadWrite && type == OPEN_MAIN_DB && (rc = winceCreateLock(name, file)) != RC_OK)
+		{
+			osCloseHandle(h);
+			_free(converted);
 			return rc;
+		}
+		if (isTemp)
+			file->DeleteOnClose = converted;
+		else
+#endif
+			_free(converted);
+		file->Opened = true;
+		file->Vfs = this;
+		file->H = h;
+		if (VSystem::UriBoolean(name, "psow", POWERSAFE_OVERWRITE))
+			file->CtrlFlags |= WinVFile::WINFILE_PSOW;
+		file->LastErrno = NO_ERROR;
+		file->Path = name;
+		OpenCounter(+1);
+		return rc;
 	}
 
 	RC WinVSystem::Delete(const char *filename, bool syncDir)

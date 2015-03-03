@@ -55,11 +55,6 @@
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="..\Runtime.Run\TestRuntime.cu">
-      <FileType>Document</FileType>
-    </CudaCompile>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{821AFA21-3738-4DFC-985B-0F5C080E15E4}</ProjectGuid>
     <RootNamespace>Runtime</RootNamespace>

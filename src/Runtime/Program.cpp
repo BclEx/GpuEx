@@ -1,10 +1,11 @@
 #pragma warning(disable: 4996)
 #ifndef _LIB
+
 #include "RuntimeHost.h"
 #include "FallocHost.h"
 #include <stdio.h>
 
-void __testRuntime(cudaDeviceHeap &r);
+//void __testRuntime(cudaDeviceHeap &r);
 
 int main(int argc, char **argv)
 {
@@ -12,7 +13,7 @@ int main(int argc, char **argv)
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
 
-	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(); //256, 4096);
+	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	cudaDeviceFalloc deviceFalloc = cudaDeviceFallocCreate(100, 1024);
 
 #if VISUAL
@@ -29,7 +30,7 @@ int main(int argc, char **argv)
 #endif
 
 	cudaDeviceHeapSelect(deviceHeap);
-	__testRuntime(deviceHeap);
+	//__testRuntime(deviceHeap);
 
 	cudaDeviceHeapDestroy(deviceHeap);
 	cudaDeviceFallocDestroy(deviceFalloc);

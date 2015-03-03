@@ -5,8 +5,8 @@ namespace Core
 
 #if _DEBUG
 	__device__ extern bool IOTrace;
-#define SysEx_LOG(RC, X, ...) { _printf(X, __VA_ARGS__); }
-#define SysEx_IOTRACE(X, ...) if (IOTrace) { _printf("IO: "X, __VA_ARGS__); }
+#define SysEx_LOG(RC, X, ...) { _dprintf(X, __VA_ARGS__); }
+#define SysEx_IOTRACE(X, ...) if (IOTrace) { _dprintf("IO: "X, __VA_ARGS__); }
 #else
 #define SysEx_LOG(RC, X, ...) ((void)0)
 #define SysEx_IOTRACE(X, ...) ((void)0)

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #if __CUDACC__
+#define inline __forceinline__
 #include "Runtime.cu.h"
 #else
 #include <malloc.h>
@@ -41,13 +42,6 @@ __device__ extern unsigned char __one;
 //struct cudaRuntime
 //{
 //	int Initialized;
-//	void *(*Alloc)(size_t size);
-//	void *(*TagAlloc)(void *tag, size_t size);
-//	void *(*Realloc)(void *old, size_t newSize);
-//	void *(*TagRealloc)(void *tag, void *old, size_t newSize);
-//	void (*Free)(void *p);
-//	void (*TagFree)(void *tag, void *p);
-//	void (*TagAllocFailed)(void *tag);
 //};
 //
 //__device__ extern cudaRuntime __curt;
@@ -58,7 +52,6 @@ __device__ extern unsigned char __one;
 //	if (__curt.Initialized == -1) __curt.Initialized = cudaRuntimeInitialize(&__curt);
 //	return (__curt.Initialized == 1);
 //}
-
 
 //////////////////////
 // WSD
@@ -476,12 +469,12 @@ __device__ inline static char *__snprintf(const char *buf, size_t bufLen, const 
 #endif
 
 #if __CUDACC__
-#define _fprintf(f, ...) _printf(__VA_ARGS__)
+#define _fprintf(f, ...) printf(__VA_ARGS__)
 #define _fopen(f, b) 0
 #define _fflush(f)
 #define _fclose(f)
 #else
-#define _fprintf(f, ...) _printf(__VA_ARGS__)
+#define _fprintf(f, ...) fprintf(f, __VA_ARGS__)
 #define _fopen(f, b) fopen(f, b)
 #define _fflush(f) fflush(f)
 #define _fclose(f) fclose(f)
