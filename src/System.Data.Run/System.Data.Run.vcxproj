@@ -98,7 +98,7 @@
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <Include>$(SolutionDir)lib;%(Include)</Include>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
-      <GPUDebugInfo>false</GPUDebugInfo>
+      <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
     <CudaLink>
       <PerformDeviceLink Condition="'$(LC)'=='11'">false</PerformDeviceLink>

@@ -46,7 +46,7 @@ namespace Core
 		__device__ void Cachesize(uint max);
 		__device__ void Shrink();
 		__device__ int get_Pages();
-		__device__ ICachePage *Fetch(Pid id, bool createFlag);
+		__device__ ICachePage *Fetch(Pid id, int createFlag);
 		__device__ void Unpin(ICachePage *pg, bool reuseUnlikely);
 		__device__ void Rekey(ICachePage *pg, Pid old, Pid new_);
 		__device__ void Truncate(Pid limit);
@@ -90,7 +90,7 @@ namespace Core
 #pragma endregion
 
 	__device__ static _WSD PCacheGlobal g_pcache1;
-	#define _pcache1 _GLOBAL(PCacheGlobal, g_pcache1)
+#define _pcache1 _GLOBAL(PCacheGlobal, g_pcache1)
 
 #pragma region Page Allocation
 
@@ -466,9 +466,9 @@ namespace Core
 		return pages;
 	}
 
-	__device__ ICachePage *PCache1::Fetch(Pid id, bool createFlag)
+	__device__ ICachePage *PCache1::Fetch(Pid id, int createFlag)
 	{
-		_assert(Purgeable || !createFlag);
+		_assert(Purgeable || createFlag != 1);
 		_assert(Purgeable || Min == 0);
 		_assert(!Purgeable || Min == 10);
 		PGroup *group;
@@ -502,7 +502,7 @@ namespace Core
 		pinned = Pages - Recyclables;	
 		_assert(group->MaxPinned == group->MaxPages + 10 - group->MinPages);
 		_assert(N90pct == Max * 9 / 10);
-		if (createFlag && (pinned >= group->MaxPinned || pinned >= N90pct || UnderMemoryPressure(this)))
+		if (createFlag == 1 && (pinned >= group->MaxPinned || pinned >= N90pct || UnderMemoryPressure(this)))
 			goto fetch_out;
 		if (Pages >= (Pid)Hash.length && ResizeHash(this))
 			goto fetch_out;
@@ -533,9 +533,9 @@ namespace Core
 		// Step 5. If a usable page buffer has still not been found, attempt to allocate a new one. 
 		if (!page)
 		{
-			if (createFlag) _benignalloc_begin();
+			if (createFlag == 1) _benignalloc_begin();
 			page = AllocPage(this);
-			if (createFlag) _benignalloc_end();
+			if (createFlag == 1) _benignalloc_end();
 		}
 		if (page)
 		{

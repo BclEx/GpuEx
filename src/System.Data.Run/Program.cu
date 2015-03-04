@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax), return -1);
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
-	cudaDeviceReset();
+	cudaCheckErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024*3), return -2);
 
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	//cudaDeviceFalloc fallocHost = cudaDeviceFallocCreate(100, 1024);

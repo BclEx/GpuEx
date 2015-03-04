@@ -19,7 +19,7 @@ namespace Core
 		__device__ virtual void Cachesize(uint max) = 0;
 		__device__ virtual void Shrink() = 0;
 		__device__ virtual int get_Pages() = 0;
-		__device__ virtual ICachePage *Fetch(Pid id, bool createFlag) = 0;
+		__device__ virtual ICachePage *Fetch(Pid id, int createFlag) = 0;
 		__device__ virtual void Unpin(ICachePage *pg, bool reuseUnlikely) = 0;
 		__device__ virtual void Rekey(ICachePage *pg, Pid old, Pid new_) = 0;
 		__device__ virtual void Truncate(Pid limit) = 0;

@@ -20,11 +20,7 @@ namespace Core
 	{
 		CORE_DEFAULT_MEMSTATUS,		// Memstat
 		true,						// CoreMutex
-#ifdef THREADSAFE
-		true,						// FullMutex
-#else
-		false,						// FullMutex
-#endif
+		THREADSAFE == 1,			// FullMutex
 		CORE_USE_URI,				// OpenUri
 		// Main::UseCis
 		0x7ffffffe,					// MaxStrlen
@@ -204,12 +200,12 @@ namespace Core
 			SysEx_GlobalStatics.CoreMutex = true;
 			SysEx_GlobalStatics.FullMutex = true;
 			break; }
-		case CONFIG_MUTEX: { // Specify an alternative mutex implementation
-			SysEx_GlobalStatics.Mutex = *va_arg(args, sqlite3_mutex_methods*);
-			break; }
-		case CONFIG_GETMUTEX: { // Retrieve the current mutex implementation
-			*va_arg(args, sqlite3_mutex_methods*) = SysEx_GlobalStatics.Mutex;
-			break; }
+		//case CONFIG_MUTEX: { // Specify an alternative mutex implementation
+		//	SysEx_GlobalStatics.Mutex = *va_arg(args, void *);
+		//	break; }
+		//case CONFIG_GETMUTEX: { // Retrieve the current mutex implementation
+		//	*va_arg(args, void *) = SysEx_GlobalStatics.Mutex;
+		//	break; }
 #endif
 		case CONFIG_MALLOC: { // Specify an alternative malloc implementation
 			//SysEx_GlobalStatics.m = *va_arg(args, sqlite3_mem_methods*);

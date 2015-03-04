@@ -390,7 +390,7 @@ namespace Core
 #endif
 		__device__ VdbeOp *GetOp(int addr);
 		__device__ void UsesBtree(int i);
-#if !defined(OMIT_SHARED_CACHE) && THREADSAFE>0
+#if !defined(OMIT_SHARED_CACHE) && THREADSAFE > 0
 		__device__ void Enter();
 		__device__ void Leave();
 #else

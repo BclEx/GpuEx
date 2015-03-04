@@ -69,6 +69,8 @@
     <None Include="System.Data+Btree.cu" />
     <None Include="System.Data+Pager.cu" />
     <None Include="System.Data+Vdbe.cu" />
+    <None Include="System.Data+Vdbe+Parse.cu" />
+    <None Include="System.Data+Vdbe+Vdbe.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.cu" />
