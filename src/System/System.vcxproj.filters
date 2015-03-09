@@ -50,48 +50,48 @@
     <None Include="..\System.net\Core\GpuVSystem.cu">
       <Filter>Core</Filter>
     </None>
-    <None Include="System.cu" />
+    <None Include="..\System.net\Core\Bitvec.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\ConvertEx.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\Hash.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\MathEx.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\MutexEx.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\StatusEx.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\SysEx+Random.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\SysEx.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\VSystem.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\WinVSystem.cu">
+      <Filter>Core</Filter>
+    </None>
+    <None Include="..\System.net\Core\IO\IO.JournalVFile.cu">
+      <Filter>Core\IO</Filter>
+    </None>
+    <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu">
+      <Filter>Core\IO</Filter>
+    </None>
+    <None Include="..\System.net\Core\IO\IO.VFile.cu">
+      <Filter>Core\IO</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Program.cu" />
-    <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu">
-      <Filter>Core\IO</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu">
-      <Filter>Core\IO</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu">
-      <Filter>Core\IO</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\Bitvec.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\ConvertEx.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\Hash.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\MathEx.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\MutexEx.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\SysEx+Random.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\SysEx.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\VSystem.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\WinVSystem.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\StatusEx.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
+    <CudaCompile Include="System.cu" />
+    <CudaCompile Include="Program.cu" />
   </ItemGroup>
 </Project>

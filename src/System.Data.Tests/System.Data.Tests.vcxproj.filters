@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="Program.cu" />
+    <CudaCompile Include="..\system.data.tests.net\core+vdbe\command\select2.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\System.Data.Tests.net\_Tester.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Hosts.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Core+Vdbe">
+      <UniqueIdentifier>{b819ed40-93d2-4bff-afe2-626d68c3e0e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core+Vdbe\Command">
+      <UniqueIdentifier>{f45f3fd0-652e-48c5-b71e-163884fb36a2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\System.Data.Tests.net\_Tester.cu.h" />
+  </ItemGroup>
+</Project>

@@ -216,7 +216,7 @@
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
-      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">false</Keep>
       <GPUDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</GPUDebugInfo>
     </CudaCompile>
     <PostBuildEvent>
