@@ -2,16 +2,18 @@
 // select2.test
 #include "../../_Tester.cu.h"
 
-DEVICE(select2,
+DEVICE(select2)
 {
 	// Create a table with some data
-	execsql(@"CREATE TABLE tbl1(f1 int, f2 int)");
-	//execsql(@"BEGIN");
-	//for (var i = 0; i <= 30; i++)
-	//{
-	//	execsql(@"INSERT INTO tbl1 VALUES(" + (i % 9) + "," + (i % 10) + ")");
-	//}
-	//execsql(@"COMMIT");
+	execsql("CREATE TABLE tbl1(f1 int, f2 int)");
+	execsql("BEGIN");
+	for (int i = 0; i <= 30; i++)
+	{
+		char b[100];
+		__snprintf(b, sizeof(b), "INSERT INTO tbl1 VALUES(%d,%d)", i % 9, i % 10);
+		execsql(b);
+	}
+	execsql("COMMIT");
 
 	//// Do a second query inside a first.
 	//do_test("select2-1.1", () =>
@@ -184,5 +186,5 @@ DEVICE(select2,
 	//	");
 	//}, "1 4 1 0 3 2 3 0");
 
-	//finish_test();
-})
+	finish_test();
+}

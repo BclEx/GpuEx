@@ -21,6 +21,6 @@ namespace Core
 		__device__ static int StatusValue(STATUS op);
 		__device__ static void StatusAdd(STATUS op, int n);
 		__device__ static void StatusSet(StatusEx::STATUS op, int x);
-		__device__ static int Status(StatusEx::STATUS op, int *current, int *highwater, int resetFlag);
+		__device__ static RC Status(StatusEx::STATUS op, int *current, int *highwater, int resetFlag);
 	};
 }

@@ -2,9 +2,9 @@
 
 #pragma region tester.tcl
 
-__device__ void Tester::sqlite3(Context *ctx, array_t<char *> args)
+__device__ void Tester::sqlite3(TestCtx *tctx, array_t<void *> args)
 {
-	if (args.length >= 1 && args[0][0] != '-')
+	if (args.length >= 1 && ((char *)args[0])[0] != '-')
 	{
 		// This command is opening a new database connection.
 		if (G.Find("perm:sqlite3_args", 17))
@@ -16,10 +16,9 @@ __device__ void Tester::sqlite3(Context *ctx, array_t<char *> args)
 		//}
 
 		auto res = 0; //[uplevel 1 sqlite_orig $args]
-		if (G.Find("perm:presql", 11))
-		{
-			//[lindex $args 0] eval G["perm:presql")
-		}
+		auto presql = (char *)G.Find("perm:presql", 11);
+		if (presql)
+			((TestCtx *)args[0])->DB_EVAL(presql);
 		if (G.Find("perm:dbconfig", 13))
 		{
 			//set ::dbhandle [lindex $args 0]
@@ -60,8 +59,6 @@ __device__ char *Tester::GetPwd()
 {
 	if (_tcl_platform == PLATFORM_WINDOWS)
 	{
-		// NOTE: Cannot use [file normalize] here because it would alter the case of the result to what Tcl considers canonical, which would defeat the purpose of this procedure.
-		// return [string map [list \\ /] [string trim [exec -- $::env(ComSpec) /c echo %CD%]]]
 		return "pwd";
 	}
 	return "pwd";
@@ -185,13 +182,12 @@ __device__ void Tester::do_delete_file(bool force, const char *args[], int argsL
 	}
 }
 
-__device__ void Tester::execpresql(void *handle, void *args)
+__device__ void Tester::execpresql(TestCtx *handle, void *args)
 {
 	//  trace remove execution $handle enter [list execpresql $handle]
-	if (G.Find("perm:presql", 11))
-	{
-		//$handle eval G.Find("perm:presql")
-	}
+	auto presql = (char *)G.Find("perm:presql", 11);
+	if (presql)
+		handle->DB_EVAL(presql);
 }
 
 // This command should be called after loading tester.tcl from within all test scripts that are incompatible with encryption codecs.
@@ -205,118 +201,116 @@ __device__ void Tester::do_not_use_codec()
 // populated before the test script is run in slave interpreters).
 //#
 //if {[info exists cmdlinearg]==0} {
+__device__ void Tester::Initialize()
+{
+	G.Init();
+	db = db2 = db3 = nullptr;
+	//  # Parse any options specified in the $argv array. This script accepts the 
+	//  # following options: 
+	//  #
+	//  #   --pause
+	//  #   --soft-heap-limit=NN
+	//  #   --maxerror=NN
+	//  #   --malloctrace=N
+	//  #   --backtrace=N
+	//  #   --binarylog=N
+	//  #   --soak=N
+	//  #   --file-retries=N
+	//  #   --file-retry-delay=N
+	//  #   --start=[$permutation:]$testfile
+	//  #   --match=$pattern
+	//  #
+	//  set cmdlinearg(soft-heap-limit)    0
+	//  set cmdlinearg(maxerror)        1000
+	//  set cmdlinearg(malloctrace)        0
+	//  set cmdlinearg(backtrace)         10
+	//  set cmdlinearg(binarylog)          0
+	//  set cmdlinearg(soak)               0
+	//  set cmdlinearg(file-retries)       0
+	//  set cmdlinearg(file-retry-delay)   0
+	//  set cmdlinearg(start)             ""
+	//  set cmdlinearg(match)             ""
 
-//  # Parse any options specified in the $argv array. This script accepts the 
-//  # following options: 
-//  #
-//  #   --pause
-//  #   --soft-heap-limit=NN
-//  #   --maxerror=NN
-//  #   --malloctrace=N
-//  #   --backtrace=N
-//  #   --binarylog=N
-//  #   --soak=N
-//  #   --file-retries=N
-//  #   --file-retry-delay=N
-//  #   --start=[$permutation:]$testfile
-//  #   --match=$pattern
-//  #
-//  set cmdlinearg(soft-heap-limit)    0
-//  set cmdlinearg(maxerror)        1000
-//  set cmdlinearg(malloctrace)        0
-//  set cmdlinearg(backtrace)         10
-//  set cmdlinearg(binarylog)          0
-//  set cmdlinearg(soak)               0
-//  set cmdlinearg(file-retries)       0
-//  set cmdlinearg(file-retry-delay)   0
-//  set cmdlinearg(start)             ""
-//  set cmdlinearg(match)             ""
+	//  set leftover [list]
+	//  foreach a $argv {
+	//    switch -regexp -- $a {
+	//      {^-+pause$} {
+	//        # Wait for user input before continuing. This is to give the user an 
+	//        # opportunity to connect profiling tools to the process.
+	//        puts -nonewline "Press RETURN to begin..."
+	//        flush stdout
+	//        gets stdin
+	//      }
+	//      {^-+soft-heap-limit=.+$} {
+	//        foreach {dummy cmdlinearg(soft-heap-limit)} [split $a =] break
+	//      }
+	//      {^-+maxerror=.+$} {
+	//        foreach {dummy cmdlinearg(maxerror)} [split $a =] break
+	//      }
+	//      {^-+malloctrace=.+$} {
+	//        foreach {dummy cmdlinearg(malloctrace)} [split $a =] break
+	//        if {$cmdlinearg(malloctrace)} {
+	//          sqlite3_memdebug_log start
+	//        }
+	//      }
+	//      {^-+backtrace=.+$} {
+	//        foreach {dummy cmdlinearg(backtrace)} [split $a =] break
+	//        sqlite3_memdebug_backtrace $value
+	//      }
+	//      {^-+binarylog=.+$} {
+	//        foreach {dummy cmdlinearg(binarylog)} [split $a =] break
+	//      }
+	//      {^-+soak=.+$} {
+	//        foreach {dummy cmdlinearg(soak)} [split $a =] break
+	//        set ::G(issoak) $cmdlinearg(soak)
+	//      }
+	//      {^-+file-retries=.+$} {
+	//        foreach {dummy cmdlinearg(file-retries)} [split $a =] break
+	//        set ::G(file-retries) $cmdlinearg(file-retries)
+	//      }
+	//      {^-+file-retry-delay=.+$} {
+	//        foreach {dummy cmdlinearg(file-retry-delay)} [split $a =] break
+	//        set ::G(file-retry-delay) $cmdlinearg(file-retry-delay)
+	//      }
+	//      {^-+start=.+$} {
+	//        foreach {dummy cmdlinearg(start)} [split $a =] break
 
-//  set leftover [list]
-//  foreach a $argv {
-//    switch -regexp -- $a {
-//      {^-+pause$} {
-//        # Wait for user input before continuing. This is to give the user an 
-//        # opportunity to connect profiling tools to the process.
-//        puts -nonewline "Press RETURN to begin..."
-//        flush stdout
-//        gets stdin
-//      }
-//      {^-+soft-heap-limit=.+$} {
-//        foreach {dummy cmdlinearg(soft-heap-limit)} [split $a =] break
-//      }
-//      {^-+maxerror=.+$} {
-//        foreach {dummy cmdlinearg(maxerror)} [split $a =] break
-//      }
-//      {^-+malloctrace=.+$} {
-//        foreach {dummy cmdlinearg(malloctrace)} [split $a =] break
-//        if {$cmdlinearg(malloctrace)} {
-//          sqlite3_memdebug_log start
-//        }
-//      }
-//      {^-+backtrace=.+$} {
-//        foreach {dummy cmdlinearg(backtrace)} [split $a =] break
-//        sqlite3_memdebug_backtrace $value
-//      }
-//      {^-+binarylog=.+$} {
-//        foreach {dummy cmdlinearg(binarylog)} [split $a =] break
-//      }
-//      {^-+soak=.+$} {
-//        foreach {dummy cmdlinearg(soak)} [split $a =] break
-//        set ::G(issoak) $cmdlinearg(soak)
-//      }
-//      {^-+file-retries=.+$} {
-//        foreach {dummy cmdlinearg(file-retries)} [split $a =] break
-//        set ::G(file-retries) $cmdlinearg(file-retries)
-//      }
-//      {^-+file-retry-delay=.+$} {
-//        foreach {dummy cmdlinearg(file-retry-delay)} [split $a =] break
-//        set ::G(file-retry-delay) $cmdlinearg(file-retry-delay)
-//      }
-//      {^-+start=.+$} {
-//        foreach {dummy cmdlinearg(start)} [split $a =] break
+	//        set ::G(start:file) $cmdlinearg(start)
+	//        if {[regexp {(.*):(.*)} $cmdlinearg(start) -> s.perm s.file]} {
+	//          set ::G(start:permutation) ${s.perm}
+	//          set ::G(start:file)        ${s.file}
+	//        }
+	//        if {$::G(start:file) == ""} {unset ::G(start:file)}
+	//      }
+	//      {^-+match=.+$} {
+	//        foreach {dummy cmdlinearg(match)} [split $a =] break
 
-//        set ::G(start:file) $cmdlinearg(start)
-//        if {[regexp {(.*):(.*)} $cmdlinearg(start) -> s.perm s.file]} {
-//          set ::G(start:permutation) ${s.perm}
-//          set ::G(start:file)        ${s.file}
-//        }
-//        if {$::G(start:file) == ""} {unset ::G(start:file)}
-//      }
-//      {^-+match=.+$} {
-//        foreach {dummy cmdlinearg(match)} [split $a =] break
+	//        set ::G(match) $cmdlinearg(match)
+	//        if {$::G(match) == ""} {unset ::G(match)}
+	//      }
+	//      default {
+	//        lappend leftover $a
+	//      }
+	//    }
+	//  }
+	//  set argv $leftover
 
-//        set ::G(match) $cmdlinearg(match)
-//        if {$::G(match) == ""} {unset ::G(match)}
-//      }
-//      default {
-//        lappend leftover $a
-//      }
-//    }
-//  }
-//  set argv $leftover
+	//  Install the malloc layer used to inject OOM errors. And the 'automatic' extensions. This only needs to be done once for the process.
+	//  sqlite3_shutdown 
+	//  install_malloc_faultsim 1 
+	Main::Initialize();
+	//  autoinstall_test_functions
 
-//  # Install the malloc layer used to inject OOM errors. And the 'automatic'
-//  # extensions. This only needs to be done once for the process.
-//  #
-//  sqlite3_shutdown 
-//  install_malloc_faultsim 1 
-//  sqlite3_initialize
-//  autoinstall_test_functions
+	//  If the --binarylog option was specified, create the logging VFS. This call installs the new VFS as the default for all SQLite connections.
+	//  if {$cmdlinearg(binarylog)} {
+	//    vfslog new binarylog {} vfslog.bin
+	//  }
 
-//  # If the --binarylog option was specified, create the logging VFS. This
-//  # call installs the new VFS as the default for all SQLite connections.
-//  #
-//  if {$cmdlinearg(binarylog)} {
-//    vfslog new binarylog {} vfslog.bin
-//  }
-
-//  # Set the backtrace depth, if malloc tracing is enabled.
-//  #
-//  if {$cmdlinearg(malloctrace)} {
-//    sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
-//  }
-//}
+	//  # Set the backtrace depth, if malloc tracing is enabled.
+	//  if {$cmdlinearg(malloctrace)}  {
+	//    sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
+	//  }
+}
 
 // Update the soft-heap-limit each time this script is run. In that way if an individual test file changes the soft-heap-limit, it
 // will be reset at the start of the next test file.
@@ -649,144 +643,144 @@ __device__ void Tester::reset_db()
 // Run this routine last
 __device__ void Tester::finish_test()
 {
-	//  catch {db close}
-	//  catch {db2 close}
-	//  catch {db3 close}
-	//  if {0==[info exists ::SLAVE]} { finalize_testing }
+	//if (db) { DB_Closedb->Close(); db = nullptr; }
+	//if (db2) { Main::Close(db2); db2 = nullptr; }
+	//if (db3) { Main::Close(db3); db3 = nullptr; }
+	if (!_SLAVE) finalize_testing();
 }
-//proc finalize_testing {} {
-//  global sqlite_open_file_count
+__device__ void Tester::finalize_testing()
+{
+	//  global sqlite_open_file_count
 
-//  set omitList [set_test_counter omit_list]
+	//  set omitList [set_test_counter omit_list]
 
-//  catch {db close}
-//  catch {db2 close}
-//  catch {db3 close}
+	//if (db) { Main::Close(db); db = nullptr; }
+	//if (db2) { Main::Close(db2); db2 = nullptr; }
+	//if (db3) { Main::Close(db3); db3 = nullptr; }
 
-//  vfs_unlink_test
-//  sqlite3 db {}
-//  # sqlite3_clear_tsd_memdebug
-//  db close
-//  sqlite3_reset_auto_extension
+	//  vfs_unlink_test
+	//  sqlite3 db {}
+	//  # sqlite3_clear_tsd_memdebug
+	//  db close
+	//  sqlite3_reset_auto_extension
 
-//  sqlite3_soft_heap_limit 0
-//  set nTest [incr_ntest]
-//  set nErr [set_test_counter errors]
+	//  sqlite3_soft_heap_limit 0
+	//  set nTest [incr_ntest]
+	//  set nErr [set_test_counter errors]
 
-//  puts "$nErr errors out of $nTest tests"
-//  if {$nErr>0} {
-//    puts "Failures on these tests: [set_test_counter fail_list]"
-//  }
-//  run_thread_tests 1
-//  if {[llength $omitList]>0} {
-//    puts "Omitted test cases:"
-//    set prec {}
-//    foreach {rec} [lsort $omitList] {
-//      if {$rec==$prec} continue
-//      set prec $rec
-//      puts [format {  %-12s %s} [lindex $rec 0] [lindex $rec 1]]
-//    }
-//  }
-//  if {$nErr>0 && ![working_64bit_int]} {
-//    puts "******************************************************************"
-//    puts "N.B.:  The version of TCL that you used to build this test harness"
-//    puts "is defective in that it does not support 64-bit integers.  Some or"
-//    puts "all of the test failures above might be a result from this defect"
-//    puts "in your TCL build."
-//    puts "******************************************************************"
-//  }
-//  if {$::cmdlinearg(binarylog)} {
-//    vfslog finalize binarylog
-//  }
-//  if {$sqlite_open_file_count} {
-//    puts "$sqlite_open_file_count files were left open"
-//    incr nErr
-//  }
-//  if {[lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]>0 ||
-//              [sqlite3_memory_used]>0} {
-//    puts "Unfreed memory: [sqlite3_memory_used] bytes in\
-//         [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1] allocations"
-//    incr nErr
-//    ifcapable memdebug||mem5||(mem3&&debug) {
-//      puts "Writing unfreed memory log to \"./memleak.txt\""
-//      sqlite3_memdebug_dump ./memleak.txt
-//    }
-//  } else {
-//    puts "All memory allocations freed - no leaks"
-//    ifcapable memdebug||mem5 {
-//      sqlite3_memdebug_dump ./memusage.txt
-//    }
-//  }
-//  show_memstats
-//  puts "Maximum memory usage: [sqlite3_memory_highwater 1] bytes"
-//  puts "Current memory usage: [sqlite3_memory_highwater] bytes"
-//  if {[info commands sqlite3_memdebug_malloc_count] ne ""} {
-//    puts "Number of malloc()  : [sqlite3_memdebug_malloc_count] calls"
-//  }
-//  if {$::cmdlinearg(malloctrace)} {
-//    puts "Writing mallocs.sql..."
-//    memdebug_log_sql
-//    sqlite3_memdebug_log stop
-//    sqlite3_memdebug_log clear
+	//  puts "$nErr errors out of $nTest tests"
+	//  if {$nErr>0} {
+	//    puts "Failures on these tests: [set_test_counter fail_list]"
+	//  }
+	//  run_thread_tests 1
+	//  if {[llength $omitList]>0} {
+	//    puts "Omitted test cases:"
+	//    set prec {}
+	//    foreach {rec} [lsort $omitList] {
+	//      if {$rec==$prec} continue
+	//      set prec $rec
+	//      puts [format {  %-12s %s} [lindex $rec 0] [lindex $rec 1]]
+	//    }
+	//  }
+	//  if {$nErr>0 && ![working_64bit_int]} {
+	//    puts "******************************************************************"
+	//    puts "N.B.:  The version of TCL that you used to build this test harness"
+	//    puts "is defective in that it does not support 64-bit integers.  Some or"
+	//    puts "all of the test failures above might be a result from this defect"
+	//    puts "in your TCL build."
+	//    puts "******************************************************************"
+	//  }
+	//  if {$::cmdlinearg(binarylog)} {
+	//    vfslog finalize binarylog
+	//  }
+	//  if {$sqlite_open_file_count} {
+	//    puts "$sqlite_open_file_count files were left open"
+	//    incr nErr
+	//  }
+	//  if {[lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]>0 ||
+	//              [sqlite3_memory_used]>0} {
+	//    puts "Unfreed memory: [sqlite3_memory_used] bytes in\
+	//         [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1] allocations"
+	//    incr nErr
+	//    ifcapable memdebug||mem5||(mem3&&debug) {
+	//      puts "Writing unfreed memory log to \"./memleak.txt\""
+	//      sqlite3_memdebug_dump ./memleak.txt
+	//    }
+	//  } else {
+	//    puts "All memory allocations freed - no leaks"
+	//    ifcapable memdebug||mem5 {
+	//      sqlite3_memdebug_dump ./memusage.txt
+	//    }
+	//  }
+	show_memstats();
+	//  puts "Maximum memory usage: [sqlite3_memory_highwater 1] bytes"
+	//  puts "Current memory usage: [sqlite3_memory_highwater] bytes"
+	//  if {[info commands sqlite3_memdebug_malloc_count] ne ""} {
+	//    puts "Number of malloc()  : [sqlite3_memdebug_malloc_count] calls"
+	//  }
+	//  if {$::cmdlinearg(malloctrace)} {
+	//    puts "Writing mallocs.sql..."
+	//    memdebug_log_sql
+	//    sqlite3_memdebug_log stop
+	//    sqlite3_memdebug_log clear
 
-//    if {[sqlite3_memory_used]>0} {
-//      puts "Writing leaks.sql..."
-//      sqlite3_memdebug_log sync
-//      memdebug_log_sql leaks.sql
-//    }
-//  }
-//  foreach f [glob -nocomplain test.db-*-journal] {
-//    forcedelete $f
-//  }
-//  foreach f [glob -nocomplain test.db-mj*] {
-//    forcedelete $f
-//  }
-//  exit [expr {$nErr>0}]
-//}
+	//    if {[sqlite3_memory_used]>0} {
+	//      puts "Writing leaks.sql..."
+	//      sqlite3_memdebug_log sync
+	//      memdebug_log_sql leaks.sql
+	//    }
+	//  }
+	//  foreach f [glob -nocomplain test.db-*-journal] {
+	//    forcedelete $f
+	//  }
+	//  foreach f [glob -nocomplain test.db-mj*] {
+	//    forcedelete $f
+	//  }
+	//  exit [expr {$nErr>0}]
+}
 
-//# Display memory statistics for analysis and debugging purposes.
-//#
-//proc show_memstats {} {
-//  set x [sqlite3_status SQLITE_STATUS_MEMORY_USED 0]
-//  set y [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
-//  set val [format {now %10d  max %10d  max-size %10d} \
-//              [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-//  puts "Memory used:          $val"
-//  set x [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0]
-//  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-//  puts "Allocation count:     $val"
-//  set x [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0]
-//  set y [sqlite3_status SQLITE_STATUS_PAGECACHE_SIZE 0]
-//  set val [format {now %10d  max %10d  max-size %10d} \
-//              [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-//  puts "Page-cache used:      $val"
-//  set x [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0]
-//  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-//  puts "Page-cache overflow:  $val"
-//  set x [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0]
-//  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-//  puts "Scratch memory used:  $val"
-//  set x [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0]
-//  set y [sqlite3_status SQLITE_STATUS_SCRATCH_SIZE 0]
-//  set val [format {now %10d  max %10d  max-size %10d} \
-//               [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-//  puts "Scratch overflow:     $val"
-//  ifcapable yytrackmaxstackdepth {
-//    set x [sqlite3_status SQLITE_STATUS_PARSER_STACK 0]
-//    set val [format {               max %10d} [lindex $x 2]]
-//    puts "Parser stack depth:    $val"
-//  }
-//}
+// Display memory statistics for analysis and debugging purposes.
+__device__ void Tester::show_memstats()
+{
+	int x1, x2;
+	RC x0 = StatusEx::Status(StatusEx::STATUS_MEMORY_USED, &x1, &x2, false);
+	int y1, y2;
+	RC y0 = StatusEx::Status(StatusEx::STATUS_MALLOC_SIZE, &y1, &y2, false);
+	char val[100];
+	__snprintf(val, sizeof(val), "now %10d  max %10d  max-size %10d", x1, x2, y2);
+	printf("Memory used:          %s", val);
+	x0 = StatusEx::Status(StatusEx::STATUS_MALLOC_COUNT, &x1, &x2, false);
+	__snprintf(val, sizeof(val), "now %10d  max %10d", x1, x2);
+	printf("Allocation count:     %s", val);
+	x0 = StatusEx::Status(StatusEx::STATUS_PAGECACHE_USED, &x1, &x2, false);
+	y0 = StatusEx::Status(StatusEx::STATUS_PAGECACHE_SIZE, &y1, &y2, false);
+	__snprintf(val, sizeof(val), "now %10d  max %10d  max-size %10d", x1, x2, y2);
+	printf("Page-cache used:      %s", val);
+	x0 = StatusEx::Status(StatusEx::STATUS_PAGECACHE_OVERFLOW, &x1, &x2, false);
+	__snprintf(val, sizeof(val), "now %10d  max %10d", x1, x2);
+	printf("Page-cache overflow:  %s", val);
+	x0 = StatusEx::Status(StatusEx::STATUS_SCRATCH_USED, &x1, &x2, false);	
+	__snprintf(val, sizeof(val), "now %10d  max %10d", x1, x2);
+	printf("Scratch memory used:  %s", val);
+	x0 = StatusEx::Status(StatusEx::STATUS_SCRATCH_OVERFLOW, &x1, &x2, false);
+	y0 = StatusEx::Status(StatusEx::STATUS_SCRATCH_SIZE, &y1, &y2, false);
+	__snprintf(val, sizeof(val), "now %10d  max %10d  max-size %10d", x1, x2, y2);
+	printf("Scratch overflow:     %s", val);
+#if yytrackmaxstackdepth
+	x0 = StatusEx::Status(StatusEx::STATUS_PARSER_STACK, &x1, &x2, false);
+	__snprintf(val, sizeof(val), "               max %10d", x2);
+	printf("Parser stack depth:    %s", val);
+#endif
+}
 
 // A procedure to execute SQL
-__device__ void Tester::execsql(const char *sql, Context *db)
+__device__ void Tester::execsql(const char *sql, TestCtx *db)
 {
-	// puts "SQL = $sql"
-	//uplevel [list $db eval $sql]
+	printf("SQL = %s\n", sql);
+	db->DB_EVAL(sql);
 }
 
-//# Execute SQL and catch exceptions.
-//#
+// Execute SQL and catch exceptions.
 //proc catchsql {sql {db db}} {
 //  # puts "SQL = $sql"
 //  set r [catch [list uplevel [list $db eval $sql]] msg]
@@ -1571,7 +1565,7 @@ __device__ void Tester::execsql(const char *sql, Context *db)
 
 // This file contains code used by several different test scripts. The code in this file allows testfixture to control another process (or processes) to test locking.
 #pragma region lock_common.tcl
-//
+
 //protected void do_multiclient_test(string varname, string script)
 //{
 //
