@@ -78,6 +78,9 @@
     <ClCompile Include="..\System.net\Core\MutexEx.cu">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="..\System.net\Core\StatusEx.cu">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="..\System.net\Core\SysEx+Random.cu">
       <Filter>Core</Filter>
     </ClCompile>
@@ -88,9 +91,6 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="..\System.net\Core\WinVSystem.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\StatusEx.cu">
       <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>

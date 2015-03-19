@@ -45,6 +45,7 @@ __device__ static void TestDB()
 	// run query
 	char *errMsg = nullptr;
 	//Main::Exec(ctx, "Select * From sqlite_master;", MyCallback, nullptr, &errMsg);
+	//Main::Exec(ctx, "Create Table Test (Name); Insert Test(Name) Values('Sky');", MyCallback, nullptr, &errMsg);
 	Main::Exec(ctx, "PRAGMA database_list;", MyCallback, nullptr, &errMsg);
 	if (errMsg)
 	{

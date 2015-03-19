@@ -39,6 +39,8 @@
     <ClInclude Include="..\System.Data.net\Core+Vdbe\Parse+Parser.orig.h" />
     <ClInclude Include="..\System.Data.net\Core+Vdbe\Vdbe.cu.h" />
     <ClInclude Include="..\System.Data.net\Core+Vdbe\VdbeInt.cu.h" />
+    <ClInclude Include="..\System.Data.net\Core+Test\TestCtx.cu.h" />
+    <ClInclude Include="..\System.Data.net\Core+Test\TestTcl.cu.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <None Include="System.Data.cu" />
@@ -97,6 +99,140 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Walker.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Where.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Autoext.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Backup.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Btree.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Config.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_DemoVfs.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_DevSym.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_FS.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Func.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Fuzzer.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_HexIO.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Init.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_IntArray.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Journal.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_LoadExt.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Malloc.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Multiplex.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Mutex.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_OneFile.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_OSInst.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_PCache.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Quota.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_RegExp.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Schema.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Server.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SpellFix.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SqlLog.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Stat.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SuperLock.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SysCall.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_TclVar.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Thread.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Vfs.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_VfsTrace.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_WholeNumber.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Wsd.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test1.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test2.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test3.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test4.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test5.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test6.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test7.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test8.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test9.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\TestCtx.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Test\TestTcl.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="System.Data.cu" />
@@ -155,6 +291,52 @@
     <None Include="..\System.Data.net\Core+Vdbe\Walker.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Where.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Autoext.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Backup.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Btree.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Config.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_DemoVfs.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_DevSym.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_FS.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Func.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Fuzzer.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_HexIO.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Init.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_IntArray.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Journal.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_LoadExt.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Malloc.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Multiplex.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Mutex.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_OneFile.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_OSInst.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_PCache.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Quota.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_RegExp.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Schema.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Server.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_SpellFix.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_SqlLog.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Stat.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_SuperLock.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_SysCall.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_TclVar.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Thread.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Vfs.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_VfsTrace.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_WholeNumber.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test_Wsd.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test1.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test2.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test3.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test4.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test5.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test6.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test7.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test8.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\Test9.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\TestCtx.cu" />
+    <CudaCompile Include="..\System.Data.net\Core+Test\TestTcl.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu" />
@@ -216,7 +398,7 @@
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
-      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">false</Keep>
       <GPUDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</GPUDebugInfo>
     </CudaCompile>
     <PostBuildEvent>

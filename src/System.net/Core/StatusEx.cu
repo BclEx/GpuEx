@@ -41,7 +41,7 @@ namespace Core
 			_stat.MaxValue[op] = _stat.NowValue[op];
 	}
 
-	__device__ int StatusEx::Status(StatusEx::STATUS op, int *current, int *highwater, int resetFlag)
+	__device__ RC StatusEx::Status(StatusEx::STATUS op, int *current, int *highwater, int resetFlag)
 	{
 		_stat_Init;
 		if (op < 0 || op >= _lengthof(_stat.NowValue))

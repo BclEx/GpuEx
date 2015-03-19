@@ -13,6 +13,9 @@
     <Filter Include="Core+Vdbe\Command">
       <UniqueIdentifier>{6cb83c07-6ccc-4e1d-9d8a-83b562198464}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core+Test">
+      <UniqueIdentifier>{0ed02a90-82ad-40c7-bcdf-a8011f2d36d6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System.Data.net\Core+Btree\BContext.cu.h">
@@ -59,6 +62,12 @@
     </ClInclude>
     <ClInclude Include="..\System.Data.net\Opcodes.h" />
     <ClInclude Include="..\System.Data.net\KeywordHash.h" />
+    <ClInclude Include="..\System.Data.net\Core+Test\TestTcl.cu.h">
+      <Filter>Core+Test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\System.Data.net\Core+Test\TestCtx.cu.h">
+      <Filter>Core+Test</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu">
@@ -76,8 +85,38 @@
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.Data.net\CompileTime.cu" />
     <ClCompile Include="..\System.Data.net\Opcodes.cu" />
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Where.cu">
-      <Filter>Core+Vdbe</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Alter.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Analyze.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Attach.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Date.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Delete.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Func.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Insert.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Pragma.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Select.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Update.cu">
+      <Filter>Core+Vdbe\Command</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Vacuum.cu">
+      <Filter>Core+Vdbe\Command</Filter>
     </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Auth.cu">
       <Filter>Core+Vdbe</Filter>
@@ -91,6 +130,15 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Expr.cu">
       <Filter>Core+Vdbe</Filter>
     </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu">
+      <Filter>Core+Btree</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu">
+      <Filter>Core+Btree</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Btree\Btree.cu">
+      <Filter>Core+Btree</Filter>
+    </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu">
       <Filter>Core+Vdbe</Filter>
     </ClCompile>
@@ -99,6 +147,9 @@
     </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Main.cu">
       <Filter>Core+Vdbe</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Pager\Pager.cu">
+      <Filter>Core+Pager</Filter>
     </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Build.cu">
       <Filter>Core+Vdbe</Filter>
@@ -114,6 +165,12 @@
     </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Tokenize.cu">
       <Filter>Core+Vdbe</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Pager\PCache.cu">
+      <Filter>Core+Pager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Pager\PCache1.cu">
+      <Filter>Core+Pager</Filter>
     </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Prepare.cu">
       <Filter>Core+Vdbe</Filter>
@@ -160,59 +217,149 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Walker.cu">
       <Filter>Core+Vdbe</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu">
-      <Filter>Core+Btree</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu">
-      <Filter>Core+Btree</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Btree\Btree.cu">
-      <Filter>Core+Btree</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Pager\Pager.cu">
-      <Filter>Core+Pager</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Where.cu">
+      <Filter>Core+Vdbe</Filter>
     </ClCompile>
     <ClCompile Include="..\System.Data.net\Core+Pager\Wal.cu">
       <Filter>Core+Pager</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Alter.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test1.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Analyze.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test2.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Attach.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test3.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Date.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test4.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Delete.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test5.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Func.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test6.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Insert.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test7.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Pragma.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test8.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Select.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test9.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Update.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Autoext.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Command\Vacuum.cu">
-      <Filter>Core+Vdbe\Command</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Backup.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Pager\PCache.cu">
-      <Filter>Core+Pager</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Btree.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Pager\PCache1.cu">
-      <Filter>Core+Pager</Filter>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Config.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_DemoVfs.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_DevSym.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_FS.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Func.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Fuzzer.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_HexIO.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Init.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_IntArray.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Journal.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_LoadExt.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Malloc.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Multiplex.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Mutex.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_OneFile.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_OSInst.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_PCache.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Quota.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_RegExp.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Schema.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Server.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SpellFix.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SqlLog.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Stat.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SuperLock.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_SysCall.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_TclVar.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Thread.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Vfs.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_VfsTrace.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_WholeNumber.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\Test_Wsd.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\TestCtx.cu">
+      <Filter>Core+Test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.Data.net\Core+Test\TestTcl.cu">
+      <Filter>Core+Test</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -163,7 +163,7 @@
     <None Include="Core+Vdbe\Main.cu" />
     <None Include="Shell.cu" />
     <Compile Include="Program.cs" />
-    <Compile Include="Parse_h.cs" />
+    <Compile Include="Core+Vdbe\Parse_h.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Core+Btree\Btree.cu.h" />

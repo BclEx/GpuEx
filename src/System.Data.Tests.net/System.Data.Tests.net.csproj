@@ -1,0 +1,238 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug.cpu</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{039C2AF2-7917-4596-AFE7-255799385C3D}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>System</RootNamespace>
+    <AssemblyName>System.Data.net</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug.cpu|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;_LIB;TEST;THREADSAFE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;MAX_EXPR_DEPTH;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>0618</NoWarn>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.cpu|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+    <Optimize>true</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <DefineConstants>_LIB;THREADSAFE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;ENABLE_ATOMIC_WRITE;HAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetName>System.Data$(LD).net</TargetName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="xunit">
+      <HintPath>..\..\packages\xunit.1.9.1\lib\net20\xunit.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Core+Pager\TesterBase.cs" />
+    <None Include="Core+Vdbe\Command\select2.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Runtime.net\Runtime.net.csproj">
+      <Project>{06098f19-6185-43a5-ad77-b0e8c10ac885}</Project>
+      <Name>Runtime.net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\System.Data.net\System.Data.net.csproj">
+      <Project>{31180e7b-aabe-4f33-9c2c-f8a447024674}</Project>
+      <Name>System.Data.net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\System.net\System.net.csproj">
+      <Project>{30180e7b-aabe-4f33-9c2c-f8a447024674}</Project>
+      <Name>System.net</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Core+Pager\PCache2.cs" />
+    <Compile Include="Core+Pager\Pager1.cs" />
+    <Compile Include="Core+Pager\Pager2.cs" />
+    <Compile Include="Core+Pager\Pager3.cs" />
+    <Compile Include="Core+Pager\PagerFault.cs" />
+    <Compile Include="Core+Pager\PagerFault2.cs" />
+    <Compile Include="Core+Pager\PagerFault3.cs" />
+    <Compile Include="Core+Pager\PagerOpt.cs" />
+    <Compile Include="Core+Pager\Pragama_PageSize.cs" />
+    <Compile Include="Core+Pager\PCache.cs" />
+    <None Include="Core+Pager\PCache2.cu" />
+    <None Include="Core+Pager\wal.test" />
+    <None Include="Core+Pager\wal2.test" />
+    <None Include="Core+Pager\wal3.test" />
+    <None Include="Core+Pager\wal4.test" />
+    <None Include="Core+Pager\wal5.test" />
+    <None Include="Core+Pager\wal6.test" />
+    <None Include="Core+Pager\wal7.test" />
+    <None Include="Core+Pager\wal8.test" />
+    <None Include="Core+Pager\wal9.test" />
+    <None Include="Core+Pager\walbak.test" />
+    <None Include="Core+Pager\walbig.test" />
+    <None Include="Core+Pager\walcksum.test" />
+    <None Include="Core+Pager\walcrash.test" />
+    <None Include="Core+Pager\walcrash2.test" />
+    <None Include="Core+Pager\walcrash3.test" />
+    <None Include="Core+Pager\walfault.test" />
+    <None Include="Core+Pager\walhook.test" />
+    <None Include="Core+Pager\walmode.test" />
+    <None Include="Core+Pager\walnoshm.test" />
+    <None Include="Core+Pager\walpersist.test" />
+    <None Include="Core+Pager\walro.test" />
+    <None Include="Core+Pager\walshared.test" />
+    <None Include="Core+Pager\walslow.test" />
+    <None Include="Core+Pager\walthread.test" />
+    <None Include="Core+Pager\wal_common.tcl" />
+    <None Include="Core+Vdbe\auth.test" />
+    <None Include="Core+Vdbe\auth2.test" />
+    <None Include="Core+Vdbe\auth3.test" />
+    <None Include="Core+Vdbe\backup.test" />
+    <None Include="Core+Vdbe\backup2.test" />
+    <None Include="Core+Vdbe\backup4.test" />
+    <None Include="Core+Vdbe\backup_ioerr.test" />
+    <None Include="Core+Vdbe\backup_malloc.test" />
+    <None Include="Core+Vdbe\Command\alter.test" />
+    <None Include="Core+Vdbe\Command\alter2.test" />
+    <None Include="Core+Vdbe\Command\alter3.test" />
+    <None Include="Core+Vdbe\Command\alter4.test" />
+    <None Include="Core+Vdbe\Command\analyze.test" />
+    <None Include="Core+Vdbe\Command\analyze3.test" />
+    <None Include="Core+Vdbe\Command\analyze4.test" />
+    <None Include="Core+Vdbe\Command\analyze5.test" />
+    <None Include="Core+Vdbe\Command\analyze6.test" />
+    <None Include="Core+Vdbe\Command\analyze7.test" />
+    <None Include="Core+Vdbe\Command\analyze8.test" />
+    <None Include="Core+Vdbe\Command\attach.test" />
+    <None Include="Core+Vdbe\Command\attach2.test" />
+    <None Include="Core+Vdbe\Command\attach3.test" />
+    <None Include="Core+Vdbe\Command\attach4.test" />
+    <None Include="Core+Vdbe\Command\delete.test" />
+    <None Include="Core+Vdbe\Command\delete2.test" />
+    <None Include="Core+Vdbe\Command\delete3.test" />
+    <None Include="Core+Vdbe\Command\func.test" />
+    <None Include="Core+Vdbe\Command\func2.test" />
+    <None Include="Core+Vdbe\Command\func3.test" />
+    <None Include="Core+Vdbe\Command\insert.test" />
+    <None Include="Core+Vdbe\Command\insert2.test" />
+    <None Include="Core+Vdbe\Command\insert3.test" />
+    <None Include="Core+Vdbe\Command\insert4.test" />
+    <None Include="Core+Vdbe\Command\insert5.test" />
+    <None Include="Core+Vdbe\Command\select1.test" />
+    <Compile Include="Core+Vdbe\Command\select2.cs" />
+    <None Include="Core+Vdbe\Command\select3.test" />
+    <None Include="Core+Vdbe\Command\select4.test" />
+    <None Include="Core+Vdbe\Command\select5.test" />
+    <None Include="Core+Vdbe\Command\select6.test" />
+    <None Include="Core+Vdbe\Command\select7.test" />
+    <None Include="Core+Vdbe\Command\select8.test" />
+    <None Include="Core+Vdbe\Command\select9.test" />
+    <None Include="Core+Vdbe\Command\selectA.test" />
+    <None Include="Core+Vdbe\Command\selectB.test" />
+    <None Include="Core+Vdbe\Command\selectC.test" />
+    <None Include="Core+Vdbe\Command\selectD.test" />
+    <None Include="Core+Vdbe\Command\selectE.test" />
+    <None Include="Core+Vdbe\Command\update.test" />
+    <None Include="Core+Vdbe\Command\vacuum.test" />
+    <None Include="Core+Vdbe\Command\vacuum2.test" />
+    <None Include="Core+Vdbe\Command\vacuum3.test" />
+    <None Include="Core+Vdbe\Command\vacuum4.test" />
+    <None Include="Core+Vdbe\tokenize.test" />
+    <None Include="Core+Vdbe\trigger1.test" />
+    <None Include="Core+Vdbe\trigger2.test" />
+    <None Include="Core+Vdbe\trigger3.test" />
+    <None Include="Core+Vdbe\trigger4.test" />
+    <None Include="Core+Vdbe\trigger5.test" />
+    <None Include="Core+Vdbe\trigger6.test" />
+    <None Include="Core+Vdbe\trigger7.test" />
+    <None Include="Core+Vdbe\trigger8.test" />
+    <None Include="Core+Vdbe\trigger9.test" />
+    <None Include="Core+Vdbe\triggerA.test" />
+    <None Include="Core+Vdbe\triggerB.test" />
+    <None Include="Core+Vdbe\triggerC.test" />
+    <None Include="Core+Vdbe\triggerD.test" />
+    <None Include="Core+Vdbe\vtab1.test" />
+    <None Include="Core+Vdbe\vtab2.test" />
+    <None Include="Core+Vdbe\vtab3.test" />
+    <None Include="Core+Vdbe\vtab4.test" />
+    <None Include="Core+Vdbe\vtab5.test" />
+    <None Include="Core+Vdbe\vtab6.test" />
+    <None Include="Core+Vdbe\vtab7.test" />
+    <None Include="Core+Vdbe\vtab8.test" />
+    <None Include="Core+Vdbe\vtab9.test" />
+    <None Include="Core+Vdbe\vtabA.test" />
+    <None Include="Core+Vdbe\vtabB.test" />
+    <None Include="Core+Vdbe\vtabC.test" />
+    <None Include="Core+Vdbe\vtabD.test" />
+    <None Include="Core+Vdbe\vtabE.test" />
+    <None Include="Core+Vdbe\vtabF.test" />
+    <None Include="Core+Vdbe\vtab_alter.test" />
+    <None Include="Core+Vdbe\vtab_err.test" />
+    <None Include="Core+Vdbe\vtab_shared.test" />
+    <None Include="Core+Vdbe\where.test" />
+    <None Include="Core+Vdbe\where2.test" />
+    <None Include="Core+Vdbe\where3.test" />
+    <None Include="Core+Vdbe\where4.test" />
+    <None Include="Core+Vdbe\where5.test" />
+    <None Include="Core+Vdbe\where6.test" />
+    <None Include="Core+Vdbe\where7.test" />
+    <None Include="Core+Vdbe\where8.test" />
+    <None Include="Core+Vdbe\where8m.test" />
+    <None Include="Core+Vdbe\where9.test" />
+    <None Include="Core+Vdbe\whereA.test" />
+    <None Include="Core+Vdbe\whereB.test" />
+    <None Include="Core+Vdbe\whereC.test" />
+    <None Include="Core+Vdbe\whereD.test" />
+    <None Include="Core+Vdbe\whereE.test" />
+    <None Include="Core+Vdbe\whereF.test" />
+    <None Include="Core+Vdbe\wherelimit.test" />
+    <None Include="Core\8_3_names.test" />
+    <None Include="Core\atof1.test" />
+    <None Include="Core\bc_common.tcl" />
+    <None Include="Core\bitvec.test" />
+    <None Include="Core\boundary1.tcl" />
+    <None Include="Core\boundary2.tcl" />
+    <None Include="Core\boundary3.tcl" />
+    <None Include="Core\boundary4.tcl" />
+    <None Include="Core\malloc.test" />
+    <None Include="Core\malloc3.test" />
+    <None Include="Core\malloc4.test" />
+    <None Include="Core\malloc5.test" />
+    <None Include="Core\malloc6.test" />
+    <None Include="Core\malloc7.test" />
+    <None Include="Core\malloc8.test" />
+    <None Include="Core\malloc9.test" />
+    <None Include="Core\mallocA.test" />
+    <None Include="Core\mallocAll.test" />
+    <None Include="Core\mallocB.test" />
+    <None Include="Core\mallocC.test" />
+    <None Include="Core\mallocD.test" />
+    <None Include="Core\mallocE.test" />
+    <None Include="Core\mallocF.test" />
+    <None Include="Core\mallocG.test" />
+    <None Include="Core\mallocH.test" />
+    <None Include="Core\mallocI.test" />
+    <None Include="Core\mallocJ.test" />
+    <None Include="Core\mallocK.test" />
+    <None Include="Core\mem5.test" />
+    <None Include="Core\uri.test" />
+    <None Include="Core\utf16align.test" />
+    <None Include="Core\varint.test" />
+    <None Include="Core\win32lock.test" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Core+Btree\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>
