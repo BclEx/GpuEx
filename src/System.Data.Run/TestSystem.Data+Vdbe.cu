@@ -32,8 +32,14 @@ __device__ static void TestDB()
 
 	// open
 	Context *ctx;
-	Main::Open("C:\\T_\\Test2.db", &ctx);
-	//Main::Open(":memory:", &ctx);
+	//RC rc = Main::Open("C:\\T_\\Test2.db", &ctx);
+	RC rc = Main::Open(":memory:", &ctx);
+	if (rc != RC_OK)
+	{
+		_printf("Error: %s\n", Main::ErrMsg(ctx));
+		goto close;
+	}
+	
 	//ctx->Trace = Trace;
 
 	// run query
@@ -47,6 +53,7 @@ __device__ static void TestDB()
 	}
 
 	// close
+close:
 	Main::Close(ctx);
 }
 

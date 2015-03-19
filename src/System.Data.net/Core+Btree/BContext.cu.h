@@ -101,9 +101,6 @@ namespace Core
 
 	};
 
-	__device__ inline void operator|=(BContext::FLAG &a, BContext::FLAG b) { a = (BContext::FLAG)(a | b); }
-	__device__ inline void operator&=(BContext::FLAG &a, BContext::FLAG b) { a = (BContext::FLAG)(a & b); }
-	__device__ inline BContext::FLAG operator|(BContext::FLAG a, BContext::FLAG b) { return (BContext::FLAG)((int)a | (int)b); }
-	__device__ inline BContext::FLAG operator&(BContext::FLAG a, BContext::FLAG b) { return (BContext::FLAG)((int)a & (int)b); }
-	//__device__ inline BContext::FLAG operator~(BContext::FLAG a) { return (BContext::FLAG)(~(int)a); }
+	__device__ __forceinline void operator|=(BContext::FLAG &a, BContext::FLAG b) { a = (BContext::FLAG)(a | b); }
+	__device__ __forceinline void operator&=(BContext::FLAG &a, BContext::FLAG b) { a = (BContext::FLAG)(a & b); }
 }

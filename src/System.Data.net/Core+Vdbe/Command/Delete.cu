@@ -327,7 +327,7 @@ delete_from_cleanup:
 		if (parse->FKRequired(table, 0, 0) || trigger)
 		{
 			// TODO: Could use temporary registers here. Also could attempt to avoid copying the contents of the rowid register.
-			uint32 mask = trigger->Colmask(parse, nullptr, false, TRIGGER_BEFORE|TRIGGER_AFTER, table, onconf); // Mask of OLD.* columns in use
+			uint32 mask = trigger->Colmask(parse, nullptr, false, (TRIGGER)(TRIGGER_BEFORE|TRIGGER_AFTER), table, onconf); // Mask of OLD.* columns in use
 			mask |= parse->FKOldmask(table);
 			oldId = parse->Mems+1;
 			parse->Mems += (1 + table->Cols.length);

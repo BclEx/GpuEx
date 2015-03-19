@@ -685,7 +685,7 @@ begin_table_error:
 		}
 		if ((table->Cols.length & 0x7) == 0)
 		{
-			Column *newCols = (Column *)_tagrealloc(ctx, table->Cols, (table->Cols.length + 8) * sizeof(table->Cols[0]));
+			Column *newCols = (Column *)_tagrealloc(ctx, table->Cols.data, (table->Cols.length + 8) * sizeof(table->Cols.data[0]));
 			if (!newCols)
 			{
 				_tagfree(ctx, nameAsString);

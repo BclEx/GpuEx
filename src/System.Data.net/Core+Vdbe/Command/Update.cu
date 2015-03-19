@@ -285,7 +285,7 @@ namespace Core { namespace Command
 		if (hasFK || trigger)
 		{
 			uint32 oldmask = (hasFK ? parse->FKOldmask(table) : 0);
-			oldmask |= trigger->Colmask(parse, changes, 0, TRIGGER_BEFORE|TRIGGER_AFTER, table, onError);
+			oldmask |= trigger->Colmask(parse, changes, 0, (TRIGGER)(TRIGGER_BEFORE|TRIGGER_AFTER), table, onError);
 			for (i = 0; i < table->Cols.length; i++)
 			{
 				if (xrefs[i] < 0 || oldmask == 0xffffffff || (i < 32 && (oldmask & (1<<i))))

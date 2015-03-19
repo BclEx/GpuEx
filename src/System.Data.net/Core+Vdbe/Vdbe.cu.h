@@ -565,6 +565,5 @@ namespace Core
 #pragma endregion
 	};
 
-	__device__ inline void operator|=(Vdbe::OPFLAG &a, int b) { a = (Vdbe::OPFLAG)(a | b); }
-	__device__ inline Vdbe::OPFLAG operator|(Vdbe::OPFLAG a, Vdbe::OPFLAG b) { return (Vdbe::OPFLAG)((int)a | (int)b); }
+	__device__ __forceinline void operator|=(Vdbe::OPFLAG &a, int b) { a = (Vdbe::OPFLAG)(a | b); }
 }

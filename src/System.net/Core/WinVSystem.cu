@@ -196,7 +196,7 @@ namespace Core
 		//__device__ virtual RC ShmMap(int region, int sizeRegion, bool isWrite, void volatile **pp);
 	};
 
-	__device__ inline void operator|=(WinVFile::WINFILE &a, int b) { a = (WinVFile::WINFILE)(a | b); }
+	__device__ __forceinline void operator|=(WinVFile::WINFILE &a, int b) { a = (WinVFile::WINFILE)(a | b); }
 
 #pragma endregion
 

@@ -631,7 +631,7 @@ namespace Core
 				//
 				// The string value P4 of length P1 (bytes) is stored in register P2.
 				_assert(op->P4.Z != nullptr);
-				out_->Flags = MEM_Str|MEM_Static|MEM_Term;
+				out_->Flags = (MEM)(MEM_Str|MEM_Static|MEM_Term);
 				out_->Z = op->P4.Z;
 				out_->N = op->P1;
 				out_->Encode = encoding;
@@ -647,7 +647,7 @@ namespace Core
 				int cnt = op->P3 - op->P2;
 				_assert(op->P3 <= Mems.length);
 				MEM nullFlag;
-				out_->Flags = nullFlag = (op->P1 ? (MEM_Null|MEM_Cleared) : MEM_Null);
+				out_->Flags = nullFlag = (op->P1 ? (MEM)(MEM_Null|MEM_Cleared) : MEM_Null);
 				while (cnt > 0)
 				{
 					out_++;
@@ -880,7 +880,7 @@ namespace Core
 				in2 = &mems[op->P2];
 				ApplyNumericAffinity(in2);
 				out_ = &mems[op->P3];
-				MEM flags = (in1->Flags | in2->Flags); // Combined MEM_* flags from both inputs
+				MEM flags = (MEM)(in1->Flags|in2->Flags); // Combined MEM_* flags from both inputs
 				if ((flags & MEM_Null) != 0) goto arithmetic_result_is_null;
 				if ((in1->Flags & in2->Flags & MEM_Int) == MEM_Int)
 				{
@@ -1378,8 +1378,8 @@ arithmetic_result_is_null:
 					pc = op->P2-1;
 
 				// Undo any changes made by applyAffinity() to the input registers.
-				in1->Flags = (MEM)(in1->Flags&~MEM_TypeMask) | (flags1&MEM_TypeMask);
-				in3->Flags = (MEM)(in3->Flags&~MEM_TypeMask) | (flags3&MEM_TypeMask);
+				in1->Flags = (MEM)((in1->Flags&~MEM_TypeMask) | (flags1&MEM_TypeMask));
+				in3->Flags = (MEM)((in3->Flags&~MEM_TypeMask) | (flags3&MEM_TypeMask));
 				break; }
 			case OP_Permutation: {
 				// Opcode: Permutation * * * P4 *
@@ -1949,7 +1949,7 @@ op_column_out:
 
 				_assert(op->P3 > 0 && op->P3 <= Mems.length);
 				out_->N = (int)bytes;
-				out_->Flags = MEM_Blob | MEM_Dyn;
+				out_->Flags = (MEM)(MEM_Blob|MEM_Dyn);
 				out_->Del = nullptr;
 				if (zeros)
 				{
@@ -2463,7 +2463,7 @@ op_column_out:
 				VdbeCursor *cur = AllocateCursor(this, op->P1, op->P2, -1, true);
 				if (!cur) goto no_mem;
 				cur->NullRow = true;
-				rc = Btree::Open(ctx->Vfs, 0, ctx, &cur->Bt, Btree::OPEN_OMIT_JOURNAL | Btree::OPEN_SINGLE | (Btree::OPEN)op->P5, _vfsFlags);
+				rc = Btree::Open(ctx->Vfs, 0, ctx, &cur->Bt, (Btree::OPEN)(Btree::OPEN_OMIT_JOURNAL|Btree::OPEN_SINGLE|(Btree::OPEN)op->P5), _vfsFlags);
 				if (rc == RC_OK)
 					rc = cur->Bt->BeginTrans(1);
 				if (rc == RC_OK)
@@ -3597,7 +3597,7 @@ op_column_out:
 					UnpackedRecord r;
 					r.KeyInfo = cur->KeyInfo;
 					r.Fields = (uint16)op->P4.I;
-					r.Flags = (op->P5 ? UNPACKED_INCRKEY | UNPACKED_PREFIX_MATCH : UNPACKED_PREFIX_MATCH);
+					r.Flags = (UNPACKED)(op->P5 ? UNPACKED_INCRKEY|UNPACKED_PREFIX_MATCH : UNPACKED_PREFIX_MATCH);
 					r.Mems = &mems[op->P3];
 #ifdef _DEBUG
 					for (int i = 0; i < r.Fields; i++) _assert(MemIsValid(&r.Mems[i]));
@@ -4270,7 +4270,7 @@ op_column_out:
 				newMode = pager->SetJournalMode(newMode);
 
 				out_ = &mems[op->P2];
-				out_->Flags = MEM_Str|MEM_Static|MEM_Term;
+				out_->Flags = (MEM)(MEM_Str|MEM_Static|MEM_Term);
 				out_->Z = (char *)Pragma::JournalModename(newMode);
 				out_->N = _strlen30(out_->Z);
 				out_->Encode = TEXTENCODE_UTF8;

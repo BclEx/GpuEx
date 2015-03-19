@@ -1149,8 +1149,8 @@ namespace Core { namespace Command
 		Main::CreateFunc(ctx, "like", 2, TEXTENCODE_UTF8, info, LikeFunc, 0, 0, 0);
 		Main::CreateFunc(ctx, "like", 3, TEXTENCODE_UTF8, info, LikeFunc, 0, 0, 0);
 		Main::CreateFunc(ctx, "glob", 2, TEXTENCODE_UTF8, (CompareInfo *)&_globInfo, LikeFunc, 0, 0, 0);
-		SetLikeOptFlag(ctx, "glob", FUNC_LIKE | FUNC_CASE);
-		SetLikeOptFlag(ctx, "like", caseSensitive ? (FUNC_LIKE | FUNC_CASE) : FUNC_LIKE);
+		SetLikeOptFlag(ctx, "glob", (FUNC)(FUNC_LIKE|FUNC_CASE));
+		SetLikeOptFlag(ctx, "like", (FUNC)(caseSensitive ? FUNC_LIKE|FUNC_CASE : FUNC_LIKE));
 	}
 
 	__device__ bool Func::IsLikeFunction(Context *ctx, Expr *expr, bool *isNocase, char *wc)

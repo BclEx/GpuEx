@@ -1131,7 +1131,7 @@ _out:
 		coll->Cmp = compare;
 		coll->User = ctx2;
 		coll->Del = del;
-		coll->Encode = (encode2 | (encode & TEXTENCODE_UTF16_ALIGNED));
+		coll->Encode = (TEXTENCODE)(encode2 | (encode & TEXTENCODE_UTF16_ALIGNED));
 		Main::Error(ctx, RC_OK, nullptr);
 		return RC_OK;
 	}
@@ -1293,20 +1293,20 @@ _out:
 		ctx->AutoCommit = 1;
 		ctx->NextAutovac = (Btree::AUTOVACUUM)-1;
 		ctx->NextPagesize = 0;
-		ctx->Flags |= Context::FLAG_ShortColNames | Context::FLAG_AutoIndex | Context::FLAG_EnableTrigger
+		ctx->Flags |= (Context::FLAG)(Context::FLAG_ShortColNames|Context::FLAG_AutoIndex|Context::FLAG_EnableTrigger
 #if DEFAULT_FILE_FORMAT<4
-			| Context::FLAG_LegacyFileFmt
+			|Context::FLAG_LegacyFileFmt
 #endif
 #ifdef ENABLE_LOAD_EXTENSION
-			| Context::FLAG_LoadExtension
+			|Context::FLAG_LoadExtension
 #endif
 #if DEFAULT_RECURSIVE_TRIGGERS
-			| Context::FLAG_RecTriggers
+			|Context::FLAG_RecTriggers
 #endif
 #if defined(DEFAULT_FOREIGN_KEYS) && DEFAULT_FOREIGN_KEYS
-			| Context::FLAG_ForeignKeys
+			|Context::FLAG_ForeignKeys
 #endif
-			;
+			);
 		ctx->CollSeqs.Init();
 #ifndef OMIT_VIRTUALTABLE
 		ctx->Modules.Init();
@@ -1340,7 +1340,7 @@ _out:
 		}
 
 		// Open the backend database driver
-		rc = Btree::Open(ctx->Vfs, open, ctx, &ctx->DBs[0].Bt, (Btree::OPEN)0, flags | VSystem::OPEN_MAIN_DB);
+		rc = Btree::Open(ctx->Vfs, open, ctx, &ctx->DBs[0].Bt, (Btree::OPEN)0, (VSystem::OPEN)(flags|VSystem::OPEN_MAIN_DB));
 		if (rc != RC_OK)
 		{
 			if (rc == RC_IOERR_NOMEM)
@@ -1441,7 +1441,7 @@ opendb_out:
 		return Main::ApiExit(nullptr, rc);
 	}
 
-	__device__ RC Main::Open(const char *fileName, Context **ctxOut) { return OpenDatabase(fileName, ctxOut, VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE, nullptr); }
+	__device__ RC Main::Open(const char *fileName, Context **ctxOut) { return OpenDatabase(fileName, ctxOut, (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE), nullptr); }
 	__device__ RC Main::Open_v2(const char *fileName, Context **ctxOut, VSystem::OPEN flags, const char *vfsName) { return OpenDatabase(fileName, ctxOut, flags, vfsName); }
 
 #ifndef OMIT_UTF16
@@ -1460,7 +1460,7 @@ opendb_out:
 		const char *fileName8 = (const char *)Vdbe::ValueText(val, TEXTENCODE_UTF8); // filename encoded in UTF-8 instead of UTF-16
 		if (fileName8)
 		{
-			rc = OpenDatabase(fileName8, ctxOut, VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE, nullptr);
+			rc = OpenDatabase(fileName8, ctxOut, (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE), nullptr);
 			_assert(*ctxOut || rc == RC_NOMEM);
 			if (rc == RC_OK && !DbHasProperty(*ctxOut, 0, SCHEMA_SchemaLoaded))
 				CTXENCODE(*ctxOut) = TEXTENCODE_UTF16NATIVE;

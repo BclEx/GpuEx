@@ -182,8 +182,8 @@ namespace Core
 		TextBuilder ErrMsg; // Accumulate the error message text here
 	} IntegrityCk;
 
-	__device__ inline void operator|=(BTS &a, int b) { a = (BTS)(a | b); }
-	__device__ inline void operator&=(BTS &a, int b) { a = (BTS)(a & b); }
+	__device__ __forceinline void operator|=(BTS &a, int b) { a = (BTS)(a | b); }
+	__device__ __forceinline void operator&=(BTS &a, int b) { a = (BTS)(a & b); }
 }
 
 #endif // __BTREEINT_CU_H__

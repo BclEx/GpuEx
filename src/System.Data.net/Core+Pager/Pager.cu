@@ -391,7 +391,7 @@ namespace Core
 			else
 				rc = pager->JournalFile->Write(zeroHeader, sizeof(zeroHeader), 0);
 			if (rc == RC_OK && !pager->NoSync)
-				rc = pager->JournalFile->Sync(VFile::SYNC_DATAONLY | pager->SyncFlags);
+				rc = pager->JournalFile->Sync((VFile::SYNC)(VFile::SYNC_DATAONLY|pager->SyncFlags));
 			// At this point the transaction is committed but the write lock is still held on the file. If there is a size limit configured for 
 			// the persistent journal and the journal file currently consumes more space than that limit allows for, truncate it now. There is no need
 			// to sync the file following this operation.
@@ -1970,7 +1970,7 @@ end_playback:
 				{
 					PAGERTRACE("SYNC journal of %d\n", PAGERID(pager));
 					SysEx_IOTRACE("JSYNC %p\n", pager);
-					rc = pager->JournalFile->Sync(pager->SyncFlags | (pager->SyncFlags == VFile::SYNC_FULL ? VFile::SYNC_DATAONLY : (VFile::SYNC)0));
+					rc = pager->JournalFile->Sync((VFile::SYNC)(pager->SyncFlags|(pager->SyncFlags == VFile::SYNC_FULL ? VFile::SYNC_DATAONLY : (VFile::SYNC)0)));
 					if (rc != RC_OK) return rc;
 				}
 

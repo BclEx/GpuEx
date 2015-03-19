@@ -81,8 +81,8 @@ namespace Core { namespace Command
 		int saved_Changes = ctx->Changes; // Saved value of ctx->nChange
 		int saved_TotalChanges = ctx->TotalChanges; // Saved value of ctx->nTotalChange
 		void (*saved_Trace)(void *, const char *) = ctx->Trace; // Saved ctx->xTrace
-		ctx->Flags |= Context::FLAG_WriteSchema | Context::FLAG_IgnoreChecks | Context::FLAG_PreferBuiltin;
-		ctx->Flags &= (Context::FLAG)~(Context::FLAG_ForeignKeys | Context::FLAG_ReverseOrder);
+		ctx->Flags |= (Context::FLAG)(Context::FLAG_WriteSchema|Context::FLAG_IgnoreChecks|Context::FLAG_PreferBuiltin);
+		ctx->Flags &= (Context::FLAG)~(Context::FLAG_ForeignKeys|Context::FLAG_ReverseOrder);
 		ctx->Trace = nullptr;
 
 		Btree *main = ctx->DBs[0].Bt; // The database being vacuumed

@@ -33,9 +33,7 @@ namespace Core
 		WO_ALL = 0xfff,			// Mask of all possible WO_* values
 		WO_SINGLE = 0x0ff,      // Mask of all non-compound WO_* values
 	};
-	__device__ inline void operator|=(WO &a, int b) { a = (WO)(a | b); }
-	__device__ inline WO operator|(WO a, WO b) { return (WO)((int)a | (int)b); }
-	__device__ inline WO operator&(WO a, WO b) { return (WO)((int)a & (int)b); }
+	__device__ __forceinline void operator|=(WO &a, int b) { a = (WO)(a | b); }
 
 	enum TERM : uint8
 	{
@@ -52,9 +50,8 @@ namespace Core
 		TERM_VNULL = 0x00,   // Disabled if not using stat3
 #endif
 	};
-	__device__ inline void operator|=(TERM &a, int b) { a = (TERM)(a | b); }
-	__device__ inline void operator&=(TERM &a, int b) { a = (TERM)(a & b); }
-	__device__ inline TERM operator|(TERM a, TERM b) { return (TERM)((int)a | (int)b); }
+	__device__ __forceinline void operator|=(TERM &a, int b) { a = (TERM)(a | b); }
+	__device__ __forceinline void operator&=(TERM &a, int b) { a = (TERM)(a & b); }
 
 	struct WhereTerm
 	{
@@ -727,7 +724,7 @@ findTerm_success:
 					TransferJoinMarkings(newExpr, expr);
 					_assert(!ExprHasProperty(newExpr, EP_xIsSelect));
 					newExpr->x.List = list;
-					int idxNew = WhereClauseInsert(wc, newExpr, TERM_VIRTUAL|TERM_DYNAMIC);
+					int idxNew = WhereClauseInsert(wc, newExpr, (TERM)(TERM_VIRTUAL|TERM_DYNAMIC));
 					ASSERTCOVERAGE(idxNew == 0);
 					ExprAnalyze(src, wc, idxNew);
 					term = &wc->Slots[idxTerm];
@@ -784,7 +781,7 @@ findTerm_success:
 			{
 				term->LeftCursor = left->TableId;
 				term->u.LeftColumn = left->ColumnId;
-				term->EOperator = OperatorMask(op) & opMask;
+				term->EOperator = (WO)(OperatorMask(op)&opMask);
 			}
 			if (right && right->OP == TK_COLUMN)
 			{
@@ -799,7 +796,7 @@ findTerm_success:
 						Expr::Delete(ctx, dup);
 						return;
 					}
-					int idxNew = WhereClauseInsert(wc, dup, TERM_VIRTUAL|TERM_DYNAMIC);
+					int idxNew = WhereClauseInsert(wc, dup, (TERM)(TERM_VIRTUAL|TERM_DYNAMIC));
 					if (idxNew == 0) return;
 					newTerm = &wc->Slots[idxNew];
 					newTerm->Parent = idxTerm;
@@ -825,7 +822,7 @@ findTerm_success:
 				ASSERTCOVERAGE((prereqLeft | extraRight) != prereqLeft);
 				newTerm->PrereqRight = prereqLeft | extraRight;
 				newTerm->PrereqAll = prereqAll;
-				newTerm->EOperator = (OperatorMask(dup->OP) | extraOp) & opMask;
+				newTerm->EOperator = (WO)((OperatorMask(dup->OP)|extraOp)&opMask);
 			}
 		}
 #ifndef OMIT_BETWEEN_OPTIMIZATION
@@ -851,7 +848,7 @@ findTerm_success:
 			for (int i = 0; i < 2; i++)
 			{
 				Expr *newExpr = Expr::PExpr_(parse, _ops[i], Expr::Dup(ctx, expr->Left, 0), Expr::Dup(ctx, list->Ids[i].Expr, 0), nullptr);
-				int idxNew = WhereClauseInsert(wc, newExpr, TERM_VIRTUAL|TERM_DYNAMIC);
+				int idxNew = WhereClauseInsert(wc, newExpr, (TERM)(TERM_VIRTUAL|TERM_DYNAMIC));
 				ASSERTCOVERAGE(idxNew == 0);
 				ExprAnalyze(src, wc, idxNew);
 				term = &wc->Slots[idxTerm];
@@ -901,12 +898,12 @@ findTerm_success:
 			sCollSeqName.length = 6;
 			Expr *newExpr1 = Expr::Dup(ctx, left, 0);
 			newExpr1 = Expr::PExpr_(parse, TK_GE, Expr::AddCollateToken(parse, newExpr1, &sCollSeqName), str1, 0);
-			int idxNew1 = WhereClauseInsert(wc, newExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
+			int idxNew1 = WhereClauseInsert(wc, newExpr1, (TERM)(TERM_VIRTUAL|TERM_DYNAMIC));
 			ASSERTCOVERAGE(idxNew1 == 0);
 			ExprAnalyze(src, wc, idxNew1);
 			Expr *newExpr2 = Expr::Dup(ctx, left, 0);
 			newExpr2 = Expr::PExpr_(parse, TK_LT, Expr::AddCollateToken(parse, newExpr2, &sCollSeqName), str2, 0);
-			int idxNew2 = WhereClauseInsert(wc, newExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
+			int idxNew2 = WhereClauseInsert(wc, newExpr2, (TERM)(TERM_VIRTUAL|TERM_DYNAMIC));
 			ASSERTCOVERAGE(idxNew2 == 0);
 			ExprAnalyze(src, wc, idxNew2);
 			term = &wc->Slots[idxTerm];
@@ -931,7 +928,7 @@ findTerm_success:
 			if ((prereqExpr & prereqColumn) == 0)
 			{
 				Expr *newExpr = Expr::PExpr_(parse, TK_MATCH, nullptr, Expr::Dup(ctx, right, 0), 0);
-				int idxNew = WhereClauseInsert(wc, newExpr, TERM_VIRTUAL|TERM_DYNAMIC);
+				int idxNew = WhereClauseInsert(wc, newExpr, (TERM)(TERM_VIRTUAL|TERM_DYNAMIC));
 				ASSERTCOVERAGE(idxNew == 0);
 				WhereTerm *newTerm = &wc->Slots[idxNew];
 				newTerm->PrereqRight = prereqExpr;
@@ -1455,7 +1452,7 @@ findTerm_success:
 			if (term->WtFlags & TERM_VNULL) continue;
 			idxCons[j].Column = term->u.LeftColumn;
 			idxCons[j].TermOffset = i;
-			WO op = (WO)term->EOperator & WO_ALL;
+			WO op = (WO)(term->EOperator&WO_ALL);
 			if (op == WO_IN) op = WO_EQ;
 			// The direct Debug.Assignment in the previous line is possible only because the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.
 			idxCons[j].OP = (INDEX_CONSTRAINT)op;
@@ -2027,7 +2024,7 @@ cancel:
 
 			// If X is the column in the index and ORDER BY clause, check to see if there are any X= or X IS NULL constraints in the WHERE clause.
 			int isEq; // Subject to an == or IS NULL constraint
-			WhereTerm *constraint = FindTerm(p->WC, baseId, column, p->NotReady, WO_EQ|WO_ISNULL|WO_IN, index); // A constraint in the WHERE clause
+			WhereTerm *constraint = FindTerm(p->WC, baseId, column, p->NotReady, (WO)(WO_EQ|WO_ISNULL|WO_IN), index); // A constraint in the WHERE clause
 			if (!constraint) isEq = 0;
 			else if ((constraint->EOperator & WO_IN) != 0) isEq = 0;
 			else if ((constraint->EOperator & WO_ISNULL) != 0) { uniqueNotNull = false; isEq = 1; } // "X IS NULL" means X has only a single value
@@ -2123,7 +2120,7 @@ cancel:
 		Index *index; // Copy of pProbe, or zero for IPK index
 		int wsFlagMask; // Allowed flags in p->cost.plan.wsFlag
 		WO eqTermMask; // Current mask of valid equality operators
-		WO idxEqTermMask = (src->Jointype & JT_LEFT ? WO_EQ|WO_IN : WO_EQ|WO_IN|WO_ISNULL); // Index mask of valid equality operators
+		WO idxEqTermMask = (WO)(src->Jointype&JT_LEFT ? WO_EQ|WO_IN : WO_EQ|WO_IN|WO_ISNULL); // Index mask of valid equality operators
 		if (src->Index)
 		{
 			// An INDEXED BY clause specifies a particular index to use
@@ -2151,7 +2148,7 @@ cancel:
 				sPk.Next = first; // The real indices of the table are only considered if the NOT INDEXED qualifier is omitted from the FROM clause
 			probe = &sPk;
 			wsFlagMask = ~(WHERE_COLUMN_IN|WHERE_COLUMN_EQ|WHERE_COLUMN_NULL|WHERE_COLUMN_RANGE);
-			eqTermMask = WO_EQ|WO_IN;
+			eqTermMask = (WO)(WO_EQ|WO_IN);
 			index = nullptr;
 		}
 
@@ -2289,10 +2286,10 @@ cancel:
 			else if (!probe->Unordered)
 			{
 				int j = (pc.Plan.Eqs == probe->Columns.length ? -1 : probe->Columns[pc.Plan.Eqs]);
-				if (FindTerm(wc, cursor, j, p->NotReady, WO_LT|WO_LE|WO_GT|WO_GE, index))
+				if (FindTerm(wc, cursor, j, p->NotReady, (WO)(WO_LT|WO_LE|WO_GT|WO_GE), index))
 				{
-					WhereTerm *top = FindTerm(wc, cursor, j, p->NotReady, WO_LT|WO_LE, index);
-					WhereTerm *btm = FindTerm(wc, cursor, j, p->NotReady, WO_GT|WO_GE, index);
+					WhereTerm *top = FindTerm(wc, cursor, j, p->NotReady, (WO)(WO_LT|WO_LE), index);
+					WhereTerm *btm = FindTerm(wc, cursor, j, p->NotReady, (WO)(WO_GT|WO_GE), index);
 					WhereRangeScanEst(parse, probe, pc.Plan.Eqs, btm, top, &rangeDiv);
 					if (top)
 					{
@@ -2935,7 +2932,7 @@ cancel:
 					// Case 1:  We can directly reference a single row using an equality comparison against the ROWID field.  Or
 					// we reference multiple rows using a "rowid IN (...)" construct.
 					releaseRegId = Expr::GetTempReg(parse);
-					term = FindTerm(wc, cur, -1, notReady, WO_EQ|WO_IN, 0);
+					term = FindTerm(wc, cur, -1, notReady, (WO)(WO_EQ|WO_IN), 0);
 					_assert(term != nullptr);
 					_assert(term->Expr != nullptr);
 					_assert(!omitTable);
@@ -2955,8 +2952,8 @@ cancel:
 					int testOp = OP_Noop;
 					int memEndValue = 0;
 					_assert(!omitTable);
-					WhereTerm *start = FindTerm(wc, cur, -1, notReady, WO_GT|WO_GE, 0);
-					WhereTerm *end = FindTerm(wc, cur, -1, notReady, WO_LT|WO_LE, 0);
+					WhereTerm *start = FindTerm(wc, cur, -1, notReady, (WO)(WO_GT|WO_GE), 0);
+					WhereTerm *end = FindTerm(wc, cur, -1, notReady, (WO)(WO_LT|WO_LE), 0);
 					if (rev)
 					{
 						term = start;
@@ -3066,13 +3063,13 @@ cancel:
 					WhereTerm *rangeEnd = nullptr; // Inequality constraint at range end
 					if (level->Plan.WsFlags & WHERE_TOP_LIMIT)
 					{
-						rangeEnd = FindTerm(wc, cur, k, notReady, (WO_LT|WO_LE), index);
+						rangeEnd = FindTerm(wc, cur, k, notReady, (WO)(WO_LT|WO_LE), index);
 						extraRegs = 1;
 					}
 					WhereTerm *rangeStart = nullptr; // Inequality constraint at range start
 					if (level->Plan.WsFlags & WHERE_BTM_LIMIT)
 					{
-						rangeStart = FindTerm(wc, cur, k, notReady, (WO_GT|WO_GE), index);
+						rangeStart = FindTerm(wc, cur, k, notReady, (WO)(WO_GT|WO_GE), index);
 						extraRegs = 1;
 					}
 
@@ -3310,7 +3307,7 @@ cancel:
 									orExpr = andExpr;
 								}
 								// Loop through table entries that match term orTerm.
-								WhereInfo *subWInfo = WhereInfo::Begin(parse, orTab, orExpr, 0, 0, WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY | WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY, covCur); // Info for single OR-term scan
+								WhereInfo *subWInfo = WhereInfo::Begin(parse, orTab, orExpr, 0, 0, (WHERE)(WHERE_OMIT_OPEN_CLOSE|WHERE_AND_ONLY|WHERE_FORCE_TABLE|WHERE_ONETABLE_ONLY), covCur); // Info for single OR-term scan
 								_assert(subWInfo || parse->Errs || parse->Ctx->MallocFailed);
 								if (subWInfo)
 								{

@@ -204,7 +204,7 @@ namespace Core
 		BtLock **iter = &bt->Lock;
 
 		_assert(p->HoldsMutex());
-		_assert(p->Sharable_ || iter == nullptr);
+		_assert(p->Sharable_ || *iter == nullptr);
 		_assert((int)p->InTrans > 0);
 
 		while (*iter)

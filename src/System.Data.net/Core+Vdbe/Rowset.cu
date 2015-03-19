@@ -23,8 +23,8 @@ namespace Core
 		ROWSET_SORTED = 0x01,   // True if RowSet.pEntry is sorted
 		ROWSET_NEXT = 0x02,		// True if sqlite3RowSetNext() has been called
 	};
-	__device__ inline void operator|=(ROWSET &a, int b) { a = (ROWSET)(a | b); }
-	__device__ inline void operator&=(ROWSET &a, int b) { a = (ROWSET)(a & b); }
+	__device__ __forceinline void operator|=(ROWSET &a, int b) { a = (ROWSET)(a | b); }
+	__device__ __forceinline void operator&=(ROWSET &a, int b) { a = (ROWSET)(a & b); }
 
 	struct RowSet
 	{

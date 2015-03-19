@@ -131,8 +131,7 @@ namespace Core
 		FUNC_LENGTH = 0x40,			// Built-in length() function
 		FUNC_TYPEOF = 0x80,			// Built-in typeof() function
 	};
-	__device__ inline void operator|=(FUNC &a, int b) { a = (FUNC)(a | b); }
-	__device__ inline FUNC operator|(FUNC a, FUNC b) { return (FUNC)((int)a | (int)b); }
+	__device__ __forceinline void operator|=(FUNC &a, int b) { a = (FUNC)(a | b); }
 
 	struct FuncDestructor
 	{
@@ -403,8 +402,7 @@ namespace Core
 		AFF_BIT_STOREP2 = 0x10,	// Store result in reg[P2] rather than jump
 		AFF_BIT_NULLEQ = 0x80,  // NULL=NULL
 	};
-	__device__ inline void operator|=(AFF &a, int b) { a = (AFF)(a | b); }
-	__device__ inline AFF operator|(AFF a, AFF b) { return (AFF)((int)a | (int)b); }
+	__device__ __forceinline void operator|=(AFF &a, int b) { a = (AFF)(a | b); }
 
 #define IsNumericAffinity(X) ((X) >= AFF_NUMERIC)
 
@@ -432,8 +430,7 @@ namespace Core
 		JT_OUTER = 0x0020,		// The "OUTER" keyword is present
 		JT_ERROR = 0x0040,		// unknown or unsupported join type
 	};
-	__device__ inline void operator|=(JT &a, JT b) { a = (JT)(a | b); }
-	__device__ inline JT operator|(JT a, JT b) { return (JT)((int)a | (int)b); }
+	__device__ __forceinline void operator|=(JT &a, JT b) { a = (JT)(a | b); }
 
 	struct Select;
 	struct SrcList
@@ -479,8 +476,7 @@ namespace Core
 		WHERE_ONETABLE_ONLY = 0x0040,	// Only code the 1st table in pTabList
 		WHERE_AND_ONLY = 0x0080,		// Don't use indices for OR terms
 	};
-	__device__ inline void operator|=(WHERE &a, int b) { a = (WHERE)(a | b); }
-	__device__ inline WHERE operator|(WHERE a, WHERE b) { return (WHERE)((int)a | (int)b); }
+	__device__ __forceinline void operator|=(WHERE &a, int b) { a = (WHERE)(a | b); }
 
 	struct WhereTerm;
 	struct WherePlan
@@ -569,8 +565,8 @@ namespace Core
 		NC_IsCheck = 0x04,			// True if resolving names in a CHECK constraint
 		NC_InAggFunc = 0x08,		// True if analyzing arguments to an agg func
 	};
-	__device__ inline void operator|=(NC &a, int b) { a = (NC)(a | b); }
-	__device__ inline void operator&=(NC &a, int b) { a = (NC)(a & b); }
+	__device__ __forceinline void operator|=(NC &a, int b) { a = (NC)(a | b); }
+	__device__ __forceinline void operator&=(NC &a, int b) { a = (NC)(a & b); }
 
 	struct NameContext
 	{
@@ -597,10 +593,8 @@ namespace Core
 		SF_Materialize = 0x0100,	// Force materialization of views
 		SF_NestedFrom = 0x0200,		// Part of a parenthesized FROM clause
 	};
-	__device__ inline void operator|=(SF &a, int b) { a = (SF)(a | b); }
-	__device__ inline void operator&=(SF &a, int b) { a = (SF)(a & b); }
-	__device__ inline SF operator|(SF a, SF b) { return (SF)((int)a | (int)b); }
-	__device__ inline SF operator&(SF a, SF b) { return (SF)((int)a & (int)b); }
+	__device__ __forceinline void operator|=(SF &a, int b) { a = (SF)(a | b); }
+	__device__ __forceinline void operator&=(SF &a, int b) { a = (SF)(a & b); }
 
 	enum SRT : uint8
 	{
@@ -686,17 +680,15 @@ namespace Core
 		EP_TokenOnly = 0x4000,		// Expr struct is EXPR_TOKENONLYSIZE bytes only
 		EP_Static = 0x8000,			// Held in memory not obtained from malloc()
 	};
-	__device__ inline void operator|=(EP &a, int b) { a = (EP)(a | b); }
-	__device__ inline void operator&=(EP &a, int b) { a = (EP)(a & b); }
-	__device__ inline EP operator|(EP a, EP b) { return (EP)((int)a | (int)b); }
-	__device__ inline EP operator&(EP a, EP b) { return (EP)((int)a & (int)b); }
+	__device__ __forceinline void operator|=(EP &a, int b) { a = (EP)(a | b); }
+	__device__ __forceinline void operator&=(EP &a, int b) { a = (EP)(a & b); }
 
 	enum EP2 : uint8
 	{
 		EP2_MallocedToken = 0x0001,	// Need to sqlite3DbFree() Expr.zToken
 		EP2_Irreducible = 0x0002,	// Cannot EXPRDUP_REDUCE this Expr
 	};
-	__device__ inline void operator|=(EP2 &a, int b) { a = (EP2)(a | b); }
+	__device__ __forceinline void operator|=(EP2 &a, int b) { a = (EP2)(a | b); }
 
 	__constant__ extern const Token g_intTokens[];
 
@@ -1269,7 +1261,7 @@ namespace Core {
 		COLFLAG_PRIMKEY = 0x0001,		// Column is part of the primary key
 		COLFLAG_HIDDEN = 0x0002,		// A hidden column in a virtual table
 	};
-	__device__ inline void operator|=(COLFLAG &a, int b) { a = (COLFLAG)(a | b); }
+	__device__ __forceinline void operator|=(COLFLAG &a, int b) { a = (COLFLAG)(a | b); }
 
 	struct Column
 	{
@@ -1346,7 +1338,7 @@ namespace Core {
 		TF_Autoincrement = 0x08,    // Integer primary key is autoincrement
 		TF_Virtual = 0x10,			// Is a virtual table
 	};
-	__device__ inline void operator|=(TF &a, int b) { a = (TF)(a | b); }
+	__device__ __forceinline void operator|=(TF &a, int b) { a = (TF)(a | b); }
 
 	struct Index;
 	struct Select;
@@ -1486,8 +1478,7 @@ namespace Core {
 		TRIGGER_BEFORE = 1,
 		TRIGGER_AFTER = 2,
 	};
-	__device__ inline void operator|=(TRIGGER &a, int b) { a = (TRIGGER)(a | b); }
-	__device__ inline TRIGGER operator|(TRIGGER a, TRIGGER b) { return (TRIGGER)((int)a | (int)b); }
+	__device__ __forceinline void operator|=(TRIGGER &a, int b) { a = (TRIGGER)(a | b); }
 
 	struct TriggerStep;
 	struct Trigger

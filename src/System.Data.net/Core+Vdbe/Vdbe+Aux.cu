@@ -816,7 +816,7 @@ __device__ RC Vdbe::List()
 			mem->u.I = i; // Program counter
 			mem++;
 
-			mem->Flags = MEM_Static|MEM_Str|MEM_Term;
+			mem->Flags = (MEM)(MEM_Static|MEM_Str|MEM_Term);
 			mem->Z = (char *)OpcodeName(op->Opcode); // Opcode
 			_assert(mem->Z != nullptr);
 			mem->N = _strlen30(mem->Z);
@@ -862,7 +862,7 @@ __device__ RC Vdbe::List()
 			_assert(ctx->MallocFailed);
 			return RC_ERROR;
 		}
-		mem->Flags = MEM_Dyn|MEM_Str|MEM_Term;
+		mem->Flags = (MEM)(MEM_Dyn|MEM_Str|MEM_Term);
 		z = DisplayP4(op, mem->Z, 32);
 		if (z != mem->Z)
 			MemSetStr(mem, z, -1, TEXTENCODE_UTF8, 0);
@@ -882,7 +882,7 @@ __device__ RC Vdbe::List()
 				_assert(ctx->MallocFailed);
 				return RC_ERROR;
 			}
-			mem->Flags = MEM_Dyn|MEM_Str|MEM_Term;
+			mem->Flags = (MEM)(MEM_Dyn|MEM_Str|MEM_Term);
 			mem->N = 2;
 			__snprintf(mem->Z, 3, "%.2x", op->P5); // P5
 			mem->Type = TYPE_TEXT;
@@ -892,7 +892,7 @@ __device__ RC Vdbe::List()
 #ifdef _DEBUG
 			if (op->Comment)
 			{
-				mem->Flags = MEM_Str|MEM_Term;
+				mem->Flags = (MEM)(MEM_Str|MEM_Term);
 				mem->Z = op->Comment; // Comment
 				mem->N = _strlen30(mem->Z);
 				mem->Encode = TEXTENCODE_UTF8;
@@ -1311,7 +1311,7 @@ __device__ static RC VdbeCommit(Context *ctx, Vdbe *p)
 			rc = vfs->Access(masterName, VSystem::ACCESS_EXISTS, &res);
 		} while (rc == RC_OK && res);
 		if (rc == RC_OK)
-			rc = vfs->OpenAndAlloc(masterName, &master, VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_EXCLUSIVE|VSystem::OPEN_MASTER_JOURNAL, nullptr); // Open the master journal. 
+			rc = vfs->OpenAndAlloc(masterName, &master, (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_EXCLUSIVE|VSystem::OPEN_MASTER_JOURNAL), nullptr); // Open the master journal. 
 		if (rc != RC_OK)
 		{
 			_tagfree(ctx, masterName);
@@ -2032,9 +2032,9 @@ __device__ uint32 Vdbe::SerialGet(const unsigned char *buf, uint32 serialType, M
 		mem->N = len;
 		mem->Del = nullptr;
 		if (serialType&0x01)
-			mem->Flags = MEM_Str | MEM_Ephem;
+			mem->Flags = (MEM)(MEM_Str|MEM_Ephem);
 		else
-			mem->Flags = MEM_Blob | MEM_Ephem;
+			mem->Flags = (MEM)(MEM_Blob|MEM_Ephem);
 		return len; }
 	}
 	return 0;

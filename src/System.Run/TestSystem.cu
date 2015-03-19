@@ -4,7 +4,7 @@ __device__ static void TestVFS()
 {
 	auto vfs = VSystem::FindVfs(nullptr);
 	auto file = (VFile *)_alloc2(vfs->SizeOsFile, true);
-	auto rc = vfs->Open("C:\\T_\\Test.db", file, VSystem::OPEN_CREATE | VSystem::OPEN_READWRITE | VSystem::OPEN_MAIN_DB, nullptr);
+	auto rc = vfs->Open("C:\\T_\\Test.db", file, (VSystem::OPEN)(VSystem::OPEN_CREATE|VSystem::OPEN_READWRITE|VSystem::OPEN_MAIN_DB), nullptr);
 	file->Write4(0, 123145);
 	file->Close();
 }

@@ -213,16 +213,16 @@ namespace Core
 					VSystem::OPEN limit = (VSystem::OPEN)0;
 					if (optLength == 5 && !_memcmp("cache", opt, 5))
 					{
-						mask = VSystem::OPEN_SHAREDCACHE | VSystem::OPEN_PRIVATECACHE;
+						mask = (VSystem::OPEN)(VSystem::OPEN_SHAREDCACHE|VSystem::OPEN_PRIVATECACHE);
 						modes = _cacheModes;
 						limit = mask;
 						modeType = "cache";
 					}
 					if (optLength == 4 && !_memcmp("mode", opt, 4))
 					{
-						mask = VSystem::OPEN_READONLY | VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE | VSystem::OPEN_MEMORY;
+						mask = (VSystem::OPEN)(VSystem::OPEN_READONLY|VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_MEMORY);
 						modes = _openModes;
-						limit = mask & flags;
+						limit = (VSystem::OPEN)(mask & flags);
 						modeType = "access";
 					}
 					if (modes)
@@ -249,7 +249,7 @@ namespace Core
 							rc = RC_PERM;
 							goto parse_uri_out;
 						}
-						flags = (VSystem::OPEN)(flags & ~mask) | mode;
+						flags = (VSystem::OPEN)((flags & ~mask) | mode);
 					}
 				}
 				opt = &val[valLength+1];

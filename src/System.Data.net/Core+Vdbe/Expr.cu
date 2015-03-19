@@ -1753,7 +1753,7 @@ no_mem:
 			r1 = CodeTemp(parse, expr->Left, &regFree1);
 			r2 = CodeTemp(parse, expr->Right, &regFree2);
 			op = (op == TK_IS ? TK_EQ : TK_NE);
-			CodeCompare(parse, expr->Left, expr->Right, op, r1, r2, inReg, AFF_BIT_STOREP2 | AFF_BIT_NULLEQ);
+			CodeCompare(parse, expr->Left, expr->Right, op, r1, r2, inReg, (AFF)(AFF_BIT_STOREP2|AFF_BIT_NULLEQ));
 			ASSERTCOVERAGE(regFree1 == 0);
 			ASSERTCOVERAGE(regFree2 == 0);
 			break; }
