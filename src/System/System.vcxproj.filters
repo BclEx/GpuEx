@@ -16,13 +16,7 @@
     <ClInclude Include="..\System.net\Core\MathEx.cu.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="..\System.net\Core\MutexEx.cu.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="..\System.net\Core\RC.cu.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\System.net\Core\StatusEx.cu.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="..\System.net\Core\SysEx.cu.h">
@@ -54,15 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.cu" />
-    <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu">
-      <Filter>Core\IO</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu">
-      <Filter>Core\IO</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu">
-      <Filter>Core\IO</Filter>
-    </ClCompile>
     <ClCompile Include="..\System.net\Core\Bitvec.cu">
       <Filter>Core</Filter>
     </ClCompile>
@@ -73,12 +58,6 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="..\System.net\Core\MathEx.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\MutexEx.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\System.net\Core\StatusEx.cu">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="..\System.net\Core\SysEx+Random.cu">
@@ -92,6 +71,15 @@
     </ClCompile>
     <ClCompile Include="..\System.net\Core\WinVSystem.cu">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu">
+      <Filter>Core\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu">
+      <Filter>Core\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu">
+      <Filter>Core\IO</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -5722,14 +5722,14 @@ switch (major) {
     case 160: /* select */
     case 194: /* oneselect */
 {
-#line 298 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 298 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Select.Delete(parse.Ctx, (minor.yy3)); 
 }
       break;
     case 173: /* term */
     case 174: /* expr */
 {
-#line 575 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 575 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Expr.Delete(parse.Ctx, (minor.yy4).Expr); 
 }
       break;
@@ -5744,7 +5744,7 @@ switch (major) {
     case 220: /* exprlist */
     case 225: /* case_exprlist */
 {
-#line 906 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 906 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Expr.ListDelete(parse.Ctx, (minor.yy6)); 
 }
       break;
@@ -5753,7 +5753,7 @@ switch (major) {
     case 206: /* seltablist */
     case 207: /* stl_prefix */
 {
-#line 405 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 405 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Parse.SrcListDelete(parse.Ctx, (minor.yy10)); 
 }
       break;
@@ -5764,13 +5764,13 @@ switch (major) {
     case 236: /* when_clause */
     case 241: /* key_opt */
 {
-#line 490 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 490 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Expr.Delete(parse.Ctx, (minor.yy12)); 
 }
       break;
     case 202: /* orderby_opt */
 {
-#line 437 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 437 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Expr.ListDelete(parse.Ctx, (minor.yy6));
 }
       break;
@@ -5778,32 +5778,32 @@ switch (major) {
     case 213: /* inscollist */
     case 218: /* inscollist_opt */
 {
-#line 431 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 431 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Parse.IdListDelete(parse.Ctx, (minor.yy15)); 
 }
       break;
     case 219: /* valuelist */
 {
-#line 530 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 530 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Expr.ListDelete(parse.Ctx, (minor.yy16).List); Select.Delete(parse.Ctx, (minor.yy16).Select); 
 }
       break;
     case 226: /* case_else */
 {
-#line 874 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 874 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  sqlite3ExprDelete(parse.Ctx, (minor.yy12)); 
 }
       break;
     case 232: /* trigger_cmd_list */
     case 237: /* trigger_cmd */
 {
-#line 997 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 997 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Trigger.DeleteTriggerStep(parse.Ctx, (minor.yy18)); 
 }
       break;
     case 234: /* trigger_event */
 {
-#line 983 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 983 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
  Parse.IdListDelete(parse.Ctx, (minor.yy20).B); 
 }
       break;
@@ -5865,44 +5865,44 @@ switch (ruleno) {
     case 324: /* anylist ::= */
     case 325: /* anylist ::= anylist LP anylist RP */
     case 326: /* anylist ::= anylist ANY */
-#line 68 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 68 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 
 }
       break;
     case 5: /* explain ::= */
-#line 73 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 73 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.BeginParse(0); 
 }
       break;
     case 6: /* explain ::= EXPLAIN */
-#line 75 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 75 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.BeginParse(1); 
 }
       break;
     case 7: /* explain ::= EXPLAIN QUERY PLAN */
-#line 76 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 76 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.BeginParse(2); 
 }
       break;
     case 8: /* cmdx ::= cmd */
-#line 78 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 78 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.FinishCoding(); 
 }
       break;
     case 9: /* cmd ::= BEGIN transtype trans_opt */
-#line 82 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 82 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.BeginTransaction(_stack[_idx + -1].minor.yy1); 
 }
       break;
     case 13: /* transtype ::= */
-#line 87 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 87 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = TK.DEFERRED; 
 }
@@ -5912,50 +5912,50 @@ switch (ruleno) {
     case 16: /* transtype ::= EXCLUSIVE */
     case 115: /* multiselect_op ::= UNION */
     case 117: /* multiselect_op ::= EXCEPT|INTERSECT */
-#line 88 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 88 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = _stack[_idx + 0].major; 
 }
       break;
     case 17: /* cmd ::= COMMIT trans_opt */
     case 18: /* cmd ::= END trans_opt */
-#line 91 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 91 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.CommitTransaction(); 
 }
       break;
     case 19: /* cmd ::= ROLLBACK trans_opt */
-#line 93 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 93 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.RollbackTransaction(); 
 }
       break;
     case 22: /* cmd ::= SAVEPOINT nm */
-#line 97 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 97 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.Savepoint(IPager.SAVEPOINT.BEGIN, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 23: /* cmd ::= RELEASE savepoint_opt nm */
-#line 98 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 98 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.Savepoint(IPager.SAVEPOINT.RELEASE, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 24: /* cmd ::= ROLLBACK trans_opt TO savepoint_opt nm */
-#line 99 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 99 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.Savepoint(IPager.SAVEPOINT.ROLLBACK, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 26: /* create_table ::= createkw temp TABLE ifnotexists nm dbnm */
-#line 104 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 104 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.StartTable(&_stack[_idx + -1].minor.yy0, &_stack[_idx + 0].minor.yy0, _stack[_idx + -4].minor.yy2, false, false, _stack[_idx + -2].minor.yy2); 
 }
       break;
     case 27: /* createkw ::= CREATE */
-#line 105 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 105 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.Ctx.Lookaside.Enabled = false; gotoMinor.yy0 = _stack[_idx + 0].minor.yy0; 
 }
@@ -5963,7 +5963,7 @@ switch (ruleno) {
     case 28: /* ifnotexists ::= */
     case 31: /* temp ::= */
     case 109: /* ifexists ::= */
-#line 107 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 107 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy2 = false; 
 }
@@ -5971,31 +5971,31 @@ switch (ruleno) {
     case 29: /* ifnotexists ::= IF NOT EXISTS */
     case 30: /* temp ::= TEMP */
     case 108: /* ifexists ::= IF EXISTS */
-#line 108 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 108 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy2 = true; 
 }
       break;
     case 32: /* create_table_args ::= LP columnlist conslist_opt RP */
-#line 114 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 114 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.EndTable(&_stack[_idx + -1].minor.yy0, &_stack[_idx + 0].minor.yy0, null); 
 }
       break;
     case 33: /* create_table_args ::= AS select */
-#line 115 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 115 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.EndTable(null, null, _stack[_idx + 0].minor.yy3); Select.Delete(parse.Ctx, _stack[_idx + 0].minor.yy3); 
 }
       break;
     case 36: /* column ::= columnid type carglist */
-#line 121 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 121 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.data = _stack[_idx + -2].minor.yy0.data; gotoMinor.yy0.length = (int)(parse.LastToken.data - _stack[_idx + -2].minor.yy0.data) + parse.LastToken.length; 
 }
       break;
     case 37: /* columnid ::= nm */
-#line 122 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 122 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddColumn(&_stack[_idx + 0].minor.yy0); gotoMinor.yy0 = _stack[_idx + 0].minor.yy0; parse.ConstraintName.length = 0; 
 }
@@ -6023,57 +6023,57 @@ switch (ruleno) {
     case 266: /* minus_num ::= MINUS number */
     case 267: /* number ::= INTEGER|FLOAT */
     case 283: /* trnm ::= nm */
-#line 127 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 127 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0 = _stack[_idx + 0].minor.yy0; 
 }
       break;
     case 45: /* type ::= typetoken */
-#line 177 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 177 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddColumnType(&_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 47: /* typetoken ::= typename LP signed RP */
-#line 179 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 179 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.data = _stack[_idx + -3].minor.yy0.data; gotoMinor.yy0.length = (int)(&_stack[_idx + 0].minor.yy0.data[_stack[_idx + 0].minor.yy0.length] - _stack[_idx + -3].minor.yy0.data); 
 }
       break;
     case 48: /* typetoken ::= typename LP signed COMMA signed RP */
-#line 180 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 180 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.data = _stack[_idx + -5].minor.yy0.data; gotoMinor.yy0.length = (int)(&_stack[_idx + 0].minor.yy0.data[_stack[_idx + 0].minor.yy0.length] - _stack[_idx + -5].minor.yy0.data); 
 }
       break;
     case 50: /* typename ::= typename ids */
-#line 183 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 183 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.data = _stack[_idx + -1].minor.yy0.data; gotoMinor.yy0.length = _stack[_idx + 0].minor.yy0.length+(int)(_stack[_idx + 0].minor.yy0.data - _stack[_idx + -1].minor.yy0.data); 
 }
       break;
     case 55: /* ccons ::= CONSTRAINT nm */
     case 93: /* tcons ::= CONSTRAINT nm */
-#line 190 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 190 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.ConstraintName = _stack[_idx + 0].minor.yy0; 
 }
       break;
     case 56: /* ccons ::= DEFAULT term */
     case 58: /* ccons ::= DEFAULT PLUS term */
-#line 191 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 191 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddDefaultValue(&_stack[_idx + 0].minor.yy4); 
 }
       break;
     case 57: /* ccons ::= DEFAULT LP expr RP */
-#line 192 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 192 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddDefaultValue(&_stack[_idx + -1].minor.yy4); 
 }
       break;
     case 59: /* ccons ::= DEFAULT MINUS term */
-#line 194 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 194 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	ExprSpan v;
@@ -6085,7 +6085,7 @@ switch (ruleno) {
 }
       break;
     case 60: /* ccons ::= DEFAULT id */
-#line 201 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 201 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	ExprSpan v;
@@ -6095,43 +6095,43 @@ switch (ruleno) {
 }
       break;
     case 62: /* ccons ::= NOT NULL onconf */
-#line 209 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 209 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddNotNull(_stack[_idx + 0].minor.yy1); 
 }
       break;
     case 63: /* ccons ::= PRIMARY KEY sortorder onconf autoinc */
-#line 210 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 210 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddPrimaryKey(0, _stack[_idx + -1].minor.yy1, _stack[_idx + 0].minor.yy1, _stack[_idx + -2].minor.yy5); 
 }
       break;
     case 64: /* ccons ::= UNIQUE onconf */
-#line 211 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 211 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.CreateIndex(0, 0, 0, 0, _stack[_idx + 0].minor.yy1, 0, 0, 0, 0); 
 }
       break;
     case 65: /* ccons ::= CHECK LP expr RP */
-#line 212 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 212 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddCheckConstraint(_stack[_idx + -1].minor.yy4.Expr); 
 }
       break;
     case 66: /* ccons ::= REFERENCES nm idxlist_opt refargs */
-#line 213 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 213 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.CreateForeignKey(0, &_stack[_idx + -2].minor.yy0, _stack[_idx + -1].minor.yy6, _stack[_idx + 0].minor.yy1); 
 }
       break;
     case 67: /* ccons ::= defer_subclause */
-#line 214 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 214 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.DeferForeignKey(_stack[_idx + 0].minor.yy1); 
 }
       break;
     case 68: /* ccons ::= COLLATE ids */
-#line 215 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 215 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddCollateType(&_stack[_idx + 0].minor.yy0); 
 }
@@ -6143,7 +6143,7 @@ switch (ruleno) {
     case 98: /* defer_subclause_opt ::= */
     case 221: /* between_op ::= BETWEEN */
     case 224: /* in_op ::= IN */
-#line 219 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 219 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = 0; 
 }
@@ -6152,68 +6152,68 @@ switch (ruleno) {
     case 85: /* init_deferred_pred_opt ::= INITIALLY DEFERRED */
     case 222: /* between_op ::= NOT BETWEEN */
     case 225: /* in_op ::= NOT IN */
-#line 220 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 220 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = 1; 
 }
       break;
     case 71: /* refargs ::= */
-#line 225 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 225 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_None*0x0101; /* EV: R-19803-45884 */ 
 }
       break;
     case 72: /* refargs ::= refargs refarg */
-#line 226 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 226 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = (_stack[_idx + -1].minor.yy1 & ~_stack[_idx + 0].minor.yy7.Mask) | _stack[_idx + 0].minor.yy7.Value; 
 }
       break;
     case 73: /* refarg ::= MATCH nm */
     case 74: /* refarg ::= ON INSERT refact */
-#line 228 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 228 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy7.Value = 0;     gotoMinor.yy7.Mask = 0x000000; 
 }
       break;
     case 75: /* refarg ::= ON DELETE refact */
-#line 230 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 230 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy7.Value = _stack[_idx + 0].minor.yy1;     gotoMinor.yy7.Mask = 0x0000ff; 
 }
       break;
     case 76: /* refarg ::= ON UPDATE refact */
-#line 231 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 231 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy7.Value = _stack[_idx + 0].minor.yy1<<8;  gotoMinor.yy7.Mask = 0x00ff00; 
 }
       break;
     case 77: /* refact ::= SET NULL */
-#line 233 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 233 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_SetNull;  /* EV: R-33326-45252 */ 
 }
       break;
     case 78: /* refact ::= SET DEFAULT */
-#line 234 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 234 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_SetDflt;  /* EV: R-33326-45252 */ 
 }
       break;
     case 79: /* refact ::= CASCADE */
-#line 235 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 235 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_Cascade;  /* EV: R-33326-45252 */ 
 }
       break;
     case 80: /* refact ::= RESTRICT */
-#line 236 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 236 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_Restrict; /* EV: R-33326-45252 */ 
 }
       break;
     case 81: /* refact ::= NO ACTION */
-#line 237 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 237 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_None;     /* EV: R-33326-45252 */ 
 }
@@ -6221,109 +6221,109 @@ switch (ruleno) {
     case 83: /* defer_subclause ::= DEFERRABLE init_deferred_pred_opt */
     case 99: /* defer_subclause_opt ::= defer_subclause */
     case 101: /* onconf ::= ON CONFLICT resolvetype */
-#line 240 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 240 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = _stack[_idx + 0].minor.yy1; 
 }
       break;
     case 87: /* conslist_opt ::= */
-#line 246 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 246 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.length = 0; gotoMinor.yy0.data = null; 
 }
       break;
     case 88: /* conslist_opt ::= COMMA conslist */
-#line 247 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 247 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0 = _stack[_idx + -1].minor.yy0; 
 }
       break;
     case 91: /* tconscomma ::= COMMA */
-#line 250 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 250 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.ConstraintName.length = 0; 
 }
       break;
     case 94: /* tcons ::= PRIMARY KEY LP idxlist autoinc RP onconf */
-#line 253 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 253 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddPrimaryKey(_stack[_idx + -3].minor.yy6, _stack[_idx + 0].minor.yy1, _stack[_idx + -2].minor.yy1, 0); 
 }
       break;
     case 95: /* tcons ::= UNIQUE LP idxlist RP onconf */
-#line 254 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 254 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.CreateIndex(0, 0, 0, _stack[_idx + -2].minor.yy6, _stack[_idx + 0].minor.yy1, 0, 0, 0, 0); 
 }
       break;
     case 96: /* tcons ::= CHECK LP expr RP onconf */
-#line 255 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 255 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.AddCheckConstraint(_stack[_idx + -2].minor.yy4.Expr); 
 }
       break;
     case 97: /* tcons ::= FOREIGN KEY LP idxlist RP REFERENCES nm idxlist_opt refargs defer_subclause_opt */
-#line 257 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 257 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.CreateForeignKey(_stack[_idx + -6].minor.yy6, &_stack[_idx + -3].minor.yy0, _stack[_idx + -2].minor.yy6, _stack[_idx + -1].minor.yy1); parse.DeferForeignKey(_stack[_idx + 0].minor.yy1); 
 }
       break;
     case 100: /* onconf ::= */
-#line 266 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 266 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_Default; 
 }
       break;
     case 102: /* orconf ::= */
-#line 268 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 268 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy8 = OE_Default; 
 }
       break;
     case 103: /* orconf ::= OR resolvetype */
-#line 269 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 269 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy8 = (byte)_stack[_idx + 0].minor.yy1; 
 }
       break;
     case 104: /* resolvetype ::= raisetype */
-#line 270 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 270 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = _stack[_idx + 0].minor.yy9; 
 }
       break;
     case 105: /* resolvetype ::= IGNORE */
-#line 271 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 271 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_Ignore; 
 }
       break;
     case 106: /* resolvetype ::= REPLACE */
-#line 272 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 272 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = OE_Replace; 
 }
       break;
     case 107: /* cmd ::= DROP TABLE ifexists fullname */
-#line 275 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 275 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.DropTable(_stack[_idx + 0].minor.yy10, 0, _stack[_idx + -1].minor.yy2); 
 }
       break;
     case 110: /* cmd ::= createkw temp VIEW ifnotexists nm dbnm AS select */
-#line 282 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 282 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.CreateView(&_stack[_idx + -7].minor.yy0, &_stack[_idx + -3].minor.yy0, &_stack[_idx + -2].minor.yy0, _stack[_idx + 0].minor.yy3, _stack[_idx + -6].minor.yy2, _stack[_idx + -4].minor.yy2); 
 }
       break;
     case 111: /* cmd ::= DROP VIEW ifexists fullname */
-#line 283 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 283 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.DropTable(_stack[_idx + 0].minor.yy10, 1, _stack[_idx + -1].minor.yy2); 
 }
       break;
     case 112: /* cmd ::= select */
-#line 288 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 288 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	SelectDest dest = { SRT.Output, 0, 0, 0, 0 };
@@ -6336,13 +6336,13 @@ switch (ruleno) {
 }
       break;
     case 113: /* select ::= oneselect */
-#line 302 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 302 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy3 = _stack[_idx + 0].minor.yy3; 
 }
       break;
     case 114: /* select ::= select multiselect_op oneselect */
-#line 304 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 304 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	if (_stack[_idx + 0].minor.yy3) { _stack[_idx + 0].minor.yy3.OP = (byte)_stack[_idx + -1].minor.yy1; _stack[_idx + 0].minor.yy3.Prior = _stack[_idx + -2].minor.yy3; }
@@ -6353,33 +6353,33 @@ switch (ruleno) {
 }
       break;
     case 116: /* multiselect_op ::= UNION ALL */
-#line 312 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 312 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy1 = TK.ALL; 
 }
       break;
     case 118: /* oneselect ::= SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt */
-#line 316 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 316 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy3 = Select.New(parse, _stack[_idx + -6].minor.yy6, _stack[_idx + -5].minor.yy10, _stack[_idx + -4].minor.yy12, _stack[_idx + -3].minor.yy6, _stack[_idx + -2].minor.yy12, _stack[_idx + -1].minor.yy6, _stack[_idx + -7].minor.yy11, _stack[_idx + 0].minor.yy13.Limit, _stack[_idx + 0].minor.yy13.Offset); 
 }
       break;
     case 119: /* distinct ::= DISTINCT */
-#line 320 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 320 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy11 = SF.Distinct; 
 }
       break;
     case 120: /* distinct ::= ALL */
     case 121: /* distinct ::= */
-#line 321 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 321 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy11 = (SF)0; 
 }
       break;
     case 122: /* sclp ::= selcollist COMMA */
     case 246: /* idxlist_opt ::= LP idxlist RP */
-#line 330 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 330 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = _stack[_idx + -1].minor.yy6; 
 }
@@ -6389,13 +6389,13 @@ switch (ruleno) {
     case 158: /* groupby_opt ::= */
     case 239: /* exprlist ::= */
     case 245: /* idxlist_opt ::= */
-#line 331 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 331 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = null; 
 }
       break;
     case 124: /* selcollist ::= sclp expr as */
-#line 332 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 332 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy6 = Expr.ListAppend(parse, _stack[_idx + -2].minor.yy6, _stack[_idx + -1].minor.yy4.Expr);
@@ -6405,7 +6405,7 @@ switch (ruleno) {
 }
       break;
     case 125: /* selcollist ::= sclp STAR */
-#line 337 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 337 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Expr p = Expr.Expr_(parse.Ctx, TK_ALL, 0);
@@ -6414,7 +6414,7 @@ switch (ruleno) {
 }
       break;
     case 126: /* selcollist ::= sclp nm DOT STAR */
-#line 341 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 341 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Expr right = Expr.PExpr_(parse, TK_ALL, 0, 0, &_stack[_idx + 0].minor.yy0);
@@ -6425,49 +6425,49 @@ switch (ruleno) {
 }
       break;
     case 129: /* as ::= */
-#line 352 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 352 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.length = 0; 
 }
       break;
     case 130: /* from ::= */
-#line 363 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 363 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
- gotoMinor.yy10 = (SrcList)C._alloc2(parse.Ctx, sizeof(*gotoMinor.yy10), true); 
+ gotoMinor.yy10 = (SrcList)C._allocZero(parse.Ctx, sizeof(*gotoMinor.yy10)); 
 }
       break;
     case 131: /* from ::= FROM seltablist */
-#line 364 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 364 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy10 = _stack[_idx + 0].minor.yy10; Vdbe.SrcListShiftJoinType(gotoMinor.yy10); 
 }
       break;
     case 132: /* stl_prefix ::= seltablist joinop */
-#line 367 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 367 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy10 = _stack[_idx + -1].minor.yy10; if (C._ALWAYS(gotoMinor.yy10 != null && gotoMinor.yy10.Srcs > 0)) gotoMinor.yy10.Ids[gotoMinor.yy10.Srcs-1].Jointype = (JT)_stack[_idx + 0].minor.yy14; 
 }
       break;
     case 133: /* stl_prefix ::= */
-#line 368 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 368 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy10 = null; 
 }
       break;
     case 134: /* seltablist ::= stl_prefix nm dbnm as indexed_opt on_opt using_opt */
-#line 370 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 370 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy10 = parse.SrcListAppendFromTerm(_stack[_idx + -6].minor.yy10, &_stack[_idx + -5].minor.yy0, &_stack[_idx + -4].minor.yy0, &_stack[_idx + -3].minor.yy0, null, _stack[_idx + -1].minor.yy12, _stack[_idx + 0].minor.yy15); parse.SrcListIndexedBy(gotoMinor.yy10, &_stack[_idx + -2].minor.yy0); 
 }
       break;
     case 135: /* seltablist ::= stl_prefix LP select RP as on_opt using_opt */
-#line 373 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 373 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy10 = parse.SrcListAppendFromTerm(_stack[_idx + -6].minor.yy10, null, null, &_stack[_idx + -2].minor.yy0, _stack[_idx + -4].minor.yy3, _stack[_idx + -1].minor.yy12, _stack[_idx + 0].minor.yy15); 
 }
       break;
     case 136: /* seltablist ::= stl_prefix LP seltablist RP as on_opt using_opt */
-#line 375 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 375 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
     if (_stack[_idx + -6].minor.yy10 == null && _stack[_idx + -2].minor.yy0.length == null && _stack[_idx + -1].minor.yy12 == null && _stack[_idx + 0].minor.yy15 == null)
@@ -6497,37 +6497,37 @@ switch (ruleno) {
     case 137: /* dbnm ::= */
     case 146: /* indexed_opt ::= */
     case 249: /* collate ::= */
-#line 401 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 401 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.data = null; gotoMinor.yy0.length = 0; 
 }
       break;
     case 139: /* fullname ::= nm dbnm */
-#line 406 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 406 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy10 = Parse.SrcListAppend(parse.Ctx, null, &_stack[_idx + -1].minor.yy0, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 140: /* joinop ::= COMMA|JOIN */
-#line 410 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 410 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy14 = JT.INNER; 
 }
       break;
     case 141: /* joinop ::= JOIN_KW JOIN */
-#line 411 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 411 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy14 = Select.JoinType(parse, &_stack[_idx + -1].minor.yy0, null, null); 
 }
       break;
     case 142: /* joinop ::= JOIN_KW nm JOIN */
-#line 412 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 412 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy14 = Select.JoinType(parse, &_stack[_idx + -2].minor.yy0, &_stack[_idx + -1].minor.yy0, null); 
 }
       break;
     case 143: /* joinop ::= JOIN_KW nm nm JOIN */
-#line 413 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 413 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy14 = Select.JoinType(parse, &_stack[_idx + -3].minor.yy0, &_stack[_idx + -2].minor.yy0, &_stack[_idx + -1].minor.yy0); 
 }
@@ -6539,7 +6539,7 @@ switch (ruleno) {
     case 236: /* case_operand ::= expr */
     case 280: /* when_clause ::= WHEN expr */
     case 302: /* key_opt ::= KEY expr */
-#line 417 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 417 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy12 = _stack[_idx + 0].minor.yy4.Expr; 
 }
@@ -6551,27 +6551,27 @@ switch (ruleno) {
     case 237: /* case_operand ::= */
     case 279: /* when_clause ::= */
     case 301: /* key_opt ::= */
-#line 418 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 418 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy12 = null; 
 }
       break;
     case 148: /* indexed_opt ::= NOT INDEXED */
-#line 428 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 428 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0.data = null; gotoMinor.yy0.length = 1; 
 }
       break;
     case 149: /* using_opt ::= USING LP inscollist RP */
     case 180: /* inscollist_opt ::= LP inscollist RP */
-#line 432 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 432 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy15 = _stack[_idx + -1].minor.yy15; 
 }
       break;
     case 150: /* using_opt ::= */
     case 179: /* inscollist_opt ::= */
-#line 433 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 433 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy15 = null; 
 }
@@ -6579,62 +6579,62 @@ switch (ruleno) {
     case 152: /* orderby_opt ::= ORDER BY sortlist */
     case 159: /* groupby_opt ::= GROUP BY nexprlist */
     case 238: /* exprlist ::= nexprlist */
-#line 442 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 442 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = _stack[_idx + 0].minor.yy6; 
 }
       break;
     case 153: /* sortlist ::= sortlist COMMA expr sortorder */
-#line 443 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 443 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = Expr.ListAppend(parse, _stack[_idx + -3].minor.yy6, _stack[_idx + -1].minor.yy4.Expr); if (gotoMinor.yy6 != null) gotoMinor.yy6.Ids[gotoMinor.yy6.Exprs-1].SortOrder = (SO)_stack[_idx + 0].minor.yy5; 
 }
       break;
     case 154: /* sortlist ::= expr sortorder */
-#line 444 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 444 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = Expr.ListAppend(parse, null, _stack[_idx + -1].minor.yy4.Expr); if (gotoMinor.yy6 != null && C._ALWAYS(gotoMinor.yy6.Ids != null)) gotoMinor.yy6.Ids[0].SortOrder = (SO)_stack[_idx + 0].minor.yy5; 
 }
       break;
     case 155: /* sortorder ::= ASC */
     case 157: /* sortorder ::= */
-#line 447 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 447 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy5 = SO.ASC; 
 }
       break;
     case 156: /* sortorder ::= DESC */
-#line 448 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 448 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy5 = SO.DESC; 
 }
       break;
     case 162: /* limit_opt ::= */
-#line 468 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 468 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy13.Limit = null; gotoMinor.yy13.Offset = null; 
 }
       break;
     case 163: /* limit_opt ::= LIMIT expr */
-#line 469 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 469 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy13.Limit = _stack[_idx + 0].minor.yy4.Expr; gotoMinor.yy13.Offset = null; 
 }
       break;
     case 164: /* limit_opt ::= LIMIT expr OFFSET expr */
-#line 470 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 470 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy13.Limit = _stack[_idx + -2].minor.yy4.Expr; gotoMinor.yy13.Offset = _stack[_idx + 0].minor.yy4.Expr; 
 }
       break;
     case 165: /* limit_opt ::= LIMIT expr COMMA expr */
-#line 471 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 471 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy13.Offset = _stack[_idx + -2].minor.yy4.Expr; gotoMinor.yy13.Limit = _stack[_idx + 0].minor.yy4.Expr; 
 }
       break;
     case 166: /* cmd ::= DELETE FROM fullname indexed_opt where_opt */
-#line 483 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 483 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	parse.SrcListIndexedBy(_stack[_idx + -2].minor.yy10, &_stack[_idx + -1].minor.yy0);
@@ -6643,7 +6643,7 @@ switch (ruleno) {
 }
       break;
     case 169: /* cmd ::= UPDATE orconf fullname indexed_opt SET setlist where_opt */
-#line 505 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 505 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	parse.SrcListIndexedBy(_stack[_idx + -4].minor.yy10, &_stack[_idx + -3].minor.yy0);
@@ -6653,55 +6653,55 @@ switch (ruleno) {
 }
       break;
     case 170: /* setlist ::= setlist COMMA nm EQ expr */
-#line 514 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 514 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = Expr.ListAppend(parse, _stack[_idx + -4].minor.yy6, _stack[_idx + 0].minor.yy4.Expr); Expr.ListSetName(parse, gotoMinor.yy6, &_stack[_idx + -2].minor.yy0, 1); 
 }
       break;
     case 171: /* setlist ::= nm EQ expr */
-#line 515 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 515 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = Expr.ListAppend(parse, null, _stack[_idx + 0].minor.yy4.Expr); Expr.ListSetName(parse, gotoMinor.yy6, &_stack[_idx + -2].minor.yy0, 1); 
 }
       break;
     case 172: /* cmd ::= insert_cmd INTO fullname inscollist_opt valuelist */
-#line 518 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 518 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Insert.Insert_(parse, _stack[_idx + -2].minor.yy10, _stack[_idx + 0].minor.yy16.List, _stack[_idx + 0].minor.yy16.Select, _stack[_idx + -1].minor.yy15, _stack[_idx + -4].minor.yy9); 
 }
       break;
     case 173: /* cmd ::= insert_cmd INTO fullname inscollist_opt select */
-#line 519 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 519 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Insert.Insert_(parse, _stack[_idx + -2].minor.yy10, null, _stack[_idx + 0].minor.yy3, _stack[_idx + -1].minor.yy15, _stack[_idx + -4].minor.yy9); 
 }
       break;
     case 174: /* cmd ::= insert_cmd INTO fullname inscollist_opt DEFAULT VALUES */
-#line 520 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 520 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Insert.Insert_(parse, _stack[_idx + -3].minor.yy10, null, null, _stack[_idx + -2].minor.yy15, _stack[_idx + -5].minor.yy9); 
 }
       break;
     case 175: /* insert_cmd ::= INSERT orconf */
-#line 523 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 523 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy9 = _stack[_idx + 0].minor.yy8; 
 }
       break;
     case 176: /* insert_cmd ::= REPLACE */
-#line 524 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 524 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy9 = OE.Replace; 
 }
       break;
     case 177: /* valuelist ::= VALUES LP nexprlist RP */
-#line 531 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 531 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy16.List = _stack[_idx + -1].minor.yy6; gotoMinor.yy16.Select = null; 
 }
       break;
     case 178: /* valuelist ::= valuelist COMMA LP exprlist RP */
-#line 535 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 535 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Select right = Select.New(parse, _stack[_idx + -1].minor.yy6, null, null, null, null, null, null, null, null);
@@ -6729,25 +6729,25 @@ switch (ruleno) {
 }
       break;
     case 181: /* inscollist ::= inscollist COMMA nm */
-#line 567 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 567 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy15 = Parse.IdListAppend(parse.Ctx, _stack[_idx + -2].minor.yy15, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 182: /* inscollist ::= nm */
-#line 568 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 568 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy15 = Parse.IdListAppend(parse.Ctx, null, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 183: /* expr ::= term */
-#line 594 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 594 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy4 = _stack[_idx + 0].minor.yy4; 
 }
       break;
     case 184: /* expr ::= LP expr RP */
-#line 595 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 595 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy4.Expr = _stack[_idx + -1].minor.yy4.Expr; SpanSet(&gotoMinor.yy4, &_stack[_idx + -2].minor.yy0, &_stack[_idx + 0].minor.yy0); 
 }
@@ -6755,20 +6755,20 @@ switch (ruleno) {
     case 185: /* term ::= NULL */
     case 190: /* term ::= INTEGER|FLOAT|BLOB */
     case 191: /* term ::= STRING */
-#line 596 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 596 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanExpr(&gotoMinor.yy4, parse, _stack[_idx + 0].major, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 186: /* expr ::= id */
     case 187: /* expr ::= JOIN_KW */
-#line 597 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 597 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanExpr(&gotoMinor.yy4, parse, TK_ID, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 188: /* expr ::= nm DOT nm */
-#line 599 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 599 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Expr temp1 = Expr.PExpr_(parse, TK.ID, 0, 0, &_stack[_idx + -2].minor.yy0);
@@ -6779,7 +6779,7 @@ switch (ruleno) {
 }
       break;
     case 189: /* expr ::= nm DOT nm DOT nm */
-#line 605 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 605 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Expr temp1 = Expr.PExpr_(parse, TK.ID, 0, 0, &_stack[_idx + -4].minor.yy0);
@@ -6792,7 +6792,7 @@ switch (ruleno) {
 }
       break;
     case 192: /* expr ::= REGISTER */
-#line 615 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 615 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	// When doing a nested parse, one can include terms in an expression that look like this:   #1 #2 ...  These terms refer to registers in the virtual machine.  #N is the N-th register.
@@ -6811,7 +6811,7 @@ switch (ruleno) {
 }
       break;
     case 193: /* expr ::= VARIABLE */
-#line 629 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 629 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	SpanExpr(&gotoMinor.yy4, parse, TK.VARIABLE, &_stack[_idx + 0].minor.yy0);
@@ -6821,7 +6821,7 @@ switch (ruleno) {
 }
       break;
     case 194: /* expr ::= expr COLLATE ids */
-#line 634 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 634 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = _stack[_idx + -2].minor.yy4.Expr.AddCollateToken(parse, &_stack[_idx + 0].minor.yy0);
@@ -6831,7 +6831,7 @@ switch (ruleno) {
 }
       break;
     case 195: /* expr ::= CAST LP expr AS typetoken RP */
-#line 640 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 640 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = Expr.PExpr_(parse, TK.CAST, _stack[_idx + -3].minor.yy4.Expr, 0, &_stack[_idx + -1].minor.yy0);
@@ -6840,7 +6840,7 @@ switch (ruleno) {
 }
       break;
     case 196: /* expr ::= ID LP distinct exprlist RP */
-#line 645 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 645 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	if (_stack[_idx + -1].minor.yy6 != null && _stack[_idx + -1].minor.yy6.Exprs > parse.Ctx.Limits[(int)LIMIT.FUNCTION_ARG])
@@ -6852,7 +6852,7 @@ switch (ruleno) {
 }
       break;
     case 197: /* expr ::= ID LP STAR RP */
-#line 652 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 652 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = Expr.Function(parse, 0, &_stack[_idx + -3].minor.yy0);
@@ -6861,7 +6861,7 @@ switch (ruleno) {
 }
       break;
     case 198: /* term ::= CTIME_KW */
-#line 656 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 656 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	// The CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP values are treated as functions that return constants
@@ -6879,27 +6879,27 @@ switch (ruleno) {
     case 204: /* expr ::= expr PLUS|MINUS expr */
     case 205: /* expr ::= expr STAR|SLASH|REM expr */
     case 206: /* expr ::= expr CONCAT expr */
-#line 673 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 673 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanBinaryExpr(&gotoMinor.yy4, parse, _stack[_idx + -1].major, &_stack[_idx + -2].minor.yy4, &_stack[_idx + 0].minor.yy4); 
 }
       break;
     case 207: /* likeop ::= LIKE_KW */
     case 209: /* likeop ::= MATCH */
-#line 682 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 682 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy17.Operator = _stack[_idx + 0].minor.yy0; gotoMinor.yy17.Not = false; 
 }
       break;
     case 208: /* likeop ::= NOT LIKE_KW */
     case 210: /* likeop ::= NOT MATCH */
-#line 683 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 683 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy17.Operator = _stack[_idx + 0].minor.yy0; gotoMinor.yy17.Not = true; 
 }
       break;
     case 211: /* expr ::= expr likeop expr */
-#line 686 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 686 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	ExprList list;
@@ -6914,7 +6914,7 @@ switch (ruleno) {
 }
       break;
     case 212: /* expr ::= expr likeop expr ESCAPE expr */
-#line 696 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 696 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	ExprList *list;
@@ -6930,50 +6930,50 @@ switch (ruleno) {
 }
       break;
     case 213: /* expr ::= expr ISNULL|NOTNULL */
-#line 718 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 718 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanUnaryPostfix(&gotoMinor.yy4, parse, _stack[_idx + 0].major, &_stack[_idx + -1].minor.yy4, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 214: /* expr ::= expr NOT NULL */
-#line 719 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 719 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanUnaryPostfix(&gotoMinor.yy4, parse, TK.NOTNULL, &_stack[_idx + -2].minor.yy4, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 215: /* expr ::= expr IS expr */
-#line 739 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 739 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanBinaryExpr(&gotoMinor.yy4, parse, TK.IS, &_stack[_idx + -2].minor.yy4, &_stack[_idx + 0].minor.yy4); BinaryToUnaryIfNull(parse, _stack[_idx + 0].minor.yy4.Expr, gotoMinor.yy4.Expr, TK.ISNULL); 
 }
       break;
     case 216: /* expr ::= expr IS NOT expr */
-#line 740 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 740 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanBinaryExpr(&gotoMinor.yy4, parse, TK.ISNOT, &_stack[_idx + -3].minor.yy4, &_stack[_idx + 0].minor.yy4); BinaryToUnaryIfNull(parse, _stack[_idx + 0].minor.yy4.Expr, gotoMinor.yy4.Expr, TK.NOTNULL); 
 }
       break;
     case 217: /* expr ::= NOT expr */
     case 218: /* expr ::= BITNOT expr */
-#line 752 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 752 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanUnaryPrefix(&gotoMinor.yy4, parse, _stack[_idx + -1].major, &_stack[_idx + 0].minor.yy4, &_stack[_idx + -1].minor.yy0); 
 }
       break;
     case 219: /* expr ::= MINUS expr */
-#line 754 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 754 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanUnaryPrefix(&gotoMinor.yy4, parse, TK.UMINUS, &_stack[_idx + 0].minor.yy4, &_stack[_idx + -1].minor.yy0); 
 }
       break;
     case 220: /* expr ::= PLUS expr */
-#line 755 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 755 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  SpanUnaryPrefix(&gotoMinor.yy4, parse, TK.UPLUS, &_stack[_idx + 0].minor.yy4, &_stack[_idx + -1].minor.yy0); 
 }
       break;
     case 223: /* expr ::= expr between_op expr AND expr */
-#line 760 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 760 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	ExprList list = Expr.ListAppend(parse, 0, _stack[_idx + -2].minor.yy4.Expr);
@@ -6988,7 +6988,7 @@ switch (ruleno) {
 }
       break;
     case 226: /* expr ::= expr in_op LP exprlist RP */
-#line 774 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 774 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	if (_stack[_idx + -1].minor.yy6 == null)
@@ -7017,7 +7017,7 @@ switch (ruleno) {
 }
       break;
     case 227: /* expr ::= LP select RP */
-#line 798 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 798 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = Expr.PExpr_(parse, TK.SELECT, 0, 0, 0);
@@ -7034,7 +7034,7 @@ switch (ruleno) {
 }
       break;
     case 228: /* expr ::= expr in_op LP select RP */
-#line 810 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 810 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = Expr.PExpr_(parse, TK.IN, _stack[_idx + -4].minor.yy4.Expr, 0, 0);
@@ -7052,7 +7052,7 @@ switch (ruleno) {
 }
       break;
     case 229: /* expr ::= expr in_op nm dbnm */
-#line 823 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 823 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	SrcList src = Parse.SrcListAppend(parse.Ctx, 0, &_stack[_idx + -1].minor.yy0, &_stack[_idx + 0].minor.yy0);
@@ -7071,7 +7071,7 @@ switch (ruleno) {
 }
       break;
     case 230: /* expr ::= EXISTS LP select RP */
-#line 837 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 837 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Expr p = gotoMinor.yy4.Expr = Expr.PExpr_(parse, TK.EXISTS, 0, 0, 0);
@@ -7088,7 +7088,7 @@ switch (ruleno) {
 }
       break;
     case 231: /* expr ::= CASE case_operand case_exprlist case_else END */
-#line 852 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 852 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = Expr.PExpr_(parse, TK.CASE, _stack[_idx + -3].minor.yy12, _stack[_idx + -1].minor.yy12, 0);
@@ -7105,7 +7105,7 @@ switch (ruleno) {
       break;
     case 232: /* case_exprlist ::= case_exprlist WHEN expr THEN expr */
     case 233: /* case_exprlist ::= WHEN expr THEN expr */
-#line 865 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 865 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy6 = Expr.ListAppend(parse, null, _stack[_idx + -2].minor.yy4.Expr);
@@ -7114,19 +7114,19 @@ switch (ruleno) {
 }
       break;
     case 240: /* nexprlist ::= nexprlist COMMA expr */
-#line 889 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 889 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = Expr.ListAppend(parse, _stack[_idx + -2].minor.yy6, _stack[_idx + 0].minor.yy4.Expr); 
 }
       break;
     case 241: /* nexprlist ::= expr */
-#line 890 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 890 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy6 = Expr.ListAppend(parse, null, _stack[_idx + 0].minor.yy4.Expr); 
 }
       break;
     case 242: /* cmd ::= createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP idxlist RP */
-#line 895 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 895 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	parse.CreateIndex(&_stack[_idx + -6].minor.yy0, &_stack[_idx + -5].minor.yy0, Parse.SrcListAppend(parse.Ctx, 0, &_stack[_idx + -3].minor.yy0, 0), _stack[_idx + -1].minor.yy6, _stack[_idx + -9].minor.yy9, &_stack[_idx + -10].minor.yy0, &_stack[_idx + 0].minor.yy0, SO.ASC, _stack[_idx + -7].minor.yy2);
@@ -7135,19 +7135,19 @@ switch (ruleno) {
       break;
     case 243: /* uniqueflag ::= UNIQUE */
     case 296: /* raisetype ::= ABORT */
-#line 900 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 900 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy9 = OE.Abort; 
 }
       break;
     case 244: /* uniqueflag ::= */
-#line 901 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 901 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy9 = OE.None; 
 }
       break;
     case 247: /* idxlist ::= idxlist COMMA nm collate sortorder */
-#line 910 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 910 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Expr p = Expr.AddCollateToken(parse, 0, &_stack[_idx + -1].minor.yy0);
@@ -7159,7 +7159,7 @@ switch (ruleno) {
 }
       break;
     case 248: /* idxlist ::= nm collate sortorder */
-#line 917 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 917 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Expr p = Expr.AddCollateToken(parse, 0, &_stack[_idx + -1].minor.yy0);
@@ -7171,50 +7171,50 @@ switch (ruleno) {
 }
       break;
     case 251: /* cmd ::= DROP INDEX ifexists fullname */
-#line 931 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 931 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.DropIndex(_stack[_idx + 0].minor.yy10, _stack[_idx + -1].minor.yy2); 
 }
       break;
     case 252: /* cmd ::= VACUUM */
     case 253: /* cmd ::= VACUUM nm */
-#line 936 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 936 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Vacuum.Vacuum_(parse); 
 }
       break;
     case 254: /* cmd ::= PRAGMA nm dbnm */
-#line 943 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 943 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Pragma.Pragma_(parse, &_stack[_idx + -1].minor.yy0, &_stack[_idx + 0].minor.yy0, 0, 0); 
 }
       break;
     case 255: /* cmd ::= PRAGMA nm dbnm EQ nmnum */
-#line 944 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 944 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Pragma.Pragma_(parse, &_stack[_idx + -3].minor.yy0, &_stack[_idx + -2].minor.yy0, &_stack[_idx + 0].minor.yy0, 0); 
 }
       break;
     case 256: /* cmd ::= PRAGMA nm dbnm LP nmnum RP */
-#line 945 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 945 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Pragma.Pragma_(parse, &_stack[_idx + -4].minor.yy0, &_stack[_idx + -3].minor.yy0, &_stack[_idx + -1].minor.yy0, 0); 
 }
       break;
     case 257: /* cmd ::= PRAGMA nm dbnm EQ minus_num */
-#line 946 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 946 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Pragma.Pragma_(parse, &_stack[_idx + -3].minor.yy0, &_stack[_idx + -2].minor.yy0, &_stack[_idx + 0].minor.yy0, 1); 
 }
       break;
     case 258: /* cmd ::= PRAGMA nm dbnm LP minus_num RP */
-#line 947 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 947 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Pragma.Pragma_(parse, &_stack[_idx + -4].minor.yy0, &_stack[_idx + -3].minor.yy0, &_stack[_idx + -1].minor.yy0, 1); 
 }
       break;
     case 268: /* cmd ::= createkw trigger_decl BEGIN trigger_cmd_list END */
-#line 962 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 962 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Token all;
@@ -7225,7 +7225,7 @@ switch (ruleno) {
 }
       break;
     case 269: /* trigger_decl ::= temp TRIGGER ifnotexists nm dbnm trigger_time trigger_event ON fullname foreach_clause when_clause */
-#line 971 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 971 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Trigger.BeginTrigger(parse, &_stack[_idx + -7].minor.yy0, &_stack[_idx + -6].minor.yy0, _stack[_idx + -5].minor.yy19, _stack[_idx + -4].minor.yy20.gotoMinor.yy0, _stack[_idx + -4].minor.yy20._stack[_idx + -7].minor.yy0, _stack[_idx + -2].minor.yy10, _stack[_idx + 0].minor.yy12, _stack[_idx + -10].minor.yy2, _stack[_idx + -8].minor.yy2);
@@ -7235,38 +7235,38 @@ switch (ruleno) {
       break;
     case 270: /* trigger_time ::= BEFORE */
     case 273: /* trigger_time ::= */
-#line 977 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 977 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy19 = TK.BEFORE; 
 }
       break;
     case 271: /* trigger_time ::= AFTER */
-#line 978 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 978 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy19 = TK.AFTER;  
 }
       break;
     case 272: /* trigger_time ::= INSTEAD OF */
-#line 979 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 979 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy19 = TK.INSTEAD;
 }
       break;
     case 274: /* trigger_event ::= DELETE|INSERT */
     case 275: /* trigger_event ::= UPDATE */
-#line 984 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 984 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy20.a = _stack[_idx + 0].major; gotoMinor.yy20.B = nullptr; 
 }
       break;
     case 276: /* trigger_event ::= UPDATE OF inscollist */
-#line 986 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 986 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy20.a = TK.UPDATE; gotoMinor.yy20.B = _stack[_idx + 0].minor.yy15; 
 }
       break;
     case 281: /* trigger_cmd_list ::= trigger_cmd_list trigger_cmd SEMI */
-#line 998 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 998 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	Debug.Assert(_stack[_idx + -2].minor.yy18 != null);
@@ -7277,7 +7277,7 @@ switch (ruleno) {
 }
       break;
     case 282: /* trigger_cmd_list ::= trigger_cmd SEMI */
-#line 1004 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1004 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  
 	Debug.Assert(_stack[_idx + -1].minor.yy18 != null);
@@ -7287,55 +7287,55 @@ switch (ruleno) {
 }
       break;
     case 284: /* trnm ::= nm DOT nm */
-#line 1014 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1014 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy0 = _stack[_idx + 0].minor.yy0; parse.ErrorMsg("qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers"); 
 }
       break;
     case 286: /* tridxby ::= INDEXED BY nm */
-#line 1019 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1019 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.ErrorMsg("the INDEXED BY clause is not allowed on UPDATE or DELETE statements within triggers"); 
 }
       break;
     case 287: /* tridxby ::= NOT INDEXED */
-#line 1020 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1020 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.ErrorMsg("the NOT INDEXED clause is not allowed on UPDATE or DELETE statements within triggers"); 
 }
       break;
     case 288: /* trigger_cmd ::= UPDATE orconf trnm tridxby SET setlist where_opt */
-#line 1025 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1025 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy18 = Trigger.UpdateStep(parse.Ctx, &_stack[_idx + -4].minor.yy0, _stack[_idx + -1].minor.yy6, _stack[_idx + 0].minor.yy12, _stack[_idx + -5].minor.yy8); 
 }
       break;
     case 289: /* trigger_cmd ::= insert_cmd INTO trnm inscollist_opt valuelist */
-#line 1027 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1027 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy18 = Trigger.InsertStep(parse.Ctx, &_stack[_idx + -2].minor.yy0, _stack[_idx + -1].minor.yy15, _stack[_idx + 0].minor.yy16.List, _stack[_idx + 0].minor.yy16.Select, _stack[_idx + -4].minor.yy9); 
 }
       break;
     case 290: /* trigger_cmd ::= insert_cmd INTO trnm inscollist_opt select */
-#line 1028 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1028 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy18 = Trigger.InsertStep(parse.Ctx, &_stack[_idx + -2].minor.yy0, _stack[_idx + -1].minor.yy15, 0, _stack[_idx + 0].minor.yy3, _stack[_idx + -4].minor.yy9); 
 }
       break;
     case 291: /* trigger_cmd ::= DELETE FROM trnm tridxby where_opt */
-#line 1030 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1030 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy18 = Trigger.DeleteStep(parse.Ctx, &_stack[_idx + -2].minor.yy0, _stack[_idx + 0].minor.yy12); 
 }
       break;
     case 292: /* trigger_cmd ::= select */
-#line 1032 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1032 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy18 = Trigger.SelectStep(parse.Ctx, _stack[_idx + 0].minor.yy3); 
 }
       break;
     case 293: /* expr ::= RAISE LP IGNORE RP */
-#line 1035 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1035 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = Expr.PExpr_(parse, TK.RAISE, 0, 0, 0); 
@@ -7346,7 +7346,7 @@ switch (ruleno) {
 }
       break;
     case 294: /* expr ::= RAISE LP raisetype COMMA nm RP */
-#line 1041 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1041 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
 
 	gotoMinor.yy4.Expr = Expr.PExpr_(parse, TK.RAISE, 0, 0, &_stack[_idx + -1].minor.yy0); 
@@ -7357,97 +7357,97 @@ switch (ruleno) {
 }
       break;
     case 295: /* raisetype ::= ROLLBACK */
-#line 1050 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1050 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy9 = OE.Rollback; 
 }
       break;
     case 297: /* raisetype ::= FAIL */
-#line 1052 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1052 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  gotoMinor.yy9 = OE.Fail; 
 }
       break;
     case 298: /* cmd ::= DROP TRIGGER ifexists fullname */
-#line 1056 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1056 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Trigger.DropTrigger(parse, _stack[_idx + 0].minor.yy10, _stack[_idx + -1].minor.yy2); 
 }
       break;
     case 299: /* cmd ::= ATTACH database_kw_opt expr AS expr key_opt */
-#line 1061 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1061 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Attach.Attach_(parse, _stack[_idx + -3].minor.yy4.Expr, _stack[_idx + -1].minor.yy4.Expr, _stack[_idx + 0].minor.yy12); 
 }
       break;
     case 300: /* cmd ::= DETACH database_kw_opt expr */
-#line 1062 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1062 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Attach.Detach(parse, _stack[_idx + 0].minor.yy4.Expr); 
 }
       break;
     case 305: /* cmd ::= REINDEX */
-#line 1074 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1074 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.Reindex(null, null); 
 }
       break;
     case 306: /* cmd ::= REINDEX nm dbnm */
-#line 1075 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1075 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.Reindex(&_stack[_idx + -1].minor.yy0, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 307: /* cmd ::= ANALYZE */
-#line 1080 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1080 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Analyze.Analyze_(parse, null, null); 
 }
       break;
     case 308: /* cmd ::= ANALYZE nm dbnm */
-#line 1081 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1081 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Analyze.Analyze_(parse, &_stack[_idx + -1].minor.yy0, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 309: /* cmd ::= ALTER TABLE fullname RENAME TO nm */
-#line 1086 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1086 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Alter.RenameTable(parse, _stack[_idx + -3].minor.yy10, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 310: /* cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt column */
-#line 1087 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1087 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  Alter.FinishAddColumn(parse, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 311: /* add_column_fullname ::= fullname */
-#line 1088 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1088 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  parse.Ctx.Lookaside.Enabled = false; Alter.BeginAddColumn(parse, _stack[_idx + 0].minor.yy10); 
 }
       break;
     case 314: /* cmd ::= create_vtab */
-#line 1095 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1095 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  VTable.FinishParse(parse, null); 
 }
       break;
     case 315: /* cmd ::= create_vtab LP vtabarglist RP */
-#line 1096 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1096 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  VTable.FinishParse(parse, &_stack[_idx + 0].minor.yy0); 
 }
       break;
     case 316: /* create_vtab ::= createkw VIRTUAL TABLE ifnotexists nm dbnm USING nm */
-#line 1098 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1098 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  VTable.BeginParse(parse, &_stack[_idx + -3].minor.yy0, &_stack[_idx + -2].minor.yy0, &_stack[_idx + 0].minor.yy0, _stack[_idx + -4].minor.yy2); 
 }
       break;
     case 319: /* vtabarg ::= */
-#line 1101 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1101 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  VTable.ArgInit(parse);
 }
@@ -7455,7 +7455,7 @@ switch (ruleno) {
     case 321: /* vtabargtoken ::= ANY */
     case 322: /* vtabargtoken ::= lp anylist RP */
     case 323: /* lp ::= LP */
-#line 1103 "C:\_GITHUB\GpuStructs\src\SystemL.Data.net\Core+Vdbe\Parse+Parser.y"
+#line 1103 "C:\_GITHUB\GpuEx\src\System.Data.net\Core+Vdbe\Parse+Parser.y"
 {
  VTable.ArgExtend(parse, &_stack[_idx + 0].minor.yy0); 
 }
@@ -7491,7 +7491,7 @@ switch (ruleno) {
                 this.PopParserStack();
             }
             // Here code is inserted which will execute if the parser stack every overflows
-#line 22 "C:\\_GITHUB\\GpuStructs\\src\\SystemL.Data.net\\Core+Vdbe\\Parse+Parser.y"
+#line 22 "C:\\_GITHUB\\GpuEx\\src\\System.Data.net\\Core+Vdbe\\Parse+Parser.y"
 
 	parse.ErrorMsg("parser stack overflow");
 
@@ -7522,7 +7522,7 @@ switch (ruleno) {
         /// </summary>
         private void SyntaxError(int major, Minor minor) {
             Parse parse = this._parse;
-#line 18 "C:\\_GITHUB\\GpuStructs\\src\\SystemL.Data.net\\Core+Vdbe\\Parse+Parser.y"
+#line 18 "C:\\_GITHUB\\GpuEx\\src\\System.Data.net\\Core+Vdbe\\Parse+Parser.y"
 
 	Debug.Assert(TOKEN.data[0]); // The tokenizer always gives us a token
 	parse.ErrorMsg("near \"%T\": syntax error", TOKEN);

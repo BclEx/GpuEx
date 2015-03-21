@@ -269,7 +269,7 @@ namespace Core
 				_assert(value >= 0);
 			}
 		}
-		Expr *newExpr = (Expr *)_tagalloc2(ctx, sizeof(Expr)+extraSize, true);
+		Expr *newExpr = (Expr *)_tagallocZero(ctx, sizeof(Expr)+extraSize);
 		if (newExpr)
 		{
 			newExpr->OP = (uint8)op;
@@ -758,7 +758,7 @@ namespace Core
 		Context *ctx = parse->Ctx;
 		if (!list)
 		{
-			list = (ExprList *)_tagalloc2(ctx, sizeof(ExprList), true);
+			list = (ExprList *)_tagallocZero(ctx, sizeof(ExprList));
 			if (!list)
 				goto no_mem;
 			list->Ids = (ExprList::ExprListItem *)_tagalloc(ctx, sizeof(list->Ids[0]));

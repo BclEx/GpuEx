@@ -40,7 +40,7 @@ namespace Core
 				{
 					if (!callbackIsInit)
 					{
-						colsNames = (char **)_tagalloc2(ctx, 2*cols*sizeof(const char*) + 1, true);
+						colsNames = (char **)_tagallocZero(ctx, 2*cols*sizeof(const char*) + 1);
 						if (!colsNames)
 							goto exec_out;
 						for (i = 0; i < cols; i++)

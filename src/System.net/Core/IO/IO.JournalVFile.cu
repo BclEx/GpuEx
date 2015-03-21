@@ -119,7 +119,7 @@ namespace Core { namespace IO
 		JournalVFile *p = (JournalVFile *)file;
 		if (bufferLength > 0)
 		{
-			p->Buffer = (char *)_alloc2(bufferLength, true);
+			p->Buffer = (char *)_allocZero(bufferLength);
 			if (!p->Buffer)
 				return RC_NOMEM;
 		}

@@ -546,7 +546,7 @@ exit_rename_table:
 		// Put a copy of the Table struct in Parse.pNewTable for the sqlite3AddColumn() function and friends to modify.  But modify
 		// the name by adding an "sqlite_altertab_" prefix.  By adding this prefix, we insure that the name will not collide with an existing
 		// table because user table are not allowed to have the "sqlite_" prefix on their name.
-		Table *newTable = (Table *)_tagalloc2(ctx, sizeof(Table), true);
+		Table *newTable = (Table *)_tagallocZero(ctx, sizeof(Table));
 		if (!newTable) goto exit_begin_add_column;
 		parse->NewTable = newTable;
 		newTable->Refs = 1;
@@ -554,7 +554,7 @@ exit_rename_table:
 		_assert(newTable->Cols.length > 0);
 		int allocs = (((newTable->Cols.length-1)/8)*8)+8;
 		_assert(allocs >= newTable->Cols.length && allocs%8 == 0 && allocs - newTable->Cols.length < 8);
-		newTable->Cols.data = (Column *)_tagalloc2(ctx, sizeof(Column)*allocs, true);
+		newTable->Cols.data = (Column *)_tagallocZero(ctx, sizeof(Column)*allocs);
 		newTable->Name = _mtagprintf(ctx, "sqlite_altertab_%s", table->Name);
 		if (!newTable->Cols || !newTable->Name)
 		{

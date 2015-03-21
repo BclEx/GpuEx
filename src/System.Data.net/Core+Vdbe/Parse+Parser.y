@@ -360,7 +360,7 @@ as(X) ::= .            { X.length = 0; }
 %destructor from { Parse.SrcListDelete(parse.Ctx, $$); }
 
 // A complete FROM clause.
-from(A) ::= .					{ A = (SrcList)C._alloc2(parse.Ctx, sizeof(*A), true); }
+from(A) ::= .					{ A = (SrcList)C._allocZero(parse.Ctx, sizeof(*A)); }
 from(A) ::= FROM seltablist(X). { A = X; Vdbe.SrcListShiftJoinType(A); }
 
 // "seltablist" is a "Select Table List" - the content of the FROM clause in a SELECT statement.  "stl_prefix" is a prefix of this list.

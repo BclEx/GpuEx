@@ -28,7 +28,7 @@ namespace Core
 	__device__ Select *Select::New(Parse *parse, ExprList *list, SrcList *src, Expr *where_, ExprList *groupBy, Expr *having, ExprList *orderBy, SF selFlags, Expr *limit, Expr *offset)
 	{
 		Context *ctx = parse->Ctx;
-		Select *newSelect = (Select *)_tagalloc2(ctx, sizeof(*newSelect), true);
+		Select *newSelect = (Select *)_tagallocZero(ctx, sizeof(*newSelect));
 		_assert(ctx->MallocFailed || !offset || limit); // OFFSET implies LIMIT
 		Select standin;
 		if (!newSelect)
@@ -40,7 +40,7 @@ namespace Core
 		if (!list)
 			list = Expr::ListAppend(parse, nullptr, Expr::Expr_(ctx, TK_ALL, nullptr));
 		newSelect->EList = list;
-		if (!src) src = (SrcList *)_tagalloc2(ctx, sizeof(*src), true);
+		if (!src) src = (SrcList *)_tagallocZero(ctx, sizeof(*src));
 		newSelect->Src = src;
 		newSelect->Where = where_;
 		newSelect->GroupBy = groupBy;
@@ -532,7 +532,7 @@ namespace Core
 	{
 		Context *ctx = parse->Ctx;
 		int exprs = list->Exprs;
-		KeyInfo *info = (KeyInfo *)_tagalloc2(ctx, sizeof(*info) + exprs*(sizeof(CollSeq*)+1), true);
+		KeyInfo *info = (KeyInfo *)_tagallocZero(ctx, sizeof(*info) + exprs*(sizeof(CollSeq*)+1));
 		if (info)
 		{
 			info->SortOrders = (SO *)&info->Colls[exprs];
@@ -901,7 +901,7 @@ namespace Core
 		if (list)
 		{
 			colsLength = list->Exprs;
-			cols = (Column *)_tagalloc2(ctx, sizeof(cols[0])*colsLength, true);
+			cols = (Column *)_tagallocZero(ctx, sizeof(cols[0])*colsLength);
 			ASSERTCOVERAGE(cols == nullptr);
 		}
 		else
@@ -1019,7 +1019,7 @@ namespace Core
 		if (parse->Errs) return nullptr;
 		while (select->Prior) select = select->Prior;
 		ctx->Flags = savedFlags;
-		Table *table = (Table *)_tagalloc2(ctx, sizeof(Table), true);
+		Table *table = (Table *)_tagallocZero(ctx, sizeof(Table));
 		if (!table)
 			return nullptr;
 		// The sqlite3ResultSetOfSelect() is only used n contexts where lookaside is disabled
@@ -1377,7 +1377,7 @@ namespace Core
 		{
 			_assert(p->Rightmost == p);
 			int cols = p->EList->Exprs; // Number of columns in result set
-			KeyInfo *keyInfo = (KeyInfo *)_tagalloc2(ctx, sizeof(*keyInfo)+cols*(sizeof(CollSeq*) + 1), true); // Collating sequence for the result set
+			KeyInfo *keyInfo = (KeyInfo *)_tagallocZero(ctx, sizeof(*keyInfo)+cols*(sizeof(CollSeq*) + 1)); // Collating sequence for the result set
 			if (!keyInfo)
 			{
 				rc = RC_NOMEM;
@@ -1626,7 +1626,7 @@ multi_select_end:
 			regPrev = parse->Mems+1;
 			parse->Mems += exprs+1;
 			v->AddOp2(OP_Integer, 0, regPrev);
-			keyDup = (KeyInfo *)_tagalloc2(ctx, sizeof(*keyDup) + exprs*(sizeof(CollSeq*)+1), true);
+			keyDup = (KeyInfo *)_tagallocZero(ctx, sizeof(*keyDup) + exprs*(sizeof(CollSeq*)+1));
 			if (keyDup)
 			{
 				keyDup->SortOrders = (SO *)&keyDup->Colls[exprs];
@@ -2282,7 +2282,7 @@ multi_select_end:
 				_assert(sel);
 				_assert(!from->Table);
 				walker->WalkSelect(sel);
-				from->Table = table = (Table *)_tagalloc2(ctx, sizeof(Table), true);
+				from->Table = table = (Table *)_tagallocZero(ctx, sizeof(Table));
 				if (!table) return WRC_Abort;
 				table->Refs = 1;
 				table->Name = _mtagprintf(ctx, "sqlite_subquery_%p_", (void *)table);

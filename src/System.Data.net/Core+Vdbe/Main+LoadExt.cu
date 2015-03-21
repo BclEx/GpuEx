@@ -394,7 +394,7 @@ namespace Core
 		}
 
 		// Append the new shared library handle to the ctx->aExtension array.
-		void **handles = (void **)_tagalloc2(ctx, sizeof(handle)*(ctx->Extensions.length+1), true);
+		void **handles = (void **)_tagallocZero(ctx, sizeof(handle)*(ctx->Extensions.length+1));
 		if (!handles)
 			return RC_NOMEM;
 		if (ctx->Extensions.length > 0)

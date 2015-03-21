@@ -93,6 +93,8 @@
     <Content Include="Opcodes.h" />
     <Content Include="Core+Vdbe\Parse+Parser.cs">
       <DependentUpon>Parse+Parser.y</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
     </Content>
     <Compile Include="Core+Vdbe\Parse+Build.cs" />
     <Compile Include="Core+Vdbe\Callback.cs" />

@@ -180,7 +180,7 @@ namespace Core
 		// If the above search did not find a BtLock struct associating Btree p with table iTable, allocate one and link it into the list.
 		if (!newLock)
 		{
-			newLock = (BtLock *)_alloc2(sizeof(BtLock), true);
+			newLock = (BtLock *)_allocZero(sizeof(BtLock));
 			if (!newLock)
 				return RC_NOMEM;
 			newLock->Table = table;
@@ -1191,7 +1191,7 @@ ptrmap_exit:
 			flags |= OPEN_MEMORY;
 		if ((vfsFlags & VSystem::OPEN_MAIN_DB) != 0 && (memoryDB || tempDB))
 			vfsFlags = (VSystem::OPEN)((vfsFlags & ~VSystem::OPEN_MAIN_DB) | VSystem::OPEN_TEMP_DB);
-		Btree *p = (Btree *)_alloc2(sizeof(Btree), true); // Handle to return
+		Btree *p = (Btree *)_allocZero(sizeof(Btree)); // Handle to return
 		if (!p)
 			return RC_NOMEM;
 		p->InTrans = TRANS_NONE;
@@ -1281,7 +1281,7 @@ ptrmap_exit:
 			_assert(sizeof(uint16) == 2);
 			_assert(sizeof(Pid) == 4);
 
-			bt = (BtShared *)_alloc2(sizeof(*bt), true);
+			bt = (BtShared *)_allocZero(sizeof(*bt));
 			if (bt == nullptr)
 			{
 				rc = RC_NOMEM;
@@ -2774,7 +2774,7 @@ set_child_ptrmaps_out:
 			if (cur->IsIncrblobHandle && !cur->Overflows)
 			{
 				uint ovfl = (cur->Info.Payload - cur->Info.Local + ovflSize - 1) / ovflSize;
-				cur->Overflows = (Pid *)_alloc2(sizeof(Pid) * ovfl, true);
+				cur->Overflows = (Pid *)_allocZero(sizeof(Pid) * ovfl);
 				// nOvfl is always positive.  If it were zero, FetchPayload would have been used instead of this routine.
 				if (_ALWAYS(ovfl) && !cur->Overflows)
 					rc = RC_NOMEM;
@@ -4475,7 +4475,7 @@ freepage_out:
 			+ bt->PageSize // aSpace1
 			+ k * oldPagesUsed; // Page copies (apCopy)
 		cells = 0; // Number of cells in apCell[]
-		cell = (uint8 **)_stackalloc(nullptr, sizeScratch, false); // All cells begin balanced
+		cell = (uint8 **)_scratchalloc(sizeScratch); // All cells begin balanced
 		if (cell == nullptr)
 		{
 			rc = RC_NOMEM;
@@ -4904,7 +4904,7 @@ freepage_out:
 
 		// Cleanup before returning.
 balance_cleanup:
-		_stackfree(nullptr, cell);
+		_scratchfree(cell);
 		for (i = 0; i < oldPagesUsed; i++)
 			ReleasePage(oldPages[i]);
 		for (i = 0; i < newPagesUsed; i++)
@@ -5979,7 +5979,7 @@ cleardatabasepage_out:
 			return nullptr;
 		}
 
-		check.PgRefs = (uint8 *)_alloc2((check.Pages / 8) + 1, true);
+		check.PgRefs = (uint8 *)_allocZero((check.Pages / 8) + 1);
 		if (!check.PgRefs)
 		{
 			*errors = 1;
@@ -6095,7 +6095,7 @@ cleardatabasepage_out:
 		Enter();
 		if (!bt->Schema && bytes)
 		{
-			bt->Schema = (Core::Schema *)_tagalloc2(nullptr, bytes, true);
+			bt->Schema = (Core::Schema *)_tagallocZero(nullptr, bytes);
 			bt->FreeSchema = free;
 		}
 		Leave();

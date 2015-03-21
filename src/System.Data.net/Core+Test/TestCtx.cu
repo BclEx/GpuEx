@@ -357,7 +357,7 @@ __device__ static int DbBusyHandler(void *cd, int tries)
 	char b[30];
 	__snprintf(b, sizeof(b), "%d", tries);
 	RC rc = tctx->Interp->VarEval(tctx->Busy, " ", b, (char *)nullptr);
-	if (rc != RC_OK || atoi(tctx->Interp->GetStringResult()))
+	if (rc != RC_OK || ConvertEx::Atoi(tctx->Interp->GetStringResult()))
 		return 0;
 	return 1;
 }
@@ -369,7 +369,7 @@ __device__ static bool DbProgressHandler(void *cd)
 	TestCtx *tctx = (TestCtx *)cd;
 	_assert(tctx->Progress);
 	RC rc = tctx->Interp->Eval(tctx->Progress);
-	if (rc != RC_OK || atoi(tctx->Interp->GetStringResult()))
+	if (rc != RC_OK || ConvertEx::Atoi(tctx->Interp->GetStringResult()))
 		return true;
 	return false;
 }
@@ -390,7 +390,7 @@ __device__ static void DbTraceHandler(void *cd, const char *sql)
 }
 
 // This routine is called by the SQLite profile handler after a statement SQL has executed.  The TCL script in pDb->zProfile is evaluated.
-static void DbProfileHandler(void *cd, const char *sql, uint64 tm)
+__device__ static void DbProfileHandler(void *cd, const char *sql, uint64 tm)
 {
 	TestCtx *tctx = (TestCtx *)cd;
 	char b[100];
@@ -412,7 +412,7 @@ __device__ static bool DbCommitHandler(void *cd)
 {
 	TestCtx *tctx = (TestCtx *)cd;
 	RC rc = tctx->Interp->Eval(tctx->Commit);
-	if (rc != RC_OK || atoi(tctx->Interp->GetStringResult()))
+	if (rc != RC_OK || ConvertEx::Atoi(tctx->Interp->GetStringResult()))
 		return true;
 	return false;
 }
@@ -499,7 +499,7 @@ __device__ static void TclCollateNeeded(void *p, Context *ctx, TEXTENCODE encode
 }
 
 // This routine is called to evaluate an SQL collation function implemented using TCL script.
-static int TclSqlCollate(void *p1, int aLength, const void *a, int bLength, const void *b)
+__device__ static int TclSqlCollate(void *p1, int aLength, const void *a, int bLength, const void *b)
 {
 	SqlCollate *p = (SqlCollate *)p1;
 	Tcl_Obj *cmd = Tcl_Obj::NewStringObj(p->Script, -1);
@@ -508,7 +508,7 @@ static int TclSqlCollate(void *p1, int aLength, const void *a, int bLength, cons
 	cmd->ListObjAppendElement(p->Interp, Tcl_Obj::NewStringObj((const char *)b, bLength));
 	p->Interp->EvalObjEx(cmd, TCL_EVAL_DIRECT);
 	cmd->DecrRefCount();
-	return (atoi(p->Interp->GetStringResult()));
+	return (ConvertEx::Atoi(p->Interp->GetStringResult()));
 }
 
 // This routine is called to evaluate an SQL function implemented using TCL script.
@@ -1176,18 +1176,18 @@ __device__ static RC DbEvalNextCmd(ClientData data[], Tcl_Interp *interp, RC res
 // The callback should return on of the following strings: SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
 //
 // If this method is invoked with no arguments, the current authorization callback string is returned.
-__device__ RC TestCtx::DB_AUTHORIZER(int objc, Tcl_Obj *const*objv)
+__device__ RC TestCtx::DB_AUTHORIZER(array_t<Tcl_Obj *> objv)
 {
 #ifdef OMIT_AUTHORIZATION
 	interp->AppendResult("authorization not available in this build", 0);
 	return RC_ERROR;
 #else
-	if (objc > 3)
+	if (objv.length > 3)
 	{
 		Interp->WrongNumArgs(2, objv, "?CALLBACK?");
 		return RC_ERROR;
 	}
-	else if (objc == 2)
+	else if (objv.length == 2)
 	{
 		if (Auth)
 			Interp->AppendResult(Auth, nullptr);
@@ -1211,21 +1211,22 @@ __device__ RC TestCtx::DB_AUTHORIZER(int objc, Tcl_Obj *const*objv)
 			Auth::SetAuthorizer(Ctx, nullptr, nullptr);
 	}
 #endif
+	return RC_OK;
 }
 
 //    $db backup ?DATABASE? FILENAME
 //
 // Open or create a database file named FILENAME.  Transfer the content of local database DATABASE (default: "main") into the FILENAME database.
-__device__ RC TestCtx::DB_BACKUP(int objc, Tcl_Obj *const*objv)
+__device__ RC TestCtx::DB_BACKUP(array_t<Tcl_Obj *> objv)
 {
 	const char *srcDb;
 	const char *destFile;
-	if (objc == 3)
+	if (objv.length == 3)
 	{
 		srcDb = "main";
 		destFile = objv[2]->GetString();
 	}
-	else if (objc == 4)
+	else if (objv.length == 4)
 	{
 		srcDb = objv[2]->GetString();
 		destFile = objv[3]->GetString();
@@ -1261,19 +1262,20 @@ __device__ RC TestCtx::DB_BACKUP(int objc, Tcl_Obj *const*objv)
 		rc = RC_ERROR;
 	}
 	Main::Close(destCtx);
+	return RC_OK;
 }
 
 //    $db busy ?CALLBACK?
 //
 // Invoke the given callback if an SQL statement attempts to open a locked database file.
-__device__ RC TestCtx::DB_BUSY(int objc, Tcl_Obj *const*objv)
+__device__ RC TestCtx::DB_BUSY(array_t<Tcl_Obj *> objv)
 {
-	if (objc > 3)
+	if (objv.length > 3)
 	{
 		Interp->WrongNumArgs(2, objv, "CALLBACK");
 		return RC_ERROR;
 	}
-	else if (objc == 2)
+	else if (objv.length == 2)
 	{
 		if (Busy)
 			Interp->AppendResult(Busy, 0);
@@ -1296,15 +1298,16 @@ __device__ RC TestCtx::DB_BUSY(int objc, Tcl_Obj *const*objv)
 		else
 			Main::BusyHandler(Ctx, nullptr, nullptr);
 	}
+	return RC_OK;
 }
 
 //     $db cache flush
 //     $db cache size n
 //
 // Flush the prepared statement cache, or set the maximum number of cached statements.
-__device__ RC TestCtx::DB_CACHE(int objc, Tcl_Obj *const*objv)
+__device__ RC TestCtx::DB_CACHE(array_t<Tcl_Obj *> objv)
 {
-	if (objc <= 2)
+	if (objv.length <= 2)
 	{
 		Interp->WrongNumArgs(1, objv, "cache option ?arg?");
 		return RC_ERROR;
@@ -1312,7 +1315,7 @@ __device__ RC TestCtx::DB_CACHE(int objc, Tcl_Obj *const*objv)
 	char *subCmd = objv[2]->GetStringFromObj(nullptr);
 	if (subCmd[0] == 'f' && !_strcmp(subCmd,"flush"))
 	{
-		if (objc != 3)
+		if (objv.length != 3)
 		{
 			Interp->WrongNumArgs(2, objv, "flush");
 			return RC_ERROR;
@@ -1320,9 +1323,9 @@ __device__ RC TestCtx::DB_CACHE(int objc, Tcl_Obj *const*objv)
 		else
 			FlushStmtCache(this);
 	}
-	else if (subCmd[0] ==' s' && !_strcmp(subCmd, "size"))
+	else if (subCmd[0] == 's' && !_strcmp(subCmd, "size"))
 	{
-		if (objc != 4)
+		if (objv.length != 4)
 		{
 			Interp->WrongNumArgs(2, objv, "size n");
 			return RC_ERROR;
@@ -1353,28 +1356,31 @@ __device__ RC TestCtx::DB_CACHE(int objc, Tcl_Obj *const*objv)
 		Interp->AppendResult("bad option \"", objv[2]->GetStringFromObj(nullptr), "\": must be flush or size", nullptr);
 		return RC_ERROR;
 	}
+	return RC_OK;
 }
 
 //     $db changes
 //
 // Return the number of rows that were modified, inserted, or deleted by the most recent INSERT, UPDATE or DELETE statement, not including 
 // any changes made by trigger programs.
-__device__ RC TestCtx::DB_CHANGES(int objc, Tcl_Obj *const*objv)
+__device__ RC TestCtx::DB_CHANGES(array_t<Tcl_Obj *> objv)
 {
-	if (objc != 2){
+	if (objv.length != 2){
 		Interp->WrongNumArgs(2, objv, "");
 		return RC_ERROR;
 	}
 	Tcl_Obj *result = Interp->GetObjResult();
 	result->SetIntObj(Main::CtxChanges(Ctx));
+	return RC_OK;
 }
 
 //    $db close
 //
 // Shutdown the database
-__device__ void TestCtx::DB_CLOSE(int objc, Tcl_Obj *const*objv)
+__device__ RC TestCtx::DB_CLOSE(array_t<Tcl_Obj *> objv)
 {
 	Interp->DeleteCommand(objv[0]->GetStringFromObj(nullptr));
+	return RC_OK;
 }
 
 #if 0
@@ -1731,16 +1737,16 @@ __device__ RC DB_ONECOLUMN()
 // The SQL statement in $sql is evaluated.  For each row, the values are placed in elements of the array named "array" and ...code... is executed.
 // If "array" and "code" are omitted, then no callback is every invoked. If "array" is an empty string, then the values are placed in variables
 // that have the same name as the fields extracted by the query.
-__device__ RC TestCtx::DB_EVAL(int objc, Tcl_Obj *const*objv)
+__device__ RC TestCtx::DB_EVAL(array_t<Tcl_Obj *> objv)
 {
-	if (objc < 3 || objc > 5)
+	if (objv.length < 3 || objv.length > 5)
 	{
 		Interp->WrongNumArgs(2, objv, "SQL ?ARRAY-NAME? ?SCRIPT?");
 		return RC_ERROR;
 	}
 
 	::RC rc;
-	if (objc == 3)
+	if (objv.length == 3)
 	{
 		DbEvalContext sEval;
 		Tcl_Obj *ret = Tcl_Obj::NewObj();
@@ -1765,8 +1771,8 @@ __device__ RC TestCtx::DB_EVAL(int objc, Tcl_Obj *const*objv)
 	else
 	{
 		ClientData cd[2];
-		Tcl_Obj *array = (objc == 5 && *(char *)objv[3]->GetString() ? objv[3] : nullptr);
-		Tcl_Obj *script = objv[objc-1];
+		Tcl_Obj *array = (objv.length == 5 && *(char *)objv[3]->GetString() ? objv[3] : nullptr);
+		Tcl_Obj *script = objv[objv.length-1];
 		script->IncrRefCount();
 
 		DbEvalContext *p = (DbEvalContext *)_alloc(sizeof(DbEvalContext));
@@ -1776,6 +1782,7 @@ __device__ RC TestCtx::DB_EVAL(int objc, Tcl_Obj *const*objv)
 		cd[1] = (void *)script;
 		rc = DbEvalNextCmd(cd, Interp, RC_OK);
 	}
+	return RC_OK;
 }
 
 #if 0
@@ -2320,19 +2327,19 @@ __device__ RC DB_VERSION()
 // DBNAME that is used to control that connection.  The database connection is deleted when the DBNAME command is deleted.
 //
 // The second argument is the name of the database file.
-__device__ static int DbMain(void *cd, Tcl_Interp *interp, int objc, Tcl_Obj *const*objv)
+__device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> objv)
 {
 	// In normal use, each TCL interpreter runs in a single thread.  So by default, we can turn of mutexing on SQLite database connections.
 	// However, for testing purposes it is useful to have mutexes turned on.  So, by default, mutexes default off.  But if compiled with
 	// SQLITE_TCL_DEFAULT_FULLMUTEX then mutexes default on.
 #ifdef TCL_DEFAULT_FULLMUTEX
-	VSystem::OPEN flags = VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE | VSystem::OPEN_FULLMUTEX;
+	VSystem::OPEN flags = (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_FULLMUTEX);
 #else
-	VSystem::OPEN flags = VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE | VSystem::OPEN_NOMUTEX;
+	VSystem::OPEN flags = (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_NOMUTEX);
 #endif
 
 	const char *arg;
-	if (objc == 2)
+	if (objv.length == 2)
 	{
 		arg = objv[1]->GetStringFromObj(nullptr);
 		if (!_strcmp(arg, "-version"))
@@ -2355,7 +2362,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
 	int keyLength = 0;
 #endif
 	const char *vfsName = nullptr;
-	for (int i = 3; i + 1 < objc; i += 2)
+	for (int i = 3; i + 1 < objv.length; i += 2)
 	{
 		arg = objv[i]->GetString();
 		bool b;
@@ -2426,7 +2433,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
 			return RC_ERROR;
 		}
 	}
-	if (objc < 3 || (objc & 1) != 1)
+	if (objv.length < 3 || (objv.length & 1) != 1)
 	{
 		interp->WrongNumArgs(1, objv, "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
 			" ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"

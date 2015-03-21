@@ -1,3 +1,6 @@
+#ifndef __TESTTCL_CU_H__
+#define __TESTTCL_CU_H__
+
 #include <Core/Core.cu.h>
 
 typedef struct Tcl_Interp Tcl_Interp;
@@ -82,7 +85,7 @@ struct Tcl_Interp
 	__device__ char *GetStringResult();
 	__device__ void ResetResult();
 	__device__ void BackgroundError();
-	__device__ void WrongNumArgs(int objc, Tcl_Obj *const objv[], char *msg);
+	__device__ void WrongNumArgs(int objc, array_t<Tcl_Obj *> objv, char *msg);
 
 	__device__ void CreateObjCommand(const char *name, void *dummy1, ClientData cd, void *freeProc);
 	__device__ void DeleteCommand(const char *name);
@@ -93,3 +96,5 @@ typedef void *Tcl_Channel;
 #define TCL_EVAL_GLOBAL 0
 #define TCL_EVAL_DIRECT 0
 #define TCL_GLOBAL_ONLY
+
+#endif // __TESTTCL_CU_H__

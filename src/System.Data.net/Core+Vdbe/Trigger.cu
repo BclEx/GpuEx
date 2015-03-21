@@ -173,7 +173,7 @@ namespace Core
 			trTm = TK_BEFORE;
 
 		// Build the Trigger object
-		trigger = (Trigger *)_tagalloc2(ctx, sizeof(Trigger), true);
+		trigger = (Trigger *)_tagallocZero(ctx, sizeof(Trigger));
 		if (!trigger) goto trigger_cleanup;
 		trigger->Name = nameAsString; nameAsString = nullptr;
 		trigger->Table = _tagstrdup(ctx, tableName->Ids[0].Name);
@@ -258,7 +258,7 @@ triggerfinish_cleanup:
 
 	__device__ TriggerStep *Trigger::SelectStep(Context *ctx, Select *select)
 	{
-		TriggerStep *triggerStep = (TriggerStep *)_tagalloc2(ctx, sizeof(TriggerStep), true);
+		TriggerStep *triggerStep = (TriggerStep *)_tagallocZero(ctx, sizeof(TriggerStep));
 		if (!triggerStep)
 		{
 			Select::Delete(ctx, select);
@@ -272,7 +272,7 @@ triggerfinish_cleanup:
 
 	__device__ static TriggerStep *TriggerStepAllocate(Context *ctx, TK op, Token *name)
 	{
-		TriggerStep *triggerStep = (TriggerStep *)_tagalloc2(ctx, sizeof(TriggerStep) + name->length, true);
+		TriggerStep *triggerStep = (TriggerStep *)_tagallocZero(ctx, sizeof(TriggerStep) + name->length);
 		if (triggerStep)
 		{
 			char *z = (char *)&triggerStep[1];
@@ -593,12 +593,12 @@ drop_trigger_cleanup:
 
 		// Allocate the TriggerPrg and SubProgram objects. To ensure that they are freed if an error occurs, link them into the Parse.pTriggerPrg 
 		// list of the top-level Parse object sooner rather than later.
-		TriggerPrg *prg = (TriggerPrg *)_tagalloc2(ctx, sizeof(TriggerPrg), true); // Value to return
+		TriggerPrg *prg = (TriggerPrg *)_tagallocZero(ctx, sizeof(TriggerPrg)); // Value to return
 		if (!prg) return nullptr;
 		prg->Next = top->TriggerPrg;
 		top->TriggerPrg = prg;
 		Vdbe::SubProgram *program; // Sub-vdbe for trigger program
-		prg->Program = program = (Vdbe::SubProgram *)_tagalloc2(ctx, sizeof(Vdbe::SubProgram), true);
+		prg->Program = program = (Vdbe::SubProgram *)_tagallocZero(ctx, sizeof(Vdbe::SubProgram));
 		if (!program) return nullptr;
 		top->V->LinkSubProgram(program);
 		prg->Trigger = trigger;
@@ -607,7 +607,7 @@ drop_trigger_cleanup:
 		prg->Colmasks[1] = 0xffffffff;
 
 		// Allocate and populate a new Parse context to use for coding the trigger sub-program.
-		Parse *subParse = (Parse *)_stackalloc(ctx, sizeof(Parse), true); // Parse context for sub-vdbe
+		Parse *subParse = (Parse *)_stackallocZero(ctx, sizeof(Parse)); // Parse context for sub-vdbe
 		if (!subParse) return nullptr;
 		NameContext sNC; _memset(&sNC, 0, sizeof(sNC)); // Name context for sub-vdbe
 		sNC.Parse = subParse;

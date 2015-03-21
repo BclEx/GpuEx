@@ -114,9 +114,7 @@
     <ClInclude Include="..\System.net\Core\Bitvec.cu.h" />
     <ClInclude Include="..\System.net\Core\Hash.cu.h" />
     <ClInclude Include="..\System.net\Core\ConvertEx.cu.h" />
-    <ClInclude Include="..\System.net\Core\MutexEx.cu.h" />
     <ClInclude Include="..\System.net\Core\RC.cu.h" />
-    <ClInclude Include="..\System.net\Core\StatusEx.cu.h" />
     <ClInclude Include="..\System.net\Core\VAlloc.cu.h" />
     <ClInclude Include="..\System.net\Core\SysEx.cu.h" />
     <ClInclude Include="..\System.net\Core\VSystem.cu.h" />
@@ -131,9 +129,7 @@
     <ClCompile Include="..\System.net\Core\Bitvec.cu" />
     <ClCompile Include="..\System.net\Core\Hash.cu" />
     <ClCompile Include="..\System.net\Core\MathEx.cu" />
-    <ClCompile Include="..\System.net\Core\MutexEx.cu" />
     <ClCompile Include="..\System.net\Core\ConvertEx.cu" />
-    <ClCompile Include="..\System.net\Core\StatusEx.cu" />
     <ClCompile Include="..\System.net\Core\SysEx+Random.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />

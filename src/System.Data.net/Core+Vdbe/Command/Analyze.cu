@@ -641,7 +641,7 @@ namespace Core { namespace Command
 			if (!idx) continue;
 			_assert(idx->Samples.length == 0);
 			idx->Samples.length = samplesLength;
-			idx->Samples.data = (IndexSample *)_tagalloc2(ctx, samplesLength*sizeof(IndexSample), true);
+			idx->Samples.data = (IndexSample *)_tagallocZero(ctx, samplesLength*sizeof(IndexSample));
 			idx->AvgEq = idx->RowEsts[1];
 			if (!idx->Samples.data)
 			{

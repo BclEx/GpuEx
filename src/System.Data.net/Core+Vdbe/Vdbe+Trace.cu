@@ -121,7 +121,7 @@ namespace Core {
 		if (vdbe)
 		{
 			_benignalloc_begin();
-			Explain *p = (Explain *)_alloc2(sizeof(Explain), true);
+			Explain *p = (Explain *)_allocZero(sizeof(Explain));
 			if (p)
 			{
 				p->Vdbe_ = vdbe;

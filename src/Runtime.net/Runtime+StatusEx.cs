@@ -47,15 +47,15 @@ namespace Core
                 _stat.MaxValue[(int)op] = _stat.NowValue[(int)op];
         }
 
-        public static RC Status(STATUS op, ref int current, ref int highwater, int resetFlag)
+        public static bool Status(STATUS op, ref int current, ref int highwater, int resetFlag)
         {
             if (op < 0 || (int)op >= _stat.NowValue.Length)
-                return SysEx.MISUSE_BKPT();
+                return false;
             current = _stat.NowValue[(int)op];
             highwater = _stat.MaxValue[(int)op];
             if (resetFlag != 0)
                 _stat.MaxValue[(int)op] = _stat.NowValue[(int)op];
-            return RC.OK;
+            return true;
         }
 
         //public static SQLITE sqlite3_db_status(sqlite3 db, int op, ref int pCurrent, ref int pHighwater, int resetFlag)

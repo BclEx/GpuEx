@@ -490,7 +490,7 @@ namespace Core
             Debug.Assert((table.TabFlags & TF.Virtual) != 0);
 
             RC rc = RC.OK;
-            Parse parse = new Parse(); //: _stackalloc(ctx, sizeof(Parse));
+            Parse parse = new Parse(); //: _scratchalloc(ctx, sizeof(Parse));
             if (parse == null)
                 rc = RC.NOMEM;
             else
@@ -522,7 +522,7 @@ namespace Core
                 if (parse.V != null)
                     parse.V.Finalize();
                 Parse.DeleteTable(ctx, ref parse.NewTable);
-                parse = null; //: C._stackfree(ctx, parse);
+                parse = null; //: C._scratchfree(ctx, parse);
             }
 
             Debug.Assert(((int)rc & 0xff) == (int)rc);

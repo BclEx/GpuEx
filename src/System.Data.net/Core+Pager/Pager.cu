@@ -1007,7 +1007,7 @@ namespace Core
 		VSystem *vfs = pager->Vfs;
 
 		// Allocate space for both the pJournal and pMaster file descriptors. If successful, open the master journal file for reading.         
-		VFile *masterFile = (VFile *)_alloc2(vfs->SizeOsFile * 2, true); // Malloc'd master-journal file descriptor
+		VFile *masterFile = (VFile *)_allocZero(vfs->SizeOsFile * 2); // Malloc'd master-journal file descriptor
 		VFile *journalFile = (VFile *)(((uint8 *)masterFile) + vfs->SizeOsFile); // Malloc'd child-journal file descriptor
 		RC rc;
 		if (!masterFile)
@@ -2251,7 +2251,7 @@ end_playback:
 
 		// Allocate memory for the Pager structure, PCache object, the three file descriptors, the database file name and the journal file name.
 		int pcacheSizeOf = PCache::SizeOf();	// Bytes to allocate for PCache
-		uint8 *ptr = (uint8 *)_alloc2(
+		uint8 *ptr = (uint8 *)_allocZero(
 			_ROUND8(sizeof(Pager)) +		// Pager structure
 			_ROUND8(pcacheSizeOf) +        // PCache object
 			_ROUND8(vfs->SizeOsFile) +     // The main db file
@@ -2261,7 +2261,7 @@ end_playback:
 #ifndef OMIT_WAL
 			+ pathnameLength + 4 + 2			// zWal
 #endif
-			, true);
+			);
 		_assert(_HASALIGNMENT8(INT_TO_PTR(journalFileSize)));
 		if (!ptr)
 		{
@@ -3402,7 +3402,7 @@ commit_phase_one_exit:
 	__device__ int Pager::get_MemUsed()
 	{
 		int perPageSize = PageSize + ExtraBytes + sizeof(PgHdr) + 5 * sizeof(void *);
-		return perPageSize * PCache->get_Pages() + _allocsize(this) + PageSize;
+		return perPageSize * PCache->get_Pages() + (int)_allocsize(this) + PageSize;
 	}
 
 	__device__ int Pager::get_PageRefs(IPage *page)

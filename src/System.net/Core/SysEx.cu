@@ -7,10 +7,6 @@ namespace Core
 
 #pragma region Initialize/Shutdown/Config
 
-#ifndef CORE_DEFAULT_MEMSTATUS
-#define CORE_DEFAULT_MEMSTATUS true
-#endif
-
 #ifndef CORE_USE_URI
 #define CORE_USE_URI false
 #endif
@@ -18,22 +14,15 @@ namespace Core
 	// The following singleton contains the global configuration for the SQLite library.
 	__device__ _WSD SysEx::GlobalStatics g_GlobalStatics =
 	{
-		CORE_DEFAULT_MEMSTATUS,		// Memstat
 		true,						// CoreMutex
 		THREADSAFE == 1,			// FullMutex
 		CORE_USE_URI,				// OpenUri
 		// Main::UseCis
 		0x7ffffffe,					// MaxStrlen
-		128,						// LookasideSize
-		500,						// Lookasides
-		//{0,0,0,0,0,0,0,0},			// m
 		//{0,0,0,0,0,0,0,0,0},		// mutex
 		// pcache2
 		//array_t(void *)nullptr, 0)// Heap
 		//0, 0,						// MinHeap, MaxHeap
-		(void *)nullptr,			// Scratch
-		0,							// ScratchSize
-		0,							// Scratchs
 		// Main::Page
 		// Main::PageSize
 		// Main::Pages
@@ -93,7 +82,7 @@ namespace Core
 		// Make sure the mutex subsystem is initialized.  If unable to initialize the mutex subsystem, return early with the error.
 		// If the system is so sick that we are unable to allocate a mutex, there is not much SQLite is going to be able to do.
 		// The mutex subsystem must take care of serializing its own initialization.
-		rc = MutexEx::Init();
+		rc = (RC)MutexEx::Init();
 		if (rc) return rc;
 
 		// Initialize the malloc() system and the recursive pInitMutex mutex. This operation is protected by the STATIC_MASTER mutex.  Note that
@@ -102,8 +91,8 @@ namespace Core
 		masterMutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER); // The main static mutex
 		MutexEx::Enter(masterMutex);
 		SysEx_GlobalStatics.IsMutexInit = true;
-		//if (!SysEx_GlobalStatics.IsMallocInit)
-		//	rc = sqlite3MallocInit();
+		if (!SysEx_GlobalStatics.IsMallocInit)
+			rc = (RC)_alloc_init();
 		if (rc == RC_OK)
 		{
 			SysEx_GlobalStatics.IsMallocInit = true;
@@ -166,14 +155,14 @@ namespace Core
 			//sqlite3_reset_auto_extension();
 			SysEx_GlobalStatics.IsInit = false;
 		}
-		//if (SysEx_GlobalStatics.IsMallocInit)
-		//{
-		//	sqlite3MallocEnd();
-		//	SysEx_GlobalStatics.IsMallocInit = false;
-		//}
+		if (SysEx_GlobalStatics.IsMallocInit)
+		{
+			_alloc_shutdown();
+			SysEx_GlobalStatics.IsMallocInit = false;
+		}
 		if (SysEx_GlobalStatics.IsMutexInit)
 		{
-			MutexEx::End();
+			MutexEx::Shutdown();
 			SysEx_GlobalStatics.IsMutexInit = false;
 		}
 		return RC_OK;
@@ -215,12 +204,12 @@ namespace Core
 			//*va_arg(args, sqlite3_mem_methods*) = SysEx_GlobalStatics.m;
 			break; }
 		case CONFIG_MEMSTATUS: { // Enable or disable the malloc status collection
-			SysEx_GlobalStatics.Memstat = va_arg(args, bool);
+			TagBase_RuntimeStatics.Memstat = va_arg(args, bool);
 			break; }
 		case CONFIG_SCRATCH: { // Designate a buffer for scratch memory space
-			SysEx_GlobalStatics.Scratch = va_arg(args, void*);
-			SysEx_GlobalStatics.ScratchSize = va_arg(args, int);
-			SysEx_GlobalStatics.Scratchs = va_arg(args, int);
+			TagBase_RuntimeStatics.Scratch = va_arg(args, void*);
+			TagBase_RuntimeStatics.ScratchSize = va_arg(args, int);
+			TagBase_RuntimeStatics.Scratchs = va_arg(args, int);
 			break; }
 #if defined(ENABLE_MEMSYS3) || defined(ENABLE_MEMSYS5)
 		case CONFIG_HEAP: {
@@ -246,8 +235,8 @@ namespace Core
 			break; }
 #endif
 		case CONFIG_LOOKASIDE: {
-			SysEx_GlobalStatics.LookasideSize = va_arg(args, int);
-			SysEx_GlobalStatics.Lookasides = va_arg(args, int);
+			TagBase_RuntimeStatics.LookasideSize = va_arg(args, int);
+			TagBase_RuntimeStatics.Lookasides = va_arg(args, int);
 			break; }
 		case CONFIG_LOG: { // Record a pointer to the logger function and its first argument. The default is NULL.  Logging is disabled if the function pointer is NULL.
 			// MSVC is picky about pulling func ptrs from va lists.

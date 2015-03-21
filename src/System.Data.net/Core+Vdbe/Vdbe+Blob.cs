@@ -257,7 +257,7 @@ namespace Core
             }
             sqlite3Error(ctx, rc, (err != null ? "%s" : null), err);
             C._tagfree(ctx, ref err);
-            C._stackfree(ctx, ref parse);
+            C._scratchfree(ctx, ref parse);
             rc = SysEx.ApiExit(ctx, rc);
             MutexEx.Leave(ctx.Mutex);
             return rc;

@@ -297,7 +297,7 @@ namespace Core
 		if (!moduleName)
 			return RC_NOMEM;
 
-		VTable *vtable = (VTable *)_tagalloc2(ctx, sizeof(VTable), true);
+		VTable *vtable = (VTable *)_tagallocZero(ctx, sizeof(VTable));
 		if (!vtable)
 		{
 			_tagfree(ctx, moduleName);
@@ -479,7 +479,7 @@ namespace Core
 		_assert((table->TabFlags & TF_Virtual) != 0);
 
 		RC rc = RC_OK;
-		Parse *parse = (Parse *)_stackalloc(ctx, sizeof(Parse), true);
+		Parse *parse = (Parse *)_stackallocZero(ctx, sizeof(Parse));
 		if (!parse)
 			rc = RC_NOMEM;
 		else
@@ -694,7 +694,7 @@ namespace Core
 			return def;
 
 		// Create a new ephemeral function definition for the overloaded function
-		FuncDef *newFunc = (FuncDef *)_tagalloc2(ctx, sizeof(FuncDef) + _strlen30(def->Name) + 1, true);
+		FuncDef *newFunc = (FuncDef *)_tagallocZero(ctx, sizeof(FuncDef) + _strlen30(def->Name) + 1);
 		if (!newFunc) return def;
 		*newFunc = *def;
 		newFunc->Name = (char *)&newFunc[1];

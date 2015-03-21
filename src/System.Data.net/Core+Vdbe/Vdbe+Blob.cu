@@ -104,9 +104,9 @@ namespace Core {
 		*blobOut = nullptr;
 
 		MutexEx::Enter(ctx->Mutex);
-		Incrblob *blob = (Incrblob *)_tagalloc2(ctx, sizeof(Incrblob), true);
+		Incrblob *blob = (Incrblob *)_tagallocZero(ctx, sizeof(Incrblob));
 		if (!blob) goto blob_open_out;
-		Parse *parse = (Parse *)_stackalloc(ctx, sizeof(*parse), false);
+		Parse *parse = (Parse *)_stackalloc(ctx, sizeof(*parse));
 		if (!parse) goto blob_open_out;
 
 		char *err = nullptr;

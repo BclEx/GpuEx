@@ -997,7 +997,7 @@ namespace Core
 		int c = osMultiByteToWideChar(CP_UTF8, 0, name, -1, NULL, 0);
 		if (!c)
 			return nullptr;
-		LPWSTR wideName = (LPWSTR)_alloc2(c*sizeof(wideName[0]), true);
+		LPWSTR wideName = (LPWSTR)_allocZero(c*sizeof(wideName[0]));
 		if (!wideName)
 			return nullptr;
 		c = osMultiByteToWideChar(CP_UTF8, 0, name, -1, wideName, c);
@@ -1014,7 +1014,7 @@ namespace Core
 		int c = osWideCharToMultiByte(CP_UTF8, 0, wideName, -1, 0, 0, 0, 0);
 		if (!c)
 			return nullptr;
-		char *name = (char *)_alloc2(c, true);
+		char *name = (char *)_allocZero(c);
 		if (!name)
 			return nullptr;
 		c = osWideCharToMultiByte(CP_UTF8, 0, wideName, -1, name, c, 0, 0);
@@ -1032,7 +1032,7 @@ namespace Core
 		int c = osMultiByteToWideChar(codepage, 0, name, -1, NULL, 0)*sizeof(WCHAR);
 		if (!c)
 			return nullptr;
-		LPWSTR mbcsName = (LPWSTR)_alloc2(c*sizeof(mbcsName[0]), true);
+		LPWSTR mbcsName = (LPWSTR)_allocZero(c*sizeof(mbcsName[0]));
 		if (!mbcsName)
 			return nullptr;
 		c = osMultiByteToWideChar(codepage, 0, name, -1, mbcsName, c);
@@ -1050,7 +1050,7 @@ namespace Core
 		int c = osWideCharToMultiByte(codepage, 0, wideName, -1, 0, 0, 0, 0);
 		if (!c)
 			return nullptr;
-		char *name = (char *)_alloc2(c, true);
+		char *name = (char *)_allocZero(c);
 		if (!name)
 			return nullptr;
 		c = osWideCharToMultiByte(codepage, 0, wideName, -1, name, c, 0, 0);
@@ -2014,7 +2014,7 @@ namespace Core
 				a[1] = win32IoerrRetryDelay;
 			return RC_OK;
 		case FCNTL_TEMPFILENAME:
-			tfile = (char *)_alloc2(Vfs->MaxPathname, true);
+			tfile = (char *)_allocZero(Vfs->MaxPathname);
 			if (tfile)
 			{
 				getTempname(Vfs->MaxPathname, tfile);
@@ -2957,7 +2957,7 @@ shmpage_out:
 				return RC_CANTOPEN_FULLPATH;
 			}
 			bytes += 3;
-			temp = (LPWSTR)_alloc2(bytes*sizeof(temp[0]), true);
+			temp = (LPWSTR)_allocZero(bytes*sizeof(temp[0]));
 			if (!temp)
 			{
 				_free(converted);
@@ -2987,7 +2987,7 @@ shmpage_out:
 				return RC_CANTOPEN_FULLPATH;
 			}
 			bytes += 3;
-			temp = (char *)_alloc2(bytes*sizeof(temp[0]), true);
+			temp = (char *)_allocZero(bytes*sizeof(temp[0]));
 			if (!temp)
 			{
 				_free(converted);

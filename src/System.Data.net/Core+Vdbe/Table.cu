@@ -91,7 +91,10 @@ malloc_failed:
 		r.Results.data = (char **)_alloc(sizeof(char *)*r.ResultsAlloc);
 		r.Results.length = 1;
 		if (!r.Results)
-			return (ctx->ErrCode = RC_NOMEM);
+		{
+			ctx->ErrCode = RC_NOMEM;
+			return RC_NOMEM;
+		}
 		r.Results[0] = nullptr;
 		RC rc = Main::Exec(ctx, sql, GetTableCallback, (char **)&r, errMsg);
 		_assert(sizeof(r.Results[0]) >= sizeof(r.Results.length));
@@ -108,7 +111,8 @@ malloc_failed:
 				}
 				_free(r.ErrMsg);
 			}
-			return (ctx->ErrCode = r.RC); // Assume 32-bit assignment is atomic
+			ctx->ErrCode = r.RC; // Assume 32-bit assignment is atomic
+			return r.RC;
 		}
 		_free(r.ErrMsg);
 		if (rc != RC_OK)

@@ -142,9 +142,9 @@ namespace Core
 #ifndef DISABLE_PAGECACHE_OVERFLOW_STATS
 			if (p)
 			{
-				int size = _allocsize(p);
+				size_t size = _allocsize(p);
 				MutexEx::Enter(_pcache1.Mutex);
-				StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_OVERFLOW, size);
+				StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_OVERFLOW, (int)size);
 				MutexEx::Leave(_pcache1.Mutex);
 			}
 #endif
@@ -155,9 +155,8 @@ namespace Core
 
 	__device__ int Free(void *p)
 	{
-		int freed = 0;
-		if (p == nullptr)
-			return 0;
+		size_t freed = 0;
+		if (!p) return 0;
 		if (p >= _pcache1.Start && p < _pcache1.End)
 		{
 			MutexEx::Enter(_pcache1.Mutex);
@@ -177,12 +176,12 @@ namespace Core
 			freed = _allocsize(p);
 #ifndef DISABLE_PAGECACHE_OVERFLOW_STATS
 			MutexEx::Enter(_pcache1.Mutex);
-			StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_OVERFLOW, -freed);
+			StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_OVERFLOW, -(int)freed);
 			MutexEx::Leave(_pcache1.Mutex);
 #endif
 			_free(p);
 		}
-		return freed;
+		return (int)freed;
 	}
 
 #ifdef ENABLE_MEMORY_MANAGEMENT
@@ -192,9 +191,9 @@ namespace Core
 			return _pcache1.SizeSlot;
 		_assert(_memdbg_hastype(p, MEMTYPE_PCACHE));
 		_memdbg_settype(p, MEMTYPE_HEAP);
-		int size = _allocsize(p);
+		size_t size = _allocsize(p);
 		_memdbg_settype(p, MEMTYPE_PCACHE);
-		return size;
+		return (int)size;
 	}
 #endif
 
@@ -247,7 +246,7 @@ namespace Core
 
 	__device__ static bool UnderMemoryPressure(PCache1 *cache)
 	{
-		return (_pcache1.Slots && (cache->SizePage + cache->SizeExtra) <= _pcache1.SizeSlot ? _pcache1.UnderPressure : _heapnearlyfull());
+		return (_pcache1.Slots && (cache->SizePage + cache->SizeExtra) <= _pcache1.SizeSlot ? _pcache1.UnderPressure : _alloc_heapnearlyfull());
 	}
 
 #pragma endregion
@@ -262,7 +261,7 @@ namespace Core
 			newLength = 256;
 		MutexEx::Leave(p->Group->Mutex);
 		if (p->Hash.length) _benignalloc_begin();
-		PgHdr1 **newHash = (PgHdr1 **)_alloc2(sizeof(PgHdr1 *) * newLength, true);
+		PgHdr1 **newHash = (PgHdr1 **)_allocZero(sizeof(PgHdr1 *) * newLength);
 		if (p->Hash.length) _benignalloc_end();
 		MutexEx::Enter(p->Group->Mutex);
 		if (newHash)
@@ -364,7 +363,7 @@ namespace Core
 
 #pragma region Interface
 
-	__device__ IPCache *new_PCache1() { PCache1 *cache = (PCache1 *)_alloc2(sizeof(PCache1), true); return (IPCache *)(new (cache) PCache1()); }
+	__device__ IPCache *new_PCache1() { PCache1 *cache = (PCache1 *)_allocZero(sizeof(PCache1)); return (IPCache *)(new (cache) PCache1()); }
 
 	__device__ RC PCache1::Init()
 	{
@@ -401,7 +400,7 @@ namespace Core
 		_assert((sizePage & (sizePage - 1)) == 0 && sizePage >= 512 && sizePage <= 65536);
 		_assert(sizeExtra < 300);
 		int size = sizeof(PCache1) + sizeof(PGroup) * (int)separateCache;
-		PCache1 *cache = (PCache1 *)_alloc2(size, true);
+		PCache1 *cache = (PCache1 *)_allocZero(size);
 		cache = new (cache) PCache1();
 		if (cache)
 		{

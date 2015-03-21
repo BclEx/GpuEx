@@ -14,7 +14,7 @@ namespace Core {
 
 __device__ Vdbe *Vdbe::Create(Context *ctx)
 {
-	Vdbe *p = (Vdbe *)_tagalloc2(ctx, sizeof(Vdbe), true);
+	Vdbe *p = (Vdbe *)_tagallocZero(ctx, sizeof(Vdbe));
 	if (!p) return nullptr;
 	p->Ctx = ctx;
 	if (ctx->Vdbes)
@@ -73,7 +73,7 @@ __device__ static RC GrowOps(Vdbe *p)
 	Vdbe::VdbeOp *newData = (Vdbe::VdbeOp *)_tagrealloc(p->Ctx, p->Ops.data, newLength * sizeof(Vdbe::VdbeOp));
 	if (newData)
 	{
-		p->OpsAlloc = _tagallocsize(p->Ctx, newData)/sizeof(Vdbe::VdbeOp);
+		p->OpsAlloc = (int)_tagallocsize(p->Ctx, newData)/sizeof(Vdbe::VdbeOp);
 		p->Ops.data = newData;
 	}
 	return (newData ? RC_OK : RC_NOMEM);
@@ -1028,6 +1028,7 @@ __device__ void Vdbe::MakeReady(Parse *parse)
 	UsesStmtJournal = (uint8)(parse->IsMultiWrite && parse->_MayAbort);
 	if (parse->Explain && mems < 10)
 		mems = 10;
+	printf("S:{%d, %d, %d}\n", Ops.length, OpsAlloc, end-csr);
 	_memset(csr, 0, end-csr);
 	csr += (csr - (uint8 *)0)&7;
 	_assert(_HASALIGNMENT8(csr));
@@ -1051,7 +1052,7 @@ __device__ void Vdbe::MakeReady(Parse *parse)
 		Cursors.data = (VdbeCursor **)AllocSpace(Cursors.data, cursors*sizeof(VdbeCursor *), &csr, end, &bytes);
 		OnceFlags.data = (uint8 *)AllocSpace(OnceFlags.data, onces, &csr, end, &bytes);
 		if (bytes)
-			FreeThis = _tagalloc2(ctx, bytes, true);
+			FreeThis = _tagallocZero(ctx, bytes);
 		csr = (uint8 *)FreeThis;
 		end = &csr[bytes];
 	} while (bytes && !ctx->MallocFailed);
@@ -1180,7 +1181,7 @@ __device__ void Vdbe::SetNumCols(int resColumns)
 	int n = resColumns*COLNAME_N;
 	ResColumns = (uint16)resColumns;
 	Mem *colName; 
-	ColNames = colName = (Mem *)_tagalloc2(ctx, sizeof(Mem)*n, true);
+	ColNames = colName = (Mem *)_tagallocZero(ctx, sizeof(Mem)*n);
 	if (!ColNames) return;
 	while (n-- > 0)
 	{

@@ -1943,8 +1943,8 @@ namespace Core
                         //int size = va_arg(args, int);
                         //void **new_ = va_arg(args, void**);
                         //void *free = va_arg(args, void*);
-                        //if (size) *newOut = _stackalloc(nullptr, size, false);
-                        //_stackfree(nullptr, free);
+                        //if (size) *newOut = _scratchalloc(nullptr, size, false);
+                        //_scratchfree(nullptr, free);
                         break;
                     }
                 case TESTCTRL.LOCALTIME_FAULT:

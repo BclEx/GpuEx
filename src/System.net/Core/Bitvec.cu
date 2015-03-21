@@ -72,8 +72,8 @@ namespace Core
 bitvec_set_rehash:
 		if (p->_set >= BITVEC_MXHASH)
 		{
-			uint32 *values;
-			if (!(values = (uint32 *)_stackalloc(nullptr, sizeof(p->u.Hash), false))) return RC_NOMEM;
+			uint32 *values = (uint32 *)_stackalloc(nullptr, sizeof(p->u.Hash));
+			if (!values) return RC_NOMEM;
 			_memcpy(values, p->u.Hash, sizeof(p->u.Hash));
 			_memset(p->u.Sub, 0, sizeof(p->u.Sub));
 			p->_divisor = ((p->_size + BITVEC_NPTR - 1) / BITVEC_NPTR);
@@ -136,7 +136,7 @@ bitvec_set_end:
 		int rc = -1;
 		// Allocate the Bitvec to be tested and a linear array of bits to act as the reference
 		Bitvec *bitvec = new Bitvec(size);
-		unsigned char *v = (unsigned char *)_alloc2((size + 7) / 8 + 1, true);
+		unsigned char *v = (unsigned char *)_allocZero((size + 7) / 8 + 1);
 		void *tmpSpace = _alloc(BITVEC_SZ);
 		int pc = 0;
 		int i, nx, op;

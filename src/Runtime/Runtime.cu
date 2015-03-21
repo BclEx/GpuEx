@@ -9,6 +9,28 @@
 __device__ unsigned char __one;
 
 //////////////////////
+// TAGBASE
+#pragma region TAGBASE
+
+#ifndef RUNTIME_DEFAULT_MEMSTATUS
+#define RUNTIME_DEFAULT_MEMSTATUS true
+#endif
+
+// The following singleton contains the global configuration for the SQLite library.
+__device__ _WSD TagBase::RuntimeStatics g_RuntimeStatics =
+{
+	RUNTIME_DEFAULT_MEMSTATUS,	// Memstat
+	true,						// RuntimeMutex
+	128,						// LookasideSize
+	500,						// Lookasides
+	(void *)nullptr,			// Scratch
+	0,							// ScratchSize
+	0,							// Scratchs
+};
+
+#pragma endregion
+
+//////////////////////
 // UTF
 #pragma region UTF
 
@@ -228,7 +250,7 @@ __device__ void _runtime_utfselftest()
 #pragma region FUNC
 
 #ifndef OMIT_BLOB_LITERAL
-__device__ void *_taghextoblob(void *tag, const char *z, size_t size)
+__device__ void *_taghextoblob(TagBase *tag, const char *z, size_t size)
 {
 	char *b = (char *)_tagalloc(tag, size / 2 + 1);
 	size--;
@@ -924,7 +946,7 @@ __device__ void TextBuilder::Init(TextBuilder *b, char *text, int capacity, int 
 	b->AllocFailed = false;
 }
 
-__device__ char *_vmtagprintf(void *tag, const char *fmt, va_list *args, int *length)
+__device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args, int *length)
 {
 	//if (!RuntimeInitialize()) return nullptr;
 	_assert(tag != nullptr);

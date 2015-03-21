@@ -16,9 +16,9 @@ __device__ void Tester::sqlite3(TestCtx *tctx, array_t<void *> args)
 		//}
 
 		auto res = 0; //[uplevel 1 sqlite_orig $args]
-		auto presql = (char *)G.Find("perm:presql", 11);
+		auto presql = (Tcl_Obj *)G.Find("perm:presql", 11);
 		if (presql)
-			((TestCtx *)args[0])->DB_EVAL(presql);
+			((TestCtx *)args[0])->DB_EVAL(db->Encode(presql));
 		if (G.Find("perm:dbconfig", 13))
 		{
 			//set ::dbhandle [lindex $args 0]
@@ -185,9 +185,9 @@ __device__ void Tester::do_delete_file(bool force, const char *args[], int argsL
 __device__ void Tester::execpresql(TestCtx *handle, void *args)
 {
 	//  trace remove execution $handle enter [list execpresql $handle]
-	auto presql = (char *)G.Find("perm:presql", 11);
+	auto presql = (Tcl_Obj *)G.Find("perm:presql", 11);
 	if (presql)
-		handle->DB_EVAL(presql);
+		handle->DB_EVAL(handle->Encode(presql));
 }
 
 // This command should be called after loading tester.tcl from within all test scripts that are incompatible with encryption codecs.
@@ -743,9 +743,9 @@ __device__ void Tester::finalize_testing()
 __device__ void Tester::show_memstats()
 {
 	int x1, x2;
-	RC x0 = StatusEx::Status(StatusEx::STATUS_MEMORY_USED, &x1, &x2, false);
+	bool x0 = StatusEx::Status(StatusEx::STATUS_MEMORY_USED, &x1, &x2, false);
 	int y1, y2;
-	RC y0 = StatusEx::Status(StatusEx::STATUS_MALLOC_SIZE, &y1, &y2, false);
+	bool y0 = StatusEx::Status(StatusEx::STATUS_MALLOC_SIZE, &y1, &y2, false);
 	char val[100];
 	__snprintf(val, sizeof(val), "now %10d  max %10d  max-size %10d", x1, x2, y2);
 	printf("Memory used:          %s", val);
@@ -777,7 +777,7 @@ __device__ void Tester::show_memstats()
 __device__ void Tester::execsql(const char *sql, TestCtx *db)
 {
 	printf("SQL = %s\n", sql);
-	db->DB_EVAL(sql);
+	db->DB_EVAL(db->Encode(sql));
 }
 
 // Execute SQL and catch exceptions.

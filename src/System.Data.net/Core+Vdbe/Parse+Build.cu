@@ -580,7 +580,7 @@ namespace Core
 			}
 		}
 
-		table = (Table *)_tagalloc2(ctx, sizeof(Table), true);
+		table = (Table *)_tagallocZero(ctx, sizeof(Table));
 		if (!table)
 		{
 			ctx->MallocFailed = true;
@@ -1565,7 +1565,7 @@ exit_drop_table:
 		if (toCol)
 			for (i = 0; i < toCol->Exprs; i++)
 				bytes += _strlen30(toCol->Ids[i].Name) + 1;
-		fkey = (FKey *)_tagalloc2(ctx, bytes, true);
+		fkey = (FKey *)_tagallocZero(ctx, bytes);
 		if (!fkey)
 			goto fk_end;
 		fkey->From = table;
@@ -1877,14 +1877,14 @@ fk_end:
 		// Allocate the index structure. 
 		int nameLength = _strlen30(name); // Number of characters in zName
 		int cols = list->Exprs;
-		Index *index = (Index *)_tagalloc2(ctx, 
+		Index *index = (Index *)_tagallocZero(ctx, 
 			_ROUND8(sizeof(Index)) +			// Index structure
-			_ROUND8(sizeof(tRowcnt)*(cols+1)) +// Index.aiRowEst
-			sizeof(char *)*cols +					// Index.azColl
-			sizeof(int)*cols +						// Index.aiColumn
-			sizeof(uint8)*cols +                    // Index.aSortOrder
-			nameLength + 1 +                        // Index.zName
-			extraLength, true);						// Collation sequence names
+			_ROUND8(sizeof(tRowcnt)*(cols+1)) +	// Index.aiRowEst
+			sizeof(char *)*cols +				// Index.azColl
+			sizeof(int)*cols +					// Index.aiColumn
+			sizeof(uint8)*cols +                // Index.aSortOrder
+			nameLength + 1 +                    // Index.zName
+			extraLength);						// Collation sequence names
 		if (ctx->MallocFailed)
 			goto exit_create_index;
 		char *extra = (char *)index;
@@ -2192,7 +2192,7 @@ exit_drop_index:
 	{
 		if (!list)
 		{
-			list = (IdList *)_tagalloc2(ctx, sizeof(IdList), true);
+			list = (IdList *)_tagallocZero(ctx, sizeof(IdList));
 			if (!list) return nullptr;
 		}
 		int i;
@@ -2261,7 +2261,7 @@ exit_drop_index:
 		_assert(!database || table); // Cannot have C without B
 		if (!list)
 		{
-			list = (SrcList *)_tagalloc2(ctx, sizeof(SrcList), true);
+			list = (SrcList *)_tagallocZero(ctx, sizeof(SrcList));
 			if (!list) return nullptr;
 			list->Allocs = 1;
 		}
@@ -2639,7 +2639,7 @@ append_from_error:
 		int colLength = index->Columns.length;
 		int bytes = sizeof(KeyInfo) + (colLength-1)*sizeof(CollSeq*) + colLength;
 		Context *ctx = Ctx;
-		KeyInfo *key = (KeyInfo *)_tagalloc2(ctx, bytes, true);
+		KeyInfo *key = (KeyInfo *)_tagallocZero(ctx, bytes);
 		if (key)
 		{
 			key->Ctx = Ctx;

@@ -393,14 +393,14 @@ namespace Core
 #endif
 
         public static byte[] _alloc(int size) { return new byte[size]; }
-        public static byte[] _alloc2(int size, bool clear) { return new byte[size]; }
+        public static byte[] _allocZero(int size) { return new byte[size]; }
         public static T[] _alloc<T>(byte s, int size) where T : struct { return new T[size / s]; }
-        public static T[] _alloc2<T>(byte s, int size, bool clear) where T : struct { return new T[size / s]; }
+        public static T[] _allocZero<T>(byte s, int size) where T : struct { return new T[size / s]; }
         public static byte[] _tagalloc(object tag, int size) { return new byte[size]; }
-        public static byte[] _tagalloc2(object tag, int size, bool clear) { return new byte[size]; }
+        public static byte[] _tagallocZero(object tag, int size) { return new byte[size]; }
         public static T[] _tagalloc<T>(object tag, int size) where T : struct { return new T[size]; }
         public static T[] _tagalloc<T>(object tag, byte s, int size) where T : struct { return new T[size / s]; }
-        public static T[] _tagalloc2<T>(object tag, byte s, int size, bool clear) where T : struct { return new T[size / s]; }
+        public static T[] _tagallocZero<T>(object tag, byte s, int size) where T : struct { return new T[size / s]; }
         public static int _allocsize(byte[] p)
         {
             Debug.Assert(_memdbg_hastype(p, MEMTYPE.HEAP));
@@ -416,8 +416,8 @@ namespace Core
         public static void _free<T>(ref T p) where T : class { }
         public static void _tagfree<T>(object tag, ref T p) where T : class { p = null; }
         static byte[][] _scratch; // Scratch memory
-        public static byte[] _stackalloc(object tag, int size) { return new byte[size]; }
-        public static byte[][] _stackalloc(object tag, byte[][] cell, int n)
+        public static byte[] _scratchalloc(object tag, int size) { return new byte[size]; }
+        public static byte[][] _scratchalloc(object tag, byte[][] cell, int n)
         {
             cell = _scratch;
             if (cell == null)
@@ -427,7 +427,7 @@ namespace Core
             _scratch = null;
             return cell;
         }
-        public static void _stackfree<T>(object tag, ref T p) where T : class
+        public static void _scratchfree<T>(object tag, ref T p) where T : class
         {
             byte[][] cell = (p as byte[][]);
             if (cell != null)
@@ -456,7 +456,7 @@ namespace Core
             Array.Copy(p, newT, Math.Min(p.Length, newT.Length));
             return newT;
         }
-        public static bool _heapnearlyfull() { return false; }
+        public static bool _alloc_heapnearlyfull() { return false; }
         public static T[] _tagrealloc_or_free<T>(object tag, ref T[] old, int newSize)
         {
             T[] p = _tagrealloc(tag, 0, old, newSize);

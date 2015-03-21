@@ -370,7 +370,7 @@ namespace Core {
 		else
 		{
 			_assert(mem->Malloc);
-			mem->u.RowSet = RowSet_Init(ctx, mem->Malloc, _tagallocsize(ctx, mem->Malloc));
+			mem->u.RowSet = RowSet_Init(ctx, mem->Malloc, (int)_tagallocsize(ctx, mem->Malloc));
 			_assert(mem->u.RowSet != nullptr);
 			mem->Flags = MEM_RowSet;
 		}
@@ -642,7 +642,7 @@ namespace Core {
 
 	__device__ Mem *Vdbe::ValueNew(Context *ctx)
 	{
-		Mem *p = (Mem *)_tagalloc2(ctx, sizeof(*p), true);
+		Mem *p = (Mem *)_tagallocZero(ctx, sizeof(*p));
 		if (p)
 		{
 			p->Flags = MEM_Null;

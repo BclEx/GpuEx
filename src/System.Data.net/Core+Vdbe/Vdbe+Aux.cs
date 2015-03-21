@@ -1231,7 +1231,7 @@ namespace Core
             //:     Cursors.data = (VdbeCursor**)AllocSpace(Cursors.data, cursors * sizeof(VdbeCursor*), &csr, end, &bytes);
             //:     OnceFlags.data = (uint8*)AllocSpace(OnceFlags.data, onces, &csr, end, &bytes);
             //:     if (bytes)
-            //:         FreeThis = _tagalloc2(ctx, bytes, true);
+            //:         FreeThis = _tagallocZero(ctx, bytes);
             //:     csr = FreeThis;
             //:     end = &csr[bytes];
             //: } while (bytes && !ctx->MallocFailed);
@@ -1371,7 +1371,7 @@ namespace Core
             int n = resColumns * COLNAME_N;
             ResColumns = (ushort)resColumns;
             Mem colName;
-            ColNames = new Mem[n]; //: (Mem *)_tagalloc2(ctx, sizeof(Mem)*n, true);
+            ColNames = new Mem[n]; //: (Mem *)_tagallocZero(ctx, sizeof(Mem)*n);
             if (ColNames == null) return;
             while (n-- > 0)
             {

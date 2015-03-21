@@ -506,7 +506,7 @@ namespace Core
             // See if the contents of the sorter should now be written out. They are written out when either of the following are true:
             //   * The total memory allocated for the in-memory list is greater than (page-size * cache-size), or
             //   * The total memory allocated for the in-memory list is greater than (page-size * 10) and sqlite3HeapNearlyFull() returns true.
-            if (rc == RC.OK && sorter.MaxPmaSize > 0 && ((sorter.InMemory > sorter.MaxPmaSize) || (sorter.InMemory > sorter.MaxPmaSize && C._heapnearlyfull())))
+            if (rc == RC.OK && sorter.MaxPmaSize > 0 && ((sorter.InMemory > sorter.MaxPmaSize) || (sorter.InMemory > sorter.MaxPmaSize && C._alloc_heapnearlyfull())))
             {
 #if DEBUG
                 long expect = sorter.WriteOffset + ConvertEx.GetVarintLength(sorter.InMemory) + sorter.InMemory;

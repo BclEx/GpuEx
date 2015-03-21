@@ -40,34 +40,6 @@ namespace Core
 #define CORE_VERSION_NUMBER 3007016
 #define CORE_SOURCE_ID      "--SOURCE-ID--"
 
-	class TagBase
-	{
-	public:
-		struct LookasideSlot
-		{
-			LookasideSlot *Next;    // Next buffer in the list of free buffers
-		};
-
-		struct Lookaside
-		{
-			uint16 Size;            // Size of each buffer in bytes
-			bool Enabled;           // False to disable new lookaside allocations
-			bool Malloced;          // True if pStart obtained from sqlite3_malloc()
-			int Outs;               // Number of buffers currently checked out
-			int MaxOuts;            // Highwater mark for nOut
-			int Stats[3];			// 0: hits.  1: size misses.  2: full misses
-			LookasideSlot *Free;	// List of available buffers
-			void *Start;			// First byte of available memory space
-			void *End;				// First byte past end of available space
-		};
-
-		MutexEx Mutex;			// Connection mutex 
-		bool MallocFailed;		// True if we have seen a malloc failure
-		RC ErrCode;				// Most recent error code (RC_*)
-		int ErrMask;			// & result codes with this before returning
-		Lookaside Lookaside;	// Lookaside malloc configuration
-	};
-
 	class SysEx
 	{
 	public:
@@ -75,26 +47,19 @@ namespace Core
 #pragma region Initialize/Shutdown/Config
 		struct GlobalStatics
 		{
-			bool Memstat;						// True to enable memory status
 			bool CoreMutex;						// True to enable core mutexing
 			bool FullMutex;						// True to enable full mutexing
 			bool OpenUri;						// True to interpret filenames as URIs
 			//Main::bool UseCis;						// Use covering indices for full-scans
 			int MaxStrlen;						// Maximum string length
-			int LookasideSize;					// Default lookaside buffer size
-			int Lookasides;						// Default lookaside buffer count
-			//mem_methods m;					// Low-level memory allocation interface
 			//mutex_methods mutex;				// Low-level mutex interface
 			//Main::sqlite3_pcache_methods2 pcache2;	// Low-level page-cache interface
 			//array_t<void> Heap;				// Heap storage space
 			//int MinReq, MaxReq;				// Min and max heap requests sizes
-			void *Scratch;						// Scratch memory
-			int ScratchSize;					// Size of each scratch buffer
-			int Scratchs;						// Number of scratch buffers
-			//Main::void *Page;						// Page cache memory
-			//Main::int PageSize;						// Size of each page in pPage[]
-			//Main::int Pages;						// Number of pages in pPage[]
-			//Main::int MaxParserStack;				// maximum depth of the parser stack
+			//Main::void *Page;					// Page cache memory
+			//Main::int PageSize;				// Size of each page in pPage[]
+			//Main::int Pages;					// Number of pages in pPage[]
+			//Main::int MaxParserStack;			// maximum depth of the parser stack
 			bool SharedCacheEnabled;			// true if shared-cache mode enabled
 			// The above might be initialized to non-zero.  The following need to always initially be zero, however.
 			bool IsInit;						// True after initialization has finished

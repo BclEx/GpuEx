@@ -205,7 +205,7 @@ namespace Core
 		//BCONTEXT::SavepointsLength
 		int Statements;						// Number of nested statement-transactions
 		int64 DeferredCons;					// Net deferred constraints this transaction.
-		int *BytesFreed;					// If not NULL, increment this in DbFree()
+		//TAGBASE::BytesFreed;				// If not NULL, increment this in DbFree()
 #ifdef ENABLE_UNLOCK_NOTIFY
 		//BCONTEXT::BlockingConnection
 		//BCONTEXT::UnlockConnection

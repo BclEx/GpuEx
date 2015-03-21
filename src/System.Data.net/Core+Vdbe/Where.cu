@@ -551,7 +551,7 @@ findTerm_success:
 		_assert((term->WtFlags & (TERM_DYNAMIC|TERM_ORINFO|TERM_ANDINFO)) == 0);
 		_assert(expr->OP == TK_OR);
 		WhereOrInfo *orInfo; // Additional information associated with pTerm
-		term->u.OrInfo = orInfo = (WhereOrInfo *)_tagalloc2(ctx, sizeof(*orInfo), true);
+		term->u.OrInfo = orInfo = (WhereOrInfo *)_tagallocZero(ctx, sizeof(*orInfo));
 		if (!orInfo) return;
 		term->WtFlags |= TERM_ORINFO;
 		WhereClause *orWc = &orInfo->WC; // Breakup of pTerm into subterms
@@ -1303,7 +1303,7 @@ findTerm_success:
 		bytes += columns*sizeof(int); // Index.aiColumn
 		bytes += columns*sizeof(char*); // Index.azColl
 		bytes += columns; // Index.aSortOrder
-		Index *index = (Index *)_tagalloc2(parse->Ctx, bytes, true); // Object describing the transient index
+		Index *index = (Index *)_tagallocZero(parse->Ctx, bytes); // Object describing the transient index
 		if (!index) return;
 		level->Plan.u.Index = index;
 		index->CollNames = (char **)&index[1];
@@ -1424,7 +1424,7 @@ findTerm_success:
 		}
 
 		// Allocate the sqlite3_index_info structure
-		IIndexInfo *idxInfo = (IIndexInfo *)_tagalloc2(parse->Ctx, sizeof(IIndexInfo) + (sizeof(IIndexInfo::Constraint) + sizeof(IIndexInfo::ConstraintUsage))*terms + sizeof(IIndexInfo::Orderby)*orderBys, true);
+		IIndexInfo *idxInfo = (IIndexInfo *)_tagallocZero(parse->Ctx, sizeof(IIndexInfo) + (sizeof(IIndexInfo::Constraint) + sizeof(IIndexInfo::ConstraintUsage))*terms + sizeof(IIndexInfo::Orderby)*orderBys);
 		if (!idxInfo)
 		{
 			parse->ErrorMsg("out of memory");
@@ -3244,7 +3244,7 @@ cancel:
 						if (winfo->Levels > 1)
 						{
 							int notReadys = winfo->Levels - levelId - 1; // The number of notReady tables
-							orTab = (SrcList *)_stackalloc(parse->Ctx, sizeof(*orTab) + notReadys*sizeof(orTab->Ids[0]), false);
+							orTab = (SrcList *)_stackalloc(parse->Ctx, sizeof(*orTab) + notReadys*sizeof(orTab->Ids[0]));
 							if (!orTab) return notReady;
 							orTab->Allocs = (int16)(notReadys + 1);
 							orTab->Srcs = orTab->Allocs;
@@ -3488,7 +3488,7 @@ cancel:
 		// field (type Bitmask) it must be aligned on an 8-byte boundary on some architectures. Hence the ROUND8() below.
 		Context *ctx = parse->Ctx; // Database connection
 		int bytesWInfo = _ROUND8(sizeof(WhereInfo)+(tabListLength-1)*sizeof(WhereLevel)); // Num. bytes allocated for WhereInfo struct
-		WhereInfo *winfo = (WhereInfo *)_tagalloc2(ctx, bytesWInfo +  sizeof(WhereClause) + sizeof(WhereMaskSet), true); // Will become the return value of this function
+		WhereInfo *winfo = (WhereInfo *)_tagallocZero(ctx, bytesWInfo +  sizeof(WhereClause) + sizeof(WhereMaskSet)); // Will become the return value of this function
 		if (ctx->MallocFailed)
 		{
 			_tagfree(ctx, winfo);

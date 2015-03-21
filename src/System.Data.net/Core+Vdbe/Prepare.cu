@@ -48,7 +48,7 @@ namespace Core
 #else
 			Prepare_(ctx, argv[2], -1, &stmt, nullptr);
 #endif
-			RC rc = ctx->ErrCode;
+			RC rc = (RC)ctx->ErrCode;
 			_assert((rc&0xFF) == (rcp&0xFF));
 			ctx->Init.DB = 0;
 			if (rc != RC_OK)
@@ -405,7 +405,7 @@ error_out:
 		RC rc = RC_OK;
 
 		// Allocate the parsing context
-		Parse *parse = (Parse *)_stackalloc(ctx, sizeof(*parse), true); // Parsing context
+		Parse *parse = (Parse *)_stackallocZero(ctx, sizeof(*parse)); // Parsing context
 		if (!parse)
 		{
 			rc = RC_NOMEM;

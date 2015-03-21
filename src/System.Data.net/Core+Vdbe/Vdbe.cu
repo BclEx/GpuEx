@@ -3957,7 +3957,7 @@ op_column_out:
 						+ childMems * sizeof(Mem)
 						+ program->Csrs * sizeof(VdbeCursor *)
 						+ program->Onces * sizeof(uint8); // Bytes of runtime space required for sub-program
-					frame = (VdbeFrame *)_tagalloc2(ctx, bytes, true);
+					frame = (VdbeFrame *)_tagallocZero(ctx, bytes);
 					if (!frame)
 						goto no_mem;
 					MemRelease(rt);

@@ -646,11 +646,11 @@ namespace Core
 			bool enableLookaside = ctx->Lookaside.Enabled; // Copy of ctx->lookaside.bEnabled
 			ctx->Lookaside.Enabled = false;
 
-			trigger = (Trigger *)_tagalloc2(ctx, 
+			trigger = (Trigger *)_tagallocZero(ctx, 
 				sizeof(Trigger) + // Trigger
 				sizeof(TriggerStep) + // Single step in trigger program
 				fromNameLength + 1 // Space for step->target.z
-				, true);
+				);
 			TriggerStep *step = nullptr; // First (only) step of trigger program
 			if (trigger)
 			{

@@ -2403,7 +2403,7 @@ __device__ static void yy_reduce(YYPARSER *yyparser, int yyruleno)
         break;
       case 130: /* from ::= */
 #line 363 "C:\\_GITHUB\\GpuEx\\src\\System.Data.net\\Core+Vdbe\\Parse+Parser.ycu"
-{ yygotominor.yy10 = (SrcList *)_tagalloc2(parse->Ctx, sizeof(*yygotominor.yy10), true); }
+{ yygotominor.yy10 = (SrcList *)_tagallocZero(parse->Ctx, sizeof(*yygotominor.yy10)); }
 #line 2373 "C:\\_GITHUB\\GpuEx\\src\\System.Data.net\\Core+Vdbe\\Parse+Parser.cu"
         break;
       case 131: /* from ::= FROM seltablist */

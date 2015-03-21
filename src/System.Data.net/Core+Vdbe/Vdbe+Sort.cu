@@ -272,7 +272,7 @@ namespace Core
 	{
 		_assert(cursor->KeyInfo && !cursor->Bt);
 		VdbeSorter *sorter; // The new sorter
-		cursor->Sorter = sorter = (VdbeSorter *)_tagalloc2(ctx, sizeof(VdbeSorter), true);
+		cursor->Sorter = sorter = (VdbeSorter *)_tagallocZero(ctx, sizeof(VdbeSorter));
 		if (!sorter)
 			return RC_NOMEM;
 
@@ -503,7 +503,7 @@ namespace Core
 		// See if the contents of the sorter should now be written out. They are written out when either of the following are true:
 		//   * The total memory allocated for the in-memory list is greater than (page-size * cache-size), or
 		//   * The total memory allocated for the in-memory list is greater than (page-size * 10) and sqlite3HeapNearlyFull() returns true.
-		if (rc == RC_OK && sorter->MaxPmaSize > 0 && ((sorter->InMemory > sorter->MaxPmaSize) || (sorter->InMemory > sorter->MaxPmaSize && _heapnearlyfull()))){
+		if (rc == RC_OK && sorter->MaxPmaSize > 0 && ((sorter->InMemory > sorter->MaxPmaSize) || (sorter->InMemory > sorter->MaxPmaSize && _alloc_heapnearlyfull()))){
 #ifdef _DEBUG
 			int64 expect = sorter->WriteOffset + ConvertEx::GetVarintLength(sorter->InMemory) + sorter->InMemory;
 #endif
@@ -560,7 +560,7 @@ namespace Core
 		_assert(iters > 0);
 		int n = 2; while (n < iters) n += n; // Power of 2 >= iters
 		int bytes = n * (sizeof(int) + sizeof(VdbeSorterIter)); // Bytes of space required for aIter/aTree
-		sorter->Iters = (VdbeSorterIter *)_tagalloc2(ctx, bytes, true);
+		sorter->Iters = (VdbeSorterIter *)_tagallocZero(ctx, bytes);
 		if (!sorter->Iters) return RC_NOMEM;
 		sorter->Trees = (int *)&sorter->Iters[n];
 		sorter->Trees.length = n;

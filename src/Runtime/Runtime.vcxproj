@@ -41,13 +41,23 @@
     <None Include="RT.cu" />
     <ClCompile Include="Falloc.cu" />
     <ClCompile Include="Runtime.cu" />
+    <ClCompile Include="Runtime+Alloc.cu" />
     <ClCompile Include="Runtime+Fault.cu" />
+    <ClCompile Include="Runtime+Mem0.cu" />
+    <ClCompile Include="Runtime+Mem1.cu" />
+    <ClCompile Include="Runtime+MutexEx.cu" />
+    <ClCompile Include="Runtime+StatusEx.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
     <None Include="Falloc.cu" />
     <None Include="Runtime.cu" />
+    <None Include="Runtime+Alloc.cu" />
     <None Include="Runtime+Fault.cu" />
+    <None Include="Runtime+Mem0.cu" />
+    <None Include="Runtime+Mem1.cu" />
+    <None Include="Runtime+MutexEx.cu" />
+    <None Include="Runtime+StatusEx.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FallocHost.cpp" />

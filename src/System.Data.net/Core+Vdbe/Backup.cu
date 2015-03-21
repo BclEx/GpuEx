@@ -13,7 +13,7 @@ namespace Core
 		if (i == 1)
 		{
 			RC rc = (RC)0;
-			Parse *parse = (Parse *)_stackalloc(errorCtx, sizeof(*parse), true);
+			Parse *parse = (Parse *)_stackallocZero(errorCtx, sizeof(*parse));
 			if (!parse)
 			{
 				Main::Error(errorCtx, RC_NOMEM, "out of memory");
@@ -68,7 +68,7 @@ namespace Core
 		{
 			// Allocate space for a new sqlite3_backup object... EVIDENCE-OF: R-64852-21591 The sqlite3_backup object is created by a
 			// call to sqlite3_backup_init() and is destroyed by a call to sqlite3_backup_finish().
-			p = (Backup *)_alloc2(sizeof(Backup), true);
+			p = (Backup *)_allocZero(sizeof(Backup));
 			if (!p)
 				Main::Error(destCtx, RC_NOMEM, nullptr);
 		}

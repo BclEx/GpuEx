@@ -623,7 +623,7 @@ namespace Core
             prg.Colmasks[1] = 0xffffffff;
 
             // Allocate and populate a new Parse context to use for coding the trigger sub-program.
-            Parse subParse = new Parse(); // Parse context for sub-vdbe //: _stackalloc(ctx, sizeof(Parse), true);
+            Parse subParse = new Parse(); // Parse context for sub-vdbe //: _scratchalloc(ctx, sizeof(Parse), true);
             if (subParse == null) return null;
             NameContext sNC = new NameContext(); // Name context for sub-vdbe
             sNC.Parse = subParse;
@@ -687,7 +687,7 @@ namespace Core
 
             Debug.Assert(subParse.Ainc == null && subParse.ZombieTab == null);
             Debug.Assert(subParse.TriggerPrg == null && subParse.MaxArgs == 0);
-            C._stackfree(ctx, ref subParse);
+            C._scratchfree(ctx, ref subParse);
 
             return prg;
         }

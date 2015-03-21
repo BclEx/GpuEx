@@ -763,7 +763,7 @@ recovery_error:
 
 	__device__ static void walIteratorFree(WalIterator *p)
 	{
-		_stackfree(p);
+		_scratchfree(p);
 	}
 
 	__device__ static RC walIteratorInit(Wal *wal, WalIterator **iteratorOut)
@@ -775,7 +775,7 @@ recovery_error:
 		// Allocate space for the WalIterator object.
 		int segments = walFramePage(lastFrame) + 1; // Number of segments to merge
 		int bytes = sizeof(WalIterator) + (segments - 1) * sizeof(WalSegment) + lastFrame * sizeof(ht_slot); // Number of bytes to allocate
-		WalIterator *p = (WalIterator *)_stackalloc(bytes); // Return value
+		WalIterator *p = (WalIterator *)_scratchalloc(bytes); // Return value
 		if (!p)
 			return RC_NOMEM;
 		_memset(p, 0, bytes);
@@ -783,7 +783,7 @@ recovery_error:
 
 		// Allocate temporary space used by the merge-sort routine. This block of memory will be freed before this function returns.
 		RC rc = RC_OK;
-		ht_slot *tmp = (ht_slot *)_stackalloc(sizeof(ht_slot) * (lastFrame > HASHTABLE_NPAGE ? HASHTABLE_NPAGE : lastFrame)); // Temp space used by merge-sort
+		ht_slot *tmp = (ht_slot *)_scratchalloc(sizeof(ht_slot) * (lastFrame > HASHTABLE_NPAGE ? HASHTABLE_NPAGE : lastFrame)); // Temp space used by merge-sort
 		if (!tmp)
 			rc = RC_NOMEM;
 
@@ -813,7 +813,7 @@ recovery_error:
 				p->Segments[i].IDs = (Pid *)ids;
 			}
 		}
-		_stackfree(tmp);
+		_scratchfree(tmp);
 
 		if (rc != RC_OK)
 			walIteratorFree(p);

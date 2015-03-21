@@ -763,7 +763,7 @@ namespace Core
 		MutexEx::Enter(ctx->Mutex);
 		if (destroy)
 		{
-			arg = (FuncDestructor *)_tagalloc2(ctx, sizeof(FuncDestructor), true);
+			arg = (FuncDestructor *)_tagallocZero(ctx, sizeof(FuncDestructor));
 			if (!arg)
 			{
 				destroy(p);
@@ -1010,7 +1010,7 @@ _out:
 			z = (char *)Vdbe::Value_Text(ctx->Err);
 			_assert(!ctx->MallocFailed);
 			if (!z)
-				z = ErrStr(ctx->ErrCode);
+				z = ErrStr((RC)ctx->ErrCode);
 		}
 		MutexEx::Leave(ctx->Mutex);
 		return z;
@@ -1046,7 +1046,7 @@ _out:
 			z = Vdbe::Value_Text16(ctx->Err);
 			if (!z)
 			{
-				Vdbe::ValueSetStr(ctx->Err, -1, ErrStr(ctx->ErrCode), TEXTENCODE_UTF8, DESTRUCTOR_STATIC);
+				Vdbe::ValueSetStr(ctx->Err, -1, ErrStr((RC)ctx->ErrCode), TEXTENCODE_UTF8, DESTRUCTOR_STATIC);
 				z = Vdbe::Value_Text16(ctx->Err);
 			}
 			// A malloc() may have failed within the call to sqlite3_value_text16() above. If this is the case, then the ctx->mallocFailed flag needs to
@@ -1073,7 +1073,7 @@ _out:
 			return SysEx_MISUSE_BKPT;
 		if (!ctx || ctx->MallocFailed)
 			return RC_NOMEM;
-		return ctx->ErrCode;
+		return (RC)ctx->ErrCode;
 	}
 
 	//__device__ const char *Main::Errstr(int rc) { return ErrStr(rc); }
@@ -1270,7 +1270,7 @@ _out:
 			VSystem::OPEN_WAL);
 
 		// Allocate the sqlite data structure
-		Context *ctx = (Context *)_alloc2(sizeof(Context), true); // Store allocated handle here
+		Context *ctx = (Context *)_allocZero(sizeof(Context)); // Store allocated handle here
 		if (!ctx) goto opendb_out;
 		if (isThreadsafe)
 		{
@@ -1413,7 +1413,7 @@ _out:
 #endif
 
 		// Enable the lookaside-malloc subsystem
-		SysEx::SetupLookaside(ctx, nullptr, SysEx_GlobalStatics.LookasideSize, SysEx_GlobalStatics.Lookasides);
+		SysEx::SetupLookaside(ctx, nullptr, TagBase_RuntimeStatics.LookasideSize, TagBase_RuntimeStatics.Lookasides);
 
 		Main::WalAutocheckpoint(ctx, DEFAULT_WAL_AUTOCHECKPOINT);
 
@@ -1832,8 +1832,8 @@ error_out:
 			int size = va_arg(args, int);
 			void **new_ = va_arg(args, void**);
 			void *free = va_arg(args, void*);
-			if (size) *new_ = _stackalloc(nullptr, size, false);
-			_stackfree(nullptr, free);
+			if (size) *new_ = _scratchalloc(size);
+			_scratchfree(free);
 			break; }
 		case TESTCTRL_LOCALTIME_FAULT: {
 			// sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, int onoff);

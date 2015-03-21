@@ -203,7 +203,7 @@ __global__ static void runtime13(void *r)
 // MPRINTF
 __global__ static void runtime14(void *r)
 {
-	void *tag = "tag";
+	TagBase *tag = new TagBase(); //"tag";
 	_runtimeSetHeap(r);
 	char *a0 = _mprintf("t0\n"); _assert(!_strcmp(a0, "t0\n")); _free(a0);
 	char *a1 = _mprintf("t1 %s\n", "1"); _assert(!_strcmp(a1, "t1 1\n")); _free(a1);

@@ -1,3 +1,6 @@
+#ifndef __TESTCTX_CU_H__
+#define __TESTCTX_CU_H__
+
 #include "..\Core+Vdbe\Core+Vdbe.cu.h"
 #include "TestTcl.cu.h"
 
@@ -68,14 +71,21 @@ struct TestCtx
 	bool LegacyPrepare;			// True to use sqlite3_prepare()
 #endif
 
-	__device__ ::RC DB_AUTHORIZER(int objc, Tcl_Obj *const*objv);
-	__device__ ::RC DB_BACKUP(int objc, Tcl_Obj *const*objv);
-	__device__ ::RC DB_BUSY(int objc, Tcl_Obj *const*objv);
-	__device__ ::RC DB_CACHE(int objc, Tcl_Obj *const*objv);
-	__device__ ::RC DB_CHANGES(int objc, Tcl_Obj *const*objv);
-	__device__ void DB_CLOSE(int objc, Tcl_Obj *const*objv);
+	__device__ inline array_t<Tcl_Obj *> Encode(const char *arg1) { return array_t<Tcl_Obj *>(nullptr, 1);}
+	__device__ inline array_t<Tcl_Obj *> Encode(Tcl_Obj *arg1) { return array_t<Tcl_Obj *>(nullptr, 1);}
+	__device__ inline array_t<Tcl_Obj *> Encode(const char *arg1, const char *arg2) { return array_t<Tcl_Obj *>(nullptr, 2);}
+	__device__ inline array_t<Tcl_Obj *> Encode(Tcl_Obj *arg1, Tcl_Obj *arg2) { return array_t<Tcl_Obj *>(nullptr, 2);}
+	__device__ inline array_t<Tcl_Obj *> Encode(const char *arg1, const char *arg2, const char *arg3) { return array_t<Tcl_Obj *>(nullptr, 2);}
+	__device__ inline array_t<Tcl_Obj *> Encode(Tcl_Obj *arg1, Tcl_Obj *arg2, Tcl_Obj *arg3) { return array_t<Tcl_Obj *>(nullptr, 2);}
+	//
+	__device__ ::RC DB_AUTHORIZER(array_t<Tcl_Obj *> objv);
+	__device__ ::RC DB_BACKUP(array_t<Tcl_Obj *> objv);
+	__device__ ::RC DB_BUSY(array_t<Tcl_Obj *> objv);
+	__device__ ::RC DB_CACHE(array_t<Tcl_Obj *> objv);
+	__device__ ::RC DB_CHANGES(array_t<Tcl_Obj *> objv);
+	__device__ ::RC DB_CLOSE(array_t<Tcl_Obj *> objv);
 
-	__device__ ::RC DB_EVAL(int objc, Tcl_Obj *const*objv);
+	__device__ ::RC DB_EVAL(array_t<Tcl_Obj *> objv);
 
 };
 
@@ -88,3 +98,5 @@ struct IncrblobChannel
 	IncrblobChannel *Next;		// Linked list of all open incrblob channels
 	IncrblobChannel *Prev;		// Linked list of all open incrblob channels
 };
+
+#endif // __TESTCTX_CU_H__
