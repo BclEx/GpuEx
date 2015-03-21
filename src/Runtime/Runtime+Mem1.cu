@@ -36,7 +36,12 @@
 __device__ inline static void *_cudarealloc(void *old, size_t newSize)
 { 
 	void *new_ = malloc(newSize);
-	if (old) { _memcpy(new_, old, newSize); free(old); }
+	if (old)
+	{ 
+		size_t = oldSize = _allocsize(old);
+		if (oldSize != 0) _memcpy(new_, old, newSize);
+		free(old);
+	}
 	return new_;
 }
 
