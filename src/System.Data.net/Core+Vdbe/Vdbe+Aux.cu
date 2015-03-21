@@ -1028,7 +1028,6 @@ __device__ void Vdbe::MakeReady(Parse *parse)
 	UsesStmtJournal = (uint8)(parse->IsMultiWrite && parse->_MayAbort);
 	if (parse->Explain && mems < 10)
 		mems = 10;
-	printf("S:{%d, %d, %d}\n", Ops.length, OpsAlloc, end-csr);
 	_memset(csr, 0, end-csr);
 	csr += (csr - (uint8 *)0)&7;
 	_assert(_HASALIGNMENT8(csr));
