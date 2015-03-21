@@ -38,8 +38,8 @@ __device__ inline static void *_cudarealloc(void *old, size_t newSize)
 	void *new_ = malloc(newSize);
 	if (old)
 	{ 
-		size_t = oldSize = _allocsize(old);
-		if (oldSize != 0) _memcpy(new_, old, newSize);
+		size_t oldSize = __allocsystem_size(old);
+		if (oldSize != 0) _memcpy(new_, old, oldSize);
 		free(old);
 	}
 	return new_;
@@ -87,7 +87,7 @@ __device__ void *__allocsystem_alloc(size_t size)
 	if (!p)
 	{
 		//ASSERTCOVERAGE(sqlite3GlobalConfig.xLog!=0);
-		//sqlite3_log(RC_NOMEM, "failed to allocate %u bytes of memory", size);
+		printf("failed to allocate %u bytes of memory", size);
 	}
 	return p;
 #else
@@ -103,7 +103,7 @@ __device__ void *__allocsystem_alloc(size_t size)
 	else
 	{
 		//ASSERTCOVERAGE(sqlite3GlobalConfig.xLog!=0);
-		//sqlite3_log(RC_NOMEM, "failed to allocate %u bytes of memory", size);
+		printf("failed to allocate %u bytes of memory", size);
 	}
 	return (void *)p;
 #endif
@@ -151,7 +151,7 @@ __device__ void *__allocsystem_realloc(void *prior, size_t size)
 	if (!p)
 	{
 		//ASSERTCOVERAGE(sqlite3GlobalConfig.xLog != 0);
-		//sqlite3_log(RC_NOMEM, "failed memory resize %u to %u bytes", RUNTIME_ALLOCSIZE(prior), size);
+		pritnf("failed memory resize %u to %u bytes", RUNTIME_ALLOCSIZE(prior), size);
 	}
 	return p;
 #else
@@ -168,7 +168,7 @@ __device__ void *__allocsystem_realloc(void *prior, size_t size)
 	else
 	{
 		//ASSERTCOVERAGE(sqlite3GlobalConfig.xLog != 0);
-		//sqlite3_log(RC_NOMEM, "failed memory resize %u to %u bytes", __allocsystem_size(prior), bytes);
+		printf("failed memory resize %u to %u bytes", __allocsystem_size(prior), size);
 	}
 	return (void *)p;
 #endif
