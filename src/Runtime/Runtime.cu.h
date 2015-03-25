@@ -204,6 +204,8 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 // PRINTF
 #pragma region PRINTF
 
+#define _printf printf
+#if 0
 #define PRINTF_PREAMBLE \
 	char *start, *end, *bufptr, *fmtstart; \
 	if ((start = __heap_movenext(end, bufptr)) == nullptr) return 0;
@@ -313,6 +315,7 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 #undef PRINTF_PREAMBLE
 #undef PRINTF_ARG
 #undef PRINTF_POSTAMBLE
+#endif
 
 #pragma endregion
 

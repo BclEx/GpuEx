@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
 	cudaCheckErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024*10), return -2);
 
-	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
+	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(); //256, 4096);
 	//cudaDeviceFalloc fallocHost = cudaDeviceFallocCreate(100, 1024);
 
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
