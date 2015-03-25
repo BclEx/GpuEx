@@ -135,9 +135,9 @@ namespace Core {
 		}
 	}
 
-	__device__ inline static int EndsWithNL(Explain *p)
+	__device__ __forceinline static int EndsWithNL(Explain *p)
 	{
-		return (p && p->Str.Text && p->Str.Size && p->Str.Text[p->Str.Size-1]=='\n');
+		return (p && p->Str.Text && p->Str.Size && p->Str.Text[p->Str.Size-1] == '\n');
 	}
 
 	__device__ void Vdbe::ExplainPrintf_(Vdbe *vdbe, const char *format, va_list &args)

@@ -17,8 +17,8 @@ __device__ void Tester::sqlite3(TestCtx *tctx, array_t<void *> args)
 
 		auto res = 0; //[uplevel 1 sqlite_orig $args]
 		auto presql = (Tcl_Obj *)G.Find("perm:presql", 11);
-		if (presql)
-			((TestCtx *)args[0])->DB_EVAL(db->Encode(presql));
+		//if (presql)
+		//	((TestCtx *)args[0])->DB_EVAL(db->Encode(presql));
 		if (G.Find("perm:dbconfig", 13))
 		{
 			//set ::dbhandle [lindex $args 0]
@@ -186,8 +186,8 @@ __device__ void Tester::execpresql(TestCtx *handle, void *args)
 {
 	//  trace remove execution $handle enter [list execpresql $handle]
 	auto presql = (Tcl_Obj *)G.Find("perm:presql", 11);
-	if (presql)
-		handle->DB_EVAL(handle->Encode(presql));
+	//if (presql)
+	//	handle->DB_EVAL(handle->Encode(presql));
 }
 
 // This command should be called after loading tester.tcl from within all test scripts that are incompatible with encryption codecs.
@@ -777,7 +777,7 @@ __device__ void Tester::show_memstats()
 __device__ void Tester::execsql(const char *sql, TestCtx *db)
 {
 	printf("SQL = %s\n", sql);
-	db->DB_EVAL(db->Encode(sql));
+	//db->DB_EVAL(db->Encode(sql));
 }
 
 // Execute SQL and catch exceptions.

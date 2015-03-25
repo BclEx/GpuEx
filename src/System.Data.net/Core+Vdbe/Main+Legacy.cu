@@ -26,6 +26,7 @@ namespace Core
 				sql = leftover; // this happens for a comment or white-space
 				continue;
 			}
+			//_printf("\n%s\n", Vdbe::Explanation(stmt));
 
 			bool callbackIsInit = false; // True if callback data is initialized
 			int cols = Vdbe::Column_Count(stmt);

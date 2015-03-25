@@ -13,7 +13,7 @@ __device__ unsigned char __one;
 #pragma region TAGBASE
 
 #ifndef RUNTIME_DEFAULT_MEMSTATUS
-#define RUNTIME_DEFAULT_MEMSTATUS true
+#define RUNTIME_DEFAULT_MEMSTATUS false
 #endif
 
 // The following singleton contains the global configuration for the SQLite library.
@@ -886,7 +886,7 @@ __device__ void TextBuilder::Append(const char *z, int length)
 				newText = (char *)_realloc(oldText, Size);
 			if (newText)
 			{
-				if (oldText == nullptr && Index > 0) _memcpy(newText, Text, Index);
+				if (!oldText && Index > 0) _memcpy(newText, Text, Index);
 				Text = newText;
 			}
 			else

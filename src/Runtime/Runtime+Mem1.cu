@@ -38,7 +38,8 @@ __device__ inline static void *_cudarealloc(void *old, size_t newSize)
 	void *new_ = malloc(newSize);
 	if (old)
 	{ 
-		size_t oldSize = __allocsystem_size(old);
+		int64 *p = (int64 *)old;
+		size_t oldSize = (size_t)p[0];
 		if (oldSize != 0) _memcpy(new_, old, oldSize);
 		free(old);
 	}
@@ -67,13 +68,14 @@ static malloc_zone_t * _zoneMalloc;
 #if (defined(_MSC_VER) && !defined(RUNTIME_WITHOUT_MSIZE)) || (defined(HAVE_MALLOC_H) && defined(HAVE_MALLOC_USABLE_SIZE))
 #include <malloc.h> // Needed for malloc_usable_size on linux
 #endif
-#ifdef HAVE_MALLOC_USABLE_SIZE
-#ifndef RUNTIME_ALLOCSIZE
-#define RUNTIME_ALLOCSIZE(x) malloc_usable_size(x)
-#endif
-#else
-#undef RUNTIME_ALLOCSIZE
-#endif
+
+//#ifdef HAVE_MALLOC_USABLE_SIZE
+//#ifndef RUNTIME_ALLOCSIZE
+//#define RUNTIME_ALLOCSIZE(x) malloc_usable_size(x)
+//#endif
+//#else
+//#undef RUNTIME_ALLOCSIZE
+//#endif
 
 #endif /* __APPLE__ or not __APPLE__ */
 
@@ -83,7 +85,7 @@ static malloc_zone_t * _zoneMalloc;
 __device__ void *__allocsystem_alloc(size_t size)
 {
 #ifdef RUNTIME_ALLOCSIZE
-	void *p = RUNTIME_ALLOCSIZE(size);
+	void *p = RUNTIME_ALLOC(size);
 	if (!p)
 	{
 		//ASSERTCOVERAGE(sqlite3GlobalConfig.xLog!=0);
@@ -91,10 +93,9 @@ __device__ void *__allocsystem_alloc(size_t size)
 	}
 	return p;
 #else
-	int64 *p;
 	_assert(size > 0);
 	size = _ROUND8(size);
-	p = (int64 *)RUNTIME_ALLOC(size + 8);
+	int64 *p = (int64 *)RUNTIME_ALLOC(size + 8);
 	if (p)
 	{
 		p[0] = size;
@@ -118,8 +119,8 @@ __device__ void __allocsystem_free(void *prior)
 #ifdef RUNTIME_ALLOCSIZE
 	RUNTIME_FREE(prior);
 #else
+	_assert(prior);
 	int64 *p = (int64 *)prior;
-	_assert(prior != 0);
 	p--;
 	RUNTIME_FREE(p);
 #endif
@@ -131,9 +132,8 @@ __device__ size_t __allocsystem_size(void *prior)
 #ifdef RUNTIME_ALLOCSIZE
 	return (prior ? (int)RUNTIME_ALLOCSIZE(prior) : 0);
 #else
-	int64 *p;
 	if (!prior) return 0;
-	p = (int64 *)prior;
+	int64 *p = (int64 *)prior;
 	p--;
 	return (size_t)p[0];
 #endif
@@ -151,13 +151,13 @@ __device__ void *__allocsystem_realloc(void *prior, size_t size)
 	if (!p)
 	{
 		//ASSERTCOVERAGE(sqlite3GlobalConfig.xLog != 0);
-		pritnf("failed memory resize %u to %u bytes", RUNTIME_ALLOCSIZE(prior), size);
+		printf("failed memory resize %u to %u bytes", RUNTIME_ALLOCSIZE(prior), size);
 	}
 	return p;
 #else
-	int64 *p = (int64 *)prior;
 	_assert(prior && size > 0);
 	_assert(size == _ROUND8(size)); /* EV: R-46199-30249 */
+	int64 *p = (int64 *)prior;
 	p--;
 	p = (int64 *)RUNTIME_REALLOC(p, size + 8);
 	if (p)
