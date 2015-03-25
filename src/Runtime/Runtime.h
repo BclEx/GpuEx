@@ -10,6 +10,7 @@
 #define __forceinline __forceinline__
 #include "Runtime.cu.h"
 #else
+#include <string.h>
 #include <malloc.h>
 #include "Runtime.cpu.h"
 #endif
@@ -224,177 +225,6 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #pragma endregion
 
 //////////////////////
-// MEMORY ALLOCATION
-#pragma region MEMORY ALLOCATION
-
-#define _ROUNDT(t, x)	(((x)+sizeof(t)-1)&~(sizeof(t)-1))
-#define _ROUND8(x)		(((x)+7)&~7)
-#define _ROUNDDOWN8(x)	((x)&~7)
-#ifdef BYTEALIGNED4
-#define _HASALIGNMENT8(X) ((((char *)(X) - (char *)0)&3) == 0)
-#else
-#define _HASALIGNMENT8(X) ((((char *)(X) - (char *)0)&7) == 0)
-#endif
-
-enum MEMTYPE : unsigned char
-{
-	MEMTYPE_HEAP = 0x01,         // General heap allocations
-	MEMTYPE_LOOKASIDE = 0x02,    // Might have been lookaside memory
-	MEMTYPE_SCRATCH = 0x04,      // Scratch allocations
-	MEMTYPE_PCACHE = 0x08,       // Page cache allocations
-	MEMTYPE_DB = 0x10,           // Uses sqlite3DbMalloc, not sqlite_malloc
-};
-
-#if MEMDEBUG
-__device__ inline static void _memdbg_settype(void *p, MEMTYPE memType) { }
-__device__ inline static bool _memdbg_hastype(void *p, MEMTYPE memType) { return true; }
-__device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return true; }
-#else
-#define _memdbg_settype(X,Y) // no-op
-#define _memdbg_hastype(X,Y) true
-#define _memdbg_nottype(X,Y) true
-#endif
-
-// BenignMallocHooks
-#ifndef OMIT_BUILTIN_TEST
-__device__ void _benignalloc_hook(void (*benignBegin)(), void (*benignEnd)());
-__device__ void _benignalloc_begin();
-__device__ void _benignalloc_end();
-#else
-#define _benignalloc_begin()
-#define _benignalloc_end()
-#endif
-//
-__device__ void *__allocsystem_alloc(size_t size);
-__device__ void __allocsystem_free(void *prior);
-__device__ void *__allocsystem_realloc(void *prior, size_t size);
-__device__ size_t __allocsystem_size(void *prior);
-__device__ size_t __allocsystem_roundup(size_t size);
-__device__ int __allocsystem_init(void *p);
-__device__ void __allocsystem_shutdown(void *p);
-//
-//__device__ void __alloc_setmemoryalarm(int (*callback)(void*,long long,int), void *arg, long long threshold);
-//__device__ long long __alloc_softheaplimit64(long long n);
-//__device__ void __alloc_softheaplimit(int n);
-__device__ int _alloc_init();
-__device__ bool _alloc_heapnearlyfull();
-__device__ void _alloc_shutdown();
-//__device__ long long __alloc_memoryused();
-//__device__ long long __alloc_memoryhighwater(bool resetFlag);
-__device__ void *_alloc(size_t size);
-__device__ void *_scratchalloc(size_t size);
-__device__ void _scratchfree(void *p);
-__device__ size_t _allocsize(void *p);
-__device__ size_t _tagallocsize(TagBase *tag, void *p);
-__device__ void _free(void *p);
-__device__ void _tagfree(TagBase *tag, void *p);
-__device__ void *_realloc(void *old, size_t newSize);
-__device__ void *_allocZero(size_t size);
-__device__ void *_tagallocZero(TagBase *tag, size_t size);
-__device__ void *_tagalloc(TagBase *tag, size_t size);
-__device__ void *_tagrealloc(TagBase *tag, void *old, size_t size);
-__device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize);
-__device__ char *_tagstrdup(TagBase *tag, const char *z);
-__device__ char *_tagstrndup(TagBase *tag, const char *z, int n);
-
-// On systems with ample stack space and that support alloca(), make use of alloca() to obtain space for large automatic objects.  By default,
-// obtain space from malloc().
-//
-// The alloca() routine never returns NULL.  This will cause code paths that deal with sqlite3StackAlloc() failures to be unreachable.
-#ifdef USE_ALLOCA
-#define _stackalloc(D,N) alloca(N)
-#define _stackallocZero(D,N) _memset(alloca(N), 0, N)
-#define _stackfree(D,P)       
-#else
-#define _stackalloc(D,N) _tagalloc(D,N)
-#define _stackallocZero(D,N) _tagallocZero(D,N)
-#define _stackfree(D,P) _tagfree(D,P)
-#endif
-
-typedef void (*Destructor_t)(void *);
-#define DESTRUCTOR_STATIC ((Destructor_t)0)
-#define DESTRUCTOR_TRANSIENT ((Destructor_t)-1)
-#define DESTRUCTOR_DYNAMIC ((Destructor_t)_allocsize)
-
-//__device__ inline static void *_alloc(size_t size) { return (char *)malloc(size); }
-//__device__ inline static void *_allocZero(size_t size, bool clear) { char *b = (char *)malloc(size); if (clear) _memset(b, 0, size); return b; }
-//__device__ inline static void *_tagalloc(TagBase *tag, size_t size) { return (char *)malloc(size); }
-//__device__ inline static void *_tagallocZero(TagBase *tag, size_t size, bool clear) { char *b = (char *)malloc(size); if (clear) _memset(b, 0, size); return b; }
-//__device__ inline static void _free(void *p) { if (p) free(p); }
-//__device__ inline static void _tagfree(TagBase *tag, void *p) { if (p) free(p); }
-//#if __CUDACC__
-//__device__ inline static size_t _allocsize(void *p) { return 0; }
-//__device__ inline static size_t _tagallocsize(TagBase *tag, void *p) { return 0; }
-//__device__ inline static void *_scratchalloc(TagBase *tag, size_t size, bool clear) { char *b = (char *)malloc(size); if (clear) _memset(b, 0, size); return b; }
-//__device__ inline static void _scratchfree(TagBase *tag, void *p) { if (p) free(p); }
-//__device__ inline static void *_realloc(void *old, size_t newSize)
-//{
-//	void *new_ = malloc(newSize);
-//	if (old) { _memcpy(new_, old, newSize); free(old); }
-//	return new_;
-//}
-//__device__ inline static void *_tagrealloc(TagBase *tag, void *old, size_t newSize)
-//{ 
-//	void *new_ = malloc(newSize);
-//	if (old) { _memcpy(new_, old, newSize); free(old); }
-//	return new_;
-//}
-//#else
-//__device__ inline static size_t _allocsize(void *p) { return (p ? _msize(p) : 0); }
-////{
-////	_assert(_memdbg_hastype(p, MEMTYPE_HEAP));
-////	_assert(_memdbg_nottype(p, MEMTYPE_DB));
-////	return 0; 
-////}
-//__device__ inline static size_t _tagallocsize(TagBase *tag, void *p) { return (p ? _msize(p) : 0); }
-////{
-////	_assert(_memdbg_hastype(p, MEMTYPE_HEAP));
-////	_assert(_memdbg_nottype(p, MEMTYPE_DB));
-////	return 0; 
-////}
-//__device__ __forceinline static void *_scratchalloc(TagBase *tag, size_t size, bool clear) { char *b = (char *)malloc(size); if (clear) _memset(b, 0, size); return b; }
-//__device__ __forceinline static void _scratchfree(TagBase *tag, void *p) { if (p != nullptr) free(p); }
-//__device__ __forceinline static void *_realloc(void *old, size_t newSize) { return realloc(old, newSize); }
-//__device__ __forceinline static void *_tagrealloc(TagBase *tag, void *old, size_t newSize) { return realloc(old, newSize); }
-//#endif
-
-
-
-
-//__device__ inline static void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
-//{
-//	void *p = _tagrealloc(tag, old, newSize);
-//	if (!p) _tagfree(tag, old);
-//	return p;
-//}
-//
-//__device__ inline static char *_tagstrdup(TagBase *tag, const char *z)
-//{
-//	if (z == nullptr) return nullptr;
-//	size_t n = _strlen30(z) + 1;
-//	_assert((n & 0x7fffffff) == n);
-//	char *newZ = (char *)_tagalloc(tag, (int)n);
-//	if (newZ)
-//		_memcpy(newZ, (char *)z, n);
-//	return newZ;
-//}
-//
-//__device__ inline static char *_tagstrndup(TagBase *tag, const char *z, int n)
-//{
-//	if (z == nullptr) return nullptr;
-//	_assert((n & 0x7fffffff) == n);
-//	char *newZ = (char *)_tagalloc(tag, n + 1);
-//	if (newZ)
-//	{
-//		_memcpy(newZ, (char *)z, n);
-//		newZ[n] = 0;
-//	}
-//	return newZ;
-//}
-
-#pragma endregion
-
-//////////////////////
 // FUNC
 #pragma region FUNC
 
@@ -440,6 +270,8 @@ template <typename T> __device__ __forceinline int _strncmp(const T *left, const
 #define _fstrncmp(x, y) (_tolower(*(unsigned char *)(x))==_tolower(*(unsigned char *)(y))&&!_strcmp((x)+1,(y)+1))
 
 // memcpy
+#define _memcpy memcpy
+#if 0
 template <typename T> __device__ __forceinline void _memcpy(T *dest, const T *src, size_t length)
 {
 	register unsigned char *a, *b;
@@ -456,8 +288,11 @@ template <typename T> __device__ __forceinline void _memcpy(T *dest, T *src, siz
 	for (size_t i = 0; i < length; ++i, ++a, ++b)
 		*a = *b;
 }
+#endif
 
 // memset
+#define _memset memset
+#if 0
 template <typename T> __device__ __forceinline void _memset(T *dest, const char value, size_t length)
 {
 	register unsigned char *a;
@@ -465,6 +300,7 @@ template <typename T> __device__ __forceinline void _memset(T *dest, const char 
 	for (size_t i = 0; i < length; ++i, ++a)
 		*a = value;
 }
+#endif
 
 // memcmp
 template <typename T, typename Y> __device__ __forceinline int _memcmp(T *left, Y *right, size_t length)
@@ -539,6 +375,125 @@ __device__ inline bool _isnan(double x)
 #endif
 }
 #endif
+
+#pragma endregion
+
+//////////////////////
+// MEMORY ALLOCATION
+#pragma region MEMORY ALLOCATION
+
+#define _ROUNDT(t, x)	(((x)+sizeof(t)-1)&~(sizeof(t)-1))
+#define _ROUND8(x)		(((x)+7)&~7)
+#define _ROUNDDOWN8(x)	((x)&~7)
+#ifdef BYTEALIGNED4
+#define _HASALIGNMENT8(X) ((((char *)(X) - (char *)0)&3) == 0)
+#else
+#define _HASALIGNMENT8(X) ((((char *)(X) - (char *)0)&7) == 0)
+#endif
+
+enum MEMTYPE : unsigned char
+{
+	MEMTYPE_HEAP = 0x01,         // General heap allocations
+	MEMTYPE_LOOKASIDE = 0x02,    // Might have been lookaside memory
+	MEMTYPE_SCRATCH = 0x04,      // Scratch allocations
+	MEMTYPE_PCACHE = 0x08,       // Page cache allocations
+	MEMTYPE_DB = 0x10,           // Uses sqlite3DbMalloc, not sqlite_malloc
+};
+
+#if MEMDEBUG
+__device__ inline static void _memdbg_settype(void *p, MEMTYPE memType) { }
+__device__ inline static bool _memdbg_hastype(void *p, MEMTYPE memType) { return true; }
+__device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return true; }
+#else
+#define _memdbg_settype(X,Y) // no-op
+#define _memdbg_hastype(X,Y) true
+#define _memdbg_nottype(X,Y) true
+#endif
+
+// BenignMallocHooks
+#ifndef OMIT_BUILTIN_TEST
+__device__ void _benignalloc_hook(void (*benignBegin)(), void (*benignEnd)());
+__device__ void _benignalloc_begin();
+__device__ void _benignalloc_end();
+#else
+#define _benignalloc_begin()
+#define _benignalloc_end()
+#endif
+//
+__device__ void *__allocsystem_alloc(size_t size);
+__device__ void __allocsystem_free(void *prior);
+__device__ void *__allocsystem_realloc(void *prior, size_t size);
+__device__ size_t __allocsystem_size(void *prior);
+__device__ size_t __allocsystem_roundup(size_t size);
+__device__ int __allocsystem_init(void *p);
+__device__ void __allocsystem_shutdown(void *p);
+//
+//__device__ void __alloc_setmemoryalarm(int (*callback)(void*,long long,int), void *arg, long long threshold);
+//__device__ long long __alloc_softheaplimit64(long long n);
+//__device__ void __alloc_softheaplimit(int n);
+__device__ int _alloc_init();
+__device__ bool _alloc_heapnearlyfull();
+__device__ void _alloc_shutdown();
+//__device__ long long __alloc_memoryused();
+//__device__ long long __alloc_memoryhighwater(bool resetFlag);
+__device__ void *_alloc(size_t size);
+__device__ void *_scratchalloc(size_t size);
+__device__ void _scratchfree(void *p);
+__device__ size_t _allocsize(void *p);
+__device__ size_t _tagallocsize(TagBase *tag, void *p);
+__device__ void _free(void *p);
+__device__ void _tagfree(TagBase *tag, void *p);
+__device__ void *_realloc(void *old, size_t newSize);
+__device__ void *_allocZero(size_t size);
+__device__ void *_tagallocZero(TagBase *tag, size_t size);
+__device__ void *_tagalloc(TagBase *tag, size_t size);
+__device__ void *_tagrealloc(TagBase *tag, void *old, size_t size);
+//__device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize);
+__device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
+{
+	void *p = _tagrealloc(tag, old, newSize);
+	if (!p) _tagfree(tag, old);
+	return p;
+}
+
+//__device__ char *_tagstrdup(TagBase *tag, const char *z);
+__device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
+{
+	if (z == nullptr) return nullptr;
+	size_t n = _strlen30(z) + 1;
+	_assert((n & 0x7fffffff) == n);
+	char *newZ = (char *)_tagalloc(tag, (int)n);
+	if (newZ) _memcpy(newZ, (char *)z, n);
+	return newZ;
+}
+//__device__ char *_tagstrndup(TagBase *tag, const char *z, int n);
+__device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n)
+{
+	if (z == nullptr) return nullptr;
+	_assert((n & 0x7fffffff) == n);
+	char *newZ = (char *)_tagalloc(tag, n + 1);
+	if (newZ) { _memcpy(newZ, (char *)z, n); newZ[n] = 0; }
+	return newZ;
+}
+
+// On systems with ample stack space and that support alloca(), make use of alloca() to obtain space for large automatic objects.  By default,
+// obtain space from malloc().
+//
+// The alloca() routine never returns NULL.  This will cause code paths that deal with sqlite3StackAlloc() failures to be unreachable.
+#ifdef USE_ALLOCA
+#define _stackalloc(D,N) alloca(N)
+#define _stackallocZero(D,N) _memset(alloca(N), 0, N)
+#define _stackfree(D,P)       
+#else
+#define _stackalloc(D,N) _tagalloc(D,N)
+#define _stackallocZero(D,N) _tagallocZero(D,N)
+#define _stackfree(D,P) _tagfree(D,P)
+#endif
+
+typedef void (*Destructor_t)(void *);
+#define DESTRUCTOR_STATIC ((Destructor_t)0)
+#define DESTRUCTOR_TRANSIENT ((Destructor_t)-1)
+#define DESTRUCTOR_DYNAMIC ((Destructor_t)_allocsize)
 
 #pragma endregion
 

@@ -657,7 +657,7 @@ namespace Core
 				step = trigger->StepList = (TriggerStep *)&trigger[1];
 				step->Target.data = (char *)&step[1];
 				step->Target.length = fromNameLength;
-				_memcpy(step->Target.data, fromName, fromNameLength);
+				_memcpy((void *)step->Target.data, fromName, fromNameLength);
 
 				step->Where = Expr::Dup(ctx, where_, EXPRDUP_REDUCE);
 				step->ExprList = Expr::ListDup(ctx, list, EXPRDUP_REDUCE);

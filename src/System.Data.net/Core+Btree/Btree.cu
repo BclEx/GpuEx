@@ -1785,7 +1785,7 @@ page1_init_failed:
 		uint8 *data = p1->Data;
 		RC rc = Pager::Write(p1->DBPage);
 		if (rc) return rc;
-		_memcpy<char>((char *)data, _magicHeader, sizeof(_magicHeader));
+		_memcpy((char *)data, _magicHeader, sizeof(_magicHeader));
 		_assert(sizeof(_magicHeader) == 16);
 		data[16] = (uint8)((bt->PageSize >> 8) & 0xff);
 		data[17] = (uint8)((bt->PageSize >> 16) & 0xff);

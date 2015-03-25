@@ -1065,7 +1065,6 @@ __global__ static void RenderBlock(struct runtimeHeap_s *heap, quad4 *b, size_t 
 	}
 }
 
-__device__ static int _printf(const char *fmt);
 __global__ static void Keypress(struct runtimeHeap_s *heap, unsigned char key)
 {
 	_runtimeSetHeap(heap);

@@ -525,6 +525,7 @@ __device__ void *_tagrealloc(TagBase *tag, void *old, size_t size)
 	return p;
 }
 
+#if 0
 // Attempt to reallocate p.  If the reallocation fails, then free p and set the mallocFailed flag in the database connection.
 __device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
 {
@@ -542,10 +543,8 @@ __device__ char *_tagstrdup(TagBase *tag, const char *z)
 	size_t n = _strlen30(z) + 1;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_tagalloc(tag, (int)n);
-	if (newZ)
-		_memcpy(newZ, (char *)z, n);
+	if (newZ) _memcpy(newZ, (char *)z, n);
 	return newZ;
-
 }
 
 __device__ char *_tagstrndup(TagBase *tag, const char *z, int n)
@@ -553,10 +552,7 @@ __device__ char *_tagstrndup(TagBase *tag, const char *z, int n)
 	if (z == nullptr) return nullptr;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_tagalloc(tag, n + 1);
-	if (newZ)
-	{
-		_memcpy(newZ, z, n);
-		newZ[n] = 0;
-	}
+	if (newZ) { _memcpy(newZ, z, n); newZ[n] = 0; }
 	return newZ;
 }
+#endif
