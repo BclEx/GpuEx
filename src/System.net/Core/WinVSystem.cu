@@ -18,21 +18,21 @@ namespace Core
 #endif
 
 #ifdef TEST
-	int io_error_hit = 0;            // Total number of I/O Errors
-	int io_error_hardhit = 0;        // Number of non-benign errors
-	int io_error_pending = 0;        // Count down to first I/O error
-	int io_error_persist = 0;        // True if I/O errors persist
-	int io_error_benign = 0;         // True if errors are benign
-	int diskfull_pending = 0;
-	int diskfull = 0;
-#define SimulateIOErrorBenign(X) io_error_benign=(X)
+	__device__ int g_io_error_hit = 0;            // Total number of I/O Errors
+	__device__ int g_io_error_hardhit = 0;        // Number of non-benign errors
+	__device__ int g_io_error_pending = 0;        // Count down to first I/O error
+	__device__ int g_io_error_persist = 0;        // True if I/O errors persist
+	__device__ int g_io_error_benign = 0;         // True if errors are benign
+	__device__ int g_diskfull_pending = 0;
+	__device__ int g_diskfull = 0;
+#define SimulateIOErrorBenign(X) g_io_error_benign=(X)
 #define SimulateIOError(CODE) \
-	if ((io_error_persist && io_error_hit) || io_error_pending-- == 1) { local_ioerr(); CODE; }
-	static void local_ioerr() { OSTRACE("IOERR\n"); io_error_hit++; if (!io_error_benign) io_error_hardhit++; }
+	if ((g_io_error_persist && g_io_error_hit) || g_io_error_pending-- == 1) { local_ioerr(); CODE; }
+	__device__ static void local_ioerr() { OSTRACE("IOERR\n"); g_io_error_hit++; if (!g_io_error_benign) g_io_error_hardhit++; }
 #define SimulateDiskfullError(CODE) \
-	if (diskfull_pending) { if (diskfull_pending == 1) { \
-	local_ioerr(); diskfull = 1; io_error_hit = 1; CODE; \
-	} else diskfull_pending--; }
+	if (g_diskfull_pending) { if (g_diskfull_pending == 1) { \
+	local_ioerr(); g_diskfull = 1; g_io_error_hit = 1; CODE; \
+	} else g_diskfull_pending--; }
 #else
 #define SimulateIOErrorBenign(X)
 #define SimulateIOError(A)
@@ -776,6 +776,7 @@ namespace Core
 	void win32_Sleep(DWORD milliseconds)
 	{
 #if OS_WINRT
+
 		if (sleepObj == NULL)
 			sleepObj = osCreateEventExW(NULL, NULL, CREATE_EVENT_MANUAL_RESET, SYNCHRONIZE);
 		_assert(sleepObj != NULL);
@@ -1086,8 +1087,8 @@ namespace Core
 
 #pragma region Win32
 
-	char *data_directory;
-	char *temp_directory;
+	char *g_data_directory;
+	char *g_temp_directory;
 	RC win32_SetDirectory(DWORD type, LPCWSTR value)
 	{
 #ifndef OMIT_AUTOINIT
@@ -1096,9 +1097,9 @@ namespace Core
 #endif
 		char **directory = nullptr;
 		if (type == WIN32_DATA_DIRECTORY_TYPE)
-			directory = &data_directory;
+			directory = &g_data_directory;
 		else if (type == WIN32_TEMP_DIRECTORY_TYPE)
-			directory = &temp_directory;
+			directory = &g_temp_directory;
 		_assert(!directory || type == WIN32_DATA_DIRECTORY_TYPE || type == WIN32_TEMP_DIRECTORY_TYPE);
 		_assert(!directory || _memdbg_hastype(*directory, MEMTYPE_HEAP));
 		if (directory)
@@ -1123,8 +1124,7 @@ namespace Core
 
 	static RC getLastErrorMsg(DWORD lastErrno, int bufLength, char *buf)
 	{
-		// FormatMessage returns 0 on failure.  Otherwise it returns the number of TCHARs written to the output
-		// buffer, excluding the terminating null char.
+		// FormatMessage returns 0 on failure.  Otherwise it returns the number of TCHARs written to the output buffer, excluding the terminating null char.
 		DWORD dwLen = 0;
 		char *out = nullptr;
 		if (isNT())
@@ -2481,8 +2481,8 @@ shmpage_out:
 		SimulateIOError(return RC_IOERR);
 		char tempPath[MAX_PATH+2];
 		memset(tempPath, 0, MAX_PATH+2);
-		if (temp_directory)
-			__snprintf(tempPath, MAX_PATH-30, "%s", temp_directory);
+		if (g_temp_directory)
+			__snprintf(tempPath, MAX_PATH-30, "%s", g_temp_directory);
 #if !OS_WINRT
 		else if (isNT())
 		{
@@ -2608,7 +2608,7 @@ shmpage_out:
 		file->H = INVALID_HANDLE_VALUE;
 
 #if OS_WINRT
-		if (!temp_directory)
+		if (!g_temp_directory)
 			SysEx_LOG(RC_ERROR, "sqlite3_temp_directory variable should be set for WinRT");
 #endif
 
@@ -2626,7 +2626,7 @@ shmpage_out:
 		}
 
 		// Database filenames are double-zero terminated if they are not URIs with parameters.  Hence, they can always be passed into sqlite3_uri_parameter().
-		_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[strlen(utf8Name)+1]==0);
+		_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[strlen(utf8Name)+1] == 0);
 
 		// Convert the filename to the system encoding.
 		void *converted = ConvertUtf8Filename(utf8Name); // Filename in OS encoding
@@ -2645,8 +2645,7 @@ shmpage_out:
 		else
 			dwDesiredAccess = GENERIC_READ;
 
-		// SQLITE_OPEN_EXCLUSIVE is used to make sure that a new file is created. SQLite doesn't use it to indicate "exclusive access"
-		// as it is usually understood.
+		// SQLITE_OPEN_EXCLUSIVE is used to make sure that a new file is created. SQLite doesn't use it to indicate "exclusive access" as it is usually understood.
 		DWORD dwCreationDisposition;
 		if (isExclusive) // Creates a new file, only if it does not already exist. If the file exists, it fails.
 			dwCreationDisposition = CREATE_NEW;
@@ -2904,12 +2903,12 @@ shmpage_out:
 		_assert(fullLength >= MaxPathname);
 		// NOTE: We are dealing with a relative path name and the data directory has been set.  Therefore, use it as the basis
 		//       for converting the relative path name to an absolute one by prepending the data directory and a slash.
-		if (data_directory && !winIsVerbatimPathname(relative))
+		if (g_data_directory && !winIsVerbatimPathname(relative))
 		{
 			char out[MAX_PATH+1];
 			memset(out, 0, MAX_PATH+1);
 			cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, relative, out, MAX_PATH+1);
-			_snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", data_directory, out);
+			_snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", g_data_directory, out);
 		}
 		else
 			cygwin_conv_path(CCP_POSIX_TO_WIN_A, relative, full, fullLength);
@@ -2921,8 +2920,8 @@ shmpage_out:
 		// WinRT has no way to convert a relative path to an absolute one.
 		// NOTE: We are dealing with a relative path name and the data directory has been set.  Therefore, use it as the basis
 		//       for converting the relative path name to an absolute one by prepending the data directory and a backslash.
-		if (data_directory && !winIsVerbatimPathname(relative))
-			_snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", data_directory, relative);
+		if (g_data_directory && !winIsVerbatimPathname(relative))
+			_snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", g_data_directory, relative);
 		else
 			_snprintf(full, MIN(fullLength, MaxPathname), "%s", relative);
 		return RC_OK;
@@ -2936,9 +2935,9 @@ shmpage_out:
 		SimulateIOError(return RC_ERROR);
 		// NOTE: We are dealing with a relative path name and the data directory has been set.  Therefore, use it as the basis
 		//       for converting the relative path name to an absolute one by prepending the data directory and a backslash.
-		if (data_directory && !winIsVerbatimPathname(relative))
+		if (g_data_directory && !winIsVerbatimPathname(relative))
 		{
-			_snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", data_directory, relative);
+			_snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", g_data_directory, relative);
 			return RC_OK;
 		}
 		void *converted = ConvertUtf8Filename(relative);

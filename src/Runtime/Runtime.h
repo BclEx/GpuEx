@@ -270,7 +270,7 @@ template <typename T> __device__ __forceinline int _strncmp(const T *left, const
 #define _fstrncmp(x, y) (_tolower(*(unsigned char *)(x))==_tolower(*(unsigned char *)(y))&&!_strcmp((x)+1,(y)+1))
 
 // memcpy
-#define _memcpy memcpy
+#define _memcpy(dest, src, length) if (length) memcpy(dest, src, length)
 #if 0
 template <typename T> __device__ __forceinline void _memcpy(T *dest, const T *src, size_t length)
 {
@@ -291,7 +291,7 @@ template <typename T> __device__ __forceinline void _memcpy(T *dest, T *src, siz
 #endif
 
 // memset
-#define _memset memset
+#define _memset(dest, value, length) if (length) memset(dest, value, length)
 #if 0
 template <typename T> __device__ __forceinline void _memset(T *dest, const char value, size_t length)
 {
@@ -704,5 +704,7 @@ __device__ inline static void _mtagassignf(char **src, TagBase *tag, const char 
 #endif
 
 #pragma endregion
+
+__device__ void __sleep(int milliseconds) { }
 
 #endif // __RUNTIME_H__

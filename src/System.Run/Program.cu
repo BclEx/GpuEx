@@ -9,8 +9,8 @@ void GMain(cudaDeviceHeap &r) {
 #else
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
-__testSystem(r);
-//__testSystemIO(r);
+//__testSystem(r);
+__testSystemIO(r);
 }
 
 #if __CUDACC__
