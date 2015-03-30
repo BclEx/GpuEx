@@ -1392,7 +1392,7 @@ namespace Core
 			}
 		}
 		// Want a pending lock?
-		else if (fFileOffsetLow == (DWORD)PENDING_BYTE && numberOfBytesToLockLow == 1)
+		else if (fileOffsetLow == (DWORD)PENDING_BYTE && numberOfBytesToLockLow == 1)
 		{
 			// If no pending lock has been acquired, then acquire it
 			if (!file->Shared->Pending) 
@@ -1546,7 +1546,7 @@ namespace Core
 #endif
 	}
 
-#define MX_CLOSE_ATTEMPT 3
+#define MAX_CLOSE_ATTEMPT 3
 	RC WinVFile::Close_()
 	{
 #ifndef OMIT_WAL
@@ -1559,7 +1559,7 @@ namespace Core
 		do
 		{
 			rc = osCloseHandle(H);
-		} while (!rc && ++cnt < MX_CLOSE_ATTEMPT && (win32_Sleep(100), 1));
+		} while (!rc && ++cnt < MAX_CLOSE_ATTEMPT && (win32_Sleep(100), 1));
 #if OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
 		winceDestroyLock(this);
@@ -1567,7 +1567,7 @@ namespace Core
 		{
 			int cnt = 0;
 			while (osDeleteFileW(DeleteOnClose) == 0 && osGetFileAttributesW(DeleteOnClose) != 0xffffffff && cnt++ < WINCE_DELETION_ATTEMPTS)
-				win32_Sleep(100);  // Wait a little before trying again
+				win32_Sleep(100); // Wait a little before trying again
 			_free(DeleteOnClose);
 		}
 #endif
@@ -2523,7 +2523,7 @@ shmpage_out:
 		for (i = tempPathLength; i > 0 && tempPath[i-1] == '\\'; i--) { }
 		tempPath[i] = 0;
 		size_t j;
-		__snprintf(buf, bufLength-18, (tempPathLength > 0 ? "%s\\"TEMP_FILE_PREFIX : TEMP_FILE_PREFIX, tempPath));
+		__snprintf(buf, bufLength-18, (tempPathLength > 0 ? "%s\\"TEMP_FILE_PREFIX : TEMP_FILE_PREFIX), tempPath);
 		j = _strlen30(buf);
 		SysEx::PutRandom(15, &buf[j]);
 		for (i = 0; i < 15; i++, j++)

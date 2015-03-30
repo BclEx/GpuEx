@@ -2,10 +2,12 @@
 #define OS_GPU 1
 #if OS_GPU
 #include "Core.cu.h"
+#include <RuntimeOS.h>
 #include <new.h>
 
 namespace Core
 {
+
 #pragma region Preamble
 
 #if defined(TEST) || defined(_DEBUG)
@@ -14,10 +16,6 @@ namespace Core
 #else
 #define OSTRACE(X, ...)
 #endif
-
-#define HANDLE int
-#define DWORD unsigned long
-#define INVALID_HANDLE_VALUE -1
 
 #ifdef TEST
 	__device__ int g_io_error_hit = 0;            // Total number of I/O Errors
@@ -51,45 +49,35 @@ namespace Core
 
 #define MAX_PATH 100
 
+	// LOCKFILE_FAIL_IMMEDIATELY is undefined on some Windows systems.
+#ifndef LOCKFILE_FAIL_IMMEDIATELY
+#define LOCKFILE_FAIL_IMMEDIATELY 1
+#endif
+#ifndef LOCKFILE_EXCLUSIVE_LOCK
+#define LOCKFILE_EXCLUSIVE_LOCK 2
+#endif
 
-#define INVALID_FILE_ATTRIBUTES ((DWORD)-1) 
-#define GENERIC_READ                     (0x80000000L)
-#define GENERIC_WRITE                    (0x40000000L)
-#define GENERIC_EXECUTE                  (0x20000000L)
-#define GENERIC_ALL                      (0x10000000L)
-
-#define CREATE_NEW          1
-#define CREATE_ALWAYS       2
-#define OPEN_EXISTING       3
-#define OPEN_ALWAYS         4
-#define TRUNCATE_EXISTING   5
-#define FILE_SHARE_READ                 0x00000001
-#define FILE_SHARE_WRITE                0x00000002
-#define FILE_SHARE_DELETE               0x00000004
-#define FILE_ATTRIBUTE_READONLY             0x00000001
-#define FILE_ATTRIBUTE_HIDDEN               0x00000002
-#define FILE_ATTRIBUTE_SYSTEM               0x00000004
-#define FILE_ATTRIBUTE_DIRECTORY            0x00000010
-	//#define FILE_ATTRIBUTE_ARCHIVE              0x00000020
-	//#define FILE_ATTRIBUTE_DEVICE               0x00000040
-#define FILE_ATTRIBUTE_NORMAL               0x00000080
-#define FILE_ATTRIBUTE_TEMPORARY            0x00000100
-	//#define FILE_ATTRIBUTE_SPARSE_FILE          0x00000200
-	//#define FILE_ATTRIBUTE_REPARSE_POINT        0x00000400
-	//#define FILE_ATTRIBUTE_COMPRESSED           0x00000800
-	//#define FILE_ATTRIBUTE_OFFLINE              0x00001000
-	//#define FILE_ATTRIBUTE_NOT_CONTENT_INDEXED  0x00002000
-	//#define FILE_ATTRIBUTE_ENCRYPTED            0x00004000
-	//#define FILE_ATTRIBUTE_INTEGRITY_STREAM     0x00008000
-	//#define FILE_ATTRIBUTE_VIRTUAL              0x00010000
-	//#define FILE_ATTRIBUTE_NO_SCRUB_DATA        0x00020000
-#define FILE_FLAG_DELETE_ON_CLOSE       0x04000000
-
-#define NO_ERROR 0L // dderror
+	// Historically, SQLite has used both the LockFile and LockFileEx functions. When the LockFile function was used, it was always expected to fail
+	// immediately if the lock could not be obtained.  Also, it always expected to obtain an exclusive lock.  These flags are used with the LockFileEx function
+	// and reflect those expectations; therefore, they should not be changed.
+#ifndef LOCKFILE_FLAGS
+#define LOCKFILE_FLAGS (LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK)
+#endif
+#ifndef LOCKFILEEX_FLAGS
+#define LOCKFILEEX_FLAGS (LOCKFILE_FAIL_IMMEDIATELY)
+#endif
 
 #pragma endregion
 
 #pragma region GpuVFile
+
+	typedef struct gpuLock
+	{
+		int Readers;       // Number of reader locks obtained
+		bool Pending;      // Indicates a pending lock has been obtained
+		bool Reserved;     // Indicates a reserved lock has been obtained
+		bool Exclusive;    // Indicates an exclusive lock has been obtained
+	} gpuLock;
 
 	// gpuFile
 	class GpuVFile : public VFile
@@ -98,9 +86,16 @@ namespace Core
 		VSystem *Vfs;			// The VFS used to open this file
 		HANDLE H;				// Handle for accessing the file
 		LOCK Lock_;				// Type of lock currently held on this file
+		short SharedLockByte;   // Randomly chosen byte used as a shared lock
 		DWORD LastErrno;		// The Windows errno from the last I/O error
 		const char *Path;		// Full pathname of this file
 		int SizeChunk;          // Chunk size configured by FCNTL_CHUNK_SIZE
+		//
+		char *DeleteOnClose;	// Name of file to delete when closing
+		HANDLE Mutex;			// Mutex used to control access to shared lock
+		HANDLE SharedHandle;	// Shared memory segment used for locking
+		gpuLock Local;			// Locks obtained by this instance of winFile
+		gpuLock *Shared;		// Global shared lock memory for the file
 
 	public:
 		__device__ virtual RC Read(void *buffer, int amount, int64 offset);
@@ -188,7 +183,7 @@ namespace Core
 		if (directory)
 		{
 			_free(*directory);
-			*directory = value;
+			*directory = (char *)value;
 			return RC_OK;
 		}
 		return RC_ERROR;
@@ -203,21 +198,21 @@ namespace Core
 		// FormatMessage returns 0 on failure.  Otherwise it returns the number of TCHARs written to the output buffer, excluding the terminating null char.
 		DWORD dwLen = 0;
 		char *out = nullptr;
-		LPWSTR tempWide = NULL;
-		dwLen = osFormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastErrno, 0, (LPWSTR)&tempWide, 0, 0);
-		if (dwLen > 0)
-		{
-			// allocate a buffer and convert to UTF8
-			_benignalloc_begin();
-			out = UnicodeToUtf8(tempWide);
-			_benignalloc_end();
-		}
+		//LPWSTR tempWide = NULL;
+		//dwLen = osFormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastErrno, 0, (LPWSTR)&tempWide, 0, 0);
+		//if (dwLen > 0)
+		//{
+		//	// allocate a buffer and convert to UTF8
+		//	_benignalloc_begin();
+		//	out = UnicodeToUtf8(tempWide);
+		//	_benignalloc_end();
+		//}
 		if (!dwLen)
-			_snprintf(buf, bufLength, "OsError 0x%x (%u)", lastErrno, lastErrno);
+			__snprintf(buf, bufLength, "OsError 0x%x (%u)", lastErrno, lastErrno);
 		else
 		{
 			// copy a maximum of nBuf chars to output buffer
-			_snprintf(buf, bufLength, "%s", out);
+			__snprintf(buf, bufLength, "%s", out);
 			// free the UTF8 buffer
 			_free(out);
 		}
@@ -239,14 +234,14 @@ namespace Core
 		return errcode;
 	}
 
-#ifndef WIN32_IOERR_RETRY
-#define WIN32_IOERR_RETRY 1
+#ifndef GPU_IOERR_RETRY
+#define GPU_IOERR_RETRY 1
 #endif
-#ifndef WIN32_IOERR_RETRY_DELAY
-#define WIN32_IOERR_RETRY_DELAY 10
+#ifndef GPU_IOERR_RETRY_DELAY
+#define GPU_IOERR_RETRY_DELAY 10
 #endif
-	__device__ static int gpuIoerrRetry = WIN32_IOERR_RETRY;
-	__device__ static int gpuIoerrRetryDelay = WIN32_IOERR_RETRY_DELAY;
+	__device__ static int gpuIoerrRetry = GPU_IOERR_RETRY;
+	__device__ static int gpuIoerrRetryDelay = GPU_IOERR_RETRY_DELAY;
 
 	__device__ static int retryIoerr(int *retry, DWORD *error)
 	{
@@ -259,7 +254,7 @@ namespace Core
 		}
 		if (e == ERROR_ACCESS_DENIED || e == ERROR_LOCK_VIOLATION || e == ERROR_SHARING_VIOLATION)
 		{
-			__sleep(gpuIoerrRetryDelay*(1+*retry));
+			_sleep(gpuIoerrRetryDelay*(1+*retry));
 			++*retry;
 			return 1;
 		}
@@ -271,49 +266,297 @@ namespace Core
 	__device__ static void logIoerr(int retry)
 	{
 		if (retry)
-			SysEx_LOG(RC_IOERR, "delayed %dms for lock/sharing conflict", win32IoerrRetryDelay*retry*(retry+1)/2);
+			SysEx_LOG(RC_IOERR, "delayed %dms for lock/sharing conflict", gpuIoerrRetryDelay*retry*(retry+1)/2);
+	}
+
+#pragma endregion
+
+#pragma region GPU Only
+
+	__device__ static void *ConvertFilename(const char *name)
+	{
+		void *converted = nullptr;
+		int length = _strlen30(name);
+		converted = _alloc(length);
+		_memcpy(converted, name, length);
+		return converted;
+	}
+
+#define HANDLE_TO_GPUFILE(a) (GpuVFile*)&((char*)a)[-(int)offsetof(GpuVFile,H)]
+
+	__device__ static void gpuMutexAcquire(HANDLE h)
+	{
+		DWORD err;
+		do
+		{
+			err = osWaitForSingleObject(h, INFINITE);
+		} while (err != WAIT_OBJECT_0 && err != WAIT_ABANDONED);
+	}
+
+#define gpuMutexRelease(h) ReleaseMutex(h)
+
+	static RC gpuCreateLock(const char *filename, GpuVFile *file)
+	{
+		char *name = (char *)ConvertFilename(filename);
+		if (!name)
+			return RC_IOERR_NOMEM;
+		// Initialize the local lockdata
+		_memset(&file->Local, 0, sizeof(file->Local));
+		// Replace the backslashes from the filename and lowercase it to derive a mutex name.
+		//LPWSTR tok = osCharLowerW(name);
+		//for (; *tok; tok++)
+		//	if (*tok == '\\') *tok = '_';
+		// Create/open the named mutex
+		file->Mutex = osCreateMutexA(NULL, false, name);
+		if (!file->Mutex)
+		{
+			file->LastErrno = osGetLastError();
+			gpuLogError(RC_IOERR, file->LastErrno, "gpuCreateLock1", filename);
+			_free(name);
+			return RC_IOERR;
+		}
+		// Acquire the mutex before continuing
+		gpuMutexAcquire(file->Mutex);
+		// Since the names of named mutexes, semaphores, file mappings etc are case-sensitive, take advantage of that by uppercasing the mutex name
+		// and using that as the shared filemapping name.
+		//osCharUpperW(name);
+		file->SharedHandle = osCreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(gpuLock), name);  
+		// Set a flag that indicates we're the first to create the memory so it must be zero-initialized
+		bool init = true;
+		DWORD lastErrno = osGetLastError();
+		if (lastErrno == ERROR_ALREADY_EXISTS)
+			init = false;
+		_free(name);
+
+		// If we succeeded in making the shared memory handle, map it.
+		bool logged = false;
+		if (file->SharedHandle)
+		{
+			file->Shared = (gpuLock *)osMapViewOfFile(file->SharedHandle, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(gpuLock));
+			// If mapping failed, close the shared memory handle and erase it
+			if (!file->Shared)
+			{
+				file->LastErrno = osGetLastError();
+				gpuLogError(RC_IOERR, file->LastErrno, "gpuCreateLock2", filename);
+				logged = true;
+				osCloseHandle(file->SharedHandle);
+				file->SharedHandle = NULL;
+			}
+		}
+		// If shared memory could not be created, then close the mutex and fail
+		if (!file->SharedHandle)
+		{
+			if (!logged)
+			{
+				file->LastErrno = lastErrno;
+				gpuLogError(RC_IOERR, file->LastErrno, "gpuCreateLock3", filename);
+				logged = true;
+			}
+			gpuMutexRelease(file->Mutex);
+			osCloseHandle(file->Mutex);
+			file->Mutex = NULL;
+			return RC_IOERR;
+		}
+		// Initialize the shared memory if we're supposed to
+		if (init)
+			_memset(file->Shared, 0, sizeof(gpuLock));
+		gpuMutexRelease(file->Mutex);
+		return RC_OK;
+	}
+
+	__device__ static void gpuDestroyLock(GpuVFile *file)
+	{
+		if (file->Mutex)
+		{
+			// Acquire the mutex
+			gpuMutexAcquire(file->Mutex);
+			// The following blocks should probably assert in debug mode, but they are to cleanup in case any locks remained open
+			if (file->Local.Readers)
+				file->Shared->Readers--;
+			if (file->Local.Reserved)
+				file->Shared->Reserved = false;
+			if (file->Local.Pending)
+				file->Shared->Pending = false;
+			if (file->Local.Exclusive)
+				file->Shared->Exclusive = false;
+			// De-reference and close our copy of the shared memory handle
+			osUnmapViewOfFile(file->Shared);
+			osCloseHandle(file->SharedHandle);
+			// Done with the mutex
+			gpuMutexRelease(file->Mutex);    
+			osCloseHandle(file->Mutex);
+			file->Mutex = NULL;
+		}
+	}
+
+	static bool gpuLockFile(LPHANDLE fileHandle, DWORD fileOffsetLow, DWORD fileOffsetHigh, DWORD numberOfBytesToLockLow, DWORD numberOfBytesToLockHigh)
+	{
+		GpuVFile *file = HANDLE_TO_GPUFILE(fileHandle);
+		bool r = false;
+		if (!file->Mutex) return true;
+		gpuMutexAcquire(file->Mutex);
+		// Wanting an exclusive lock?
+		if (fileOffsetLow == (DWORD)SHARED_FIRST && numberOfBytesToLockLow == (DWORD)SHARED_SIZE)
+		{
+			if (file->Shared->Readers == 0 && !file->Shared->Exclusive)
+			{
+				file->Shared->Exclusive = true;
+				file->Local.Exclusive = true;
+				r = true;
+			}
+		}
+		// Want a read-only lock? 
+		else if (fileOffsetLow == (DWORD)SHARED_FIRST && numberOfBytesToLockLow == 1)
+		{
+			if (!file->Shared->Exclusive)
+			{
+				file->Local.Readers++;
+				if (file->Local.Readers == 1)
+					file->Shared->Readers++;
+				r = true;
+			}
+		}
+		// Want a pending lock?
+		else if (fileOffsetLow == (DWORD)PENDING_BYTE && numberOfBytesToLockLow == 1)
+		{
+			// If no pending lock has been acquired, then acquire it
+			if (!file->Shared->Pending) 
+			{
+				file->Shared->Pending = true;
+				file->Local.Pending = true;
+				r = true;
+			}
+		}
+		// Want a reserved lock?
+		else if (fileOffsetLow == (DWORD)RESERVED_BYTE && numberOfBytesToLockLow == 1)
+		{
+			if (!file->Shared->Reserved)
+			{
+				file->Shared->Reserved = true;
+				file->Local.Reserved = true;
+				r = true;
+			}
+		}
+		gpuMutexRelease(file->Mutex);
+		return r;
+	}
+
+	static bool gpuUnlockFile(LPHANDLE fileHandle, DWORD fileOffsetLow, DWORD fileOffsetHigh, DWORD numberOfBytesToUnlockLow, DWORD numberOfBytesToUnlockHigh)
+	{
+		GpuVFile *file = HANDLE_TO_GPUFILE(fileHandle);
+		bool r = false;
+		if (!file->Mutex) return true;
+		gpuMutexAcquire(file->Mutex);
+		// Releasing a reader lock or an exclusive lock
+		if (fileOffsetLow == (DWORD)SHARED_FIRST)
+		{
+			// Did we have an exclusive lock?
+			if (file->Local.Exclusive)
+			{
+				_assert(numberOfBytesToUnlockLow == (DWORD)SHARED_SIZE);
+				file->Local.Exclusive = false;
+				file->Shared->Exclusive = false;
+				r = true;
+			}
+			// Did we just have a reader lock?
+			else if (file->Local.Readers)
+			{
+				_assert(numberOfBytesToUnlockLow == (DWORD)SHARED_SIZE || numberOfBytesToUnlockLow == 1);
+				file->Local.Readers--;
+				if (file->Local.Readers == 0)
+					file->Shared->Readers--;
+				r = true;
+			}
+		}
+		// Releasing a pending lock
+		else if (fileOffsetLow == (DWORD)PENDING_BYTE && numberOfBytesToUnlockLow == 1)
+		{
+			if (file->Local.Pending)
+			{
+				file->Local.Pending = false;
+				file->Shared->Pending = false;
+				r = true;
+			}
+		}
+		// Releasing a reserved lock
+		else if (fileOffsetLow == (DWORD)RESERVED_BYTE && numberOfBytesToUnlockLow == 1)
+		{
+			if (file->Local.Reserved)
+			{
+				file->Local.Reserved = false;
+				file->Shared->Reserved = false;
+				r = true;
+			}
+		}
+		gpuMutexRelease(file->Mutex);
+		return r;
 	}
 
 #pragma endregion
 
 #pragma region GpuVFile
 
+	__device__ static int seekGpuFile(GpuVFile *file, int64 offset)
+	{
+		bool ret = osSetFilePointer(file->H, offset, 0, FILE_BEGIN); // Value returned by SetFilePointerEx()
+		if (!ret)
+		{
+			file->LastErrno = osGetLastError();
+			gpuLogError(RC_IOERR_SEEK, file->LastErrno, "seekGpuFile", file->Path);
+			return 1;
+		}
+		return 0;
+	}
+
+#define MAX_CLOSE_ATTEMPT 3
 	__device__ RC GpuVFile::Close_()
 	{
 		OSTRACE("CLOSE %d\n", H);
-		return RC_OK;
-		//_assert(H != NULL && H != INVALID_HANDLE_VALUE);
-		//int rc;
-		//rc = osCloseHandle(H);
-		//OSTRACE("CLOSE %d %s\n", H, rc ? "ok" : "failed");
-		//if (rc)
-		//	H = NULL;
-		//return (rc ? RC_OK : gpuLogError(RC_IOERR_CLOSE, gpuGetLastError(), "gpuClose", Path));
+		_assert(H != NULL && H != INVALID_HANDLE_VALUE);
+		int rc;
+		int cnt = 0;
+		do
+		{
+			rc = osCloseHandle(H);
+		} while (!rc && ++cnt < MAX_CLOSE_ATTEMPT && (_sleep(100), 1));
+#define GPU_DELETION_ATTEMPTS 3
+		gpuDestroyLock(this);
+		if (DeleteOnClose)
+		{
+			int cnt = 0;
+			while (osDeleteFileA(DeleteOnClose) == 0 && osGetFileAttributesA(DeleteOnClose) != 0xffffffff && cnt++ < GPU_DELETION_ATTEMPTS)
+				_sleep(100); // Wait a little before trying again
+			_free(DeleteOnClose);
+		}
+		OSTRACE("CLOSE %d %s\n", H, rc ? "ok" : "failed");
+		if (rc)
+			H = NULL;
+		return (rc ? RC_OK : gpuLogError(RC_IOERR_CLOSE, osGetLastError(), "gpuClose", Path));
 	}
 
 	__device__ RC GpuVFile::Read(void *buffer, int amount, int64 offset)
 	{
+		int retry = 0; // Number of retrys
+		SimulateIOError(return RC_IOERR_READ);
 		OSTRACE("READ %d lock=%d\n", H, Lock_);
+		DWORD read; // Number of bytes actually read from file
+		if (seekGpuFile(this, offset))
+			return RC_FULL;
+		while (!osReadFile(H, buffer, amount, &read, 0))
+		{
+			DWORD lastErrno;
+			if (retryIoerr(&retry, &lastErrno)) continue;
+			LastErrno = lastErrno;
+			return gpuLogError(RC_IOERR_READ, LastErrno, "gpuRead", Path);
+		}
+		logIoerr(retry);
+		if (read < (DWORD)amount)
+		{
+			// Unread parts of the buffer must be zero-filled
+			_memset(&((char *)buffer)[read], 0, amount - read);
+			return RC_IOERR_SHORT_READ;
+		}
 		return RC_OK;
-		//int retry = 0; // Number of retrys
-		//DWORD read; // Number of bytes actually read from file
-		//if (seekGpuFile(this, offset))
-		//	return RC_FULL;
-		//while (!gpuReadFile(H, buffer, amount, &read, 0))
-		//{
-		//	DWORD lastErrno;
-		//	if (retryIoerr(&retry, &lastErrno)) continue;
-		//	LastErrno = lastErrno;
-		//	return winLogError(RC_IOERR_READ, LastErrno, "winRead", Path);
-		//}
-		//logIoerr(retry);
-		//if (read < (DWORD)amount)
-		//{
-		//	// Unread parts of the buffer must be zero-filled
-		//	memset(&((char *)buffer)[read], 0, amount - read);
-		//	return RC_IOERR_SHORT_READ;
-		//}
-		//return RC_OK;
 	}
 
 	__device__ RC GpuVFile::Write(const void *buffer, int amount, int64 offset)
@@ -404,23 +647,249 @@ namespace Core
 		//return rc;
 	}
 
+	__device__ static int getReadLock(GpuVFile *file)
+	{
+		int res;
+		res = gpuLockFile(&file->H, SHARED_FIRST, 0, 1, 0);
+		//int lock;
+		//SysEx::PutRandom(sizeof(lock), &lock);
+		//file->SharedLockByte = (short)((lock & 0x7fffffff)%(SHARED_SIZE - 1));
+		//res = gpuLockFile(&file->H, LOCKFILE_FLAGS, SHARED_FIRST + file->SharedLockByte, 0, 1, 0);
+		if (res == 0)
+			file->LastErrno = osGetLastError();
+		// No need to log a failure to lock
+		return res;
+	}
+
+	__device__ static int unlockReadLock(GpuVFile *file)
+	{
+		int res;
+		res = gpuUnlockFile(&file->H, SHARED_FIRST, 0, SHARED_SIZE, 0);
+		//res = gpuUnlockFile(&file->H, SHARED_FIRST + file->SharedLockByte, 0, 1, 0);
+		DWORD lastErrno;
+		if (res == 0 && (lastErrno = osGetLastError()) != ERROR_NOT_LOCKED)
+		{
+			file->LastErrno = lastErrno;
+			gpuLogError(RC_IOERR_UNLOCK, file->LastErrno, "unlockReadLock", file->Path);
+		}
+		return res;
+	}
+
 	__device__ RC GpuVFile::Lock(LOCK lock)
 	{
-		return RC_OK;
+		OSTRACE("LOCK %d %d was %d(%d)\n", H, lock, Lock_, SharedLockByte);
+
+		// If there is already a lock of this type or more restrictive on the OsFile, do nothing. Don't use the end_lock: exit path, as
+		// sqlite3OsEnterMutex() hasn't been called yet.
+		if (Lock_ >= lock)
+			return RC_OK;
+
+		// Make sure the locking sequence is correct
+		_assert(Lock_ != LOCK_NO || lock == LOCK_SHARED);
+		_assert(lock != LOCK_PENDING);
+		_assert(lock != LOCK_RESERVED || Lock_ == LOCK_SHARED);
+
+		// Lock the PENDING_LOCK byte if we need to acquire a PENDING lock or a SHARED lock.  If we are acquiring a SHARED lock, the acquisition of
+		// the PENDING_LOCK byte is temporary.
+		LOCK newLock = Lock_; // Set pFile->locktype to this value before exiting
+		int res = 1; // Result of a Windows lock call
+		bool gotPendingLock = false; // True if we acquired a PENDING lock this time
+		DWORD lastErrno = NO_ERROR;
+		if (Lock_ == LOCK_NO || (lock == LOCK_EXCLUSIVE && Lock_ == LOCK_RESERVED))
+		{
+			int cnt = 3;
+			while (cnt-- > 0 && (res = gpuLockFile(&H, LOCKFILE_FLAGS, PENDING_BYTE, 0, 1, 0)) == 0)
+			{
+				// Try 3 times to get the pending lock.  This is needed to work around problems caused by indexing and/or anti-virus software on Windows systems.
+				// If you are using this code as a model for alternative VFSes, do not copy this retry logic.  It is a hack intended for Windows only.
+				OSTRACE("could not get a PENDING lock. cnt=%d\n", cnt);
+				if (cnt) _sleep(1);
+			}
+			gotPendingLock = (res != 0);
+			if (!res)
+				lastErrno = osGetLastError();
+		}
+
+		// Acquire a SHARED lock
+		if (lock == LOCK_SHARED && res)
+		{
+			_assert(Lock_ == LOCK_NO);
+			res = getReadLock(this);
+			if (res)
+				newLock = LOCK_SHARED;
+			else
+				lastErrno = osGetLastError();
+		}
+
+		// Acquire a RESERVED lock
+		if (lock == LOCK_RESERVED && res)
+		{
+			_assert(Lock_ == LOCK_SHARED);
+			res = gpuLockFile(&H, LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
+			if (res)
+				newLock = LOCK_RESERVED;
+			else
+				lastErrno = osGetLastError();
+		}
+
+		// Acquire a PENDING lock
+		if (lock == LOCK_EXCLUSIVE && res)
+		{
+			newLock = LOCK_PENDING;
+			gotPendingLock = false;
+		}
+
+		// Acquire an EXCLUSIVE lock
+		if (lock == LOCK_EXCLUSIVE && res)
+		{
+			_assert(Lock_ >= LOCK_SHARED);
+			res = unlockReadLock(this);
+			OSTRACE("unreadlock = %d\n", res);
+			res = gpuLockFile(&H, LOCKFILE_FLAGS, SHARED_FIRST, 0, SHARED_SIZE, 0);
+			if (res)
+				newLock = LOCK_EXCLUSIVE;
+			else
+			{
+				lastErrno = osGetLastError();
+				OSTRACE("error-code = %d\n", lastErrno);
+				getReadLock(this);
+			}
+		}
+
+		// If we are holding a PENDING lock that ought to be released, then release it now.
+		if (gotPendingLock && lock == LOCK_SHARED)
+			gpuUnlockFile(&H, PENDING_BYTE, 0, 1, 0);
+
+		// Update the state of the lock has held in the file descriptor then return the appropriate result code.
+		RC rc;
+		if (res)
+			rc = RC_OK;
+		else
+		{
+			OSTRACE("LOCK FAILED %d trying for %d but got %d\n", H, lock, newLock);
+			LastErrno = lastErrno;
+			rc = RC_BUSY;
+		}
+		Lock_ = newLock;
+		return rc;
 	}
 
 	__device__ RC GpuVFile::CheckReservedLock(int &lock)
 	{
+		SimulateIOError(return RC_IOERR_CHECKRESERVEDLOCK;);
+		int rc;
+		if (Lock_ >= LOCK_RESERVED)
+		{
+			rc = 1;
+			OSTRACE("TEST WR-LOCK %d %d (local)\n", H, rc);
+		}
+		else
+		{
+			rc = gpuLockFile(&H, LOCKFILEEX_FLAGS, RESERVED_BYTE, 0, 1, 0);
+			if (rc)
+				gpuUnlockFile(&H, RESERVED_BYTE, 0, 1, 0);
+			rc = !rc;
+			OSTRACE("TEST WR-LOCK %d %d (remote)\n", H, rc);
+		}
+		lock = rc;
 		return RC_OK;
 	}
 
 	__device__ RC GpuVFile::Unlock(LOCK lock)
 	{
-		return RC_OK;
+		_assert(lock <= LOCK_SHARED);
+		OSTRACE("UNLOCK %d to %d was %d(%d)\n", H, lock, Lock_, SharedLockByte);
+		RC rc = RC_OK;
+		LOCK type = Lock_;
+		if (type >= LOCK_EXCLUSIVE)
+		{
+			gpuUnlockFile(&H, SHARED_FIRST, 0, SHARED_SIZE, 0);
+			if (lock == LOCK_SHARED && !getReadLock(this)) // This should never happen.  We should always be able to reacquire the read lock
+				rc = gpuLogError(RC_IOERR_UNLOCK, osGetLastError(), "gpuUnlock", Path);
+		}
+		if (type >= LOCK_RESERVED)
+			gpuUnlockFile(&H, RESERVED_BYTE, 0, 1, 0);
+		if (lock == LOCK_NO && type >= LOCK_SHARED)
+			unlockReadLock(this);
+		if (type >= LOCK_PENDING)
+			gpuUnlockFile(&H, PENDING_BYTE, 0, 1, 0);
+		Lock_ = lock;
+		return rc;
 	}
 
+	//__device__ static void gpuModeBit(GpuVFile *file, uint8 mask, int *arg)
+	//{
+	//	if (*arg < 0)
+	//		*arg = ((file->CtrlFlags & mask) != 0);
+	//	else if ((*arg) == 0)
+	//		file->CtrlFlags = (GpuVFile::WINFILE)(file->CtrlFlags & ~mask);
+	//	else
+	//		file->CtrlFlags |= mask;
+	//}
+
+	__device__ static RC getTempname(int bufLength, char *buf);
 	__device__ RC GpuVFile::FileControl(FCNTL op, void *arg)
 	{
+		int *a;
+		char *tfile;
+		switch (op)
+		{
+		case FCNTL_LOCKSTATE:
+			*(int*)arg = Lock_;
+			return RC_OK;
+		case FCNTL_LAST_ERRNO:
+			*(int*)arg = (int)LastErrno;
+			return RC_OK;
+		case FCNTL_CHUNK_SIZE:
+			SizeChunk = *(int *)arg;
+			return RC_OK;
+		case FCNTL_SIZE_HINT:
+			if (SizeChunk > 0)
+			{
+				int64 oldSize;
+				RC rc = get_FileSize(oldSize);
+				if (rc == RC_OK)
+				{
+					int64 newSize = *(int64 *)arg;
+					if (newSize > oldSize)
+					{
+						SimulateIOErrorBenign(true);
+						rc = Truncate(newSize);
+						SimulateIOErrorBenign(false);
+					}
+				}
+				return rc;
+			}
+			return RC_OK;
+			//case FCNTL_PERSIST_WAL:
+			//	winModeBit(this, (uint8)WINFILE_PERSIST_WAL, (int*)arg);
+			//	return RC_OK;
+			//case FCNTL_POWERSAFE_OVERWRITE:
+			//	winModeBit(this, (uint8)WINFILE_PSOW, (int*)arg);
+			//	return RC_OK;
+		case FCNTL_VFSNAME:
+			*(char**)arg = "win32";
+			return RC_OK;
+		case FCNTL_WIN32_AV_RETRY:
+			a = (int*)arg;
+			if (a[0] > 0)
+				gpuIoerrRetry = a[0];
+			else
+				a[0] = gpuIoerrRetry;
+			if (a[1] > 0)
+				gpuIoerrRetryDelay = a[1];
+			else
+				a[1] = gpuIoerrRetryDelay;
+			return RC_OK;
+		case FCNTL_TEMPFILENAME:
+			tfile = (char *)_allocZero(Vfs->MaxPathname);
+			if (tfile)
+			{
+				getTempname(Vfs->MaxPathname, tfile);
+				*(char**)arg = tfile;
+			}
+			return RC_OK;
+		}
 		return RC_NOTFOUND;
 	}
 
@@ -436,21 +905,7 @@ namespace Core
 
 #pragma endregion
 
-	__device__ HANDLE osCreateFileA(void *converted, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dummy1, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, DWORD dummy2)
-	{
-		return INVALID_HANDLE_VALUE;
-	}
-
 #pragma region GpuVSystem
-
-	__device__ static void *ConvertUtf8Filename(const char *name)
-	{
-		void *converted = nullptr;
-		int length = _strlen30(name);
-		converted = _alloc(length);
-		_memcpy(converted, name, length);
-		return converted;
-	}
 
 	__constant__ static char _chars[] =
 		"abcdefghijklmnopqrstuvwxyz"
@@ -472,7 +927,7 @@ namespace Core
 		for (i = tempPathLength; i > 0 && tempPath[i-1] == '\\'; i--) { }
 		tempPath[i] = 0;
 		size_t j;
-		__snprintf(buf, bufLength-18, (tempPathLength > 0 ? "%s\\"TEMP_FILE_PREFIX : TEMP_FILE_PREFIX, tempPath));
+		__snprintf(buf, bufLength-18, (tempPathLength > 0 ? "%s\\"TEMP_FILE_PREFIX : TEMP_FILE_PREFIX), tempPath);
 		j = _strlen30(buf);
 		SysEx::PutRandom(15, &buf[j]);
 		for (i = 0; i < 15; i++, j++)
@@ -554,7 +1009,7 @@ namespace Core
 		_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[_strlen30(utf8Name)+1] == 0);
 
 		// Convert the filename to the system encoding.
-		void *converted = ConvertUtf8Filename(utf8Name); // Filename in OS encoding
+		void *converted = ConvertFilename(utf8Name); // Filename in OS encoding
 		if (!converted)
 			return RC_IOERR_NOMEM;
 
@@ -582,15 +1037,19 @@ namespace Core
 		DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
 
 		DWORD dwFlagsAndAttributes = 0;
+		int isTemp = 0;
 		if (isDelete)
+		{
 			dwFlagsAndAttributes = FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_HIDDEN | FILE_FLAG_DELETE_ON_CLOSE;
+			isTemp = 1;
+		}
 		else
 			dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
 
 		HANDLE h;
 		DWORD lastErrno = 0;
 		int cnt = 0;
-		while ((h = osCreateFileA(converted, dwDesiredAccess, dwShareMode, nullptr, dwCreationDisposition, dwFlagsAndAttributes, nullptr)) == INVALID_HANDLE_VALUE && retryIoerr(&cnt, &lastErrno)) { }
+		while ((h = osCreateFileA((char *)converted, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, NULL)) == INVALID_HANDLE_VALUE && retryIoerr(&cnt, &lastErrno)) { }
 		logIoerr(cnt);
 
 		OSTRACE("OPEN %d %s 0x%lx %s\n", h, name, dwDesiredAccess, h == INVALID_HANDLE_VALUE ? "failed" : "ok");
@@ -607,6 +1066,15 @@ namespace Core
 
 		if (outFlags)
 			*outFlags = (isReadWrite ? OPEN_READWRITE : OPEN_READONLY);
+		if (isReadWrite && type == OPEN_MAIN_DB && (rc = gpuCreateLock(name, file)) != RC_OK)
+		{
+			osCloseHandle(h);
+			_free(converted);
+			return rc;
+		}
+		if (isTemp)
+			file->DeleteOnClose = converted;
+		else
 		_free(converted);
 		file->Opened = true;
 		file->Vfs = this;
@@ -622,7 +1090,7 @@ namespace Core
 	__device__ RC GpuVSystem::Delete(const char *filename, bool syncDir)
 	{
 		SimulateIOError(return RC_IOERR_DELETE;);
-		void *converted = ConvertUtf8Filename(filename);
+		void *converted = ConvertFilename(filename);
 		if (!converted)
 			return RC_IOERR_NOMEM;
 		DWORD attr;
@@ -630,7 +1098,7 @@ namespace Core
 		DWORD lastErrno;
 		int cnt = 0;
 		do {
-			attr = osGetFileAttributesA(converted);
+			attr = osGetFileAttributesA((char *)converted);
 			if (attr == INVALID_FILE_ATTRIBUTES)
 			{
 				lastErrno = osGetLastError();
@@ -642,7 +1110,7 @@ namespace Core
 				rc = RC_ERROR; // Files only.
 				break;
 			}
-			if (osDeleteFileA(converted))
+			if (osDeleteFileA((char *)converted))
 			{
 				rc = RC_OK; // Deleted OK.
 				break;
@@ -665,13 +1133,13 @@ namespace Core
 	__device__ RC GpuVSystem::Access(const char *filename, ACCESS flags, int *resOut)
 	{
 		SimulateIOError(return RC_IOERR_ACCESS;);
-		void *converted = ConvertUtf8Filename(filename);
+		void *converted = ConvertFilename(filename);
 		if (!converted)
 			return RC_IOERR_NOMEM;
 		DWORD attr;
 		int rc = 0;
-		DWORD lastErrno;
-		attr = osGetFileAttributesA((char*)converted);
+		//DWORD lastErrno;
+		attr = osGetFileAttributesA((char *)converted);
 		_free(converted);
 		switch (flags)
 		{
@@ -708,9 +1176,9 @@ namespace Core
 	{
 		SimulateIOError(return RC_ERROR);
 		if (g_data_directory && !gpuIsVerbatimPathname(relative))
-			_snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", g_data_directory, relative);
+			__snprintf(full, MIN(fullLength, MaxPathname), "%s\\%s", g_data_directory, relative);
 		else
-			_snprintf(full, MIN(fullLength, MaxPathname), "%s", relative);
+			__snprintf(full, MIN(fullLength, MaxPathname), "%s", relative);
 		return RC_OK;
 	}
 

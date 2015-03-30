@@ -705,6 +705,4 @@ __device__ inline static void _mtagassignf(char **src, TagBase *tag, const char 
 
 #pragma endregion
 
-__device__ void __sleep(int milliseconds) { }
-
 #endif // __RUNTIME_H__
