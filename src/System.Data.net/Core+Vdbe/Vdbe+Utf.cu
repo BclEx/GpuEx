@@ -103,7 +103,7 @@ namespace Core
 		unsigned char *z; // Output iterator
 		unsigned int c;
 
-		_assert(mem->Ctx == nullptr || MutexEx::Held(mem->Ctx->Mutex));
+		_assert(mem->Ctx == nullptr || MutexEx_Held(mem->Ctx->Mutex));
 		_assert(mem->Flags & MEM_Str);
 		_assert(mem->Encode != desiredEncode);
 		_assert(mem->Encode != 0);

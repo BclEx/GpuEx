@@ -29,7 +29,7 @@ __device__ RC Vdbe::Finalize(Vdbe *p)
 		return RC_OK; // IMPLEMENTATION-OF: R-57228-12904 Invoking sqlite3_finalize() on a NULL pointer is a harmless no-op.
 	Context *ctx = p->Ctx;
 	if (VdbeSafety(p)) return SysEx_MISUSE_BKPT;
-	MutexEx::Enter(ctx->Mutex);
+	MutexEx_Enter(ctx->Mutex);
 	RC rc = p->Finalize2();
 	rc = Main::ApiExit(ctx, rc);
 	Main::LeaveMutexAndCloseZombie(ctx);
@@ -43,12 +43,12 @@ __device__ RC Vdbe::Reset(Vdbe *p)
 #if THREADSAFE
 	MutexEx mutex = p->Ctx->Mutex;
 #endif
-	MutexEx::Enter(mutex);
+	MutexEx_Enter(mutex);
 	RC rc = p->Reset();
 	p->Rewind();
 	_assert((rc & p->Ctx->ErrMask) == rc);
 	rc = Main::ApiExit(p->Ctx, rc);
-	MutexEx::Leave(mutex);
+	MutexEx_Leave(mutex);
 	return rc;
 }
 
@@ -57,7 +57,7 @@ __device__ RC Vdbe::ClearBindings()
 #if THREADSAFE
 	MutexEx mutex = Ctx->Mutex;
 #endif
-	MutexEx::Enter(mutex);
+	MutexEx_Enter(mutex);
 	for (int i = 0; i < Vars.length; i++)
 	{
 		Vdbe::MemRelease(&Vars[i]);
@@ -65,7 +65,7 @@ __device__ RC Vdbe::ClearBindings()
 	}
 	if (IsPrepareV2 && Expmask)
 		Expired = true;
-	MutexEx::Leave(mutex);
+	MutexEx_Leave(mutex);
 	return RC_OK;
 }
 
@@ -114,73 +114,73 @@ __device__ inline static void SetResultStrOrError(FuncContext *fctx, const char 
 __device__ void Vdbe::Result_Blob(FuncContext *fctx, const void *z, int n, void (*del)(void *))
 {
 	_assert(n >= 0);
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	SetResultStrOrError(fctx, (const char *)z, n, (TEXTENCODE)0, del);
 }
 __device__ void Vdbe::Result_Double(FuncContext *fctx, double value)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	MemSetDouble(&fctx->S, value);
 }
 __device__ void Vdbe::Result_Error(FuncContext *fctx, const char *z, int n)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	fctx->IsError = RC_ERROR;
 	MemSetStr(&fctx->S, z, n, TEXTENCODE_UTF8, DESTRUCTOR_TRANSIENT);
 }
 #ifndef OMIT_UTF16
 __device__ void Vdbe::Result_Error16(FuncContext *fctx, const void *z, int n)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	fctx->IsError = RC_ERROR;
 	MemSetStr(&fctx->S, (const char *)z, n, TEXTENCODE_UTF16NATIVE, DESTRUCTOR_TRANSIENT);
 }
 #endif
 __device__ void Vdbe::Result_Int(FuncContext *fctx, int value)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	MemSetInt64(&fctx->S, (int64)value);
 }
 __device__ void Vdbe::Result_Int64(FuncContext *fctx, int64 value)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	MemSetInt64(&fctx->S, value);
 }
 __device__ void Vdbe::Result_Null(FuncContext *fctx)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	MemSetNull(&fctx->S);
 }
 __device__ void Vdbe::Result_Text(FuncContext *fctx, const char *z, int n, void (*del)(void *))
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	SetResultStrOrError(fctx, z, n, TEXTENCODE_UTF8, del);
 }
 #ifndef OMIT_UTF16
 __device__ void Vdbe::Result_Text16(FuncContext *fctx, const void *z, int n, void (*del)(void *))
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	SetResultStrOrError(fctx, (const char *)z, n, TEXTENCODE_UTF16NATIVE, del);
 }
 __device__ void Vdbe::Result_Text16be(FuncContext *fctx, const void *z, int n, void (*del)(void *))
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	SetResultStrOrError(fctx, (const char *)z, n, TEXTENCODE_UTF16BE, del);
 }
 __device__ void Vdbe::Result_Text16le(FuncContext *fctx, const void *z, int n, void (*del)(void *))
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	SetResultStrOrError(fctx, (const char *)z, n, TEXTENCODE_UTF16LE, del);
 }
 #endif
 __device__ void Vdbe::Result_Value(FuncContext *fctx, Mem *value)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	MemCopy(&fctx->S, value);
 }
 __device__ void Vdbe::Result_ZeroBlob(FuncContext *fctx, int n)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	MemSetZeroBlob(&fctx->S, n);
 }
 __device__ void Vdbe::Result_ErrorCode(FuncContext *fctx, RC errCode)
@@ -191,13 +191,13 @@ __device__ void Vdbe::Result_ErrorCode(FuncContext *fctx, RC errCode)
 }
 __device__ void Vdbe::Result_ErrorOverflow(FuncContext *fctx)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	fctx->IsError = RC_TOOBIG;
 	MemSetStr(&fctx->S, "string or blob too big", -1, TEXTENCODE_UTF8, DESTRUCTOR_STATIC);
 }
 __device__ void Vdbe::Result_ErrorNoMem(FuncContext *fctx)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	MemSetNull(&fctx->S);
 	fctx->IsError = RC_NOMEM;
 	fctx->S.Ctx->MallocFailed = true;
@@ -334,7 +334,7 @@ __device__ RC Vdbe::Step()
 	RC rc2 = RC_OK; // Result from sqlite3Reprepare()
 	int cnt = 0; // Counter to prevent infinite loop of reprepares
 	Context *ctx = Ctx; // The database connection
-	MutexEx::Enter(ctx->Mutex);
+	MutexEx_Enter(ctx->Mutex);
 	DoingRerun = false;
 	while ((rc = Step2()) == RC_SCHEMA && cnt++ < MAX_SCHEMA_RETRY && (rc2 = rc = Prepare::Reprepare(this)) == RC_OK)
 	{
@@ -354,7 +354,7 @@ __device__ RC Vdbe::Step()
 		else { ErrMsg = nullptr; RC_ = rc = RC_NOMEM; }
 	}
 	rc = Main::ApiExit(ctx, rc);
-	MutexEx::Leave(ctx->Mutex);
+	MutexEx_Leave(ctx->Mutex);
 	return rc;
 }
 
@@ -385,7 +385,7 @@ __device__ void Vdbe::InvalidFunction(FuncContext *fctx, int notUsed1, Mem **not
 __device__ void *Vdbe::Aggregate_Context(FuncContext *fctx, int bytes)
 {
 	_assert(fctx && fctx->Func && fctx->Func->Step);
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	Mem *mem = fctx->Mem;
 	ASSERTCOVERAGE(bytes < 0);
 	if ((mem->Flags & MEM_Agg) == 0)
@@ -410,7 +410,7 @@ __device__ void *Vdbe::Aggregate_Context(FuncContext *fctx, int bytes)
 
 __device__ void *Vdbe::get_Auxdata(FuncContext *fctx, int arg)
 {
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	VdbeFunc *vdbeFunc = fctx->VdbeFunc;
 	if (!vdbeFunc || arg >= vdbeFunc->AuxsLength || arg < 0)
 		return nullptr;
@@ -420,7 +420,7 @@ __device__ void *Vdbe::get_Auxdata(FuncContext *fctx, int arg)
 __device__ void Vdbe::set_Auxdata(FuncContext *fctx, int args, void *aux, void (*delete_)(void*))
 {
 	if (args < 0) goto failed;
-	_assert(MutexEx::Held(fctx->S.Ctx->Mutex));
+	_assert(MutexEx_Held(fctx->S.Ctx->Mutex));
 	VdbeFunc *vdbeFunc = fctx->VdbeFunc;
 	if (!vdbeFunc || vdbeFunc->AuxsLength <= args)
 	{
@@ -481,14 +481,14 @@ __device__ static Mem *ColumnMem(Vdbe *p, int i)
 	Mem *r;
 	if (p && p->ResultSet != 0 && i < p->ResColumns && i >= 0)
 	{
-		MutexEx::Enter(p->Ctx->Mutex);
+		MutexEx_Enter(p->Ctx->Mutex);
 		r = &p->ResultSet[i];
 	}
 	else
 	{
 		if (p && _ALWAYS(p->Ctx))
 		{
-			MutexEx::Enter(p->Ctx->Mutex);
+			MutexEx_Enter(p->Ctx->Mutex);
 			Main::Error(p->Ctx, RC_RANGE, 0);
 		}
 		r = (Mem *)&_nullMem;
@@ -503,7 +503,7 @@ __device__ static void ColumnMallocFailure(Vdbe *p)
 	if (p)
 	{
 		p->RC_ = Main::ApiExit(p->Ctx, p->RC_);
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 	}
 }
 
@@ -539,7 +539,7 @@ __device__ static const void *ColumnName(Vdbe *p, int n, const void *(*func)(Mem
 	if (n < n2 && n >= 0)
 	{
 		n += useType*n2;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
 		r = func(&p->ColNames[n]);
 		// A malloc may have failed inside of the xFunc() call. If this is the case, clear the mallocFailed flag and return NULL.
@@ -548,7 +548,7 @@ __device__ static const void *ColumnName(Vdbe *p, int n, const void *(*func)(Mem
 			ctx->MallocFailed = false;
 			r = nullptr;
 		}
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 	}
 	return r;
 }
@@ -594,18 +594,18 @@ __device__ static RC VdbeUnbind(Vdbe *p, int i)
 	Mem *var;
 	if (VdbeSafetyNotNull(p))
 		return SysEx_MISUSE_BKPT;
-	MutexEx::Enter(p->Ctx->Mutex);
+	MutexEx_Enter(p->Ctx->Mutex);
 	if (p->Magic != VDBE_MAGIC_RUN || p->PC >= 0)
 	{
 		Main::Error(p->Ctx, RC_MISUSE, 0);
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 		SysEx_LOG(RC_MISUSE, "bind on a busy prepared statement: [%s]", p->Sql);
 		return SysEx_MISUSE_BKPT;
 	}
 	if (i < 1 || i > p->Vars.length)
 	{
 		Main::Error(p->Ctx, RC_RANGE, 0);
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 		return RC_RANGE;
 	}
 	i--;
@@ -638,7 +638,7 @@ __device__ static RC BindText(Vdbe *p, int i, const void *z, int n, void (*del)(
 			Main::Error(p->Ctx, rc, 0);
 			Main::ApiExit(p->Ctx, rc);
 		}
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 	}
 	else if (del != DESTRUCTOR_STATIC && del != DESTRUCTOR_TRANSIENT)
 		del((void *)z);
@@ -651,7 +651,7 @@ __device__ RC Vdbe::Bind_Double(Vdbe *p, int i, double value)
 	if (rc == RC_OK)
 	{
 		MemSetDouble(&p->Vars[i-1], value);
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 	}
 	return rc;
 }
@@ -662,7 +662,7 @@ __device__ RC Vdbe::Bind_Int64(Vdbe *p, int i, int64 value)
 	if (rc == RC_OK)
 	{
 		MemSetInt64(&p->Vars[i-1], value);
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 	}
 	return rc;
 }
@@ -670,7 +670,7 @@ __device__ RC Vdbe::Bind_Null(Vdbe *p, int i)
 {
 	RC rc = VdbeUnbind(p, i);
 	if (rc == RC_OK)
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 	return rc;
 }
 __device__ RC Vdbe::Bind_Text(Vdbe *p, int i, const char *z, int n, void (*del)(void *)) { return BindText(p, i, z, n, del, TEXTENCODE_UTF8); }
@@ -709,7 +709,7 @@ __device__ RC Vdbe::Bind_Zeroblob(Vdbe *p, int i, int n)
 	if (rc == RC_OK)
 	{
 		MemSetZeroBlob(&p->Vars[i-1], n);
-		MutexEx::Leave(p->Ctx->Mutex);
+		MutexEx_Leave(p->Ctx->Mutex);
 	}
 	return rc;
 }
@@ -737,10 +737,10 @@ __device__ RC Vdbe::TransferBindings(Vdbe *from, Vdbe *to)
 {
 	_assert(to->Ctx == from->Ctx);
 	_assert(to->Vars.length == from->Vars.length);
-	MutexEx::Enter(to->Ctx->Mutex);
+	MutexEx_Enter(to->Ctx->Mutex);
 	for (int i = 0; i < from->Vars.length; i++)
 		MemMove(&to->Vars[i], &from->Vars[i]);
-	MutexEx::Leave(to->Ctx->Mutex);
+	MutexEx_Leave(to->Ctx->Mutex);
 	return RC_OK;
 }
 
@@ -753,9 +753,9 @@ __device__ bool Vdbe::Stmt_Readonly(Vdbe *p) { return (p ? p->ReadOnly : true); 
 __device__ bool Vdbe::Stmt_Busy(Vdbe *p) { return (p && p->PC > 0 && p->Magic == VDBE_MAGIC_RUN); }
 __device__ Vdbe *Vdbe::Stmt_Next(Context *ctx, Vdbe *p)
 {
-	MutexEx::Enter(ctx->Mutex);
+	MutexEx_Enter(ctx->Mutex);
 	Vdbe *next = (!p ? ctx->Vdbes : p->Next);
-	MutexEx::Leave(ctx->Mutex);
+	MutexEx_Leave(ctx->Mutex);
 	return next;
 }
 __device__ int Vdbe::Stmt_Status(Vdbe *p, OP op, bool resetFlag)

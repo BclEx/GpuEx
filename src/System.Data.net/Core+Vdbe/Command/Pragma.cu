@@ -441,7 +441,7 @@ namespace Core { namespace Command
 			if (id2->length == 0 && b >= 0)
 				for (int ii = 0; ii < ctx->DBs.length; ii++)
 					ctx->DBs[ii].Bt->SecureDelete(b != 0);
-			b = (bt->SecureDelete(b) ? 1 : 0);
+			b = (bt->SecureDelete(b != 0) ? 1 : 0);
 			ReturnSingleInt(parse, "secure_delete", b);
 		}
 

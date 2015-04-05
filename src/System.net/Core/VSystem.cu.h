@@ -3,19 +3,6 @@
 namespace Core { namespace IO { class VFile; }}
 namespace Core
 {
-
-#ifndef OS_WIN
-#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#define OS_WIN 1
-#define OS_UNIX 0
-#else
-#define OS_WIN 0
-#define OS_UNIX 1
-#endif
-#else
-#define OS_UNIX 0
-#endif
-
 	typedef void (*syscall_ptr)();
 
 	class VSystem

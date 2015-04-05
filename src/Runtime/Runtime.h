@@ -15,6 +15,25 @@
 #include "Runtime.cpu.h"
 #endif
 
+#ifndef OS_WIN
+#if __CUDACC__
+#define OS_WIN 0
+#define OS_UNIX 0
+#define OS_GPU 1
+#elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#define OS_WIN 1
+#define OS_UNIX 0
+#define OS_GPU 0
+#else
+#define OS_WIN 0
+#define OS_UNIX 1
+#define OS_GPU 0
+#endif
+#else
+#define OS_UNIX 0
+#define OS_GPU 0
+#endif
+
 #pragma endregion
 
 #pragma region Limits
@@ -37,22 +56,6 @@ __device__ extern unsigned char __one;
 #endif
 
 #pragma endregion
-
-///////////////////////////////////////////////////////////////////////////////
-// RUNTIME
-//struct cudaRuntime
-//{
-//	int Initialized;
-//};
-//
-//__device__ extern cudaRuntime __curt;
-//__device__ extern int (*cudaRuntimeInitialize)(cudaRuntime *curt);
-//__device__ bool RuntimeInitialize()
-//{
-//	if (!cudaRuntimeInitialize) return true;
-//	if (__curt.Initialized == -1) __curt.Initialized = cudaRuntimeInitialize(&__curt);
-//	return (__curt.Initialized == 1);
-//}
 
 //////////////////////
 // WSD
@@ -106,39 +109,80 @@ __device__ void _runtime_utfselftest();
 // MUTEXEX
 #pragma region MUTEXEX
 
-struct MutexEx;
-__device__ extern MutexEx MutexEx_Empty;
-__device__ extern MutexEx MutexEx_NotEmpty;
+#if !defined(THREADSAFE)
+#if defined(__THREADSAFE__)
+#define THREADSAFE __THREADSAFE__
+#else
+#define THREADSAFE 1 // IMP: R-07272-22309
+#endif
+#endif
 
-struct MutexEx
+// Figure out what version of the code to use.  The choices are
+//   MUTEX_OMIT         No mutex logic.  Not even stubs.  The mutexes implemention cannot be overridden at start-time.
+//   MUTEX_NOOP         For single-threaded applications.  No mutual exclusion is provided.  But this implementation can be overridden at start-time.
+//   MUTEX_PTHREADS     For multi-threaded applications on Unix.
+//   MUTEX_W32          For multi-threaded applications on Win32.
+#if THREADSAFE == 0
+#define MUTEX_OMIT
+#else
+#if OS_UNIX
+#define MUTEX_PTHREADS
+#elif OS_WIN
+#define MUTEX_WIN
+#else
+#define MUTEX_NOOP
+#endif
+#endif
+
+enum MUTEX : unsigned char
 {
-public:
-	enum MUTEX
-	{
-		MUTEX_FAST = 0,
-		MUTEX_RECURSIVE = 1,
-		MUTEX_STATIC_MASTER = 2,
-		MUTEX_STATIC_MEM = 3,  // sqlite3_malloc()
-		MUTEX_STATIC_MEM2 = 4,  // NOT USED
-		MUTEX_STATIC_OPEN = 4,  // sqlite3BtreeOpen()
-		MUTEX_STATIC_PRNG = 5,  // sqlite3_random()
-		MUTEX_STATIC_LRU = 6,   // lru page list
-		MUTEX_STATIC_LRU2 = 7,  // NOT USED
-		MUTEX_STATIC_PMEM = 7, // sqlite3PageMalloc()
-	};
-
-	void *Tag;
-
-	__device__ static int Init();
-	__device__ static int Shutdown();
-
-	__device__ inline static MutexEx Alloc(MUTEX id) { return MutexEx_NotEmpty; }
-	__device__ inline static void Enter(MutexEx mutex) { }
-	__device__ inline static void Leave(MutexEx mutex) { }
-	__device__ inline static bool Held(MutexEx mutex) { return true; }
-	__device__ inline static bool NotHeld(MutexEx mutex) { return true; }
-	__device__ inline static void Free(MutexEx mutex) { }
+	MUTEX_FAST = 0,
+	MUTEX_RECURSIVE = 1,
+	MUTEX_STATIC_MASTER = 2,
+	MUTEX_STATIC_MEM = 3,  // sqlite3_malloc()
+	MUTEX_STATIC_OPEN = 4,  // sqlite3BtreeOpen()
+	MUTEX_STATIC_PRNG = 5,  // sqlite3_random()
+	MUTEX_STATIC_LRU = 6,   // lru page list
+	MUTEX_STATIC_PMEM = 7, // sqlite3PageMalloc()
 };
+
+struct _mutex_obj;
+typedef _mutex_obj *MutexEx;
+#ifdef MUTEX_OMIT
+
+#define MutexEx_Held(X) ((void)(X), 1)
+#define MutexEx_NotHeld(X) ((void)(X), 1)
+#define _mutex_init() 0
+#define _mutex_shutdown()
+#define MutexEx_Alloc(X) ((MutexEx)1)
+#define MutexEx_Enter(X)
+#define MutexEx_TryEnter(X) 0
+#define MutexEx_Leave(X)
+#define MutexEx_Free(X)
+#define MUTEX_LOGIC(X)
+
+#else
+
+#ifdef _DEBUG
+extern bool _mutex_held(MutexEx p);
+extern bool _mutex_notheld(MutexEx p);
+#endif
+extern int _mutex_init();
+extern void _mutex_shutdown();
+extern MutexEx _mutex_alloc(MUTEX id);
+extern void _mutex_free(MutexEx p);
+extern void _mutex_enter(MutexEx p);
+extern bool _mutex_tryenter(MutexEx p);
+extern void _mutex_leave(MutexEx p);
+#define MUTEX_LOGIC(X) X
+#define MutexEx_Alloc(id) _mutex_alloc(id)
+#define MutexEx_Enter(mutex) _mutex_enter(mutex)
+#define MutexEx_Leave(mutex) _mutex_leave(mutex)
+#define MutexEx_Held(mutex) _mutex_held(mutex)
+#define MutexEx_NotHeld(mutex) _mutex_notheld(mutex)
+#define MutexEx_Free(mutex) _mutex_free(mutex)
+
+#endif
 
 #pragma endregion
 
@@ -146,27 +190,27 @@ public:
 // STATUSEX
 #pragma region STATUSEX
 
+enum STATUS : unsigned char
+{
+	STATUS_MEMORY_USED = 0,
+	STATUS_PAGECACHE_USED = 1,
+	STATUS_PAGECACHE_OVERFLOW = 2,
+	STATUS_SCRATCH_USED = 3,
+	STATUS_SCRATCH_OVERFLOW = 4,
+	STATUS_MALLOC_SIZE = 5,
+	STATUS_PARSER_STACK = 6,
+	STATUS_PAGECACHE_SIZE = 7,
+	STATUS_SCRATCH_SIZE = 8,
+	STATUS_MALLOC_COUNT = 9,
+};
+
 class StatusEx
 {
 public:
-	enum STATUS
-	{
-		STATUS_MEMORY_USED = 0,
-		STATUS_PAGECACHE_USED = 1,
-		STATUS_PAGECACHE_OVERFLOW = 2,
-		STATUS_SCRATCH_USED = 3,
-		STATUS_SCRATCH_OVERFLOW = 4,
-		STATUS_MALLOC_SIZE = 5,
-		STATUS_PARSER_STACK = 6,
-		STATUS_PAGECACHE_SIZE = 7,
-		STATUS_SCRATCH_SIZE = 8,
-		STATUS_MALLOC_COUNT = 9,
-	};
-
 	__device__ static int StatusValue(STATUS op);
 	__device__ static void StatusAdd(STATUS op, int n);
-	__device__ static void StatusSet(StatusEx::STATUS op, int x);
-	__device__ static bool Status(StatusEx::STATUS op, int *current, int *highwater, bool resetFlag);
+	__device__ static void StatusSet(STATUS op, int x);
+	__device__ static bool Status(STATUS op, int *current, int *highwater, bool resetFlag);
 };
 
 #pragma endregion

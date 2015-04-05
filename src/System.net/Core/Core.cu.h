@@ -12,14 +12,6 @@
 #define unlikely(X) !!(X)
 #endif
 
-#if !defined(THREADSAFE)
-#if defined(__THREADSAFE__)
-#define THREADSAFE __THREADSAFE__
-#else
-#define THREADSAFE 1 // IMP: R-07272-22309
-#endif
-#endif
-
 #define _dprintf printf
 #include "ConvertEx.cu.h"
 #include "RC.cu.h"

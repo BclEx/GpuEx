@@ -55,8 +55,8 @@ namespace Core
 		// sqlite3_backup_step(). The user is required to ensure that no other thread accesses the destination handle for the duration
 		// of the backup operation.  Any attempt to use the destination database connection while a backup is in progress may cause
 		// a malfunction or a deadlock.
-		MutexEx::Enter(srcCtx->Mutex);
-		MutexEx::Enter(destCtx->Mutex);
+		MutexEx_Enter(srcCtx->Mutex);
+		MutexEx_Enter(destCtx->Mutex);
 
 		Backup *p;
 		if (srcCtx == destCtx)
@@ -94,8 +94,8 @@ namespace Core
 		if (p)
 			p->Src->Backups++;
 
-		MutexEx::Leave(destCtx->Mutex);
-		MutexEx::Leave(srcCtx->Mutex);
+		MutexEx_Leave(destCtx->Mutex);
+		MutexEx_Leave(srcCtx->Mutex);
 		return p;
 	}
 
@@ -187,10 +187,10 @@ namespace Core
 
 	__device__ RC Backup::Step(int pages)
 	{
-		MutexEx::Enter(SrcCtx->Mutex);
+		MutexEx_Enter(SrcCtx->Mutex);
 		Src->Enter();
 		if (DestCtx)
-			MutexEx::Enter(DestCtx->Mutex);
+			MutexEx_Enter(DestCtx->Mutex);
 
 		RC rc = RC_;
 		if (!IsFatalError(rc))
@@ -376,9 +376,9 @@ namespace Core
 			RC_ = rc;
 		}
 		if (DestCtx)
-			MutexEx::Leave(DestCtx->Mutex);
+			MutexEx_Leave(DestCtx->Mutex);
 		Src->Leave();
-		MutexEx::Leave(SrcCtx->Mutex);
+		MutexEx_Leave(SrcCtx->Mutex);
 		return rc;
 	}
 
@@ -387,10 +387,10 @@ namespace Core
 		// Enter the mutexes
 		if (!p) return RC_OK;
 		Context *srcCtx = p->SrcCtx; // Source database connection
-		MutexEx::Enter(srcCtx->Mutex);
+		MutexEx_Enter(srcCtx->Mutex);
 		p->Src->Enter();
 		if (p->DestCtx)
-			MutexEx::Enter(p->DestCtx->Mutex);
+			MutexEx_Enter(p->DestCtx->Mutex);
 
 		// Detach this backup from the source pager.
 		if (p->DestCtx)
@@ -435,15 +435,15 @@ namespace Core
 	{
 		for (Backup *p = this; p; p = p->Next)
 		{
-			_assert(MutexEx::Held(p->Src->Bt->Mutex));
+			_assert(MutexEx_Held(p->Src->Bt->Mutex));
 			if (!IsFatalError(p->RC_) && page < p->NextId)
 			{
 				// The backup process p has already copied page iPage. But now it has been modified by a transaction on the source pager. Copy
 				// the new data into the backup.
 				_assert(p->DestCtx);
-				MutexEx::Enter(p->DestCtx->Mutex);
+				MutexEx_Enter(p->DestCtx->Mutex);
 				RC rc = BackupOnePage(p, page, data, true);
-				MutexEx::Leave(p->DestCtx->Mutex);
+				MutexEx_Leave(p->DestCtx->Mutex);
 				_assert(rc != RC_BUSY && rc != RC_LOCKED);
 				if (rc != RC_OK ){
 					p->RC_ = rc;
@@ -456,7 +456,7 @@ namespace Core
 	{
 		for (Backup *p = this; p; p = p->Next)
 		{
-			_assert(MutexEx::Held(p->Src->Bt->Mutex));
+			_assert(MutexEx_Held(p->Src->Bt->Mutex));
 			p->NextId = 1;
 		}
 	}

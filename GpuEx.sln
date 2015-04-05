@@ -99,6 +99,7 @@ Global
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cpu|Mixed Platforms.ActiveCfg = Debug.cpu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cpu|Mixed Platforms.Build.0 = Debug.cpu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cpu|x64.ActiveCfg = Debug.cpu|x64
+		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cu|Mixed Platforms.ActiveCfg = Debug.cu|x64
 		{A38430CF-CB26-43F0-94B7-6E78A0950FF5}.Debug.cu|Mixed Platforms.Build.0 = Debug.cu|x64

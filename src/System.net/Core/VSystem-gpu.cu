@@ -1,10 +1,9 @@
-﻿// os_win.c
-#define OS_GPU 1
-#if OS_GPU
+﻿// os_gpu.c
 #include "Core.cu.h"
 #include <RuntimeOS.h>
 #include <new.h>
 
+#if OS_GPU
 namespace Core
 {
 
@@ -536,13 +535,15 @@ namespace Core
 
 	__device__ RC GpuVFile::Read(void *buffer, int amount, int64 offset)
 	{
+		OVERLAPPED overlapped; // The offset for ReadFile.
 		int retry = 0; // Number of retrys
 		SimulateIOError(return RC_IOERR_READ);
 		OSTRACE("READ %d lock=%d\n", H, Lock_);
 		DWORD read; // Number of bytes actually read from file
-		if (seekGpuFile(this, offset))
-			return RC_FULL;
-		while (!osReadFile(H, buffer, amount, &read, 0))
+		_memset(&overlapped, 0, sizeof(OVERLAPPED));
+		overlapped.Offset = (DWORD)(offset & 0xffffffff);
+		overlapped.OffsetHigh = (DWORD)((offset>>32) & 0x7fffffff);
+		while (!osReadFile(H, buffer, amount, &read, &overlapped) && osGetLastError() != ERROR_HANDLE_EOF)
 		{
 			DWORD lastErrno;
 			if (retryIoerr(&retry, &lastErrno)) continue;
@@ -562,89 +563,122 @@ namespace Core
 	__device__ RC GpuVFile::Write(const void *buffer, int amount, int64 offset)
 	{
 		_assert(amount > 0);
+		SimulateIOError(return RC_IOERR_WRITE);
+		SimulateDiskfullError(return RC_FULL);
 		OSTRACE("WRITE %d lock=%d\n", H, Lock_);
+		int rc = 0; // True if error has occurred, else false
+		int retry = 0; // Number of retries
+		{
+			OVERLAPPED overlapped; // The offset for WriteFile.
+			_memset(&overlapped, 0, sizeof(OVERLAPPED));
+			overlapped.Offset = (DWORD)(offset & 0xffffffff);
+			overlapped.OffsetHigh = (DWORD)((offset>>32) & 0x7fffffff);
+
+			uint8 *remain = (uint8 *)buffer; // Data yet to be written
+			int remainLength = amount; // Number of bytes yet to be written
+			DWORD write; // Bytes written by each WriteFile() call
+			DWORD lastErrno = NO_ERROR; // Value returned by GetLastError()
+			while (remainLength > 0)
+			{
+				if (!osWriteFile(H, remain, remainLength, &write, &overlapped))
+				{
+					if (retryIoerr(&retry, &lastErrno)) continue;
+					break;
+				}
+				_assert(write == 0 || write <= (DWORD)remainLength);
+				if (write == 0 || write > (DWORD)remainLength)
+				{
+					lastErrno = osGetLastError();
+					break;
+				}
+				offset += write;
+				overlapped.Offset = (DWORD)(offset & 0xffffffff);
+				overlapped.OffsetHigh = (DWORD)((offset>>32) & 0x7fffffff);
+
+				remain += write;
+				remainLength -= write;
+			}
+			if (remainLength > 0)
+			{
+				LastErrno = lastErrno;
+				rc = 1;
+			}
+		}
+		if (rc)
+		{
+			if (LastErrno == ERROR_HANDLE_DISK_FULL ||  LastErrno == ERROR_DISK_FULL)
+				return RC_FULL;
+			return gpuLogError(RC_IOERR_WRITE, LastErrno, "gpuWrite", Path);
+		}
+		else
+			logIoerr(retry);
 		return RC_OK;
-		//int rc = 0; // True if error has occurred, else false
-		//int retry = 0; // Number of retries
-		//{
-		//	uint8 *remain = (uint8 *)buffer; // Data yet to be written
-		//	int remainLength = amount; // Number of bytes yet to be written
-		//	DWORD write; // Bytes written by each WriteFile() call
-		//	DWORD lastErrno = NO_ERROR; // Value returned by GetLastError()
-		//	while (remainLength > 0)
-		//	{
-		//		if (!osWriteFile(H, remain, remainLength, &write, 0)) {
-		//			if (retryIoerr(&retry, &lastErrno)) continue;
-		//			break;
-		//		}
-		//		_assert(write == 0 || write <= (DWORD)remainLength);
-		//		if (write == 0 || write > (DWORD)remainLength)
-		//		{
-		//			lastErrno = osGetLastError();
-		//			break;
-		//		}
-		//		remain += write;
-		//		remainLength -= write;
-		//	}
-		//	if (remainLength > 0)
-		//	{
-		//		LastErrno = lastErrno;
-		//		rc = 1;
-		//	}
-		//}
-		//if (rc)
-		//{
-		//	if (LastErrno == ERROR_HANDLE_DISK_FULL ||  LastErrno == ERROR_DISK_FULL)
-		//		return RC_FULL;
-		//	return winLogError(RC_IOERR_WRITE, LastErrno, "winWrite", Path);
-		//}
-		//else
-		//	logIoerr(retry);
-		//return RC_OK;
 	}
 
 	__device__ RC GpuVFile::Truncate(int64 size)
 	{
+		RC rc = RC_OK;
 		OSTRACE("TRUNCATE %d %lld\n", H, size);
-		return RC_OK;
-		//RC rc = RC_OK;
-		//// If the user has configured a chunk-size for this file, truncate the file so that it consists of an integer number of chunks (i.e. the
-		//// actual file size after the operation may be larger than the requested size).
-		//if (SizeChunk > 0)
-		//	size = ((size+SizeChunk-1)/SizeChunk)*SizeChunk;
-		//// SetEndOfFile() returns non-zero when successful, or zero when it fails.
-		//if (seekWinFile(this, size))
-		//	rc = winLogError(RC_IOERR_TRUNCATE, LastErrno, "winTruncate1", Path);
-		//else if (!osSetEndOfFile(H))
-		//{
-		//	LastErrno = osGetLastError();
-		//	rc = winLogError(RC_IOERR_TRUNCATE, LastErrno, "winTruncate2", Path);
-		//}
-		//OSTRACE("TRUNCATE %d %lld %s\n", H, size, rc ? "failed" : "ok");
-		//return rc;
+		SimulateIOError(return RC_IOERR_TRUNCATE);
+		// If the user has configured a chunk-size for this file, truncate the file so that it consists of an integer number of chunks (i.e. the
+		// actual file size after the operation may be larger than the requested size).
+		if (SizeChunk > 0)
+			size = ((size+SizeChunk-1)/SizeChunk)*SizeChunk;
+		// SetEndOfFile() returns non-zero when successful, or zero when it fails.
+		if (seekGpuFile(this, size))
+			rc = gpuLogError(RC_IOERR_TRUNCATE, LastErrno, "gpuTruncate1", Path);
+		else if (!osSetEndOfFile(H))
+		{
+			LastErrno = osGetLastError();
+			rc = gpuLogError(RC_IOERR_TRUNCATE, LastErrno, "gpuTruncate2", Path);
+		}
+		OSTRACE("TRUNCATE %d %lld %s\n", H, size, rc ? "failed" : "ok");
+		return rc;
 	}
 
+#ifdef TEST
+	// Count the number of fullsyncs and normal syncs.  This is used to test that syncs and fullsyncs are occuring at the right times.
+	int g_sync_count = 0;
+	int g_fullsync_count = 0;
+#endif
 	__device__ RC GpuVFile::Sync(SYNC flags)
 	{
 		// Check that one of SQLITE_SYNC_NORMAL or FULL was passed
 		_assert((flags&0x0F) == SYNC_NORMAL || (flags&0x0F) == SYNC_FULL);
 		OSTRACE("SYNC %d lock=%d\n", H, Lock_);
+		// Unix cannot, but some systems may return SQLITE_FULL from here. This line is to test that doing so does not cause any problems.
+		SimulateDiskfullError(return RC_FULL);
+#ifdef TEST
+		if ((flags&0x0F) == SYNC_FULL)
+			g_fullsync_count++;
+		g_sync_count++;
+#endif
+#ifdef NO_SYNC // If we compiled with the SQLITE_NO_SYNC flag, then syncing is a no-op
 		return RC_OK;
+#else
+		bool rc = osFlushFileBuffers(H);
+		SimulateIOError(rc = false);
+		if (rc)
+			return RC_OK;
+		LastErrno = osGetLastError();
+		return gpuLogError(RC_IOERR_FSYNC, LastErrno, "gpuSync", Path);
+#endif
 	}
 
 	__device__ RC GpuVFile::get_FileSize(int64 &size)
 	{
-		return RC_OK;
-		//RC rc = RC_OK;
-		//FILE_STANDARD_INFO info;
-		//if (osGetFileInformationByHandleEx(H, FileStandardInfo, &info, sizeof(info)))
-		//	size = info.EndOfFile.QuadPart;
-		//else
-		//{
-		//	LastErrno = osGetLastError();
-		//	rc = winLogError(RC_IOERR_FSTAT, LastErrno, "winFileSize", Path);
-		//}
-		//return rc;
+		RC rc = RC_OK;
+		SimulateIOError(return RC_IOERR_FSTAT);
+		DWORD upperBits;
+		DWORD lowerBits = osGetFileSize(H, &upperBits);
+		size = (((int64)upperBits)<<32) + lowerBits;
+		DWORD lastErrno;
+		if (lowerBits == INVALID_FILE_SIZE && (lastErrno = osGetLastError()) != NO_ERROR)
+		{
+			LastErrno = lastErrno;
+			rc = gpuLogError(RC_IOERR_FSTAT, LastErrno, "gpuFileSize", Path);
+		}
+		return rc;
 	}
 
 	__device__ static int getReadLock(GpuVFile *file)
@@ -940,7 +974,8 @@ namespace Core
 
 	__device__ static bool gpuIsDir(const void *converted)
 	{
-		return false;
+		DWORD attr = osGetFileAttributesA((char *)converted);
+		return (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY));
 	}
 
 	__device__ VFile *GpuVSystem::_AttachFile(void *buffer)
@@ -1075,7 +1110,7 @@ namespace Core
 		if (isTemp)
 			file->DeleteOnClose = converted;
 		else
-		_free(converted);
+			_free(converted);
 		file->Opened = true;
 		file->Vfs = this;
 		file->H = h;

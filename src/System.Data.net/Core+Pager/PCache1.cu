@@ -118,12 +118,12 @@ namespace Core
 
 	__device__ void *Alloc(int bytes)
 	{
-		_assert(MutexEx::NotHeld(_pcache1.Group.Mutex));
+		_assert(MutexEx_NotHeld(_pcache1.Group.Mutex));
 		StatusEx::StatusSet(StatusEx::STATUS_PAGECACHE_SIZE, bytes);
 		void *p = nullptr;
 		if (bytes <= _pcache1.SizeSlot)
 		{
-			MutexEx::Enter(_pcache1.Mutex);
+			MutexEx_Enter(_pcache1.Mutex);
 			p = (PgHdr1 *)_pcache1.Free;
 			if (p)
 			{
@@ -133,7 +133,7 @@ namespace Core
 				_assert(_pcache1.FreeSlots >= 0);
 				StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_USED, 1);
 			}
-			MutexEx::Leave(_pcache1.Mutex);
+			MutexEx_Leave(_pcache1.Mutex);
 		}
 		if (!p)
 		{
@@ -143,9 +143,9 @@ namespace Core
 			if (p)
 			{
 				size_t size = _allocsize(p);
-				MutexEx::Enter(_pcache1.Mutex);
+				MutexEx_Enter(_pcache1.Mutex);
 				StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_OVERFLOW, (int)size);
-				MutexEx::Leave(_pcache1.Mutex);
+				MutexEx_Leave(_pcache1.Mutex);
 			}
 #endif
 			_memdbg_settype(p, MEMTYPE_PCACHE);
@@ -159,7 +159,7 @@ namespace Core
 		if (!p) return 0;
 		if (p >= _pcache1.Start && p < _pcache1.End)
 		{
-			MutexEx::Enter(_pcache1.Mutex);
+			MutexEx_Enter(_pcache1.Mutex);
 			StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_USED, -1);
 			PgFreeslot *slot = (PgFreeslot *)p;
 			slot->Next = _pcache1.Free;
@@ -167,7 +167,7 @@ namespace Core
 			_pcache1.FreeSlots++;
 			_pcache1.UnderPressure = (_pcache1.FreeSlots < _pcache1.Reserves);
 			_assert(_pcache1.FreeSlots <= _pcache1.Slots);
-			MutexEx::Leave(_pcache1.Mutex);
+			MutexEx_Leave(_pcache1.Mutex);
 		}
 		else
 		{
@@ -175,9 +175,9 @@ namespace Core
 			_memdbg_settype(p, MEMTYPE_HEAP);
 			freed = _allocsize(p);
 #ifndef DISABLE_PAGECACHE_OVERFLOW_STATS
-			MutexEx::Enter(_pcache1.Mutex);
+			MutexEx_Enter(_pcache1.Mutex);
 			StatusEx::StatusAdd(StatusEx::STATUS_PAGECACHE_OVERFLOW, -(int)freed);
-			MutexEx::Leave(_pcache1.Mutex);
+			MutexEx_Leave(_pcache1.Mutex);
 #endif
 			_free(p);
 		}
@@ -200,8 +200,8 @@ namespace Core
 	__device__ static PgHdr1 *AllocPage(PCache1 *cache)
 	{
 		// The group mutex must be released before pcache1Alloc() is called. This is because it may call sqlite3_release_memory(), which assumes that this mutex is not held.
-		_assert(MutexEx::Held(cache->Group->Mutex));
-		MutexEx::Leave(cache->Group->Mutex);
+		_assert(MutexEx_Held(cache->Group->Mutex));
+		MutexEx_Leave(cache->Group->Mutex);
 		PgHdr1 *p = nullptr;
 		void *pg;
 #ifdef PCACHE_SEPARATE_HEADER
@@ -217,7 +217,7 @@ namespace Core
 		pg = Alloc(sizeof(PgHdr1) + cache->SizePage + cache->SizeExtra);
 		p = (PgHdr1 *)&((uint8 *)pg)[cache->SizePage];
 #endif
-		MutexEx::Enter(cache->Group->Mutex);
+		MutexEx_Enter(cache->Group->Mutex);
 		if (pg)
 		{
 			p->Page.Buffer = pg;
@@ -234,7 +234,7 @@ namespace Core
 		if (_ALWAYS(p))
 		{
 			PCache1 *cache = p->Cache;
-			_assert(MutexEx::Held(p->Cache->Group->Mutex));
+			_assert(MutexEx_Held(p->Cache->Group->Mutex));
 			Free(p->Page.Buffer);
 #ifdef PCACHE_SEPARATE_HEADER
 			_free(p);
@@ -255,15 +255,15 @@ namespace Core
 
 	__device__ static int ResizeHash(PCache1 *p)
 	{
-		_assert(MutexEx::Held(p->Group->Mutex));
+		_assert(MutexEx_Held(p->Group->Mutex));
 		uint newLength = p->Hash.length * 2;
 		if (newLength < 256)
 			newLength = 256;
-		MutexEx::Leave(p->Group->Mutex);
+		MutexEx_Leave(p->Group->Mutex);
 		if (p->Hash.length) _benignalloc_begin();
 		PgHdr1 **newHash = (PgHdr1 **)_allocZero(sizeof(PgHdr1 *) * newLength);
 		if (p->Hash.length) _benignalloc_end();
-		MutexEx::Enter(p->Group->Mutex);
+		MutexEx_Enter(p->Group->Mutex);
 		if (newHash)
 		{
 			for (uint i = 0; i < (uint)p->Hash.length; i++)
@@ -291,7 +291,7 @@ namespace Core
 			return;
 		PCache1 *cache = page->Cache;
 		PGroup *group = cache->Group;
-		_assert(MutexEx::Held(group->Mutex));
+		_assert(MutexEx_Held(group->Mutex));
 		if (page->LruNext || page == group->LruTail)
 		{
 			if (page->LruPrev)
@@ -311,7 +311,7 @@ namespace Core
 	__device__ static void RemoveFromHash(PgHdr1 *page)
 	{
 		PCache1 *cache = page->Cache;
-		_assert(MutexEx::Held(cache->Group->Mutex));
+		_assert(MutexEx_Held(cache->Group->Mutex));
 		uint h = (page->ID % cache->Hash.length);
 		PgHdr1 **pp;
 		for (pp = &cache->Hash[h]; (*pp) != page; pp = &(*pp)->Next);
@@ -321,7 +321,7 @@ namespace Core
 
 	__device__ static void EnforceMaxPage(PGroup *group)
 	{
-		_assert(MutexEx::Held(group->Mutex));
+		_assert(MutexEx_Held(group->Mutex));
 		while (group->CurrentPages > group->MaxPages && group->LruTail)
 		{
 			PgHdr1 *p = group->LruTail;
@@ -335,7 +335,7 @@ namespace Core
 	__device__ static void TruncateUnsafe(PCache1 *p, Pid limit)
 	{
 		ASSERTONLY(uint pages = 0;)
-			_assert(MutexEx::Held(p->Group->Mutex));
+			_assert(MutexEx_Held(p->Group->Mutex));
 		for (uint h = 0; h < (uint)p->Hash.length; h++)
 		{
 			PgHdr1 **pp = &p->Hash[h]; 
@@ -371,8 +371,8 @@ namespace Core
 		_memset(&_pcache1, 0, sizeof(_pcache1));
 		if (SysEx_GlobalStatics.CoreMutex)
 		{
-			_pcache1.Group.Mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_LRU);
-			_pcache1.Mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_PMEM);
+			_pcache1.Group.Mutex = MutexEx_Alloc(MUTEX_STATIC_LRU);
+			_pcache1.Mutex = MutexEx_Alloc(MUTEX_STATIC_PMEM);
 		}
 		_pcache1.Group.MaxPinned = 10;
 		_pcache1.IsInit = true;
@@ -419,10 +419,10 @@ namespace Core
 			if (purgeable)
 			{
 				cache->Min = 10;
-				MutexEx::Enter(group->Mutex);
+				MutexEx_Enter(group->Mutex);
 				group->MinPages += cache->Min;
 				group->MaxPinned = group->MaxPages + 10 - group->MinPages;
-				MutexEx::Leave(group->Mutex);
+				MutexEx_Leave(group->Mutex);
 			}
 		}
 		return (IPCache *)cache;
@@ -433,13 +433,13 @@ namespace Core
 		if (Purgeable)
 		{
 			PGroup *group = Group;
-			MutexEx::Enter(group->Mutex);
+			MutexEx_Enter(group->Mutex);
 			group->MaxPages += (max - Max);
 			group->MaxPinned = group->MaxPages + 10 - group->MinPages;
 			Max = max;
 			N90pct = Max * 9 / 10;
 			EnforceMaxPage(group);
-			MutexEx::Leave(group->Mutex);
+			MutexEx_Leave(group->Mutex);
 		}
 	}
 
@@ -448,20 +448,20 @@ namespace Core
 		if (Purgeable)
 		{
 			PGroup *group = Group;
-			MutexEx::Enter(group->Mutex);
+			MutexEx_Enter(group->Mutex);
 			uint savedMaxPages = group->MaxPages;
 			group->MaxPages = 0;
 			EnforceMaxPage(group);
 			group->MaxPages = savedMaxPages;
-			MutexEx::Leave(group->Mutex);
+			MutexEx_Leave(group->Mutex);
 		}
 	}
 
 	__device__ int PCache1::get_Pages()
 	{
-		MutexEx::Enter(Group->Mutex);
+		MutexEx_Enter(Group->Mutex);
 		int pages = Pages;
-		MutexEx::Leave(Group->Mutex);
+		MutexEx_Leave(Group->Mutex);
 		return pages;
 	}
 
@@ -471,7 +471,7 @@ namespace Core
 		_assert(Purgeable || Min == 0);
 		_assert(!Purgeable || Min == 10);
 		PGroup *group;
-		MutexEx::Enter((group = Group)->Mutex);
+		MutexEx_Enter((group = Group)->Mutex);
 
 		// Step 1: Search the hash table for an existing entry.
 		PgHdr1 *page = nullptr;
@@ -552,7 +552,7 @@ namespace Core
 fetch_out:
 		if (page && id > MaxID)
 			MaxID = id;
-		MutexEx::Leave(group->Mutex);
+		MutexEx_Leave(group->Mutex);
 		return &page->Page;
 	}
 
@@ -561,7 +561,7 @@ fetch_out:
 		PgHdr1 *page = (PgHdr1 *)pg;
 		PGroup *group = Group;
 		_assert(page->Cache == this);
-		MutexEx::Enter(group->Mutex);
+		MutexEx_Enter(group->Mutex);
 		// It is an error to call this function if the page is already part of the PGroup LRU list.
 		_assert(page->LruPrev == nullptr && page->LruNext == nullptr);
 		_assert(group->LruHead != page && group->LruTail != page);
@@ -586,7 +586,7 @@ fetch_out:
 			}
 			Recyclables++;
 		}
-		MutexEx::Leave(Group->Mutex);
+		MutexEx_Leave(Group->Mutex);
 	}
 
 	__device__ void PCache1::Rekey(ICachePage *pg, Pid old, Pid new_)
@@ -594,7 +594,7 @@ fetch_out:
 		PgHdr1 *page = (PgHdr1 *)pg;
 		_assert(page->ID == old);
 		_assert(page->Cache == this);
-		MutexEx::Enter(Group->Mutex);
+		MutexEx_Enter(Group->Mutex);
 		uint h = (old % Hash.length);
 		PgHdr1 **pp = &Hash[h];
 		while ((*pp) != page)
@@ -606,18 +606,18 @@ fetch_out:
 		Hash[h] = page;
 		if (new_ > MaxID)
 			MaxID = new_;
-		MutexEx::Leave(Group->Mutex);
+		MutexEx_Leave(Group->Mutex);
 	}
 
 	__device__ void PCache1::Truncate(Pid limit)
 	{
-		MutexEx::Enter(Group->Mutex);
+		MutexEx_Enter(Group->Mutex);
 		if (limit <= MaxID)
 		{
 			TruncateUnsafe(this, limit);
 			MaxID = limit - 1;
 		}
-		MutexEx::Leave(Group->Mutex);
+		MutexEx_Leave(Group->Mutex);
 	}
 
 	__device__ void PCache1::Destroy(IPCache *p)
@@ -625,7 +625,7 @@ fetch_out:
 		PCache1 *cache = (PCache1 *)p;
 		PGroup *group = cache->Group;
 		_assert(cache->Purgeable || (cache->Max == 0 && cache->Min == 0));
-		MutexEx::Enter(group->Mutex);
+		MutexEx_Enter(group->Mutex);
 		TruncateUnsafe(cache, 0);
 		_assert(group->MaxPages >= cache->Max);
 		group->MaxPages -= cache->Max;
@@ -633,7 +633,7 @@ fetch_out:
 		group->MinPages -= cache->Min;
 		group->MaxPinned = group->MaxPages + 10 - group->MinPages;
 		EnforceMaxPage(group);
-		MutexEx::Leave(group->Mutex);
+		MutexEx_Leave(group->Mutex);
 		_free(cache->Hash);
 		_free(cache);
 	}
@@ -641,13 +641,13 @@ fetch_out:
 #ifdef ENABLE_MEMORY_MANAGEMENT
 	__device__ int PCache::ReleaseMemory(int required)
 	{
-		_assert(MutexEx::NotHeld(_pcache1.Group.Mutex));
-		_assert(MutexEx::NotHeld(_pcache1.Mutex));
+		_assert(MutexEx_NotHeld(_pcache1.Group.Mutex));
+		_assert(MutexEx_NotHeld(_pcache1.Mutex));
 		int free = 0;
 		if (_pcache1.Start == nullptr)
 		{
 			PgHdr1 *p;
-			MutexEx::Enter(_pcache1.Group.Mutex);
+			MutexEx_Enter(_pcache1.Group.Mutex);
 			while ((required < 0 || free < required) && ((p = _pcache1.Group.LruTail) != nullptr))
 			{
 				free += MemSize(p->Page.Buffer);
@@ -658,7 +658,7 @@ fetch_out:
 				RemoveFromHash(p);
 				FreePage(p);
 			}
-			MutexEx::Leave(_pcache1.Group.Mutex);
+			MutexEx_Leave(_pcache1.Group.Mutex);
 		}
 		return free;
 	}

@@ -13,7 +13,7 @@ namespace Core
 	__device__ RC VTable::CreateModule(Context *ctx, const char *name, const ITableModule *imodule, void *aux, void (*destroy)(void *))
 	{
 		RC rc = RC_OK;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		int nameLength = _strlen30(name);
 		if (ctx->Modules.Find(name, nameLength))
 			rc = SysEx_MISUSE_BKPT;
@@ -39,7 +39,7 @@ namespace Core
 		}
 		rc = Main::ApiExit(ctx, rc);
 		if (rc != RC_OK && destroy) destroy(aux);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -106,7 +106,7 @@ namespace Core
 	{
 		_assert(IsVirtual(table));
 		_assert(Btree::HoldsAllMutexes(ctx));
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		for (VTable **pvtable = &table->VTables; *pvtable; pvtable = &(*pvtable)->Next)
 			if ((*pvtable)->Ctx == ctx)
 			{
@@ -120,7 +120,7 @@ namespace Core
 	__device__ void VTable::UnlockList(Context *ctx)
 	{
 		_assert(Btree::HoldsAllMutexes(ctx));
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		VTable *vtable = ctx->Disconnect;
 		ctx->Disconnect = nullptr;
 		if (vtable)
@@ -468,12 +468,12 @@ namespace Core
 
 	__device__ RC VTable::DeclareVTable(Context *ctx, const char *createTableName)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		Table *table;
 		if (!ctx->VTableCtx || !(table = ctx->VTableCtx->Table))
 		{
 			Main::Error(ctx, RC_MISUSE, nullptr);
-			MutexEx::Leave(ctx->Mutex);
+			MutexEx_Leave(ctx->Mutex);
 			return SysEx_MISUSE_BKPT;
 		}
 		_assert((table->TabFlags & TF_Virtual) != 0);
@@ -515,7 +515,7 @@ namespace Core
 
 		_assert((rc & 0xff) == rc);
 		rc = Main::ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -741,7 +741,7 @@ namespace Core
 	__device__ RC VTable::Config(Context *ctx, VTABLECONFIG op, void *arg1)
 	{
 		RC rc = RC_OK;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		switch (op)
 		{
 		case VTABLECONFIG_CONSTRAINT: {
@@ -751,7 +751,7 @@ namespace Core
 			else
 			{
 				_assert(!p->Table || (p->Table->TabFlags & TF_Virtual) != 0);
-				p->VTable->Constraint = (bool)arg1;
+				p->VTable->Constraint = (arg1 != 0);
 			}
 			break; }
 		default:
@@ -759,7 +759,7 @@ namespace Core
 			break;
 		}
 		if (rc != RC_OK) Main::Error(ctx, rc, nullptr);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 }

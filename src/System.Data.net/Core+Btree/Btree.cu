@@ -264,7 +264,7 @@ namespace Core
 #ifdef _DEBUG
 	__device__ static bool CursorHoldsMutex(BtCursor *p)
 	{
-		return MutexEx::Held(p->Bt->Mutex);
+		return MutexEx_Held(p->Bt->Mutex);
 	}
 #endif
 
@@ -278,7 +278,7 @@ namespace Core
 
 	__device__ static void InvalidateAllOverflowCache(BtShared *bt)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		for (BtCursor *p = bt->Cursor; p; p = p->Next)
 			InvalidateOverflowCache(p);
 	}
@@ -377,7 +377,7 @@ namespace Core
 
 	__device__ static RC SaveAllCursors(BtShared *bt, Pid root, BtCursor *except)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(except == nullptr || except->Bt == bt);
 		for (BtCursor *p = bt->Cursor; p; p = p->Next)
 		{
@@ -463,7 +463,7 @@ namespace Core
 #ifndef OMIT_AUTOVACUUM
 	__device__ static Pid PtrmapPageId(BtShared *bt, Pid id)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		if (id < 2) return 0;
 		int pagesPerMapPage = (bt->UsableSize / 5) + 1;
 		Pid ptrMap = (id - 2) / pagesPerMapPage;
@@ -477,7 +477,7 @@ namespace Core
 	{
 		if (*rcRef != RC_OK) return;
 
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		// The master-journal page number must never be used as a pointer map page
 		_assert(!PTRMAP_ISPAGE(bt, PENDING_BYTE_PAGE(bt)));
 
@@ -522,7 +522,7 @@ ptrmap_exit:
 
 	__device__ static RC PtrmapGet(BtShared *bt, Pid key, PTRMAP *type, Pid *id)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 
 		IPage *page; // The pointer map page
 		uint8 ptrmapIdx = PTRMAP_PAGENO(bt, key); // Pointer map page index
@@ -558,7 +558,7 @@ ptrmap_exit:
 
 	__device__ static uint8 *FindOverflowCell(MemPage *page, uint cell)
 	{
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		for (int i = page->Overflows - 1; i >= 0; i--)
 		{
 			uint16 k = page->OvflIdxs[i];
@@ -574,7 +574,7 @@ ptrmap_exit:
 
 	__device__ static void BtreeParseCellPtr(MemPage *page, uint8 *cell, CellInfo *info)
 	{
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 
 		info->Cell = cell;
 		uint16 n = page->ChildPtrSize; // Number bytes in cell content header
@@ -710,7 +710,7 @@ ptrmap_exit:
 		_assert(page->Bt != nullptr);
 		_assert(page->Bt->UsableSize <= MAX_PAGE_SIZE);
 		_assert(page->Overflows == 0);
-		_assert(MutexEx::Held(page->Bt->Mutex) );
+		_assert(MutexEx_Held(page->Bt->Mutex) );
 		unsigned char *temp = (unsigned char *)page->Bt->Pager->get_TempSpace(); // Temp area for cell content
 		unsigned char *data = page->Data; // The page data
 		int hdr = page->HdrOffset; // Offset to the page header
@@ -766,7 +766,7 @@ ptrmap_exit:
 	{
 		_assert(Pager::Iswriteable(page->DBPage));
 		_assert(page->Bt != nullptr);
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		_assert(bytes >= 0);  // Minimum cell size is 4
 		_assert(page->Frees >= bytes);
 		_assert(page->Overflows == 0);
@@ -849,7 +849,7 @@ ptrmap_exit:
 		_assert(Pager::Iswriteable(page->DBPage));
 		_assert(start >= page->HdrOffset + 6 + page->ChildPtrSize);
 		_assert((start + size) <= (int)page->Bt->UsableSize);
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		_assert(size >= 0); // Minimum cell size is 4
 
 		unsigned char *data = page->Data;
@@ -917,7 +917,7 @@ ptrmap_exit:
 	__device__ static RC DecodeFlags(MemPage *page, int flagByte)
 	{
 		_assert(page->HdrOffset == (page->ID == 1 ? 100 : 0));
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		page->Leaf = (flagByte >> 3 ? true : false); _assert(PTF_LEAF == 1 << 3);
 		flagByte &= ~PTF_LEAF;
 		page->ChildPtrSize = 4 - 4 * page->Leaf;
@@ -945,7 +945,7 @@ ptrmap_exit:
 	__device__ static RC BtreeInitPage(MemPage *page)
 	{
 		_assert(page->Bt != nullptr);
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		_assert(page->ID == Pager::get_PageID(page->DBPage));
 		_assert(page == Pager::GetExtra(page->DBPage));
 		_assert(page->Data == Pager::GetData(page->DBPage));
@@ -1033,7 +1033,7 @@ ptrmap_exit:
 		_assert(Pager::GetExtra(page->DBPage) == (void *)page);
 		_assert(Pager::GetData(page->DBPage) == data);
 		_assert(Pager::Iswriteable(page->DBPage));
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		uint8 hdr = page->HdrOffset;
 		if (bt->BtsFlags & BTS_SECURE_DELETE)
 			_memset(&data[hdr], 0, bt->UsableSize - hdr);
@@ -1072,7 +1072,7 @@ ptrmap_exit:
 
 	__device__ static RC BtreeGetPage(BtShared *bt, Pid id, MemPage **page, bool noContent)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		IPage *dbPage;
 		RC rc = bt->Pager->Acquire(id, (IPage **)&dbPage, noContent);
 		if (rc) return rc;
@@ -1083,7 +1083,7 @@ ptrmap_exit:
 	__device__ static MemPage *BtreePageLookup(BtShared *bt, Pid id)
 	{
 		IPage *dbPage;
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		dbPage = bt->Pager->Lookup(id);
 		return (dbPage ? BtreePageFromDbPage(dbPage, id, bt) : nullptr);
 	}
@@ -1102,7 +1102,7 @@ ptrmap_exit:
 
 	__device__ static RC GetAndInitPage(BtShared *bt, Pid id, MemPage **page)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 
 		RC rc;
 		if (id > BtreePagecount(bt))
@@ -1131,7 +1131,7 @@ ptrmap_exit:
 			_assert(page->Bt != nullptr);
 			_assert(Pager::GetExtra(page->DBPage) == (void*)page);
 			_assert(Pager::GetData(page->DBPage) == page->Data);
-			_assert(MutexEx::Held(page->Bt->Mutex));
+			_assert(MutexEx_Held(page->Bt->Mutex));
 			Pager::Unref(page->DBPage);
 		}
 	}
@@ -1142,7 +1142,7 @@ ptrmap_exit:
 		_assert(Pager::get_PageRefs(dbPage) > 0);
 		if (page->IsInit)
 		{
-			_assert(MutexEx::Held(page->Bt->Mutex));
+			_assert(MutexEx_Held(page->Bt->Mutex));
 			page->IsInit = false;
 			if (Pager::get_PageRefs(dbPage) > 1)
 			{
@@ -1162,7 +1162,7 @@ ptrmap_exit:
 	{
 		BtShared *bt = (BtShared *)arg;
 		_assert(bt->Ctx != nullptr);
-		_assert(MutexEx::Held(bt->Ctx->Mutex));
+		_assert(MutexEx_Held(bt->Ctx->Mutex));
 		return bt->Ctx->InvokeBusyHandler();
 	}
 
@@ -1178,7 +1178,7 @@ ptrmap_exit:
 
 		_assert(ctx != nullptr);
 		_assert(vfs != nullptr);
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		_assert(((uint)flags & 0xff) == (uint)flags); // flags fit in 8 bits
 
 		// Only a BTREE_SINGLE database can be BTREE_UNORDERED
@@ -1203,7 +1203,7 @@ ptrmap_exit:
 
 		RC rc = RC_OK; // Result code from this function
 		BtShared *bt = nullptr; // Shared part of btree structure
-		MutexEx mutexOpen = MutexEx_Empty;
+		MutexEx mutexOpen = nullptr;
 #if !defined(OMIT_SHARED_CACHE) && !defined(OMIT_DISKIO)
 		// If this Btree is a candidate for shared cache, try to find an existing BtShared object that we can share with
 		if (!tempDB && (!memoryDB || (vfsFlags & VSystem::OPEN_URI) != 0))
@@ -1231,10 +1231,10 @@ ptrmap_exit:
 				}
 				MutexEx mutexShared;
 #if THREADSAFE
-				mutexOpen = MutexEx::Alloc(MutexEx::MUTEX_STATIC_OPEN); // Prevents a race condition. Ticket #3537
-				MutexEx::Enter(mutexOpen);
-				mutexShared = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
-				MutexEx::Enter(mutexShared);
+				mutexOpen = MutexEx_Alloc(MUTEX_STATIC_OPEN); // Prevents a race condition. Ticket #3537
+				MutexEx_Enter(mutexOpen);
+				mutexShared = MutexEx_Alloc(MUTEX_STATIC_MASTER);
+				MutexEx_Enter(mutexShared);
 #endif
 				for (bt = _sharedCacheList; bt; bt = bt->Next)
 				{
@@ -1246,8 +1246,8 @@ ptrmap_exit:
 							Btree *existing = ctx->DBs[i].Bt;
 							if (existing && existing->Bt == bt)
 							{
-								MutexEx::Leave(mutexShared);
-								MutexEx::Leave(mutexOpen);
+								MutexEx_Leave(mutexShared);
+								MutexEx_Leave(mutexOpen);
 								_free(fullPathname);
 								_free(p);
 								return RC_CONSTRAINT;
@@ -1258,7 +1258,7 @@ ptrmap_exit:
 						break;
 					}
 				}
-				MutexEx::Leave(mutexShared);
+				MutexEx_Leave(mutexShared);
 				_free(fullPathname);
 			}
 #ifdef _DEBUG
@@ -1340,13 +1340,13 @@ ptrmap_exit:
 				bt->Refs = 1;
 				MutexEx mutexShared;
 #if THREADSAFE
-				mutexShared = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
-				bt->Mutex = MutexEx::Alloc(MutexEx::MUTEX_FAST);
+				mutexShared = MutexEx_Alloc(MUTEX_STATIC_MASTER);
+				bt->Mutex = MutexEx_Alloc(MUTEX_FAST);
 #endif
-				MutexEx::Enter(mutexShared);
+				MutexEx_Enter(mutexShared);
 				bt->Next = _sharedCacheList;
 				_sharedCacheList = bt;
-				MutexEx::Leave(mutexShared);
+				MutexEx_Leave(mutexShared);
 			}
 #endif
 		}
@@ -1397,10 +1397,10 @@ btree_open_out:
 			// do not change the pager-cache size.
 			if (p->Schema(0, nullptr) == nullptr)
 				p->Bt->Pager->SetCacheSize(DEFAULT_CACHE_SIZE);
-		if (mutexOpen.Tag)
+		if (mutexOpen)
 		{
-			_assert(MutexEx::Held(mutexOpen));
-			MutexEx::Leave(mutexOpen);
+			_assert(MutexEx_Held(mutexOpen));
+			MutexEx_Leave(mutexOpen);
 		}
 		return rc;
 	}
@@ -1408,13 +1408,13 @@ btree_open_out:
 	__device__ static bool RemoveFromSharingList(BtShared *bt)
 	{
 #ifndef OMIT_SHARED_CACHE
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		MutexEx master;
 #if THREADSAFE
-		master = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
+		master = MutexEx_Alloc(MUTEX_STATIC_MASTER);
 #endif
 		bool removed = false;
-		MutexEx::Enter(master);
+		MutexEx_Enter(master);
 		bt->Refs--;
 		if (bt->Refs <= 0)
 		{
@@ -1429,11 +1429,11 @@ btree_open_out:
 					list->Next = bt->Next;
 			}
 #if THREADSAFE
-			MutexEx::Free(bt->Mutex);
+			MutexEx_Free(bt->Mutex);
 #endif
 			removed = true;
 		}
-		MutexEx::Leave(master);
+		MutexEx_Leave(master);
 		return removed;
 #else
 		return true;
@@ -1455,7 +1455,7 @@ btree_open_out:
 	__device__ RC Btree::Close()
 	{
 		// Close all cursors opened via this handle.
-		_assert(MutexEx::Held(Ctx->Mutex));
+		_assert(MutexEx_Held(Ctx->Mutex));
 		Enter();
 		BtShared *bt = Bt;
 		BtCursor *cur = bt->Cursor;
@@ -1503,7 +1503,7 @@ btree_open_out:
 
 	__device__ RC Btree::SetCacheSize(int maxPage)
 	{
-		_assert(MutexEx::Held(Ctx->Mutex));
+		_assert(MutexEx_Held(Ctx->Mutex));
 		Enter();
 		Bt->Pager->SetCacheSize(maxPage);
 		Leave();
@@ -1513,7 +1513,7 @@ btree_open_out:
 #ifndef OMIT_PAGER_PRAGMAS
 	__device__ RC Btree::SetSafetyLevel(int level, bool fullSync, bool ckptFullSync)
 	{
-		_assert(MutexEx::Held(Ctx->Mutex));
+		_assert(MutexEx_Held(Ctx->Mutex));
 		_assert(level >= 1 && level <= 3);
 		Enter();
 		Bt->Pager->SetSafetyLevel(level, fullSync, ckptFullSync);
@@ -1524,7 +1524,7 @@ btree_open_out:
 
 	__device__ bool Btree::SyncDisabled()
 	{
-		_assert(MutexEx::Held(Ctx->Mutex));  
+		_assert(MutexEx_Held(Ctx->Mutex));  
 		Enter();
 		_assert(Bt && Bt->Pager);
 		bool rc = Bt->Pager->get_NoSync();
@@ -1567,7 +1567,7 @@ btree_open_out:
 #if defined(HAS_CODEC) || defined(_DEBUG)
 	__device__ int Btree::GetReserveNoMutex()
 	{
-		_assert(MutexEx::Held(Bt->Mutex));
+		_assert(MutexEx_Held(Bt->Mutex));
 		return Bt->PageSize - Bt->UsableSize;
 	}
 #endif
@@ -1641,7 +1641,7 @@ btree_open_out:
 
 	__device__ static RC LockBtree(BtShared *bt)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(bt->Page1 == nullptr);
 		RC rc = bt->Pager->SharedLock();
 		if (rc != RC_OK) return rc;
@@ -1760,7 +1760,7 @@ page1_init_failed:
 
 	__device__ static void UnlockBtreeIfUnused(BtShared *bt)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(bt->Cursor == nullptr || bt->InTransaction > TRANS_NONE);
 		if (bt->InTransaction == TRANS_NONE && bt->Page1 != nullptr)
 		{
@@ -1777,7 +1777,7 @@ page1_init_failed:
 
 	__device__ static RC NewDatabase(BtShared *bt)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		if (bt->Pages > 0)
 			return RC_OK;
 		MemPage *p1 = bt->Page1;
@@ -1963,9 +1963,9 @@ trans_begun:
 	{
 		bool isInitOrig = page->IsInit;
 		BtShared *bt = page->Bt;
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		RC rc = BtreeInitPage(page);
-		int cells;
+		uint cells;
 		Pid id;
 		if (rc != RC_OK)
 			goto set_child_ptrmaps_out;
@@ -1996,7 +1996,7 @@ set_child_ptrmaps_out:
 
 	__device__ static RC ModifyPagePointer(MemPage *page, Pid from, Pid to, PTRMAP type)
 	{
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		_assert(Pager::Iswriteable(page->DBPage));
 		if (type == PTRMAP_OVERFLOW2)
 		{
@@ -2051,7 +2051,7 @@ set_child_ptrmaps_out:
 	__device__ static RC RelocatePage(BtShared *bt, MemPage *page, PTRMAP type, Pid ptrPageID, Pid freePageID, bool isCommit)
 	{
 		_assert(type == PTRMAP_OVERFLOW2 || type == PTRMAP_OVERFLOW1 || type == PTRMAP_BTREE || type == PTRMAP_ROOTPAGE);
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(page->Bt == bt);
 
 		// Move page iDbPage from its current location to page number iFreePage
@@ -2109,7 +2109,7 @@ set_child_ptrmaps_out:
 	__device__ static RC AllocateBtreePage(BtShared *bt, MemPage **page, Pid *id, Pid nearby, BTALLOC mode);
 	__device__ static RC IncrVacuumStep(BtShared *bt, Pid fins, Pid lastPageID, bool commit)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(lastPageID > fins);
 
 		if (!PTRMAP_ISPAGE(bt, lastPageID) && lastPageID != PENDING_BYTE_PAGE(bt))
@@ -2243,7 +2243,7 @@ set_child_ptrmaps_out:
 		Pager *pager = bt->Pager;
 		ASSERTONLY(int refs = pager->get_Refs());
 
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		InvalidateAllOverflowCache(bt);
 		_assert(bt->AutoVacuum);
 		RC rc = RC_OK;
@@ -2669,7 +2669,7 @@ set_child_ptrmaps_out:
 		MemPage *page = nullptr;
 		RC rc = RC_OK;
 
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(idNextOut != nullptr);
 
 #ifndef OMIT_AUTOVACUUM
@@ -2910,7 +2910,7 @@ set_child_ptrmaps_out:
 			BtreeParseCell(cur->Pages[cur->ID], cur->Idxs[cur->ID], &cur->Info);
 		uint8 *payload = cur->Info.Cell + cur->Info.Header;
 		uint32 key = (page->IntKey ? 0U : (int)cur->Info.Key);
-		int local;
+		uint local;
 		if (skipKey)
 		{
 			payload += key;
@@ -2927,7 +2927,7 @@ set_child_ptrmaps_out:
 
 	__device__ const void *Btree::KeyFetch(BtCursor *cur, int *amount)
 	{
-		_assert(MutexEx::Held(cur->Btree->Ctx->Mutex));
+		_assert(MutexEx_Held(cur->Btree->Ctx->Mutex));
 		_assert(CursorHoldsMutex(cur));
 		const void *p = nullptr;
 		if (_ALWAYS(cur->State == CURSOR_VALID))
@@ -2938,7 +2938,7 @@ set_child_ptrmaps_out:
 	__device__ const void *Btree::DataFetch(BtCursor *cur, int *amount)
 	{
 		const void *p = 0;
-		_assert(MutexEx::Held(cur->Btree->Ctx->Mutex));
+		_assert(MutexEx_Held(cur->Btree->Ctx->Mutex));
 		_assert(CursorHoldsMutex(cur));
 		if (_ALWAYS(cur->State == CURSOR_VALID))
 			p = (const void*)FetchPayload(cur, amount, true);
@@ -3114,7 +3114,7 @@ set_child_ptrmaps_out:
 	__device__ RC Btree::First(BtCursor *cur, int *eof)
 	{
 		_assert(CursorHoldsMutex(cur) );
-		_assert(MutexEx::Held(cur->Btree->Ctx->Mutex));
+		_assert(MutexEx_Held(cur->Btree->Ctx->Mutex));
 		RC rc = MoveToRoot(cur);
 		if (rc == RC_OK)
 		{
@@ -3136,7 +3136,7 @@ set_child_ptrmaps_out:
 	__device__ RC Btree::Last(BtCursor *cur, int *eof)
 	{
 		_assert(CursorHoldsMutex(cur));
-		_assert(MutexEx::Held(cur->Btree->Ctx->Mutex));
+		_assert(MutexEx_Held(cur->Btree->Ctx->Mutex));
 
 		// If the cursor already points to the last entry, this is a no-op.
 		if (cur->State == CURSOR_VALID && cur->AtLast)
@@ -3173,7 +3173,7 @@ set_child_ptrmaps_out:
 	__device__ RC Btree::MovetoUnpacked(BtCursor *cur, UnpackedRecord *idxKey, int64 intKey, int biasRight, int *eof)
 	{
 		_assert(CursorHoldsMutex(cur));
-		_assert(MutexEx::Held(cur->Btree->Ctx->Mutex));
+		_assert(MutexEx_Held(cur->Btree->Ctx->Mutex));
 		_assert(eof != nullptr);
 		_assert((idxKey == nullptr) == (cur->KeyInfo == nullptr));
 
@@ -3470,7 +3470,7 @@ moveto_finish:
 
 	__device__ static RC AllocateBtreePage(BtShared *bt, MemPage **page, Pid *id, Pid nearby, BTALLOC mode)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(mode == BTALLOC::ANY || (nearby > 0 && IFAUTOVACUUM(bt->AutoVacuum)));
 		MemPage *page1 = bt->Page1;
 		Pid maxPage = BtreePagecount(bt); // Total size of the database file
@@ -3760,7 +3760,7 @@ end_allocate_page:
 
 	__device__ static RC FreePage2(BtShared *bt, MemPage *memPage, Pid pageID)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(pageID > 1);
 		_assert(!memPage || memPage->ID == pageID);
 
@@ -3870,7 +3870,7 @@ freepage_out:
 
 	__device__ static RC ClearCell(MemPage *page, unsigned char *cell)
 	{
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		CellInfo info;
 		BtreeParseCellPtr(page, cell, &info);
 		if (info.Overflow == 0)
@@ -3922,7 +3922,7 @@ freepage_out:
 	__device__ static RC FillInCell(MemPage *page, unsigned char *cell, const void *key, int64 keyLength, const void *data, int dataLength, int zeros, uint16 *sizeOut)
 	{
 		BtShared *bt = page->Bt;
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 
 		// pPage is not necessarily writeable since pCell might be auxiliary buffer space that is separate from the pPage buffer area
 		_assert(cell < page->Data || cell >= &page->Data[bt->PageSize] || Pager::Iswriteable(page->DBPage));
@@ -4058,7 +4058,7 @@ freepage_out:
 		_assert(idx < page->Cells);
 		_assert(size == CellSize(page, idx));
 		_assert(Pager::Iswriteable(page->DBPage));
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		uint8 *data = page->Data;
 		uint8 *ptr = &page->CellIdx[2 * idx]; // Used to move bytes around within data[]
 		uint32 pc = ConvertEx::Get2(ptr); // Offset to cell content of cell being deleted
@@ -4096,7 +4096,7 @@ freepage_out:
 		_assert(page->Cells <= MX_CELL(page->Bt) && MX_CELL(page->Bt) <= 10921);
 		_assert(page->Overflows <= _lengthof(page->Ovfls));
 		_assert(_lengthof(page->Ovfls) == _lengthof(page->OvflIdxs));
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		// The cell should normally be sized correctly.  However, when moving a malformed cell from a leaf page to an interior page, if the cell size
 		// wanted to be less than 4 but got rounded up to 4 on the leaf, then size might be less than 8 (leaf-size + pointer) on the interior node.  Hence
 		// the term after the || in the following assert().
@@ -4163,7 +4163,7 @@ freepage_out:
 	__device__ static void AssemblePage(MemPage *page, int cells, uint8 **cellSet, uint16 *sizes)
 	{
 		_assert(page->Overflows == 0);
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		_assert(cells >= 0 && cells <= (int)MX_CELL(page->Bt) && (int)MX_CELL(page->Bt) <= 10921);
 		_assert(Pager::Iswriteable(page->DBPage));
 
@@ -4201,7 +4201,7 @@ freepage_out:
 	{
 		BtShared *const bt = page->Bt; // B-Tree Database
 
-		_assert(MutexEx::Held(page->Bt->Mutex));
+		_assert(MutexEx_Held(page->Bt->Mutex));
 		_assert(Pager::Iswriteable(parent->DBPage));
 		_assert(page->Overflows == 1);
 
@@ -4348,7 +4348,7 @@ freepage_out:
 	__device__ static RC Balance_Nonroot(MemPage *parent, int parentIdx, uint8 *ovflSpace, bool isRoot, bool bulk)
 	{
 		BtShared *bt = parent->Bt; // The whole database
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		_assert(Pager::Iswriteable(parent->DBPage));
 
 #if 0
@@ -4921,7 +4921,7 @@ balance_cleanup:
 		BtShared *bt = root->Bt; // The BTree
 
 		_assert(root->Overflows > 0);
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 
 		// Make pRoot, the root page of the b-tree, writable. Allocate a new page that will become the new right-child of pPage. Copy the contents
 		// of the node stored on pRoot into the new child page.
@@ -5386,7 +5386,7 @@ end_insert:
 
 	__device__ static RC ClearDatabasePage(BtShared *bt, Pid id, bool freePageFlag, int *changes)
 	{
-		_assert(MutexEx::Held(bt->Mutex));
+		_assert(MutexEx_Held(bt->Mutex));
 		if (id > BtreePagecount(bt))
 			return SysEx_CORRUPT_BKPT;
 
@@ -6058,7 +6058,7 @@ cleardatabasepage_out:
 
 	__device__ bool Btree::IsInTrans() // need to test != nullptr
 	{
-		_assert(MutexEx::Held(Ctx->Mutex));
+		_assert(MutexEx_Held(Ctx->Mutex));
 		return (InTrans == TRANS_WRITE);
 	}
 
@@ -6079,13 +6079,13 @@ cleardatabasepage_out:
 
 	__device__ bool Btree::IsInReadTrans()
 	{
-		_assert(MutexEx::Held(Ctx->Mutex));
+		_assert(MutexEx_Held(Ctx->Mutex));
 		return (InTrans != TRANS_NONE);
 	}
 
 	__device__ bool Btree::IsInBackup()
 	{
-		_assert(MutexEx::Held(Ctx->Mutex));
+		_assert(MutexEx_Held(Ctx->Mutex));
 		return (Backups != 0);
 	}
 
@@ -6104,7 +6104,7 @@ cleardatabasepage_out:
 
 	__device__ RC Btree::SchemaLocked()
 	{
-		_assert(MutexEx::Held(Ctx->Mutex));
+		_assert(MutexEx_Held(Ctx->Mutex));
 		Enter();
 		RC rc = QuerySharedCacheTableLock(this, MASTER_ROOT, LOCK_READ);
 		_assert(rc == RC_OK || rc == RC_LOCKED_SHAREDCACHE);
@@ -6135,7 +6135,7 @@ cleardatabasepage_out:
 	__device__ RC Btree::PutData(BtCursor *cur, uint32 offset, uint32 amount, void *z)
 	{
 		_assert(CursorHoldsMutex(cur));
-		_assert(MutexEx::Held(cur->Btree->Ctx->Mutex));
+		_assert(MutexEx_Held(cur->Btree->Ctx->Mutex));
 		_assert(cur->IsIncrblobHandle);
 
 		RC rc = restoreCursorPosition(cur);
@@ -6164,7 +6164,7 @@ cleardatabasepage_out:
 	__device__ void Btree::CacheOverflow(BtCursor *cur)
 	{
 		_assert(CursorHoldsMutex(cur));
-		_assert(MutexEx::Held(cur->Btree->Ctx->Mutex));
+		_assert(MutexEx_Held(cur->Btree->Ctx->Mutex));
 		InvalidateOverflowCache(cur);
 		cur->IsIncrblobHandle = true;
 	}

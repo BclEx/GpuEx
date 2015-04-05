@@ -1352,7 +1352,7 @@ namespace Core
             if (SysEx._GlobalStatics.FullMutex && isThreadsafe)
             {
                 ctx.Mutex = MutexEx.Alloc(MutexEx.MUTEX.RECURSIVE);
-                if (ctx.Mutex.Tag == null)
+                if (ctx.Mutex == null)
                 {
                     C._free(ref ctx);
                     ctx = null;
@@ -1495,7 +1495,7 @@ namespace Core
             C._free(ref open);
             if (ctx != null)
             {
-                Debug.Assert(ctx.Mutex.Tag != null || !isThreadsafe || !SysEx._GlobalStatics.FullMutex);
+                Debug.Assert(ctx.Mutex != null || !isThreadsafe || !SysEx._GlobalStatics.FullMutex);
                 MutexEx.Leave(ctx.Mutex);
             }
             rc = Main.ErrCode(ctx);

@@ -13,16 +13,16 @@ namespace Core
 		if (rc) return nullptr;
 #endif
 		VSystem *vfs = nullptr;
-		MutexEx mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
-		MutexEx::Enter(mutex);
+		MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
+		MutexEx_Enter(mutex);
 		for (vfs = _vfsList; vfs && name && _strcmp(name, vfs->Name); vfs = vfs->Next) { }
-		MutexEx::Leave(mutex);
+		MutexEx_Leave(mutex);
 		return vfs;
 	}
 
 	__device__ static void UnlinkVfs(VSystem *vfs)
 	{
-		_assert(MutexEx::Held(MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER)));
+		_assert(MutexEx_Held(MutexEx_Alloc(MUTEX_STATIC_MASTER)));
 		if (!vfs) { }
 		else if (_vfsList == vfs)
 			_vfsList = vfs->Next;
@@ -38,8 +38,8 @@ namespace Core
 
 	__device__ RC VSystem::RegisterVfs(VSystem *vfs, bool default_)
 	{
-		MutexEx mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
-		MutexEx::Enter(mutex);
+		MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
+		MutexEx_Enter(mutex);
 		UnlinkVfs(vfs);
 		if (default_ || !_vfsList)
 		{
@@ -52,16 +52,16 @@ namespace Core
 			_vfsList->Next = vfs;
 		}
 		_assert(_vfsList != nullptr);
-		MutexEx::Leave(mutex);
+		MutexEx_Leave(mutex);
 		return RC_OK;
 	}
 
 	__device__ RC VSystem::UnregisterVfs(VSystem *vfs)
 	{
-		MutexEx mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
-		MutexEx::Enter(mutex);
+		MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
+		MutexEx_Enter(mutex);
 		UnlinkVfs(vfs);
-		MutexEx::Leave(mutex);
+		MutexEx_Leave(mutex);
 		return RC_OK;
 	}
 

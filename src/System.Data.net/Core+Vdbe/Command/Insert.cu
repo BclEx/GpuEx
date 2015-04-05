@@ -273,7 +273,7 @@ namespace Core { namespace Command
 		// Ensure that:
 		// (a) the table is not read-only, 
 		// (b) that if it is a view then ON INSERT triggers exist
-		if (Delete::IsReadOnly(parse, table, tmask))
+		if (Delete::IsReadOnly(parse, table, tmask != 0))
 			goto insert_cleanup;
 
 		// Allocate a VDBE

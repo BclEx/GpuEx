@@ -408,16 +408,16 @@ namespace Core
 
 	__device__ RC Main::LoadExtension(Context *ctx, const char *fileName, const char *procName, char **errMsgOut)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		RC rc = LoadExtension_(ctx, fileName, procName, errMsgOut);
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
 	__device__ void Main::CloseExtensions(Context *ctx)
 	{
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		for (int i = 0; i < ctx->Extensions.length; i++)
 			ctx->Vfs->DlClose(ctx->Extensions[i]);
 		_tagfree(ctx, ctx->Extensions.data);
@@ -425,12 +425,12 @@ namespace Core
 
 	__device__ RC Main::EnableLoadExtension(Context *ctx, bool onoff)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		if (onoff)
 			ctx->Flags |= Context::FLAG_LoadExtension;
 		else
 			ctx->Flags &= (Context::FLAG)~Context::FLAG_LoadExtension;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return RC_OK;
 	}
 
@@ -465,10 +465,10 @@ namespace Core
 #endif
 		{
 #if THREADSAFE
-			MutexEx mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
+			MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
 #endif
 			WsdAutoextInit;
-			MutexEx::Enter(mutex);
+			MutexEx_Enter(mutex);
 			int i;
 			for (i = 0; i < WsdAutoext.ExtsLength; i++)
 				if (WsdAutoext.Exts[i] == init) break;
@@ -485,7 +485,7 @@ namespace Core
 					WsdAutoext.ExtsLength++;
 				}
 			}
-			MutexEx::Leave(mutex);
+			MutexEx_Leave(mutex);
 			_assert((rc & 0xff) == rc);
 			return rc;
 		}
@@ -498,14 +498,14 @@ namespace Core
 #endif
 		{
 #if THREADSAFE
-			MutexEx mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
+			MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
 #endif
 			WsdAutoextInit;
-			MutexEx::Enter(mutex);
+			MutexEx_Enter(mutex);
 			_free(WsdAutoext.Exts);
 			WsdAutoext.Exts = nullptr;
 			WsdAutoext.ExtsLength = 0;
-			MutexEx::Leave(mutex);
+			MutexEx_Leave(mutex);
 		}
 	}
 
@@ -519,9 +519,9 @@ namespace Core
 		{
 			char *errmsg;
 #if THREADSAFE
-			MutexEx mutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER);
+			MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
 #endif
-			MutexEx::Enter(mutex);
+			MutexEx_Enter(mutex);
 			RC (*init)(Context*,char**,const core_api_routines*);
 			if (i >= WsdAutoext.ExtsLength)
 			{
@@ -530,7 +530,7 @@ namespace Core
 			}
 			else
 				init = (RC(*)(Context*,char**,const core_api_routines*))WsdAutoext.Exts[i];
-			MutexEx::Leave(mutex);
+			MutexEx_Leave(mutex);
 			errmsg = nullptr;
 			RC rc;
 			if (init && (rc = init(ctx, &errmsg, &g_apis)) != 0)

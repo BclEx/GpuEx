@@ -11,19 +11,30 @@ __device__ DWORD osGetFileAttributesA(char *path)
 	return 0;
 }
 
+__device__ DWORD osGetFileSize(HANDLE h, LPDWORD upper)
+{
+	*upper = 0;
+	return 0;
+}
+
 __device__ DWORD osDeleteFileA(char *path)
 {
 	return 0;
 }
 
-__device__ int osCloseHandle(HANDLE h)
+__device__ bool osCloseHandle(HANDLE h)
 {
-	return 0;
+	return true;
 }
 
-__device__ int osReadFile(HANDLE h, void *buffer, int amount, DWORD *read, int *reserved)
+__device__ bool osReadFile(HANDLE h, void *buffer, DWORD amount, DWORD *read, OVERLAPPED *overlapped)
 {
-	return 0;
+	return true;
+}
+
+__device__ bool osWriteFile(HANDLE h, const void *buffer, DWORD amount, DWORD *write, OVERLAPPED *overlapped)
+{
+	return true;
 }
 
 __device__ bool osSetFilePointer(HANDLE h, __int64 offset, int *reserved, int seekType)
@@ -31,6 +42,17 @@ __device__ bool osSetFilePointer(HANDLE h, __int64 offset, int *reserved, int se
 	return true;
 }
 
+__device__ bool osSetEndOfFile(HANDLE h)
+{
+	return true;
+}
+
+__device__ bool osFlushFileBuffers(HANDLE h)
+{
+	return true;
+}
+
+//
 __device__ HANDLE osCreateFileMappingA(HANDLE h, void *dummy1, int flags, void *dummy2, int length, const char *name)
 {
 	return 0;

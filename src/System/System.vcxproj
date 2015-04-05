@@ -135,8 +135,8 @@
     <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu" />
     <ClCompile Include="..\System.net\Core\VSystem.cu" />
-    <None Include="..\System.net\Core\GpuVSystem.cu" />
-    <ClCompile Include="..\System.net\Core\WinVSystem.cu" />
+    <None Include="..\System.net\Core\VSystem-gpu.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="System.cu" />
@@ -153,8 +153,8 @@
     <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
     <None Include="..\System.net\Core\IO\IO.VFile.cu" />
     <None Include="..\System.net\Core\VSystem.cu" />
-    <None Include="..\System.net\Core\GpuVSystem.cu" />
-    <None Include="..\System.net\Core\WinVSystem.cu" />
+    <None Include="..\System.net\Core\VSystem-gpu.cu" />
+    <None Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

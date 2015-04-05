@@ -93,11 +93,11 @@ namespace Core
 
 	// If the following global variable points to a string which is the name of a directory, then that directory will be used to store temporary files.
 	// See also the "PRAGMA temp_store_directory" SQL command.
-	__device__ char *g_temp_directory = nullptr;
+	__device__ extern char *g_temp_directory;
 	// If the following global variable points to a string which is the name of a directory, then that directory will be used to store
 	// all database files specified with a relative pathname.
 	// See also the "PRAGMA data_store_directory" SQL command.
-	__device__ char *g_data_directory = nullptr;
+	__device__ extern char *g_data_directory;
 
 #ifndef ALLOW_COVERING_INDEX_SCAN
 #define ALLOW_COVERING_INDEX_SCAN true
@@ -263,7 +263,7 @@ namespace Core
 
 	__device__ RC Main::CtxReleaseMemory(Context *ctx)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		Btree::EnterAll(ctx);
 		for (int i = 0; i < ctx->DBs.length; i++)
 		{
@@ -275,7 +275,7 @@ namespace Core
 			}
 		}
 		Btree::LeaveAll(ctx);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return RC_OK;
 	}
 
@@ -356,7 +356,7 @@ namespace Core
 
 	__device__ static bool ConnectionIsBusy(Context *ctx)
 	{
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		if (ctx->Vdbes) return true;
 		for (int j = 0; j < ctx->DBs.length; j++)
 		{
@@ -376,7 +376,7 @@ namespace Core
 			return RC_OK;
 		if (!SafetyCheckSickOrOk(ctx))
 			return SysEx_MISUSE_BKPT;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 
 		// Force xDisconnect calls on all virtual tables
 		DisconnectAllVtab(ctx);
@@ -390,7 +390,7 @@ namespace Core
 		if (!forceZombie && ConnectionIsBusy(ctx))
 		{
 			Error(ctx, RC_BUSY, "unable to close due to unfinalized statements or unfinished backups");
-			MutexEx::Leave(ctx->Mutex);
+			MutexEx_Leave(ctx->Mutex);
 			return RC_BUSY;
 		}
 
@@ -411,7 +411,7 @@ namespace Core
 		// then just leave the mutex and return.
 		if (ctx->Magic != MAGIC_ZOMBIE || ConnectionIsBusy(ctx))
 		{
-			MutexEx::Leave(ctx->Mutex);
+			MutexEx_Leave(ctx->Mutex);
 			return;
 		}
 
@@ -495,9 +495,9 @@ namespace Core
 		// The temp-database schema is allocated differently from the other schema objects (using sqliteMalloc() directly, instead of sqlite3BtreeSchema()).
 		// So it needs to be freed here. Todo: Why not roll the temp schema into the same sqliteMalloc() as the one that allocates the database structure?
 		_tagfree(ctx, ctx->DBs[1].Schema);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		ctx->Magic = MAGIC_CLOSED;
-		MutexEx::Free(ctx->Mutex);
+		MutexEx_Free(ctx->Mutex);
 		_assert(ctx->Lookaside.Outs == 0); // Fails on a lookaside memory leak
 		if (ctx->Lookaside.Malloced)
 			_free(ctx->Lookaside.Start);
@@ -506,7 +506,7 @@ namespace Core
 
 	__device__ void Main::RollbackAll(Context *ctx, RC tripCode)
 	{
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		_benignalloc_begin();
 		bool inTrans = false;
 		for (int i = 0; i < ctx->DBs.length; i++)
@@ -639,19 +639,19 @@ namespace Core
 
 	__device__ RC Main::BusyHandler(Context *ctx, int (*busy)(void *, int), void *arg)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		ctx->BusyHandler.Func = busy;
 		ctx->BusyHandler.Arg = arg;
 		ctx->BusyHandler.Busys = 0;
 		ctx->BusyTimeout = 0;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return RC_OK;
 	}
 
 #ifndef OMIT_PROGRESS_CALLBACK
 	__device__ void Main::ProgressHandler(Context *ctx,  int ops, int (*progress)(void *), void *arg)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		if (ops > 0)
 		{
 			ctx->Progress = progress;
@@ -664,7 +664,7 @@ namespace Core
 			ctx->ProgressOps = 0;
 			ctx->ProgressArg = nullptr;
 		}
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 	}
 #endif
 
@@ -691,7 +691,7 @@ namespace Core
 
 	__device__ RC Main::CreateFunc(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *userData, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*), FuncDestructor *destructor)
 	{
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		int funcNameLength;
 		if (!funcName ||
 			(func && (final_ || step)) || 
@@ -760,7 +760,7 @@ namespace Core
 	{
 		RC rc = RC_ERROR;
 		FuncDestructor *arg = nullptr;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		if (destroy)
 		{
 			arg = (FuncDestructor *)_tagallocZero(ctx, sizeof(FuncDestructor));
@@ -781,20 +781,20 @@ namespace Core
 		}
 _out:
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
 #ifndef OMIT_UTF16
 	__device__ RC Main::CreateFunction16(Context *ctx, const void *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*))
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
 		char *funcName8 = Vdbe::Utf16to8(ctx, funcName, -1, TEXTENCODE_UTF16NATIVE);
 		RC rc = CreateFunc(ctx, funcName8, args, encode, p, func, step, final_, nullptr);
 		_tagfree(ctx, funcName8);
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 #endif
@@ -803,11 +803,11 @@ _out:
 	{
 		int funcNameLength = _strlen30(funcName);
 		RC rc;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		if (!Callback::FindFunction(ctx, funcName, funcNameLength, args, TEXTENCODE_UTF8, false))
 			rc = CreateFunc(ctx, funcName, args, TEXTENCODE_UTF8, nullptr, Vdbe::InvalidFunction, nullptr, nullptr, nullptr);
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -818,52 +818,52 @@ _out:
 #ifndef OMIT_TRACE
 	__device__ void *Main::Trace(Context *ctx, void (*trace)(void*,const char*), void *arg)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		void *oldArg = ctx->TraceArg;
 		ctx->Trace = trace;
 		ctx->TraceArg = arg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return oldArg;
 	}
 
 	__device__ void *Main::Profile(Context *ctx, void (*profile)(void*,const char*,uint64), void *arg)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		void *oldArg = ctx->ProfileArg;
 		ctx->Profile = profile;
 		ctx->ProfileArg = arg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return oldArg;
 	}
 #endif
 
 	__device__ void *Main::CommitHook(Context *ctx, RC (*callback)(void*), void *arg)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		void *oldArg = ctx->CommitArg;
 		ctx->CommitCallback = callback;
 		ctx->CommitArg = arg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return oldArg;
 	}
 
 	__device__ void *Main::UpdateHook(Context *ctx, void (*callback)(void*,int,char const*,char const*,int64), void *arg)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		void *oldArg = ctx->UpdateArg;
 		ctx->UpdateCallback = callback;
 		ctx->UpdateArg = arg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return oldArg;
 	}
 
 	__device__ void *Main::RollbackHook(Context *ctx, void (*callback)(void*), void *arg)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		void *oldArg = ctx->RollbackArg;
 		ctx->RollbackCallback = callback;
 		ctx->RollbackArg = arg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return oldArg;
 	}
 
@@ -898,11 +898,11 @@ _out:
 #ifdef OMIT_WAL
 		return nullptr;
 #else
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		void *oldArg = ctx->WalArg;
 		ctx->WalCallback = callback;
 		ctx->WalArg = arg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return oldArg;
 #endif
 	}
@@ -929,7 +929,7 @@ _out:
 		if (mode < IPager::CHECKPOINT_PASSIVE || mode > IPager::CHECKPOINT_RESTART)
 			return RC_MISUSE;
 
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		if (dbName && dbName[0])
 			db = Parse::FindDbName(ctx, dbName);
 		RC rc;
@@ -944,7 +944,7 @@ _out:
 			Error(ctx, rc, nullptr);
 		}
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 #endif
 	}
@@ -952,7 +952,7 @@ _out:
 #ifndef OMIT_WAL
 	__device__ RC Main::Checkpoint(Context *ctx, int db, IPager::CHECKPOINT mode, int *logsOut, int *ckptsOut)
 	{
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		_assert(!logsOut || *logsOut == -1);
 		_assert(!ckptsOut || *ckptsOut == -1);
 
@@ -1002,7 +1002,7 @@ _out:
 			return ErrStr(RC_NOMEM);
 		if (!SafetyCheckSickOrOk(ctx))
 			return ErrStr(SysEx_MISUSE_BKPT);
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		if (ctx->MallocFailed)
 			z = ErrStr(RC_NOMEM);
 		else
@@ -1012,7 +1012,7 @@ _out:
 			if (!z)
 				z = ErrStr((RC)ctx->ErrCode);
 		}
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return z;
 	}
 
@@ -1037,7 +1037,7 @@ _out:
 			return (void *)_outOfMem;
 		if (!SafetyCheckSickOrOk(ctx))
 			return (void *)_misuse;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		const void *z;
 		if (ctx->MallocFailed)
 			z = (void *)_outOfMem;
@@ -1053,7 +1053,7 @@ _out:
 			// be cleared before returning. Do this directly, instead of via sqlite3ApiExit(), to avoid setting the database handle error message.
 			ctx->MallocFailed = false;
 		}
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return z;
 	}
 #endif
@@ -1083,7 +1083,7 @@ _out:
 	__device__ static RC CreateCollation(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*), void (*del)(void*))
 	{
 		int nameLength = _strlen30(name);
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 
 		// If SQLITE_UTF16 is specified as the encoding type, transform this to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
 		// SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
@@ -1274,15 +1274,15 @@ _out:
 		if (!ctx) goto opendb_out;
 		if (isThreadsafe)
 		{
-			ctx->Mutex = MutexEx::Alloc(MutexEx::MUTEX_RECURSIVE);
-			if (!ctx->Mutex.Tag)
+			ctx->Mutex = MutexEx_Alloc(MUTEX_RECURSIVE);
+			if (!ctx->Mutex)
 			{
 				_free(ctx);
 				ctx = nullptr;
 				goto opendb_out;
 			}
 		}
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		ctx->ErrMask = 0xff;
 		ctx->Magic = MAGIC_BUSY;
 		ctx->DBs.length = 2;
@@ -1413,7 +1413,7 @@ _out:
 #endif
 
 		// Enable the lookaside-malloc subsystem
-		SysEx::SetupLookaside(ctx, nullptr, TagBase_RuntimeStatics.LookasideSize, TagBase_RuntimeStatics.Lookasides);
+		SysEx::SetupLookaside(ctx, nullptr, (int)TagBase_RuntimeStatics.LookasideSize, TagBase_RuntimeStatics.Lookasides);
 
 		Main::WalAutocheckpoint(ctx, DEFAULT_WAL_AUTOCHECKPOINT);
 
@@ -1421,8 +1421,8 @@ opendb_out:
 		_free(open);
 		if (ctx)
 		{
-			_assert(ctx->Mutex.Tag || !isThreadsafe || !SysEx_GlobalStatics.FullMutex);
-			MutexEx::Leave(ctx->Mutex);
+			_assert(ctx->Mutex || !isThreadsafe || !SysEx_GlobalStatics.FullMutex);
+			MutexEx_Leave(ctx->Mutex);
 		}
 		rc = Main::ErrCode(ctx);
 		_assert(ctx || rc == RC_NOMEM);
@@ -1478,21 +1478,21 @@ opendb_out:
 
 	__device__ RC Main::CreateCollation(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*))
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
 		RC rc = ::CreateCollation(ctx, name, encode, ctx2, compare, nullptr);
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
 	__device__ RC Main::CreateCollation_v2(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*), void (*del)(void*))
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
 		RC rc = ::CreateCollation(ctx, name, encode, ctx2, compare, del);
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -1500,7 +1500,7 @@ opendb_out:
 	__device__ RC Main::CreateCollation16(Context *ctx, const void *name, TEXTENCODE encode,  void *ctx2, int (*compare)(void*,int,const void*,int,const void*))
 	{
 		RC rc = RC_OK;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
 		char *name8 = Vdbe::Utf16to8(ctx, name, -1, TEXTENCODE_UTF16NATIVE);
 		if (name8)
@@ -1509,29 +1509,29 @@ opendb_out:
 			_tagfree(ctx, name8);
 		}
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 #endif
 
 	__device__ RC Main::CollationNeeded(Context *ctx, void *collNeededArg, void (*collNeeded)(void*,Context*,TEXTENCODE,const char*))
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		ctx->CollNeeded = collNeeded;
 		ctx->CollNeeded16 = nullptr;
 		ctx->CollNeededArg = collNeededArg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return RC_OK;
 	}
 
 #ifndef OMIT_UTF16
 	__device__ RC Main::CollationNeeded16(Context *ctx, void *collNeededArg, void (*collNeeded16)(void*,Context*,TEXTENCODE,const void*))
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		ctx->CollNeeded = nullptr;
 		ctx->CollNeeded16 = collNeeded16;
 		ctx->CollNeededArg = collNeededArg;
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return RC_OK;
 	}
 #endif
@@ -1565,7 +1565,7 @@ opendb_out:
 	__device__ RC Main::TableColumnMetadata(Context *ctx, const char *dbName, const char *tableName, const char *columnName, char const **dataTypeOut, char const **collSeqNameOut, bool *notNullOut, bool *primaryKeyOut, bool *autoincOut)
 	{
 		// Ensure the database schema has been loaded
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		Btree::EnterAll(ctx);
 		char *errMsg = nullptr;
 		RC rc = Prepare::Init(ctx, &errMsg);
@@ -1649,7 +1649,7 @@ error_out:
 		Error(ctx, rc, (errMsg ? "%s" : nullptr), errMsg);
 		_tagfree(ctx, errMsg);
 		rc = ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 #endif
@@ -1665,16 +1665,16 @@ error_out:
 
 	__device__ RC Main::ExtendedResultCodes(Context *ctx, bool onoff)
 	{
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		ctx->ErrMask = (onoff ? 0xffffffff : 0xff);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return RC_OK;
 	}
 
 	__device__ RC Main::FileControl(Context *ctx, const char *dbName, VFile::FCNTL op, void *arg)
 	{
 		RC rc = RC_ERROR;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		Btree *bt = DbNameToBtree(ctx, dbName);
 		if (bt)
 		{
@@ -1694,7 +1694,7 @@ error_out:
 				rc = RC_NOTFOUND;
 			bt->Leave();
 		}
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;   
 	}
 
@@ -1799,9 +1799,9 @@ error_out:
 			// Set the nReserve size to N for the main database on the database connection ctx.
 			Context *ctx = va_arg(args, Context*);
 			int x = va_arg(args, int);
-			MutexEx::Enter(ctx->Mutex);
+			MutexEx_Enter(ctx->Mutex);
 			ctx->DBs[0].Bt->SetPageSize(0, x, false);
-			MutexEx::Leave(ctx->Mutex);
+			MutexEx_Leave(ctx->Mutex);
 			break; }
 		case TESTCTRL_OPTIMIZATIONS: {
 			// sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, sqlite3 *ctx, int N)

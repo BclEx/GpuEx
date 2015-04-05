@@ -82,30 +82,30 @@ namespace Core
 		// Make sure the mutex subsystem is initialized.  If unable to initialize the mutex subsystem, return early with the error.
 		// If the system is so sick that we are unable to allocate a mutex, there is not much SQLite is going to be able to do.
 		// The mutex subsystem must take care of serializing its own initialization.
-		rc = (RC)MutexEx::Init();
+		rc = (RC)MutexEx_Init();
 		if (rc) return rc;
 
 		// Initialize the malloc() system and the recursive pInitMutex mutex. This operation is protected by the STATIC_MASTER mutex.  Note that
 		// MutexAlloc() is called for a static mutex prior to initializing the malloc subsystem - this implies that the allocation of a static
 		// mutex must not require support from the malloc subsystem.
-		masterMutex = MutexEx::Alloc(MutexEx::MUTEX_STATIC_MASTER); // The main static mutex
-		MutexEx::Enter(masterMutex);
+		masterMutex = MutexEx_Alloc(MUTEX_STATIC_MASTER); // The main static mutex
+		MutexEx_Enter(masterMutex);
 		SysEx_GlobalStatics.IsMutexInit = true;
 		if (!SysEx_GlobalStatics.IsMallocInit)
 			rc = (RC)_alloc_init();
 		if (rc == RC_OK)
 		{
 			SysEx_GlobalStatics.IsMallocInit = true;
-			if (!SysEx_GlobalStatics.InitMutex.Tag)
+			if (!SysEx_GlobalStatics.InitMutex)
 			{
-				SysEx_GlobalStatics.InitMutex = MutexEx::Alloc(MutexEx::MUTEX_RECURSIVE);
-				if (SysEx_GlobalStatics.CoreMutex && !SysEx_GlobalStatics.InitMutex.Tag)
+				SysEx_GlobalStatics.InitMutex = MutexEx_Alloc(MUTEX_RECURSIVE);
+				if (SysEx_GlobalStatics.CoreMutex && !SysEx_GlobalStatics.InitMutex)
 					rc = RC_NOMEM;
 			}
 		}
 		if (rc == RC_OK)
 			SysEx_GlobalStatics.InitMutexRefs++;
-		MutexEx::Leave(masterMutex);
+		MutexEx_Leave(masterMutex);
 
 		// If rc is not SQLITE_OK at this point, then either the malloc subsystem could not be initialized or the system failed to allocate
 		// the pInitMutex mutex. Return an error in either case.
@@ -120,31 +120,31 @@ namespace Core
 		//
 		// The following mutex is what serializes access to the appdef pcache xInit methods.  The sqlite3_pcache_methods.xInit() all is embedded in the
 		// call to sqlite3PcacheInitialize().
-		MutexEx::Enter(SysEx_GlobalStatics.InitMutex);
+		MutexEx_Enter(SysEx_GlobalStatics.InitMutex);
 		if (!SysEx_GlobalStatics.IsInit && !SysEx_GlobalStatics.InProgress)
 		{
 			SysEx_GlobalStatics.InProgress = true;
 			rc = VSystem::Initialize();
 		}
 		if (rc != RC_OK)
-			MutexEx::Leave(SysEx_GlobalStatics.InitMutex);
+			MutexEx_Leave(SysEx_GlobalStatics.InitMutex);
 		return rc;
 	}
 
 	__device__ void SysEx::PostInitialize(MutexEx masterMutex)
 	{
-		MutexEx::Leave(SysEx_GlobalStatics.InitMutex);
+		MutexEx_Leave(SysEx_GlobalStatics.InitMutex);
 
 		// Go back under the static mutex and clean up the recursive mutex to prevent a resource leak.
-		MutexEx::Enter(masterMutex);
+		MutexEx_Enter(masterMutex);
 		SysEx_GlobalStatics.InitMutexRefs--;
 		if (SysEx_GlobalStatics.InitMutexRefs <= 0)
 		{
 			_assert(SysEx_GlobalStatics.InitMutexRefs == 0);
-			MutexEx::Free(SysEx_GlobalStatics.InitMutex);
-			SysEx_GlobalStatics.InitMutex.Tag = nullptr;
+			MutexEx_Free(SysEx_GlobalStatics.InitMutex);
+			SysEx_GlobalStatics.InitMutex = nullptr;
 		}
-		MutexEx::Leave(masterMutex);
+		MutexEx_Leave(masterMutex);
 	}
 
 	__device__ RC SysEx::Shutdown()
@@ -162,7 +162,7 @@ namespace Core
 		}
 		if (SysEx_GlobalStatics.IsMutexInit)
 		{
-			MutexEx::Shutdown();
+			MutexEx_Shutdown();
 			SysEx_GlobalStatics.IsMutexInit = false;
 		}
 		return RC_OK;

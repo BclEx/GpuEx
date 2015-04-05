@@ -22,7 +22,7 @@ namespace Core
 		int db = data->Db;
 
 		_assert(argc == 3);
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		DbClearProperty(ctx, db, SCHEMA_Empty);
 		if (ctx->MallocFailed)
 		{
@@ -112,7 +112,7 @@ namespace Core
 	{
 		_assert(db >= 0 && db < ctx->DBs.length);
 		_assert(ctx->DBs[db].Schema);
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		_assert(db == 1 || ctx->DBs[db].Bt->HoldsMutex());
 		RC rc;
 		int i;
@@ -291,7 +291,7 @@ error_out:
 
 	__device__ RC Prepare::Init(Context *ctx, char **errMsg)
 	{
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		RC rc = RC_OK;
 		ctx->Init.Busy = true;
 		for (int i = 0; rc == RC_OK && i < ctx->DBs.length; i++)
@@ -324,7 +324,7 @@ error_out:
 	{
 		RC rc = RC_OK;
 		Context *ctx = parse->Ctx;
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		if (!ctx->Init.Busy)
 			rc = Init(ctx, &parse->ErrMsg);
 		if (rc != RC_OK)
@@ -339,7 +339,7 @@ error_out:
 	{
 		Context *ctx = parse->Ctx;
 		_assert(parse->CheckSchema);
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		for (int db = 0; db <ctx->DBs.length; db++)
 		{
 			bool openedTransaction = false; // True if a transaction is opened
@@ -381,7 +381,7 @@ error_out:
 		//
 		// We return -1000000 instead of the more usual -1 simply because using -1000000 as the incorrect index into ctx->aDb[] is much 
 		// more likely to cause a segfault than -1 (of course there are assert() statements too, but it never hurts to play the odds).
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		int i = -1000000;
 		if (schema)
 		{
@@ -414,7 +414,7 @@ error_out:
 		parse->Reprepare = reprepare;
 		_assert(stmtOut && *stmtOut == nullptr);
 		_assert(!ctx->MallocFailed);
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 
 		// Check to verify that it is possible to get a read lock on all database schemas.  The inability to get a read lock indicates that
 		// some other database connection is holding a write-lock, which in turn means that the other connection has made uncommitted changes
@@ -549,7 +549,7 @@ end_prepare:
 		*stmtOut = nullptr;
 		if (!Main::SafetyCheckOk(ctx))
 			return SysEx_MISUSE_BKPT;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		Btree::EnterAll(ctx);
 		RC rc = Prepare_(ctx, sql, bytes, isPrepareV2, reprepare, stmtOut, tailOut);
 		if (rc == RC_SCHEMA)
@@ -558,7 +558,7 @@ end_prepare:
 			rc = Prepare_(ctx, sql, bytes, isPrepareV2, reprepare, stmtOut, tailOut);
 		}
 		Btree::LeaveAll(ctx);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		_assert(rc == RC_OK || !*stmtOut);
 		return rc;
 	}
@@ -566,7 +566,7 @@ end_prepare:
 	__device__ RC Prepare::Reprepare(Vdbe *p)
 	{
 		Context *ctx = p->Ctx;
-		_assert(MutexEx::Held(ctx->Mutex));
+		_assert(MutexEx_Held(ctx->Mutex));
 		const char *sql = Vdbe::Sql(p);
 		_assert(sql != nullptr); // Reprepare only called for prepare_v2() statements
 		Vdbe *newVdbe;
@@ -610,7 +610,7 @@ end_prepare:
 		*stmtOut = nullptr;
 		if (!Main::SafetyCheckOk(ctx))
 			return SysEx_MISUSE_BKPT;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		RC rc = RC_OK;
 		const char *tail8 = nullptr;
 		char *sql8 = Vdbe::Utf16to8(ctx, sql, bytes, TEXTENCODE_UTF16NATIVE);
@@ -625,7 +625,7 @@ end_prepare:
 		}
 		_tagfree(ctx, sql8); 
 		rc = Main::ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 

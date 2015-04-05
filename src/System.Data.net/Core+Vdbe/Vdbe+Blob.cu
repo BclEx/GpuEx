@@ -103,7 +103,7 @@ namespace Core {
 		flags = !!flags; // flags = (flags ? 1 : 0);
 		*blobOut = nullptr;
 
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		Incrblob *blob = (Incrblob *)_tagallocZero(ctx, sizeof(Incrblob));
 		if (!blob) goto blob_open_out;
 		Parse *parse = (Parse *)_stackalloc(ctx, sizeof(*parse));
@@ -257,7 +257,7 @@ blob_open_out:
 		_tagfree(ctx, err);
 		_stackfree(ctx, parse);
 		rc = Main::ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -267,10 +267,10 @@ blob_open_out:
 		if (p)
 		{
 			Context *ctx = p->Ctx;
-			MutexEx::Enter(ctx->Mutex);
+			MutexEx_Enter(ctx->Mutex);
 			RC rc = Finalize(p->Stmt);
 			_tagfree(ctx, p);
-			MutexEx::Leave(ctx->Mutex);
+			MutexEx_Leave(ctx->Mutex);
 			return rc;
 		}
 		return RC_OK;
@@ -281,11 +281,11 @@ blob_open_out:
 		Incrblob *p = (Incrblob *)blob;
 		if (!p) return SysEx_MISUSE_BKPT;
 		Context *ctx = p->Ctx;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 		Vdbe *v = (Vdbe *)p->Stmt;
 
 		RC rc;
-		if (n < 0 || offset < 0 || (offset + n) > p->Bytes)
+		if (n < 0 || offset < 0 || (offset + n) > (uint32)p->Bytes)
 		{
 			rc = RC_ERROR; // Request is out of range. Return a transient error.
 			Main::Error(ctx, RC_ERROR, 0);
@@ -310,7 +310,7 @@ blob_open_out:
 			}
 		}
 		rc = Main::ApiExit(ctx, rc);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -335,7 +335,7 @@ blob_open_out:
 		Incrblob *p = (Incrblob *)blob;
 		if (!p) return SysEx_MISUSE_BKPT;
 		Context *ctx = p->Ctx;
-		MutexEx::Enter(ctx->Mutex);
+		MutexEx_Enter(ctx->Mutex);
 
 		RC rc;
 		if (!p->Stmt)
@@ -354,7 +354,7 @@ blob_open_out:
 
 		rc = Main::ApiExit(ctx, rc);
 		_assert(rc == RC_OK || !p->Stmt);
-		MutexEx::Leave(ctx->Mutex);
+		MutexEx_Leave(ctx->Mutex);
 		return rc;
 	}
 
