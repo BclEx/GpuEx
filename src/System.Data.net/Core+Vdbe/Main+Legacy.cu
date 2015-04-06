@@ -8,7 +8,7 @@ namespace Core
 		if (!SafetyCheckOk(ctx)) return SysEx_MISUSE_BKPT;
 		if (!sql) sql = "";
 
-		MutexEx_Enter(ctx->Mutex);
+		_mutex_enter(ctx->Mutex);
 		Error(ctx, RC_OK, nullptr);
 		Vdbe *stmt = nullptr; // The current SQL statement
 		int retrys = 0; // Number of retry attempts
@@ -115,7 +115,7 @@ exec_out:
 			*errmsg = nullptr;
 
 		_assert((rc & ctx->ErrMask) == rc);
-		MutexEx_Leave(ctx->Mutex);
+		_mutex_leave(ctx->Mutex);
 		return rc;
 	}
 }

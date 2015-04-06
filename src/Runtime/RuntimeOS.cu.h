@@ -1,5 +1,5 @@
-#ifndef __RUNTIMEOS_H__
-#define __RUNTIMEOS_H__
+#ifndef __RUNTIMEOS_CU_H__
+#define __RUNTIMEOS_CU_H__
 
 //////////////////////
 // OPERATING SYSTEM
@@ -47,9 +47,9 @@ typedef struct
 		void *Pointer;
 	};
 	HANDLE hEvent;
-} OSOVERLAPPED;
+} osOVERLAPPED;
 
-__device__ void osSleep(DWORD milliseconds);
+__device__ void _sleep(DWORD milliseconds);
 __device__ DWORD osGetLastError();
 __device__ DWORD osWaitForSingleObject(HANDLE handle, DWORD milliseconds);
 __device__ HANDLE osCreateMutexA(void *dummy1, bool initialOwner, const char *name);
@@ -117,8 +117,8 @@ __device__ DWORD osGetFileAttributesA(char *path);
 __device__ DWORD osGetFileSize(HANDLE h, LPDWORD upper);
 __device__ DWORD osDeleteFileA(char *path);
 __device__ bool osCloseHandle(HANDLE h);
-__device__ bool osReadFile(HANDLE h, void *buffer, DWORD amount, LPDWORD read, OSOVERLAPPED *overlapped);
-__device__ bool osWriteFile(HANDLE h, const void *buffer, DWORD amount, LPDWORD write, OSOVERLAPPED *overlapped);
+__device__ bool osReadFile(HANDLE h, void *buffer, DWORD amount, LPDWORD read, OVERLAPPED *overlapped);
+__device__ bool osWriteFile(HANDLE h, const void *buffer, DWORD amount, LPDWORD write, OVERLAPPED *overlapped);
 __device__ bool osSetFilePointer(HANDLE h, __int64 offset, int *reserved, int seekType);
 __device__ bool osSetEndOfFile(HANDLE h);
 __device__ bool osFlushFileBuffers(HANDLE h);
@@ -130,4 +130,5 @@ __device__ void osUnmapViewOfFile(HANDLE h);
 
 #pragma endregion
 
-#endif // __RUNTIMEOS_H__
+
+#endif // __RUNTIMEOS_CU_H__

@@ -7,6 +7,6 @@
 #include "Runtime+Mem1.cu"
 #include "Runtime+Mutex-noop.cu"
 #include "Runtime+Mutex-gpu.cu"
-#include "Runtime+StatusEx.cu"
+#include "Runtime+Status.cu"
 #include "RuntimeOS.cu"
 #include "RuntimeOS+FileSystem.cu"

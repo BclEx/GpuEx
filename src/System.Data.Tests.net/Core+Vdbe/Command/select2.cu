@@ -9,50 +9,50 @@ DEVICE(select2)
 	execsql("BEGIN");
 	for (int i = 0; i <= 30; i++)
 	{
-		char b[100];
-		__snprintf(b, sizeof(b), "INSERT INTO tbl1 VALUES(%d,%d)", i % 9, i % 10);
+		char b[100]; __snprintf(b, sizeof(b), "INSERT INTO tbl1 VALUES(%d,%d)", i % 9, i % 10);
 		execsql(b);
 	}
 	execsql("COMMIT");
 
-	//// Do a second query inside a first.
-	//do_test("select2-1.1", () =>
-	//{
-	//	var sql = "SELECT DISTINCT f1 FROM tbl1 ORDER BY f1";
-	//	var r = "";
-	//	//catch {unset data}
-	//	//db eval $sql data {
-	//	//  set f1 $data(f1)
-	//	//  lappend r $f1:
-	//	//  set sql2 "SELECT f2 FROM tbl1 WHERE f1=$f1 ORDER BY f2"
-	//	//  db eval $sql2 d2 {
-	//	//    lappend r $d2(f2)
-	//	//  }
-	//	//}
-	//	r = null;
-	//}, "0: 0 7 8 9 1: 0 1 8 9 2: 0 1 2 9 3: 0 1 2 3 4: 2 3 4 5: 3 4 5 6: 4 5 6 7: 5 6 7 8: 6 7 8");
+	// Do a second query inside a first.
+	do_test("select2-1.1", [this]() {
+		auto sql = "SELECT DISTINCT f1 FROM tbl1 ORDER BY f1";
+		auto r = "";
+		Tcl_Obj *data = nullptr;
+		db->EVAL(Zc_f(sql, data, [this] {
+			//auto f1 = data["f1"];
+			//lappend(r, f1);
+			//char sql2[100]; __snprintf(sql2, sizeof(sql2), "SELECT f2 FROM tbl1 WHERE f1=%d ORDER BY f2", f1);
+			//Tcl_Obj *d2 = nullptr;
+			//db->EVAL(Zc_f(sql2, d2, [this] {
+			//	lappend(r, d2["f2"]);
+			//}));
+			//d2->DecrRefCount();
+		}));
+		r = nullptr;
+	}, "0: 0 7 8 9 1: 0 1 8 9 2: 0 1 2 9 3: 0 1 2 3 4: 2 3 4 5: 3 4 5 6: 4 5 6 7: 5 6 7 8: 6 7 8");
 
-	//do_test("select2-1.2", () =>
-	//{
-	//	var sql = "SELECT DISTINCT f1 FROM tbl1 WHERE f1>3 AND f1<5";
-	//	var r = "";
-	//	//db eval $sql data {
-	//	//  set f1 $data(f1)
-	//	//  lappend r $f1:
-	//	//  var sql2 = "SELECT f2 FROM tbl1 WHERE f1=$f1 ORDER BY f2";
-	//	//  db eval $sql2 d2 {
-	//	//    lappend r $d2(f2)
-	//	//  }
-	//	//}
-	//	r = null;
+	//do_test("select2-1.2", []() {
+	//	auto sql = "SELECT DISTINCT f1 FROM tbl1 WHERE f1>3 AND f1<5";
+	//	auto r = "";
+	//	Tcl_Obj *data = nullptr;
+	//	db->EVAL(Zc_f(sql, data, [this] {
+	//		auto f1 = data["f1"];
+	//		lappend(r, f1);
+	//		char sql2[100]; __snprintf(sql2, sizeof(sql2), "SELECT f2 FROM tbl1 WHERE f1=%d ORDER BY f2", f1);
+	//		TclObj *d2 = nullptr;
+	//		db->EVAL(Zc_f(sql2, d2, [this] {
+	//			lappend(r, d2("f2"));
+	//		}));
+	//	}));
+	//	r = nullptr;
 	//}, "4: 2 3 4");
 	////unset data
 
 	//// Create a largish table. Do this twice, once using the TCL cache and once without.  Compare the performance to make sure things go faster with the
 	//// cache turned on.
-	//ifcapable("tclvar",  ()=>
-	//{
-	//	do_test("select2-2.0.1", ()=> {
+	//ifcapable("tclvar", []() {
+	//	do_test("select2-2.0.1", []() {
 	//		//var t1 = [time {
 	//		//  execsql {CREATE TABLE tbl2(f1 int, f2 int, f3 int); BEGIN;}
 	//		//  for {set i 1} {$i<=30000} {incr i} {
@@ -63,10 +63,10 @@ DEVICE(select2)
 	//		//  execsql {COMMIT}
 	//		//}]
 	//		//list
-	//	}, null);
-	//	puts("time with cache: " + t1);
+	//	}, nullptr);
+	//	printf("time with cache: %s\n", t1);
 	//});
-	//catch_(()=> execsql("DROP TABLE tbl2");)
+	//catch_([]() { execsql("DROP TABLE tbl2"); })
 	//	do_test("select2-2.0.2", () =>
 	//{
 	//	//var t2 = [time {
@@ -87,12 +87,10 @@ DEVICE(select2)
 	//////#  } 1
 	//////#}
 
-	//do_test("select2-2.1", () =>
-	//{
+	//do_test("select2-2.1", []() {
 	//	execsql(@"SELECT count(*) FROM tbl2");
 	//}, 30000);
-	//do_test("select2-2.2", () =>
-	//{
+	//do_test("select2-2.2", []() {
 	//	execsql(@"SELECT count(*) FROM tbl2 WHERE f2>1000");
 	//}, 29500);
 
@@ -186,5 +184,5 @@ DEVICE(select2)
 	//	");
 	//}, "1 4 1 0 3 2 3 0");
 
-	finish_test();
+	//finish_test();
 }

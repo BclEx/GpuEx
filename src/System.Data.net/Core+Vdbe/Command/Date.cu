@@ -298,15 +298,15 @@ zulu_time:
 		rc = 0;
 #elif ((!defined(HAVE_LOCALTIME_R) || !HAVE_LOCALTIME_R) && (!defined(HAVE_LOCALTIME_S) || !HAVE_LOCALTIME_S))
 #if THREADSAFE
-		MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
+		MutexEx mutex = _mutex_alloc(MUTEX_STATIC_MASTER);
 #endif
-		MutexEx_Enter(mutex);
+		_mutex_enter(mutex);
 		tm *x = localtime(t);
 #ifndef OMIT_BUILTIN_TEST
 		if (SysEx_GlobalStatics.LocaltimeFault) x = nullptr;
 #endif
 		if (x) *tm_ = *x;
-		MutexEx_Leave(mutex);
+		_mutex_leave(mutex);
 		rc = (x == nullptr);
 #else
 #ifndef OMIT_BUILTIN_TEST
@@ -767,11 +767,11 @@ zulu_time:
 #ifdef HAVE_GMTIME_R
 		tm_ = gmtime_r(&t, &sNow);
 #else
-		MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_MASTER);
-		MutexEx_Enter(mutex);
+		MutexEx mutex = _mutex_alloc(MUTEX_STATIC_MASTER);
+		_mutex_enter(mutex);
 		tm_ = gmtime(&t);
 		if (tm_) _memcpy(&sNow, tm_, sizeof(sNow));
-		MutexEx_Leave(mutex);
+		_mutex_leave(mutex);
 #endif
 		if (tm_)
 		{

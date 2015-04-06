@@ -4,7 +4,7 @@
 
 #ifdef ENABLE_UNLOCK_NOTIFY
 
-#define AssertMutexHeld() _assert(MutexEx_Held(MutexEx_Alloc(MUTEX_STATIC_MASTER)))
+#define AssertMutexHeld() _assert(_mutex_held(_mutex_alloc(MUTEX_STATIC_MASTER)))
 
 __device__ static BContext *_WSD g_blockedList = nullptr;
 
@@ -53,7 +53,7 @@ __device__ static void AddToBlockedList(BContext *ctx)
 
 __device__ static void EnterMutex()
 {
-	MutexEx_Enter(MutexEx_Alloc(MUTEX_STATIC_MASTER));
+	_mutex_enter(_mutex_alloc(MUTEX_STATIC_MASTER));
 	CheckListProperties(nullptr);
 }
 
@@ -61,13 +61,13 @@ __device__ static void LeaveMutex()
 {
 	AssertMutexHeld();
 	CheckListProperties(nullptr);
-	MutexEx_Leave(MutexEx_Alloc(MUTEX_STATIC_MASTER));
+	_mutex_leave(_mutex_alloc(MUTEX_STATIC_MASTER));
 }
 
 __device__ RC BContext::UnlockNotify_(void (*notify)(void **, int), void *arg, void (*error)(BContext *, RC, const char *))
 {
 	RC rc = RC_OK;
-	MutexEx_Enter(Mutex);
+	_mutex_enter(Mutex);
 	EnterMutex();
 
 	if (!notify)
@@ -100,7 +100,7 @@ __device__ RC BContext::UnlockNotify_(void (*notify)(void **, int), void *arg, v
 	_assert(!MallocFailed);
 	if (error)
 		error(this, rc, (rc ? "database is deadlocked" : nullptr));
-	MutexEx_Leave(Mutex);
+	_mutex_leave(Mutex);
 	return rc;
 }
 

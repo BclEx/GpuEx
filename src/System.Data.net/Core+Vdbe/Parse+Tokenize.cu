@@ -354,7 +354,7 @@ abort_parse:
 			Parser(engine, 0, LastToken, this);
 		}
 #ifdef YYTRACKMAXSTACKDEPTH
-		StatusEx::Set(StatusEx::STATUS_PARSER_STACK, ParserStackPeak(engine));
+		StatusEx::Set(STATUS_PARSER_STACK, ParserStackPeak(engine));
 #endif
 		ParserFree(engine, _free);
 		ctx->Lookaside.Enabled = enableLookaside;

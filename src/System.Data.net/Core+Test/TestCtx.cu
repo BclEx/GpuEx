@@ -1176,7 +1176,7 @@ __device__ static RC DbEvalNextCmd(ClientData data[], Tcl_Interp *interp, RC res
 // The callback should return on of the following strings: SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
 //
 // If this method is invoked with no arguments, the current authorization callback string is returned.
-__device__ RC TestCtx::DB_AUTHORIZER(array_t<Tcl_Obj *> objv)
+__device__ RC TestCtx::AUTHORIZER(array_t<Tcl_Obj *> objv)
 {
 #ifdef OMIT_AUTHORIZATION
 	interp->AppendResult("authorization not available in this build", 0);
@@ -1217,7 +1217,7 @@ __device__ RC TestCtx::DB_AUTHORIZER(array_t<Tcl_Obj *> objv)
 //    $db backup ?DATABASE? FILENAME
 //
 // Open or create a database file named FILENAME.  Transfer the content of local database DATABASE (default: "main") into the FILENAME database.
-__device__ RC TestCtx::DB_BACKUP(array_t<Tcl_Obj *> objv)
+__device__ RC TestCtx::BACKUP(array_t<Tcl_Obj *> objv)
 {
 	const char *srcDb;
 	const char *destFile;
@@ -1268,7 +1268,7 @@ __device__ RC TestCtx::DB_BACKUP(array_t<Tcl_Obj *> objv)
 //    $db busy ?CALLBACK?
 //
 // Invoke the given callback if an SQL statement attempts to open a locked database file.
-__device__ RC TestCtx::DB_BUSY(array_t<Tcl_Obj *> objv)
+__device__ RC TestCtx::BUSY(array_t<Tcl_Obj *> objv)
 {
 	if (objv.length > 3)
 	{
@@ -1305,7 +1305,7 @@ __device__ RC TestCtx::DB_BUSY(array_t<Tcl_Obj *> objv)
 //     $db cache size n
 //
 // Flush the prepared statement cache, or set the maximum number of cached statements.
-__device__ RC TestCtx::DB_CACHE(array_t<Tcl_Obj *> objv)
+__device__ RC TestCtx::CACHE(array_t<Tcl_Obj *> objv)
 {
 	if (objv.length <= 2)
 	{
@@ -1363,7 +1363,7 @@ __device__ RC TestCtx::DB_CACHE(array_t<Tcl_Obj *> objv)
 //
 // Return the number of rows that were modified, inserted, or deleted by the most recent INSERT, UPDATE or DELETE statement, not including 
 // any changes made by trigger programs.
-__device__ RC TestCtx::DB_CHANGES(array_t<Tcl_Obj *> objv)
+__device__ RC TestCtx::CHANGES(array_t<Tcl_Obj *> objv)
 {
 	if (objv.length != 2){
 		Interp->WrongNumArgs(2, objv, "");
@@ -1377,7 +1377,7 @@ __device__ RC TestCtx::DB_CHANGES(array_t<Tcl_Obj *> objv)
 //    $db close
 //
 // Shutdown the database
-__device__ RC TestCtx::DB_CLOSE(array_t<Tcl_Obj *> objv)
+__device__ RC TestCtx::CLOSE(array_t<Tcl_Obj *> objv)
 {
 	Interp->DeleteCommand(objv[0]->GetStringFromObj(nullptr));
 	return RC_OK;
@@ -1737,7 +1737,7 @@ __device__ RC DB_ONECOLUMN()
 // The SQL statement in $sql is evaluated.  For each row, the values are placed in elements of the array named "array" and ...code... is executed.
 // If "array" and "code" are omitted, then no callback is every invoked. If "array" is an empty string, then the values are placed in variables
 // that have the same name as the fields extracted by the query.
-__device__ RC TestCtx::DB_EVAL(array_t<Tcl_Obj *> objv)
+__device__ RC TestCtx::EVAL(array_t<Tcl_Obj *> objv)
 {
 	if (objv.length < 3 || objv.length > 5)
 	{

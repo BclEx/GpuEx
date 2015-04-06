@@ -11,7 +11,7 @@ namespace Core {
 		_assert(newEncode == TEXTENCODE_UTF8 || newEncode == TEXTENCODE_UTF16LE || newEncode == TEXTENCODE_UTF16BE);
 		if (!(mem->Flags & MEM_Str) || mem->Encode == newEncode)
 			return RC_OK;
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex) );
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex) );
 #ifdef OMIT_UTF16
 		return RC_ERROR;
 #else
@@ -64,7 +64,7 @@ namespace Core {
 
 	__device__ RC Vdbe::MemMakeWriteable(Mem *mem)
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert((mem->Flags & MEM_RowSet) == 0);
 		ExpandBlob(mem);
 		MEM f = mem->Flags;
@@ -89,7 +89,7 @@ namespace Core {
 		{
 			_assert(mem->Flags & MEM_Blob);
 			_assert((mem->Flags & MEM_RowSet) == 0);
-			_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+			_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 			// Set nByte to the number of bytes required to store the expanded blob.
 			int bytes = mem->N + mem->u.Zeros;
 			if (bytes <= 0)
@@ -106,7 +106,7 @@ namespace Core {
 
 	__device__ RC Vdbe::MemNulTerminate(Mem *mem)
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		if ((mem->Flags & MEM_Term) != 0 || (mem->Flags & MEM_Str) == 0)
 			return RC_OK; // Nothing to do
 		if (MemGrow(mem, mem->N + 2, true))
@@ -120,7 +120,7 @@ namespace Core {
 	__device__ RC Vdbe::MemStringify(Mem *mem, TEXTENCODE encode)
 	{
 		MEM f = mem->Flags;
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert(!(f & MEM_Zero));
 		_assert(!(f & (MEM_Str | MEM_Blob)));
 		_assert(f & (MEM_Int | MEM_Real));
@@ -154,7 +154,7 @@ namespace Core {
 		if (_ALWAYS(func && func->Finalize))
 		{
 			_assert((mem->Flags & MEM_Null) != 0 || func == mem->u.Def);
-			_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+			_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 			FuncContext ctx;
 			_memset(&ctx, 0, sizeof(ctx));
 			ctx.S.Flags = MEM_Null;
@@ -172,7 +172,7 @@ namespace Core {
 
 	__device__ void Vdbe::MemReleaseExternal(Mem *mem)
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		if (mem->Flags & MEM_Agg)
 		{
 			MemFinalize(mem, mem->u.Def);
@@ -213,7 +213,7 @@ namespace Core {
 
 	__device__ int64 Vdbe::IntValue(Mem *mem)
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert(_HASALIGNMENT8(mem));
 		MEM flags = mem->Flags;
 		if (flags & MEM_Int) return mem->u.I;
@@ -231,7 +231,7 @@ namespace Core {
 
 	__device__ double Vdbe::RealValue(Mem *mem)
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert(_HASALIGNMENT8(mem));
 		if (mem->Flags & MEM_Real) return mem->R;
 		else if (mem->Flags & MEM_Int) return (double)mem->u.I;
@@ -243,7 +243,7 @@ namespace Core {
 	{
 		_assert(mem->Flags & MEM_Real);
 		_assert((mem->Flags & MEM_RowSet) == 0);
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert(_HASALIGNMENT8(mem));
 		mem->u.I = DoubleToInt64(mem->R);
 		// Only mark the value as an integer if
@@ -265,7 +265,7 @@ namespace Core {
 
 	__device__ RC Vdbe::MemIntegerify(Mem *mem)
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert((mem->Flags & MEM_RowSet) == 0);
 		_assert(_HASALIGNMENT8(mem));
 		mem->u.I = IntValue(mem);
@@ -275,7 +275,7 @@ namespace Core {
 
 	__device__ RC Vdbe::MemRealify(Mem *mem)
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert(_HASALIGNMENT8(mem));
 		mem->R = RealValue(mem);
 		MemSetTypeFlag(mem, MEM_Real);
@@ -287,7 +287,7 @@ namespace Core {
 		if ((mem->Flags & (MEM_Int | MEM_Real | MEM_Null)) == 0)
 		{
 			_assert((mem->Flags & (MEM_Blob | MEM_Str)) != 0);
-			_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+			_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 			if (ConvertEx::Atoi64(mem->Z, &mem->u.I, mem->N, mem->Encode) == 0)
 				MemSetTypeFlag(mem, MEM_Int);
 			else
@@ -441,8 +441,8 @@ namespace Core {
 
 	__device__ void Vdbe::MemMove(Mem *to, Mem *from)
 	{
-		_assert(!from->Ctx || MutexEx_Held(from->Ctx->Mutex));
-		_assert(!to->Ctx || MutexEx_Held(to->Ctx->Mutex));
+		_assert(!from->Ctx || _mutex_held(from->Ctx->Mutex));
+		_assert(!to->Ctx || _mutex_held(to->Ctx->Mutex));
 		_assert(!from->Ctx || !to->Ctx || from->Ctx == to->Ctx);
 		MemRelease(to);
 		_memcpy(to, from, sizeof(Mem));
@@ -453,7 +453,7 @@ namespace Core {
 
 	__device__ RC Vdbe::MemSetStr(Mem *mem, const char *z, int n, TEXTENCODE encode, void (*del)(void *))
 	{
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert((mem->Flags & MEM_RowSet) == 0);
 		// If z is a NULL pointer, set pMem to contain an SQL NULL.
 		if (!z)
@@ -612,7 +612,7 @@ namespace Core {
 	__device__ const void *Vdbe::ValueText(Mem *mem, TEXTENCODE encode)
 	{
 		if (!mem) return nullptr;
-		_assert(!mem->Ctx || MutexEx_Held(mem->Ctx->Mutex));
+		_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
 		_assert((encode & 3) == (encode & ~TEXTENCODE_UTF16_ALIGNED));
 		_assert((mem->Flags & MEM_RowSet) == 0);
 		if (mem->Flags & MEM_Null) return nullptr;

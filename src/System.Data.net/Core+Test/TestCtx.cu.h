@@ -71,21 +71,14 @@ struct TestCtx
 	bool LegacyPrepare;			// True to use sqlite3_prepare()
 #endif
 
-	__device__ inline array_t<Tcl_Obj *> Encode(const char *arg1) { return array_t<Tcl_Obj *>(nullptr, 1);}
-	__device__ inline array_t<Tcl_Obj *> Encode(Tcl_Obj *arg1) { return array_t<Tcl_Obj *>(nullptr, 1);}
-	__device__ inline array_t<Tcl_Obj *> Encode(const char *arg1, const char *arg2) { return array_t<Tcl_Obj *>(nullptr, 2);}
-	__device__ inline array_t<Tcl_Obj *> Encode(Tcl_Obj *arg1, Tcl_Obj *arg2) { return array_t<Tcl_Obj *>(nullptr, 2);}
-	__device__ inline array_t<Tcl_Obj *> Encode(const char *arg1, const char *arg2, const char *arg3) { return array_t<Tcl_Obj *>(nullptr, 2);}
-	__device__ inline array_t<Tcl_Obj *> Encode(Tcl_Obj *arg1, Tcl_Obj *arg2, Tcl_Obj *arg3) { return array_t<Tcl_Obj *>(nullptr, 2);}
-	//
-	__device__ ::RC DB_AUTHORIZER(array_t<Tcl_Obj *> objv);
-	__device__ ::RC DB_BACKUP(array_t<Tcl_Obj *> objv);
-	__device__ ::RC DB_BUSY(array_t<Tcl_Obj *> objv);
-	__device__ ::RC DB_CACHE(array_t<Tcl_Obj *> objv);
-	__device__ ::RC DB_CHANGES(array_t<Tcl_Obj *> objv);
-	__device__ ::RC DB_CLOSE(array_t<Tcl_Obj *> objv);
+	__device__ ::RC AUTHORIZER(array_t<Tcl_Obj *> objv);
+	__device__ ::RC BACKUP(array_t<Tcl_Obj *> objv);
+	__device__ ::RC BUSY(array_t<Tcl_Obj *> objv);
+	__device__ ::RC CACHE(array_t<Tcl_Obj *> objv);
+	__device__ ::RC CHANGES(array_t<Tcl_Obj *> objv);
+	__device__ ::RC CLOSE(array_t<Tcl_Obj *> objv);
 
-	__device__ ::RC DB_EVAL(array_t<Tcl_Obj *> objv);
+	__device__ ::RC EVAL(array_t<Tcl_Obj *> objv);
 
 };
 

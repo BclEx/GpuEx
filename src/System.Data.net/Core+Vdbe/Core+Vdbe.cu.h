@@ -1686,7 +1686,7 @@ namespace Core {
 		__device__ inline static RC ApiExit(Context *ctx, RC rc)
 		{
 			// If the ctx handle is not NULL, then we must hold the connection handle mutex here. Otherwise the read (and possible write) of db->mallocFailed is unsafe, as is the call to sqlite3Error().
-			_assert(!ctx || MutexEx_Held(ctx->Mutex));
+			_assert(!ctx || _mutex_held(ctx->Mutex));
 			if (ctx && (ctx->MallocFailed || rc == RC_IOERR_NOMEM))
 			{
 				Error(ctx, RC_NOMEM, nullptr);

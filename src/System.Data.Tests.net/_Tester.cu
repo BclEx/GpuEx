@@ -2,7 +2,7 @@
 
 #pragma region tester.tcl
 
-__device__ void Tester::sqlite3(TestCtx *tctx, array_t<void *> args)
+__device__ void Tester::sqlite3(TestCtx *tctx, array_t<const char *> args)
 {
 	if (args.length >= 1 && ((char *)args[0])[0] != '-')
 	{
@@ -310,6 +310,8 @@ __device__ void Tester::Initialize()
 	//  if {$cmdlinearg(malloctrace)}  {
 	//    sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
 	//  }
+
+	reset_db();
 }
 
 // Update the soft-heap-limit each time this script is run. In that way if an individual test file changes the soft-heap-limit, it
@@ -319,17 +321,15 @@ __device__ void Tester::Initialize()
 // Create a test database
 __device__ void Tester::reset_db()
 {
-	/*try {}
-	catch(void *) { db.Close(); }*/
+	db->CLOSE(nullptr);
 	const char *args[] = {"test.db", "test.db-journal", "test.db-wal"};
 	forcedelete(args, 3);
-	//  sqlite3 db ./test.db
+	sqlite3(db, Y("./test.db"));
 	//  set ::DB [sqlite3_connection_pointer db]
-	//  if {[info exists ::SETUP_SQL]} {
-	//    db eval $::SETUP_SQL
-	//  }
+	if (_SETUP_SQL)
+		db->EVAL(Zc(_SETUP_SQL));
 }
-//reset_db
+
 
 //# Abort early if this script has been run before.
 //#
@@ -391,66 +391,7 @@ __device__ void Tester::reset_db()
 
 // Invoke the do_test procedure to run a single test 
 //#
-//protected void do_test(string name, Action cmd, object expected)
-//{
-//	//  global argv cmdlinearg
-//
-//	//  fix_testname name
-//
-//	//  sqlite3_memdebug_settitle $name
-//
-//	//#  if {[llength $argv]==0} { 
-//	//#    set go 1
-//	//#  } else {
-//	//#    set go 0
-//	//#    foreach pattern $argv {
-//	//#      if {[string match $pattern $name]} {
-//	//#        set go 1
-//	//#        break
-//	//#      }
-//	//#    }
-//	//#  }
-//
-//	//  if {[info exists ::G(perm:prefix)]} {
-//	//    set name "$::G(perm:prefix)$name"
-//	//  }
-//
-//	//  incr_ntest
-//	//  puts -nonewline $name...
-//	//  flush stdout
-//
-//	//  if {![info exists ::G(match)] || [string match $::G(match) $name]} {
-//	//    if {[catch {uplevel #0 "$cmd;\n"} result]} {
-//	//      puts "\nError: $result"
-//	//      fail_test $name
-//	//    } else {
-//	//      if {[regexp {^~?/.*/$} $expected]} {
-//	//        if {[string index $expected 0]=="~"} {
-//	//          set re [string map {# {[-0-9.]+}} [string range $expected 2 end-1]]
-//	//          set ok [expr {![regexp $re $result]}]
-//	//        } else {
-//	//          set re [string map {# {[-0-9.]+}} [string range $expected 1 end-1]]
-//	//          set ok [regexp $re $result]
-//	//        }
-//	//      } else {
-//	//        set ok [expr {[string compare $result $expected]==0}]
-//	//      }
-//	//      if {!$ok} {
-//	//        # if {![info exists ::testprefix] || $::testprefix eq ""} {
-//	//        #   error "no test prefix"
-//	//        # }
-//	//        puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
-//	//        fail_test $name
-//	//      } else {
-//	//        puts " Ok"
-//	//      }
-//	//    }
-//	//  } else {
-//	//    puts " Omitted"
-//	//    omit_test $name "pattern mismatch" 0
-//	//  }
-//	//  flush stdout
-//}
+
 
 //proc catchcmd {db {cmd ""}} {
 //  global CLI
@@ -743,31 +684,31 @@ __device__ void Tester::finalize_testing()
 __device__ void Tester::show_memstats()
 {
 	int x1, x2;
-	bool x0 = StatusEx::Status(StatusEx::STATUS_MEMORY_USED, &x1, &x2, false);
+	bool x0 = _status(STATUS_MEMORY_USED, &x1, &x2, false);
 	int y1, y2;
-	bool y0 = StatusEx::Status(StatusEx::STATUS_MALLOC_SIZE, &y1, &y2, false);
+	bool y0 = _status(STATUS_MALLOC_SIZE, &y1, &y2, false);
 	char val[100];
 	__snprintf(val, sizeof(val), "now %10d  max %10d  max-size %10d", x1, x2, y2);
 	printf("Memory used:          %s", val);
-	x0 = StatusEx::Status(StatusEx::STATUS_MALLOC_COUNT, &x1, &x2, false);
+	x0 = _status(STATUS_MALLOC_COUNT, &x1, &x2, false);
 	__snprintf(val, sizeof(val), "now %10d  max %10d", x1, x2);
 	printf("Allocation count:     %s", val);
-	x0 = StatusEx::Status(StatusEx::STATUS_PAGECACHE_USED, &x1, &x2, false);
-	y0 = StatusEx::Status(StatusEx::STATUS_PAGECACHE_SIZE, &y1, &y2, false);
+	x0 = _status(STATUS_PAGECACHE_USED, &x1, &x2, false);
+	y0 = _status(STATUS_PAGECACHE_SIZE, &y1, &y2, false);
 	__snprintf(val, sizeof(val), "now %10d  max %10d  max-size %10d", x1, x2, y2);
 	printf("Page-cache used:      %s", val);
-	x0 = StatusEx::Status(StatusEx::STATUS_PAGECACHE_OVERFLOW, &x1, &x2, false);
+	x0 = _status(STATUS_PAGECACHE_OVERFLOW, &x1, &x2, false);
 	__snprintf(val, sizeof(val), "now %10d  max %10d", x1, x2);
 	printf("Page-cache overflow:  %s", val);
-	x0 = StatusEx::Status(StatusEx::STATUS_SCRATCH_USED, &x1, &x2, false);	
+	x0 = _status(STATUS_SCRATCH_USED, &x1, &x2, false);	
 	__snprintf(val, sizeof(val), "now %10d  max %10d", x1, x2);
 	printf("Scratch memory used:  %s", val);
-	x0 = StatusEx::Status(StatusEx::STATUS_SCRATCH_OVERFLOW, &x1, &x2, false);
-	y0 = StatusEx::Status(StatusEx::STATUS_SCRATCH_SIZE, &y1, &y2, false);
+	x0 = _status(STATUS_SCRATCH_OVERFLOW, &x1, &x2, false);
+	y0 = _status(STATUS_SCRATCH_SIZE, &y1, &y2, false);
 	__snprintf(val, sizeof(val), "now %10d  max %10d  max-size %10d", x1, x2, y2);
 	printf("Scratch overflow:     %s", val);
 #if yytrackmaxstackdepth
-	x0 = StatusEx::Status(StatusEx::STATUS_PARSER_STACK, &x1, &x2, false);
+	x0 = _status(STATUS_PARSER_STACK, &x1, &x2, false);
 	__snprintf(val, sizeof(val), "               max %10d", x2);
 	printf("Parser stack depth:    %s", val);
 #endif

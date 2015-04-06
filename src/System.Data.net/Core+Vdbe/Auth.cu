@@ -7,11 +7,11 @@ namespace Core
 {
 	__device__ RC Auth::SetAuthorizer(Context *ctx, ARC (*auth)(void*,int,const char*,const char*,const char*,const char*), void *arg)
 	{
-		MutexEx_Enter(ctx->Mutex);
+		_mutex_enter(ctx->Mutex);
 		ctx->Auth = auth;
 		ctx->AuthArg = arg;
 		Vdbe::ExpirePreparedStatements(ctx);
-		MutexEx_Leave(ctx->Mutex);
+		_mutex_leave(ctx->Mutex);
 		return RC_OK;
 	}
 

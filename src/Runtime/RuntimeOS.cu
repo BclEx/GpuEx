@@ -1,8 +1,7 @@
 #include "Runtime.h"
 #include "RuntimeOS.h"
 
-#if OS_GPU
-__device__ void _sleep(int milliseconds)
+__device__ void osSleep(DWORD milliseconds)
 {
 	clock_t start = clock();
 	clock_t end = milliseconds * 10;
@@ -32,4 +31,3 @@ __device__ HANDLE osCreateMutexA(void *dummy1, bool dummy2, const char *name)
 __device__ void osReleaseMutex(HANDLE h)
 {
 }
-#endif

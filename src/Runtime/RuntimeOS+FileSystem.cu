@@ -27,12 +27,12 @@ __device__ bool osCloseHandle(HANDLE h)
 	return true;
 }
 
-__device__ bool osReadFile(HANDLE h, void *buffer, DWORD amount, DWORD *read, OVERLAPPED *overlapped)
+__device__ bool osReadFile(HANDLE h, void *buffer, DWORD amount, DWORD *read, OSOVERLAPPED *overlapped)
 {
 	return true;
 }
 
-__device__ bool osWriteFile(HANDLE h, const void *buffer, DWORD amount, DWORD *write, OVERLAPPED *overlapped)
+__device__ bool osWriteFile(HANDLE h, const void *buffer, DWORD amount, DWORD *write, OSOVERLAPPED *overlapped)
 {
 	return true;
 }

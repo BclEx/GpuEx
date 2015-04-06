@@ -49,9 +49,9 @@
     <ClCompile Include="Runtime+Mutex-gpu.cu" />
     <ClCompile Include="Runtime+Mutex-noop.cu" />
     <ClCompile Include="Runtime+Mutex-win.cu" />
-    <ClCompile Include="Runtime+StatusEx.cu" />
-    <ClCompile Include="RuntimeOS.cu" />
-    <ClCompile Include="RuntimeOS+FileSystem.cu" />
+    <ClCompile Include="Runtime+Status.cu" />
+    <None Include="RuntimeOS.cu" />
+    <None Include="RuntimeOS+FileSystem.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
@@ -64,7 +64,7 @@
     <None Include="Runtime+Mutex-gpu.cu" />
     <None Include="Runtime+Mutex-noop.cu" />
     <None Include="Runtime+Mutex-win.cu" />
-    <None Include="Runtime+StatusEx.cu" />
+    <None Include="Runtime+Status.cu" />
     <None Include="RuntimeOS.cu" />
     <None Include="RuntimeOS+FileSystem.cu" />
   </ItemGroup>

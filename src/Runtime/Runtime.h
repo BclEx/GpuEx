@@ -106,8 +106,8 @@ __device__ void _runtime_utfselftest();
 #pragma endregion
 
 //////////////////////
-// MUTEXEX
-#pragma region MUTEXEX
+// MUTEX
+#pragma region MUTEX
 
 #if !defined(THREADSAFE)
 #if defined(__THREADSAFE__)
@@ -149,46 +149,36 @@ enum MUTEX : unsigned char
 struct _mutex_obj;
 typedef _mutex_obj *MutexEx;
 #ifdef MUTEX_OMIT
-
-#define MutexEx_Held(X) ((void)(X), 1)
-#define MutexEx_NotHeld(X) ((void)(X), 1)
+#define _mutex_held(X) ((void)(X), 1)
+#define _mutex_notheld(X) ((void)(X), 1)
 #define _mutex_init() 0
 #define _mutex_shutdown()
-#define MutexEx_Alloc(X) ((MutexEx)1)
-#define MutexEx_Enter(X)
+#define _mutex_alloc(X) ((MutexEx)1)
+#define _mutex_enter(X)
 #define MutexEx_TryEnter(X) 0
-#define MutexEx_Leave(X)
-#define MutexEx_Free(X)
+#define _mutex_leave(X)
+#define _mutex_free(X)
 #define MUTEX_LOGIC(X)
-
 #else
-
 #ifdef _DEBUG
-extern bool _mutex_held(MutexEx p);
-extern bool _mutex_notheld(MutexEx p);
+__device__ extern bool _mutex_held(MutexEx p);
+__device__ extern bool _mutex_notheld(MutexEx p);
 #endif
-extern int _mutex_init();
-extern void _mutex_shutdown();
-extern MutexEx _mutex_alloc(MUTEX id);
-extern void _mutex_free(MutexEx p);
-extern void _mutex_enter(MutexEx p);
-extern bool _mutex_tryenter(MutexEx p);
-extern void _mutex_leave(MutexEx p);
+__device__ extern int _mutex_init();
+__device__ extern void _mutex_shutdown();
+__device__ extern MutexEx _mutex_alloc(MUTEX id);
+__device__ extern void _mutex_free(MutexEx p);
+__device__ extern void _mutex_enter(MutexEx p);
+__device__ extern bool _mutex_tryenter(MutexEx p);
+__device__ extern void _mutex_leave(MutexEx p);
 #define MUTEX_LOGIC(X) X
-#define MutexEx_Alloc(id) _mutex_alloc(id)
-#define MutexEx_Enter(mutex) _mutex_enter(mutex)
-#define MutexEx_Leave(mutex) _mutex_leave(mutex)
-#define MutexEx_Held(mutex) _mutex_held(mutex)
-#define MutexEx_NotHeld(mutex) _mutex_notheld(mutex)
-#define MutexEx_Free(mutex) _mutex_free(mutex)
-
 #endif
 
 #pragma endregion
 
 //////////////////////
-// STATUSEX
-#pragma region STATUSEX
+// STATUS
+#pragma region STATUS
 
 enum STATUS : unsigned char
 {
@@ -204,14 +194,10 @@ enum STATUS : unsigned char
 	STATUS_MALLOC_COUNT = 9,
 };
 
-class StatusEx
-{
-public:
-	__device__ static int StatusValue(STATUS op);
-	__device__ static void StatusAdd(STATUS op, int n);
-	__device__ static void StatusSet(STATUS op, int x);
-	__device__ static bool Status(STATUS op, int *current, int *highwater, bool resetFlag);
-};
+__device__ extern int _status_value(STATUS op);
+__device__ extern void _status_add(STATUS op, int n);
+__device__ extern void _status_set(STATUS op, int x);
+__device__ extern bool _status(STATUS op, int *current, int *highwater, bool resetFlag);
 
 #pragma endregion
 

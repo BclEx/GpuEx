@@ -253,7 +253,7 @@ namespace Core
 		}
 		if (e == ERROR_ACCESS_DENIED || e == ERROR_LOCK_VIOLATION || e == ERROR_SHARING_VIOLATION)
 		{
-			_sleep(gpuIoerrRetryDelay*(1+*retry));
+			osSleep(gpuIoerrRetryDelay*(1+*retry));
 			++*retry;
 			return 1;
 		}
@@ -292,9 +292,9 @@ namespace Core
 		} while (err != WAIT_OBJECT_0 && err != WAIT_ABANDONED);
 	}
 
-#define gpuMutexRelease(h) ReleaseMutex(h)
+#define gpuMutexRelease(h) osReleaseMutex(h)
 
-	static RC gpuCreateLock(const char *filename, GpuVFile *file)
+	__device__ static RC gpuCreateLock(const char *filename, GpuVFile *file)
 	{
 		char *name = (char *)ConvertFilename(filename);
 		if (!name)
@@ -388,14 +388,14 @@ namespace Core
 		}
 	}
 
-	static bool gpuLockFile(LPHANDLE fileHandle, DWORD fileOffsetLow, DWORD fileOffsetHigh, DWORD numberOfBytesToLockLow, DWORD numberOfBytesToLockHigh)
+	__device__ static bool gpuLockFile(LPHANDLE fileHandle, DWORD flags, DWORD offsetLow, DWORD offsetHigh, DWORD numBytesLow, DWORD numBytesHigh)
 	{
 		GpuVFile *file = HANDLE_TO_GPUFILE(fileHandle);
 		bool r = false;
 		if (!file->Mutex) return true;
 		gpuMutexAcquire(file->Mutex);
 		// Wanting an exclusive lock?
-		if (fileOffsetLow == (DWORD)SHARED_FIRST && numberOfBytesToLockLow == (DWORD)SHARED_SIZE)
+		if (offsetLow == (DWORD)SHARED_FIRST && numBytesLow == (DWORD)SHARED_SIZE)
 		{
 			if (file->Shared->Readers == 0 && !file->Shared->Exclusive)
 			{
@@ -405,7 +405,7 @@ namespace Core
 			}
 		}
 		// Want a read-only lock? 
-		else if (fileOffsetLow == (DWORD)SHARED_FIRST && numberOfBytesToLockLow == 1)
+		else if (offsetLow == (DWORD)SHARED_FIRST && numBytesLow == 1)
 		{
 			if (!file->Shared->Exclusive)
 			{
@@ -416,7 +416,7 @@ namespace Core
 			}
 		}
 		// Want a pending lock?
-		else if (fileOffsetLow == (DWORD)PENDING_BYTE && numberOfBytesToLockLow == 1)
+		else if (offsetLow == (DWORD)PENDING_BYTE && numBytesLow == 1)
 		{
 			// If no pending lock has been acquired, then acquire it
 			if (!file->Shared->Pending) 
@@ -427,7 +427,7 @@ namespace Core
 			}
 		}
 		// Want a reserved lock?
-		else if (fileOffsetLow == (DWORD)RESERVED_BYTE && numberOfBytesToLockLow == 1)
+		else if (offsetLow == (DWORD)RESERVED_BYTE && numBytesLow == 1)
 		{
 			if (!file->Shared->Reserved)
 			{
@@ -440,19 +440,19 @@ namespace Core
 		return r;
 	}
 
-	static bool gpuUnlockFile(LPHANDLE fileHandle, DWORD fileOffsetLow, DWORD fileOffsetHigh, DWORD numberOfBytesToUnlockLow, DWORD numberOfBytesToUnlockHigh)
+	__device__ static bool gpuUnlockFile(LPHANDLE fileHandle, DWORD offsetLow, DWORD offsetHigh, DWORD numBytesLow, DWORD numBytesHigh)
 	{
 		GpuVFile *file = HANDLE_TO_GPUFILE(fileHandle);
 		bool r = false;
 		if (!file->Mutex) return true;
 		gpuMutexAcquire(file->Mutex);
 		// Releasing a reader lock or an exclusive lock
-		if (fileOffsetLow == (DWORD)SHARED_FIRST)
+		if (offsetLow == (DWORD)SHARED_FIRST)
 		{
 			// Did we have an exclusive lock?
 			if (file->Local.Exclusive)
 			{
-				_assert(numberOfBytesToUnlockLow == (DWORD)SHARED_SIZE);
+				_assert(numBytesLow == (DWORD)SHARED_SIZE);
 				file->Local.Exclusive = false;
 				file->Shared->Exclusive = false;
 				r = true;
@@ -460,7 +460,7 @@ namespace Core
 			// Did we just have a reader lock?
 			else if (file->Local.Readers)
 			{
-				_assert(numberOfBytesToUnlockLow == (DWORD)SHARED_SIZE || numberOfBytesToUnlockLow == 1);
+				_assert(numBytesLow == (DWORD)SHARED_SIZE || numBytesLow == 1);
 				file->Local.Readers--;
 				if (file->Local.Readers == 0)
 					file->Shared->Readers--;
@@ -468,7 +468,7 @@ namespace Core
 			}
 		}
 		// Releasing a pending lock
-		else if (fileOffsetLow == (DWORD)PENDING_BYTE && numberOfBytesToUnlockLow == 1)
+		else if (offsetLow == (DWORD)PENDING_BYTE && numBytesLow == 1)
 		{
 			if (file->Local.Pending)
 			{
@@ -478,7 +478,7 @@ namespace Core
 			}
 		}
 		// Releasing a reserved lock
-		else if (fileOffsetLow == (DWORD)RESERVED_BYTE && numberOfBytesToUnlockLow == 1)
+		else if (offsetLow == (DWORD)RESERVED_BYTE && numBytesLow == 1)
 		{
 			if (file->Local.Reserved)
 			{
@@ -517,14 +517,14 @@ namespace Core
 		do
 		{
 			rc = osCloseHandle(H);
-		} while (!rc && ++cnt < MAX_CLOSE_ATTEMPT && (_sleep(100), 1));
+		} while (!rc && ++cnt < MAX_CLOSE_ATTEMPT && (osSleep(100), 1));
 #define GPU_DELETION_ATTEMPTS 3
 		gpuDestroyLock(this);
 		if (DeleteOnClose)
 		{
 			int cnt = 0;
 			while (osDeleteFileA(DeleteOnClose) == 0 && osGetFileAttributesA(DeleteOnClose) != 0xffffffff && cnt++ < GPU_DELETION_ATTEMPTS)
-				_sleep(100); // Wait a little before trying again
+				osSleep(100); // Wait a little before trying again
 			_free(DeleteOnClose);
 		}
 		OSTRACE("CLOSE %d %s\n", H, rc ? "ok" : "failed");
@@ -535,12 +535,12 @@ namespace Core
 
 	__device__ RC GpuVFile::Read(void *buffer, int amount, int64 offset)
 	{
-		OVERLAPPED overlapped; // The offset for ReadFile.
+		OSOVERLAPPED overlapped; // The offset for ReadFile.
 		int retry = 0; // Number of retrys
 		SimulateIOError(return RC_IOERR_READ);
 		OSTRACE("READ %d lock=%d\n", H, Lock_);
 		DWORD read; // Number of bytes actually read from file
-		_memset(&overlapped, 0, sizeof(OVERLAPPED));
+		_memset(&overlapped, 0, sizeof(OSOVERLAPPED));
 		overlapped.Offset = (DWORD)(offset & 0xffffffff);
 		overlapped.OffsetHigh = (DWORD)((offset>>32) & 0x7fffffff);
 		while (!osReadFile(H, buffer, amount, &read, &overlapped) && osGetLastError() != ERROR_HANDLE_EOF)
@@ -569,8 +569,8 @@ namespace Core
 		int rc = 0; // True if error has occurred, else false
 		int retry = 0; // Number of retries
 		{
-			OVERLAPPED overlapped; // The offset for WriteFile.
-			_memset(&overlapped, 0, sizeof(OVERLAPPED));
+			OSOVERLAPPED overlapped; // The offset for WriteFile.
+			_memset(&overlapped, 0, sizeof(OSOVERLAPPED));
 			overlapped.Offset = (DWORD)(offset & 0xffffffff);
 			overlapped.OffsetHigh = (DWORD)((offset>>32) & 0x7fffffff);
 
@@ -638,8 +638,8 @@ namespace Core
 
 #ifdef TEST
 	// Count the number of fullsyncs and normal syncs.  This is used to test that syncs and fullsyncs are occuring at the right times.
-	int g_sync_count = 0;
-	int g_fullsync_count = 0;
+	__device__ int g_sync_count = 0;
+	__device__ int g_fullsync_count = 0;
 #endif
 	__device__ RC GpuVFile::Sync(SYNC flags)
 	{
@@ -684,7 +684,7 @@ namespace Core
 	__device__ static int getReadLock(GpuVFile *file)
 	{
 		int res;
-		res = gpuLockFile(&file->H, SHARED_FIRST, 0, 1, 0);
+		res = gpuLockFile(&file->H, 0, SHARED_FIRST, 0, 1, 0);
 		//int lock;
 		//SysEx::PutRandom(sizeof(lock), &lock);
 		//file->SharedLockByte = (short)((lock & 0x7fffffff)%(SHARED_SIZE - 1));
@@ -698,7 +698,7 @@ namespace Core
 	__device__ static int unlockReadLock(GpuVFile *file)
 	{
 		int res;
-		res = gpuUnlockFile(&file->H, SHARED_FIRST, 0, SHARED_SIZE, 0);
+		res = gpuUnlockFile(&file->H, SHARED_FIRST, 0, 1, 0);
 		//res = gpuUnlockFile(&file->H, SHARED_FIRST + file->SharedLockByte, 0, 1, 0);
 		DWORD lastErrno;
 		if (res == 0 && (lastErrno = osGetLastError()) != ERROR_NOT_LOCKED)
@@ -737,7 +737,7 @@ namespace Core
 				// Try 3 times to get the pending lock.  This is needed to work around problems caused by indexing and/or anti-virus software on Windows systems.
 				// If you are using this code as a model for alternative VFSes, do not copy this retry logic.  It is a hack intended for Windows only.
 				OSTRACE("could not get a PENDING lock. cnt=%d\n", cnt);
-				if (cnt) _sleep(1);
+				if (cnt) osSleep(1);
 			}
 			gotPendingLock = (res != 0);
 			if (!res)
@@ -1108,7 +1108,7 @@ namespace Core
 			return rc;
 		}
 		if (isTemp)
-			file->DeleteOnClose = converted;
+			file->DeleteOnClose = (char *)converted;
 		else
 			_free(converted);
 		file->Opened = true;
@@ -1267,7 +1267,7 @@ namespace Core
 
 	__device__ int GpuVSystem::Sleep(int microseconds)
 	{
-		_sleep((microseconds+999)/1000);
+		osSleep((microseconds+999)/1000);
 		return ((microseconds+999)/1000)*1000;
 	}
 

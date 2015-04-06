@@ -2036,10 +2036,10 @@ namespace Core
 #ifndef OMIT_WAL
 
 	SYSTEM_INFO winSysInfo;
-	static void winShmEnterMutex() { MutexEx_Enter(MutexEx_Alloc(MUTEX_STATIC_MASTER)); }
-	static void winShmLeaveMutex() { MutexEx_Leave(MutexEx_Alloc(MUTEX_STATIC_MASTER)); }
+	static void winShmEnterMutex() { _mutex_enter(_mutex_alloc(MUTEX_STATIC_MASTER)); }
+	static void winShmLeaveMutex() { _mutex_leave(_mutex_alloc(MUTEX_STATIC_MASTER)); }
 #ifdef _DEBUG
-	static bool winShmMutexHeld() { return MutexEx_Held(MutexEx_Alloc(MUTEX_STATIC_MASTER)); }
+	static bool winShmMutexHeld() { return _mutex_held(_mutex_alloc(MUTEX_STATIC_MASTER)); }
 #endif
 
 	struct winShmNode
@@ -2090,7 +2090,7 @@ namespace Core
 	static int winShmSystemLock(winShmNode *file, _SHM lock, int offset, int bytes)
 	{
 		// Access to the winShmNode object is serialized by the caller
-		_assert(MutexEx_Held(file->Mutex) || file->Refs == 0);
+		_assert(_mutex_held(file->Mutex) || file->Refs == 0);
 		// Release/Acquire the system-level lock
 		int rc = 0; // Result code form Lock/UnlockFileEx()
 		if (lock == _SHM_UNLCK)
@@ -2125,7 +2125,7 @@ namespace Core
 		while ((p = *pp) != nullptr)
 			if (p->Refs == 0)
 			{
-				//if (p->Mutex) MutexEx_Free(p->Mutex);
+				//if (p->Mutex) _mutex_free(p->Mutex);
 				for (int i = 0; i < p->RegionLength; i++)
 				{
 					BOOL rc = osUnmapViewOfFile(p->Regions[i].Map);
@@ -2188,7 +2188,7 @@ namespace Core
 			shmNode->File->H = INVALID_HANDLE_VALUE;
 			shmNode->Next = _winShmNodeList;
 			_winShmNodeList = shmNode;
-			shmNode->Mutex = MutexEx_Alloc(MUTEX_FAST);
+			shmNode->Mutex = _mutex_alloc(MUTEX_FAST);
 			rc = file->Vfs->Open(shmNode->Filename, &shmNode->File, VSystem::OPEN_WAL | VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE, nullptr);
 			if (rc != RC_OK)
 				goto shm_open_err;
@@ -2218,10 +2218,10 @@ namespace Core
 		// The reference count on pShmNode has already been incremented under the cover of the winShmEnterMutex() mutex and the pointer from the
 		// new (struct winShm) object to the pShmNode has been set. All that is left to do is to link the new object into the linked list starting
 		// at pShmNode->pFirst. This must be done while holding the pShmNode->mutex mutex.
-		MutexEx_Enter(shmNode->Mutex);
+		_mutex_enter(shmNode->Mutex);
 		p->Next = shmNode->First;
 		shmNode->First = p;
-		MutexEx_Leave(shmNode->Mutex);
+		_mutex_leave(shmNode->Mutex);
 		return RC_OK;
 
 		// Jump here on any error
@@ -2241,13 +2241,13 @@ shm_open_err:
 		winShmNode *shmNode = p->ShmNode; // The underlying shared-memory file
 
 		// Remove connection p from the set of connections associated with pShmNode
-		MutexEx_Enter(shmNode->Mutex);
+		_mutex_enter(shmNode->Mutex);
 		winShm **pp;
 		for (pp = &shmNode->First; (*pp) != p; pp = &(*pp)->Next) { }
 		*pp = p->Next;
 		_free(p); // Free the connection p
 		Shm = nullptr;
-		MutexEx_Leave(shmNode->Mutex);
+		_mutex_leave(shmNode->Mutex);
 
 		// If pShmNode->nRef has reached 0, then close the underlying shared-memory file, too
 		winShmEnterMutex();
@@ -2271,7 +2271,7 @@ shm_open_err:
 		RC rc = RC_OK;
 		winShm *p = Shm; // The shared memory being locked
 		winShmNode *shmNode = p->ShmNode;
-		MutexEx_Enter(shmNode->Mutex);
+		_mutex_enter(shmNode->Mutex);
 		winShm *x;
 		if (flags & SHM_UNLOCK)
 		{
@@ -2340,7 +2340,7 @@ shm_open_err:
 					}
 				}
 		}
-		MutexEx_Leave(shmNode->Mutex);
+		_mutex_leave(shmNode->Mutex);
 		OSTRACE("SHM-LOCK shmid-%d, pid-%d got %03x,%03x %s\n", p->ID, (int)osGetCurrentProcessId(), p->SharedMask, p->ExclMask, rc ? "failed" : "ok");
 		return rc;
 	}
@@ -2364,7 +2364,7 @@ shm_open_err:
 		}
 		winShmNode *shmNode = p->ShmNode;
 
-		MutexEx_Enter(shmNode->Mutex);
+		_mutex_enter(shmNode->Mutex);
 		_assert(sizeRegion == shmNode->SizeRegion || shmNode->RegionLength == 0);
 		if (shmNode->RegionLength <= region)
 		{
@@ -2446,7 +2446,7 @@ shmpage_out:
 		}
 		else
 			*pp = nullptr;
-		MutexEx_Leave(shmNode->Mutex);
+		_mutex_leave(shmNode->Mutex);
 		return rc;
 	}
 

@@ -57,12 +57,12 @@ namespace Core
 	{
 		unsigned char *b = (unsigned char *)buffer;
 #if THREADSAFE
-		MutexEx mutex = MutexEx_Alloc(MUTEX_STATIC_PRNG);
+		MutexEx mutex = _mutex_alloc(MUTEX_STATIC_PRNG);
 #endif
-		MutexEx_Enter(mutex);
+		_mutex_enter(mutex);
 		while (length--)
 			*(b++) = RandomByte();
-		MutexEx_Leave(mutex);
+		_mutex_leave(mutex);
 	}
 
 #if !OMIT_BUILTIN_TEST

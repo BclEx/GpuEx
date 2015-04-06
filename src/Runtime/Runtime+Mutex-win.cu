@@ -26,9 +26,9 @@ static bool g_mutex_IsInit = false;
 static long g_mutex_Lock = 0;
 
 #ifdef _DEBUG
-bool _mutex_held(MutexEx p) { return (p->Refs != 0 && p->Owner == GetCurrentThreadId()); }
-bool _mutex_notheld(MutexEx p, DWORD tid) { return (p->Refs == 0 || p->Owner != tid); }
-bool _mutex_notheld(MutexEx p) { DWORD tid = GetCurrentThreadId();  return _mutex_notheld(p, tid); }
+bool _mutex_held(MutexEx p) { return (!p || (p->Refs != 0 && p->Owner == GetCurrentThreadId())); }
+bool _mutex_notheld(MutexEx p, DWORD tid) { return (!p || p->Refs == 0 || p->Owner != tid); }
+bool _mutex_notheld(MutexEx p) { DWORD tid = GetCurrentThreadId(); return (!p || _mutex_notheld(p, tid)); }
 #endif
 
 int _mutex_init()
@@ -100,6 +100,7 @@ MutexEx _mutex_alloc(MUTEX id)
 
 void _mutex_free(MutexEx p)
 {
+	if (!p) return;
 	_assert(p);
 	_assert(p->Refs == 0 && p->Owner == 0);
 	_assert(p->Id == MUTEX_FAST || p->Id == MUTEX_RECURSIVE);
@@ -109,6 +110,7 @@ void _mutex_free(MutexEx p)
 
 void _mutex_enter(MutexEx p)
 {
+	if (!p) return;
 #ifdef _DEBUG
 	DWORD tid = GetCurrentThreadId(); 
 	_assert(p->Id == MUTEX_RECURSIVE || _mutex_notheld(p, tid));
@@ -125,6 +127,7 @@ void _mutex_enter(MutexEx p)
 
 bool _mutex_tryenter(MutexEx p)
 {
+	if (!p) return true;
 #ifndef NDEBUG
 	DWORD tid = GetCurrentThreadId(); 
 #endif
@@ -149,6 +152,7 @@ bool _mutex_tryenter(MutexEx p)
 
 void _mutex_leave(MutexEx p)
 {
+	if (!p) return;
 #ifndef NDEBUG
 	DWORD tid = GetCurrentThreadId();
 	_assert(p->Refs > 0);

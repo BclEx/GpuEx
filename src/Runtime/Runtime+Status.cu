@@ -14,35 +14,35 @@ __device__ static _WSD struct Stat
 #define _stat x[0]
 #endif
 
-__device__ int StatusEx::StatusValue(STATUS op)
+__device__ int _status_value(STATUS op)
 {
 	_stat_Init;
-	_assert(op >= 0 && op < _lengthof(_stat.NowValue));
+	_assert(op < _lengthof(_stat.NowValue));
 	return _stat.NowValue[op];
 }
 
-__device__ void StatusEx::StatusAdd(STATUS op, int n)
+__device__ void _status_add(STATUS op, int n)
 {
 	_stat_Init;
-	_assert(op >= 0 && op < _lengthof(_stat.NowValue));
+	_assert(op < _lengthof(_stat.NowValue));
 	_stat.NowValue[op] += n;
 	if (_stat.NowValue[op] > _stat.MaxValue[op])
 		_stat.MaxValue[op] = _stat.NowValue[op];
 }
 
-__device__ void StatusEx::StatusSet(STATUS op, int x)
+__device__ void _status_set(STATUS op, int x)
 {
 	_stat_Init;
-	_assert(op >= 0 && op < _lengthof(_stat.NowValue));
+	_assert(op < _lengthof(_stat.NowValue));
 	_stat.NowValue[op] = x;
 	if (_stat.NowValue[op] > _stat.MaxValue[op])
 		_stat.MaxValue[op] = _stat.NowValue[op];
 }
 
-__device__ bool StatusEx::Status(STATUS op, int *current, int *highwater, bool resetFlag)
+__device__ bool _status(STATUS op, int *current, int *highwater, bool resetFlag)
 {
 	_stat_Init;
-	if (op < 0 || op >= _lengthof(_stat.NowValue))
+	if (op >= _lengthof(_stat.NowValue))
 		return false;
 	*current = _stat.NowValue[op];
 	*highwater = _stat.MaxValue[op];

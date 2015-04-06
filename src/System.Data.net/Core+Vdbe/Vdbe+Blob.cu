@@ -103,7 +103,7 @@ namespace Core {
 		flags = !!flags; // flags = (flags ? 1 : 0);
 		*blobOut = nullptr;
 
-		MutexEx_Enter(ctx->Mutex);
+		_mutex_enter(ctx->Mutex);
 		Incrblob *blob = (Incrblob *)_tagallocZero(ctx, sizeof(Incrblob));
 		if (!blob) goto blob_open_out;
 		Parse *parse = (Parse *)_stackalloc(ctx, sizeof(*parse));
@@ -257,7 +257,7 @@ blob_open_out:
 		_tagfree(ctx, err);
 		_stackfree(ctx, parse);
 		rc = Main::ApiExit(ctx, rc);
-		MutexEx_Leave(ctx->Mutex);
+		_mutex_leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -267,10 +267,10 @@ blob_open_out:
 		if (p)
 		{
 			Context *ctx = p->Ctx;
-			MutexEx_Enter(ctx->Mutex);
+			_mutex_enter(ctx->Mutex);
 			RC rc = Finalize(p->Stmt);
 			_tagfree(ctx, p);
-			MutexEx_Leave(ctx->Mutex);
+			_mutex_leave(ctx->Mutex);
 			return rc;
 		}
 		return RC_OK;
@@ -281,7 +281,7 @@ blob_open_out:
 		Incrblob *p = (Incrblob *)blob;
 		if (!p) return SysEx_MISUSE_BKPT;
 		Context *ctx = p->Ctx;
-		MutexEx_Enter(ctx->Mutex);
+		_mutex_enter(ctx->Mutex);
 		Vdbe *v = (Vdbe *)p->Stmt;
 
 		RC rc;
@@ -310,7 +310,7 @@ blob_open_out:
 			}
 		}
 		rc = Main::ApiExit(ctx, rc);
-		MutexEx_Leave(ctx->Mutex);
+		_mutex_leave(ctx->Mutex);
 		return rc;
 	}
 
@@ -335,7 +335,7 @@ blob_open_out:
 		Incrblob *p = (Incrblob *)blob;
 		if (!p) return SysEx_MISUSE_BKPT;
 		Context *ctx = p->Ctx;
-		MutexEx_Enter(ctx->Mutex);
+		_mutex_enter(ctx->Mutex);
 
 		RC rc;
 		if (!p->Stmt)
@@ -354,7 +354,7 @@ blob_open_out:
 
 		rc = Main::ApiExit(ctx, rc);
 		_assert(rc == RC_OK || !p->Stmt);
-		MutexEx_Leave(ctx->Mutex);
+		_mutex_leave(ctx->Mutex);
 		return rc;
 	}
 

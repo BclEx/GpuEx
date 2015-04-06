@@ -30,12 +30,12 @@
     <None Include="Runtime+Alloc.cu" />
     <None Include="Runtime+Mem0.cu" />
     <None Include="Runtime+Mem1.cu" />
-    <None Include="Runtime+StatusEx.cu" />
     <None Include="RuntimeOS.cu" />
     <None Include="RuntimeOS+FileSystem.cu" />
     <None Include="Runtime+Mutex-gpu.cu" />
     <None Include="Runtime+BenignAlloc.cu" />
     <None Include="Runtime+Mutex-noop.cu" />
     <None Include="Runtime+Mutex-win.cu" />
+    <None Include="Runtime+Status.cu" />
   </ItemGroup>
 </Project>

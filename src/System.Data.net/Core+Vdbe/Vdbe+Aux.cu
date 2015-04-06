@@ -1808,7 +1808,7 @@ __device__ void Vdbe::Delete(Vdbe *p)
 {
 	if (_NEVER(p == nullptr)) return;
 	Context *ctx = p->Ctx;
-	_assert(MutexEx_Held(ctx->Mutex));
+	_assert(_mutex_held(ctx->Mutex));
 	p->ClearObject(ctx);
 	if (p->Prev)
 		p->Prev->Next = p->Next;
@@ -2255,7 +2255,7 @@ __device__ RC Vdbe::IdxKeyCompare(VdbeCursor *c, UnpackedRecord *unpacked, int *
 
 __device__ void Vdbe::SetChanges(Context *ctx, int changes)
 {
-	_assert(MutexEx_Held(ctx->Mutex));
+	_assert(_mutex_held(ctx->Mutex));
 	ctx->Changes = changes;
 	ctx->TotalChanges += changes;
 }

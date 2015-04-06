@@ -47,22 +47,22 @@ __device__ static _WSD struct Mem0Global
 // Change the alarm callback
 __device__ void __alloc_setmemoryalarm(int (*callback)(void*,int64,int), void *arg, int64 threshold)
 {
-	MutexEx_Enter(mem0.Mutex);
+	_mutex_enter(mem0.Mutex);
 	mem0.AlarmCallback = callback;
 	mem0.AlarmArg = arg;
 	mem0.AlarmThreshold = threshold;
-	int used = StatusEx::StatusValue(StatusEx::STATUS_MEMORY_USED);
+	int used = _status_value(STATUS_MEMORY_USED);
 	mem0.NearlyFull = (threshold > 0 && threshold <= used);
-	MutexEx_Leave(mem0.Mutex);
+	_mutex_leave(mem0.Mutex);
 }
 
 // Set the soft heap-size limit for the library. Passing a zero or negative value indicates no limit.
 __device__ int64 __alloc_memoryused();
 __device__ int64 __alloc_softheaplimit64(int64 size)
 {
-	MutexEx_Enter(mem0.Mutex);
+	_mutex_enter(mem0.Mutex);
 	int64 priorLimit = mem0.AlarmThreshold;
-	MutexEx_Leave(mem0.Mutex);
+	_mutex_leave(mem0.Mutex);
 	if (size < 0) return priorLimit;
 	if (size > 0)
 		__alloc_setmemoryalarm(__alloc_releasememory, 0, size);
@@ -86,7 +86,7 @@ __device__ int _alloc_init()
 	//	sqlite3MemSetDefault();
 	_memset(&mem0, 0, sizeof(mem0));
 	if (TagBase_RuntimeStatics.RuntimeMutex)
-		mem0.Mutex = MutexEx_Alloc(MUTEX_STATIC_MEM);
+		mem0.Mutex = _mutex_alloc(MUTEX_STATIC_MEM);
 	if (TagBase_RuntimeStatics.Scratch && TagBase_RuntimeStatics.ScratchSize >= 100 && TagBase_RuntimeStatics.Scratchs > 0)
 	{
 		int size = _ROUNDDOWN8(TagBase_RuntimeStatics.ScratchSize);
@@ -136,7 +136,7 @@ __device__ void _alloc_shutdown()
 __device__ int64 __alloc_memoryused()
 {
 	int n, max;
-	StatusEx::Status(StatusEx::STATUS_MEMORY_USED, &n, &max, false);
+	_status(STATUS_MEMORY_USED, &n, &max, false);
 	return (int64)n; // Work around bug in Borland C. Ticket #3216
 }
 
@@ -144,7 +144,7 @@ __device__ int64 __alloc_memoryused()
 __device__ int64 __alloc_memoryhighwater(bool resetFlag)
 {
 	int n, max;
-	StatusEx::Status(StatusEx::STATUS_MEMORY_USED, &n, &max, resetFlag);
+	_status(STATUS_MEMORY_USED, &n, &max, resetFlag);
 	return (int64)max; // Work around bug in Borland C. Ticket #3216
 }
 
@@ -153,12 +153,12 @@ __device__ static void __alloc_triggermemoryalarm(size_t size)
 {
 	if (!mem0.AlarmCallback) return;
 	int (*callback)(void*,int64,int) = mem0.AlarmCallback;
-	int64 nowUsed = StatusEx::StatusValue(StatusEx::STATUS_MEMORY_USED);
+	int64 nowUsed = _status_value(STATUS_MEMORY_USED);
 	void *arg = mem0.AlarmArg;
 	mem0.AlarmCallback = 0;
-	MutexEx_Leave(mem0.Mutex);
+	_mutex_leave(mem0.Mutex);
 	callback(arg, nowUsed, (int)size);
-	MutexEx_Enter(mem0.Mutex);
+	_mutex_enter(mem0.Mutex);
 	mem0.AlarmCallback = callback;
 	mem0.AlarmArg = arg;
 }
@@ -166,12 +166,12 @@ __device__ static void __alloc_triggermemoryalarm(size_t size)
 // Do a memory allocation with statistics and alarms.  Assume the lock is already held.
 __device__ static size_t AllocWithAlarm(size_t size, void **pp)
 {
-	_assert(MutexEx_Held(mem0.Mutex));
+	_assert(_mutex_held(mem0.Mutex));
 	size_t fullSize = __allocsystem_roundup(size);
-	StatusEx::StatusSet(StatusEx::STATUS_MALLOC_SIZE, (int)size);
+	_status_set(STATUS_MALLOC_SIZE, (int)size);
 	if (mem0.AlarmCallback)
 	{
-		int used = StatusEx::StatusValue(StatusEx::STATUS_MEMORY_USED);
+		int used = _status_value(STATUS_MEMORY_USED);
 		if (used >= mem0.AlarmThreshold - fullSize)
 		{
 			mem0.NearlyFull = true;
@@ -191,8 +191,8 @@ __device__ static size_t AllocWithAlarm(size_t size, void **pp)
 	if (p)
 	{
 		fullSize = _allocsize(p);
-		StatusEx::StatusAdd(StatusEx::STATUS_MEMORY_USED, (int)fullSize);
-		StatusEx::StatusAdd(StatusEx::STATUS_MALLOC_COUNT, 1);
+		_status_add(STATUS_MEMORY_USED, (int)fullSize);
+		_status_add(STATUS_MALLOC_COUNT, 1);
 	}
 	*pp = p;
 	return fullSize;
@@ -209,9 +209,9 @@ __device__ void *_alloc(size_t size)
 		p = nullptr;
 	else if (TagBase_RuntimeStatics.Memstat)
 	{
-		MutexEx_Enter(mem0.Mutex);
+		_mutex_enter(mem0.Mutex);
 		AllocWithAlarm(size, &p);
-		MutexEx_Leave(mem0.Mutex);
+		_mutex_leave(mem0.Mutex);
 	}
 	else
 		p = __allocsystem_alloc(size);
@@ -231,34 +231,34 @@ __device__ static int g_scratchAllocOut = 0;
 __device__ void *_scratchalloc(size_t size)
 {
 	_assert(size > 0);
-	MutexEx_Enter(mem0.Mutex);
+	_mutex_enter(mem0.Mutex);
 	void *p;
 	if (mem0.ScratchFreeLength && TagBase_RuntimeStatics.ScratchSize >= size)
 	{
 		p = mem0.ScratchFree;
 		mem0.ScratchFree = mem0.ScratchFree->Next;
 		mem0.ScratchFreeLength--;
-		StatusEx::StatusAdd(StatusEx::STATUS_SCRATCH_USED, 1);
-		StatusEx::StatusSet(StatusEx::STATUS_SCRATCH_SIZE, (int)size);
-		MutexEx_Leave(mem0.Mutex);
+		_status_add(STATUS_SCRATCH_USED, 1);
+		_status_set(STATUS_SCRATCH_SIZE, (int)size);
+		_mutex_leave(mem0.Mutex);
 	}
 	else
 	{
 		if (TagBase_RuntimeStatics.Memstat)
 		{
-			StatusEx::StatusSet(StatusEx::STATUS_SCRATCH_SIZE, (int)size);
+			_status_set(STATUS_SCRATCH_SIZE, (int)size);
 			size = AllocWithAlarm(size, &p);
-			if (p) StatusEx::StatusAdd(StatusEx::STATUS_SCRATCH_OVERFLOW, (int)size);
-			MutexEx_Leave(mem0.Mutex);
+			if (p) _status_add(STATUS_SCRATCH_OVERFLOW, (int)size);
+			_mutex_leave(mem0.Mutex);
 		}
 		else
 		{
-			MutexEx_Leave(mem0.Mutex);
+			_mutex_leave(mem0.Mutex);
 			p = __allocsystem_alloc(size);
 		}
 		_memdbg_settype(p, MEMTYPE_SCRATCH);
 	}
-	_assert(MutexEx_NotHeld(mem0.Mutex));
+	_assert(_mutex_notheld(mem0.Mutex));
 #if THREADSAFE == 0 && defined(_DEBUG)
 	// Verify that no more than two scratch allocations per thread are outstanding at one time.  (This is only checked in the
 	// single-threaded case since checking in the multi-threaded case would be much more complicated.)
@@ -282,13 +282,13 @@ __device__ void _scratchfree(void *p)
 		{
 			// Release memory from the SQLITE_CONFIG_SCRATCH allocation
 			ScratchFreeslot *slot = (ScratchFreeslot *)p;
-			MutexEx_Enter(mem0.Mutex);
+			_mutex_enter(mem0.Mutex);
 			slot->Next = mem0.ScratchFree;
 			mem0.ScratchFree = slot;
 			mem0.ScratchFreeLength++;
 			_assert(mem0.ScratchFreeLength <= (uint32)TagBase_RuntimeStatics.Scratchs);
-			StatusEx::StatusAdd(StatusEx::STATUS_SCRATCH_USED, -1);
-			MutexEx_Leave(mem0.Mutex);
+			_status_add(STATUS_SCRATCH_USED, -1);
+			_mutex_leave(mem0.Mutex);
 		}
 		else
 		{
@@ -299,12 +299,12 @@ __device__ void _scratchfree(void *p)
 			if (TagBase_RuntimeStatics.Memstat)
 			{
 				size_t size2 = _allocsize(p);
-				MutexEx_Enter(mem0.Mutex);
-				StatusEx::StatusAdd(StatusEx::STATUS_SCRATCH_OVERFLOW, -(int)size2);
-				StatusEx::StatusAdd(StatusEx::STATUS_MEMORY_USED, -(int)size2);
-				StatusEx::StatusAdd(StatusEx::STATUS_MALLOC_COUNT, -1);
+				_mutex_enter(mem0.Mutex);
+				_status_add(STATUS_SCRATCH_OVERFLOW, -(int)size2);
+				_status_add(STATUS_MEMORY_USED, -(int)size2);
+				_status_add(STATUS_MALLOC_COUNT, -1);
 				__allocsystem_free(p);
-				MutexEx_Leave(mem0.Mutex);
+				_mutex_leave(mem0.Mutex);
 			}
 			else
 				__allocsystem_free(p);
@@ -329,7 +329,7 @@ __device__ size_t _allocsize(void *p)
 
 __device__ size_t _tagallocsize(TagBase *tag, void *p)
 {
-	_assert(!tag || MutexEx_Held(tag->Mutex));
+	_assert(!tag || _mutex_held(tag->Mutex));
 	if (tag && IsLookaside(tag, p))
 		return tag->Lookaside.Size;
 	_assert(_memdbg_hastype(p, MEMTYPE_DB));
@@ -346,11 +346,11 @@ __device__ void _free(void *p)
 	_assert(_memdbg_hastype(p, MEMTYPE_HEAP));
 	if (TagBase_RuntimeStatics.Memstat)
 	{
-		MutexEx_Enter(mem0.Mutex);
-		StatusEx::StatusAdd(StatusEx::STATUS_MEMORY_USED, -(int)_allocsize(p));
-		StatusEx::StatusAdd(StatusEx::STATUS_MALLOC_COUNT, -1);
+		_mutex_enter(mem0.Mutex);
+		_status_add(STATUS_MEMORY_USED, -(int)_allocsize(p));
+		_status_add(STATUS_MALLOC_COUNT, -1);
 		__allocsystem_free(p);
-		MutexEx_Leave(mem0.Mutex);
+		_mutex_leave(mem0.Mutex);
 	}
 	else
 		__allocsystem_free(p);
@@ -359,7 +359,7 @@ __device__ void _free(void *p)
 // Free memory that might be associated with a particular database connection.
 __device__ void _tagfree(TagBase *tag, void *p)
 {
-	_assert(!tag || MutexEx_Held(tag->Mutex));
+	_assert(!tag || _mutex_held(tag->Mutex));
 	if (tag)
 	{
 		if (tag->BytesFreed)
@@ -400,10 +400,10 @@ __device__ void *_realloc(void *old, size_t newSize)
 		p = old;
 	else if (TagBase_RuntimeStatics.Memstat)
 	{
-		MutexEx_Enter(mem0.Mutex);
-		StatusEx::StatusSet(StatusEx::STATUS_MALLOC_SIZE, (int)newSize);
+		_mutex_enter(mem0.Mutex);
+		_status_set(STATUS_MALLOC_SIZE, (int)newSize);
 		size_t sizeDiff = newSize2 - oldSize;
-		if (StatusEx::StatusValue(StatusEx::STATUS_MEMORY_USED) >= mem0.AlarmThreshold-sizeDiff)
+		if (_status_value(STATUS_MEMORY_USED) >= mem0.AlarmThreshold-sizeDiff)
 			__alloc_triggermemoryalarm(sizeDiff);
 		_assert(_memdbg_hastype(old, MEMTYPE_HEAP));
 		_assert(_memdbg_nottype(old, ~MEMTYPE_HEAP));
@@ -416,9 +416,9 @@ __device__ void *_realloc(void *old, size_t newSize)
 		if (p)
 		{
 			newSize2 = _allocsize(p);
-			StatusEx::StatusAdd(StatusEx::STATUS_MEMORY_USED, (int)(newSize2-oldSize));
+			_status_add(STATUS_MEMORY_USED, (int)(newSize2-oldSize));
 		}
-		MutexEx_Leave(mem0.Mutex);
+		_mutex_leave(mem0.Mutex);
 	}
 	else
 		p = __allocsystem_realloc(old, newSize2);
@@ -455,7 +455,7 @@ __device__ void *_tagallocZero(TagBase *tag, size_t size)
 // In other words, if a subsequent malloc (ex: "b") worked, it is assumed that all prior mallocs (ex: "a") worked too.
 __device__ void *_tagalloc(TagBase *tag, size_t size)
 {
-	_assert(!tag || MutexEx_Held(tag->Mutex));
+	_assert(!tag || _mutex_held(tag->Mutex));
 	_assert(!tag || tag->BytesFreed == 0);
 #ifndef OMIT_LOOKASIDE
 	if (tag)
@@ -494,7 +494,7 @@ __device__ void *_tagrealloc(TagBase *tag, void *old, size_t size)
 {
 	void *p = nullptr;
 	_assert(tag != nullptr);
-	_assert(MutexEx_Held(tag->Mutex));
+	_assert(_mutex_held(tag->Mutex));
 	if (!tag->MallocFailed)
 	{
 		if (!old) return _tagalloc(tag, size);
