@@ -95,8 +95,8 @@ bool Visual::InitGL(IVisualRender *render, int *argc, char **argv)
 	_render = render;
 	InitState();
 	glutInit(argc, argv);
-	int screenWidth = glutGet(GLUT_SCREEN_WIDTH);
-	int screenHeight = glutGet(GLUT_SCREEN_HEIGHT);
+	int screenWidth = glutGet(GLUT_LREEN_WIDTH);
+	int screenHeight = glutGet(GLUT_LREEN_HEIGHT);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH | GLUT_DOUBLE);
 	glutInitWindowPosition((screenWidth - WindowWidth) / 2, (screenHeight - WindowHeight) / 2);
 	glutInitWindowSize(WindowWidth, WindowHeight);

@@ -15,6 +15,10 @@
 #include "Runtime.cpu.h"
 #endif
 
+#ifndef _API
+#define _API extern
+#endif
+
 #ifndef OS_WIN
 #if __CUDACC__
 #define OS_WIN 0
@@ -103,6 +107,22 @@ __device__ void _runtime_utfselftest();
 #endif
 #endif
 
+#ifdef _UNICODE
+#define char_t unsigned short
+#define MAX_CHAR 0xFFFF
+#define _L(c) L##c
+#define _isprint iswprint
+#define _strlen30 wcslen
+#define _printf wprintf
+#else
+#define char_t char
+#define MAX_CHAR 0xFF
+#define _L(c) (c) 
+#define _isprint isprint
+#define _strlen30 strlen
+#define _printf printf
+#endif
+
 #pragma endregion
 
 //////////////////////
@@ -185,12 +205,12 @@ enum STATUS : unsigned char
 	STATUS_MEMORY_USED = 0,
 	STATUS_PAGECACHE_USED = 1,
 	STATUS_PAGECACHE_OVERFLOW = 2,
-	STATUS_SCRATCH_USED = 3,
-	STATUS_SCRATCH_OVERFLOW = 4,
+	STATUS_LRATCH_USED = 3,
+	STATUS_LRATCH_OVERFLOW = 4,
 	STATUS_MALLOC_SIZE = 5,
 	STATUS_PARSER_STACK = 6,
 	STATUS_PAGECACHE_SIZE = 7,
-	STATUS_SCRATCH_SIZE = 8,
+	STATUS_LRATCH_SIZE = 8,
 	STATUS_MALLOC_COUNT = 9,
 };
 
@@ -425,7 +445,7 @@ enum MEMTYPE : unsigned char
 {
 	MEMTYPE_HEAP = 0x01,         // General heap allocations
 	MEMTYPE_LOOKASIDE = 0x02,    // Might have been lookaside memory
-	MEMTYPE_SCRATCH = 0x04,      // Scratch allocations
+	MEMTYPE_LRATCH = 0x04,      // Scratch allocations
 	MEMTYPE_PCACHE = 0x08,       // Page cache allocations
 	MEMTYPE_DB = 0x10,           // Uses sqlite3DbMalloc, not sqlite_malloc
 };

@@ -238,17 +238,17 @@ __device__ void *_scratchalloc(size_t size)
 		p = mem0.ScratchFree;
 		mem0.ScratchFree = mem0.ScratchFree->Next;
 		mem0.ScratchFreeLength--;
-		_status_add(STATUS_SCRATCH_USED, 1);
-		_status_set(STATUS_SCRATCH_SIZE, (int)size);
+		_status_add(STATUS_LRATCH_USED, 1);
+		_status_set(STATUS_LRATCH_SIZE, (int)size);
 		_mutex_leave(mem0.Mutex);
 	}
 	else
 	{
 		if (TagBase_RuntimeStatics.Memstat)
 		{
-			_status_set(STATUS_SCRATCH_SIZE, (int)size);
+			_status_set(STATUS_LRATCH_SIZE, (int)size);
 			size = AllocWithAlarm(size, &p);
-			if (p) _status_add(STATUS_SCRATCH_OVERFLOW, (int)size);
+			if (p) _status_add(STATUS_LRATCH_OVERFLOW, (int)size);
 			_mutex_leave(mem0.Mutex);
 		}
 		else
@@ -256,7 +256,7 @@ __device__ void *_scratchalloc(size_t size)
 			_mutex_leave(mem0.Mutex);
 			p = __allocsystem_alloc(size);
 		}
-		_memdbg_settype(p, MEMTYPE_SCRATCH);
+		_memdbg_settype(p, MEMTYPE_LRATCH);
 	}
 	_assert(_mutex_notheld(mem0.Mutex));
 #if THREADSAFE == 0 && defined(_DEBUG)
@@ -280,27 +280,27 @@ __device__ void _scratchfree(void *p)
 #endif
 		if (p >= TagBase_RuntimeStatics.Scratch && p < mem0.ScratchEnd)
 		{
-			// Release memory from the SQLITE_CONFIG_SCRATCH allocation
+			// Release memory from the SQLITE_CONFIG_LRATCH allocation
 			ScratchFreeslot *slot = (ScratchFreeslot *)p;
 			_mutex_enter(mem0.Mutex);
 			slot->Next = mem0.ScratchFree;
 			mem0.ScratchFree = slot;
 			mem0.ScratchFreeLength++;
 			_assert(mem0.ScratchFreeLength <= (uint32)TagBase_RuntimeStatics.Scratchs);
-			_status_add(STATUS_SCRATCH_USED, -1);
+			_status_add(STATUS_LRATCH_USED, -1);
 			_mutex_leave(mem0.Mutex);
 		}
 		else
 		{
 			// Release memory back to the heap
-			_assert(_memdbg_hastype(p, MEMTYPE_SCRATCH));
-			_assert(_memdbg_nottype(p, ~MEMTYPE_SCRATCH));
+			_assert(_memdbg_hastype(p, MEMTYPE_LRATCH));
+			_assert(_memdbg_nottype(p, ~MEMTYPE_LRATCH));
 			_memdbg_settype(p, MEMTYPE_HEAP);
 			if (TagBase_RuntimeStatics.Memstat)
 			{
 				size_t size2 = _allocsize(p);
 				_mutex_enter(mem0.Mutex);
-				_status_add(STATUS_SCRATCH_OVERFLOW, -(int)size2);
+				_status_add(STATUS_LRATCH_OVERFLOW, -(int)size2);
 				_status_add(STATUS_MEMORY_USED, -(int)size2);
 				_status_add(STATUS_MALLOC_COUNT, -1);
 				__allocsystem_free(p);

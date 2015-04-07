@@ -1,4 +1,4 @@
-#include "TestTcl.cu.h"
+#include "Tclite.h"
 
 __device__ Tcl_Obj *Tcl_Obj::NewObj()
 {

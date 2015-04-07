@@ -1,7 +1,8 @@
 #ifndef __TESTTCL_CU_H__
 #define __TESTTCL_CU_H__
 
-#include <Core/Core.cu.h>
+#include <Runtime.h>
+#include <RuntimeTypes.h>
 
 typedef struct Tcl_Interp Tcl_Interp;
 

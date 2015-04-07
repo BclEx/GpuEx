@@ -62,9 +62,6 @@
     </ClInclude>
     <ClInclude Include="..\System.Data.net\Opcodes.h" />
     <ClInclude Include="..\System.Data.net\KeywordHash.h" />
-    <ClInclude Include="..\System.Data.net\Core+Test\TestTcl.cu.h">
-      <Filter>Core+Test</Filter>
-    </ClInclude>
     <ClInclude Include="..\System.Data.net\Core+Test\TestCtx.cu.h">
       <Filter>Core+Test</Filter>
     </ClInclude>
@@ -74,13 +71,6 @@
       <Filter>Core+Vdbe</Filter>
     </None>
     <None Include="..\System.Data.net\Shell.cu" />
-    <None Include="System.Data.cu" />
-    <None Include="System.Data+Btree.cu" />
-    <None Include="System.Data+Pager.cu" />
-    <None Include="System.Data+Vdbe.cu" />
-    <None Include="System.Data+Vdbe+Parse.cu" />
-    <None Include="System.Data+Vdbe+Vdbe.cu" />
-    <None Include="Program.cu" />
     <None Include="..\System.Data.net\CompileTime.cu" />
     <None Include="..\System.Data.net\Opcodes.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Command\Alter.cu">
@@ -356,8 +346,15 @@
     <None Include="..\System.Data.net\Core+Test\TestCtx.cu">
       <Filter>Core+Test</Filter>
     </None>
-    <None Include="..\System.Data.net\Core+Test\TestTcl.cu">
-      <Filter>Core+Test</Filter>
-    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="System.Data.cu" />
+    <CudaCompile Include="System.Data+Btree.cu" />
+    <CudaCompile Include="System.Data+Pager.cu" />
+    <CudaCompile Include="System.Data+Test.cu" />
+    <CudaCompile Include="System.Data+Vdbe.cu" />
+    <CudaCompile Include="System.Data+Vdbe+Parse.cu" />
+    <CudaCompile Include="System.Data+Vdbe+Vdbe.cu" />
+    <CudaCompile Include="Program.cu" />
   </ItemGroup>
 </Project>
