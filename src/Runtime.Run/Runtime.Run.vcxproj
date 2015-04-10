@@ -26,11 +26,15 @@
     <ClCompile Include="Program.cu" />
     <None Include="TestFalloc.cu" />
     <ClCompile Include="TestRuntime.cu" />
+    <ClCompile Include="TestRegex.1.cu" />
+    <ClCompile Include="TestRegex.2.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="TestFalloc.cu" />
     <CudaCompile Include="TestRuntime.cu" />
+    <CudaCompile Include="TestRegex.1.cu" />
+    <CudaCompile Include="TestRegex.2.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A38430CF-CB26-43F0-94B7-6E78A0950FF5}</ProjectGuid>

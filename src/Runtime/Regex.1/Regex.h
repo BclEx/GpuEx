@@ -1,7 +1,7 @@
 #ifndef REG_HEADER_DEFINED
 #define REG_HEADER_DEFINED
 
-http://pubs.opengroup.org/stage7tc1/basedefs/regex.h.html
+//http://pubs.opengroup.org/stage7tc1/basedefs/regex.h.html
 
 struct slre_cap {
   const char *ptr;

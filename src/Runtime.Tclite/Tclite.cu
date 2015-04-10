@@ -40,13 +40,13 @@ __device__ Tcl_Obj *Tcl_Obj::DuplicateObj()
 __device__ void Tcl_Obj::ObjSetVar2(Tcl_Interp *interp, Tcl_Obj *name, Tcl_Obj *value, bool a)
 {
 }
-__device__ RC Tcl_Obj::ListObjAppendElement(Tcl_Interp *interp, Tcl_Obj *value)
+__device__ int Tcl_Obj::ListObjAppendElement(Tcl_Interp *interp, Tcl_Obj *value)
 {
-	return RC_OK;
+	return TCL_OK;
 }
-__device__ RC Tcl_Obj::ListObjGetElements(Tcl_Interp *interp, int *argsLength, Tcl_Obj ***args)
+__device__ int Tcl_Obj::ListObjGetElements(Tcl_Interp *interp, int *argsLength, Tcl_Obj ***args)
 {
-	return RC_OK;
+	return TCL_OK;
 }
 
 __device__ uint8 *Tcl_Obj::GetByteArrayFromObj(int *length)
@@ -59,25 +59,25 @@ __device__ void Tcl_Obj::IncrRefCount()
 __device__ void Tcl_Obj::DecrRefCount()
 {
 }
-__device__ RC Tcl_Obj::GetIntFromObj(Tcl_Interp *interp, int *n)
+__device__ int Tcl_Obj::GetIntFromObj(Tcl_Interp *interp, int *n)
 {
-	return RC_OK;
+	return TCL_OK;
 }
-__device__ RC Tcl_Obj::SetIntObj(int n)
+__device__ int Tcl_Obj::SetIntObj(int n)
 {
-	return RC_OK;
+	return TCL_OK;
 }
-__device__ RC Tcl_Obj::GetDoubleFromObj(Tcl_Interp *interp, double *r)
+__device__ int Tcl_Obj::GetDoubleFromObj(Tcl_Interp *interp, double *r)
 {
-	return RC_OK;
+	return TCL_OK;
 }
-__device__ RC Tcl_Obj::GetWideIntFromObj(Tcl_Interp *interp, int64 *v)
+__device__ int Tcl_Obj::GetWideIntFromObj(Tcl_Interp *interp, int64 *v)
 {
-	return RC_OK;
+	return TCL_OK;
 }
-__device__ RC Tcl_Obj::GetBooleanFromObj(Tcl_Interp *interp, bool *r)
+__device__ int Tcl_Obj::GetBooleanFromObj(Tcl_Interp *interp, bool *r)
 {
-	return RC_OK;
+	return TCL_OK;
 }
 __device__ char *Tcl_Obj::GetString()
 {
@@ -88,17 +88,17 @@ __device__ char *Tcl_Obj::GetStringFromObj(int *length)
 	return nullptr;
 }
 
-__device__ RC Tcl_Interp::VarEval(char *cmd1, char *cmd2, char *cmd3, char *cmd4)
+__device__ int Tcl_Interp::VarEval(char *cmd1, char *cmd2, char *cmd3, char *cmd4)
 {
-	return RC_OK;
+	return TCL_OK;
 }
-__device__ RC Tcl_Interp::Eval(char *cmd)
+__device__ int Tcl_Interp::Eval(char *cmd)
 {
-	return RC_OK;
+	return TCL_OK;
 }
-__device__ RC Tcl_Interp::EvalObjEx(Tcl_Obj *objPtr, bool a)
+__device__ int Tcl_Interp::EvalObjEx(Tcl_Obj *objPtr, bool a)
 {
-	return RC_OK;
+	return TCL_OK;
 }
 __device__ void Tcl_Interp::AppendResult(const char *arg1, const char *arg2, const char *arg3, const char *arg4)
 {

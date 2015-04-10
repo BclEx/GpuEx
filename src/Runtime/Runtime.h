@@ -112,14 +112,14 @@ __device__ void _runtime_utfselftest();
 #define MAX_CHAR 0xFFFF
 #define _L(c) L##c
 #define _isprint iswprint
-#define _strlen30 wcslen
+#define _strlen wcslen
 #define _printf wprintf
 #else
 #define char_t char
 #define MAX_CHAR 0xFF
 #define _L(c) (c) 
 #define _isprint isprint
-#define _strlen30 strlen
+#define _strlen strlen
 #define _printf printf
 #endif
 

@@ -4,6 +4,13 @@
 #include <Runtime.h>
 #include <RuntimeTypes.h>
 
+#define TCL_OK		0
+#define TCL_ERROR	1
+#define TCL_RETURN	2
+#define TCL_BREAK	3
+#define TCL_CONTINUE	4
+#define TCL_SIGNAL	5
+
 typedef struct Tcl_Interp Tcl_Interp;
 
 typedef void (Tcl_FreeInternalRepProc)(struct Tcl_Obj *objPtr);
@@ -124,17 +131,17 @@ typedef struct Tcl_Obj
 	__device__ static Tcl_Obj *DuplicateObj();
 
 	__device__ void ObjSetVar2(Tcl_Interp *interp, Tcl_Obj *name, Tcl_Obj *value, bool a);
-	__device__ RC ListObjAppendElement(Tcl_Interp *interp, Tcl_Obj *value);
-	__device__ RC ListObjGetElements(Tcl_Interp *interp, int *argsLength, Tcl_Obj ***args);
+	__device__ int ListObjAppendElement(Tcl_Interp *interp, Tcl_Obj *value);
+	__device__ int ListObjGetElements(Tcl_Interp *interp, int *argsLength, Tcl_Obj ***args);
 
 	__device__ uint8 *GetByteArrayFromObj(int *length);
 	__device__ void IncrRefCount();
 	__device__ void DecrRefCount();
-	__device__ RC GetIntFromObj(Tcl_Interp *interp, int *n);
-	__device__ RC SetIntObj(int n);
-	__device__ RC GetDoubleFromObj(Tcl_Interp *interp, double *r);
-	__device__ RC GetWideIntFromObj(Tcl_Interp *interp, int64 *v);
-	__device__ RC GetBooleanFromObj(Tcl_Interp *interp, bool *r);
+	__device__ int GetIntFromObj(Tcl_Interp *interp, int *n);
+	__device__ int SetIntObj(int n);
+	__device__ int GetDoubleFromObj(Tcl_Interp *interp, double *r);
+	__device__ int GetWideIntFromObj(Tcl_Interp *interp, int64 *v);
+	__device__ int GetBooleanFromObj(Tcl_Interp *interp, bool *r);
 	__device__ char *GetString();
 	__device__ char *GetStringFromObj(int *length);
 } Tcl_Obj;
@@ -146,9 +153,9 @@ struct Tcl_Interp
 	char *Result;
 	Destructor_t FreeProc;
 
-	__device__ RC VarEval(char *cmd1, char *cmd2 = nullptr, char *cmd3 = nullptr, char *cmd4 = nullptr);
-	__device__ RC Eval(char *cmd);
-	__device__ RC EvalObjEx(Tcl_Obj *objPtr, bool a);
+	__device__ int VarEval(char *cmd1, char *cmd2 = nullptr, char *cmd3 = nullptr, char *cmd4 = nullptr);
+	__device__ int Eval(char *cmd);
+	__device__ int EvalObjEx(Tcl_Obj *objPtr, bool a);
 	__device__ void AppendResult(const char *arg1, const char *arg2 = nullptr, const char *arg3 = nullptr, const char *arg4 = nullptr);
 	__device__ void AppendResult(Tcl_Obj *arg1, Tcl_Obj *arg2 = nullptr, Tcl_Obj *arg3 = nullptr, Tcl_Obj *arg4 = nullptr);
 	__device__ void SetObjResult(Tcl_Obj *value);

@@ -28,6 +28,7 @@
     <ClInclude Include="Falloc.cu.h" />
     <ClInclude Include="Falloc.cu+native.h" />
     <ClInclude Include="FallocHost.h" />
+    <ClInclude Include="Regex.h" />
     <ClInclude Include="Regex.1\Regex.h" />
     <ClInclude Include="Regex.2\Regex.h" />
     <ClInclude Include="Regex.3\Regex.h" />
@@ -77,16 +78,18 @@
   <ItemGroup>
     <ClCompile Include="FallocHost.cpp" />
     <ClCompile Include="Program.cpp" />
-    <ClCompile Include="Regex.1\Regex+Test.c" />
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Regex.1\Regex.cu" />
-    <CudaCompile Include="Regex.2\Regex+Test.cu" />
     <CudaCompile Include="Regex.2\Regex.cu" />
-    <CudaCompile Include="Regex.3\Regex+Main.cu" />
-    <CudaCompile Include="Regex.3\Regex+Parser.cu" />
+    <CudaCompile Include="Regex.3\Regex+Main.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
+    <CudaCompile Include="Regex.3\Regex+Parser.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{821AFA21-3738-4DFC-985B-0F5C080E15E4}</ProjectGuid>
