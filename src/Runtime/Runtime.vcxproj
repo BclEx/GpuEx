@@ -29,9 +29,7 @@
     <ClInclude Include="Falloc.cu+native.h" />
     <ClInclude Include="FallocHost.h" />
     <ClInclude Include="Regex.h" />
-    <ClInclude Include="Regex.1\Regex.h" />
     <ClInclude Include="Regex.2\Regex.h" />
-    <ClInclude Include="Regex.3\Regex.h" />
     <ClInclude Include="Runtime.cpu.h" />
     <ClInclude Include="Runtime.cu.h" />
     <ClInclude Include="Runtime.cu+native.h" />
@@ -45,9 +43,8 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <None Include="RT.cu" />
     <ClCompile Include="Falloc.cu" />
-    <ClCompile Include="Regex+Main.cu" />
-    <ClCompile Include="Regex+Parser.cu" />
-    <ClCompile Include="Regex+Util.cu" />
+    <ClCompile Include="Regex.1\Regex.cu" />
+    <None Include="Regex.2\Regex.cu" />
     <ClCompile Include="Runtime.cu" />
     <ClCompile Include="Runtime+Alloc.cu" />
     <ClCompile Include="Runtime+BenignAlloc.cu" />
@@ -63,6 +60,8 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
     <None Include="Falloc.cu" />
+    <None Include="Regex.1\Regex.cu" />
+    <None Include="Regex.2\Regex.cu" />
     <None Include="Runtime.cu" />
     <None Include="Runtime+Alloc.cu" />
     <None Include="Runtime+BenignAlloc.cu" />
@@ -80,16 +79,6 @@
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="Regex.1\Regex.cu" />
-    <CudaCompile Include="Regex.2\Regex.cu" />
-    <CudaCompile Include="Regex.3\Regex+Main.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
-    <CudaCompile Include="Regex.3\Regex+Parser.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{821AFA21-3738-4DFC-985B-0F5C080E15E4}</ProjectGuid>

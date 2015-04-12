@@ -8,7 +8,7 @@ __device__ static bool MyCallback(void *args, int argsLength, char **args2, char
 		int i;
 		for (i = 0; i < argsLength; i++)
 		{
-			int len = _strlen30(cols[i] ? cols[i] : "");
+			int len = _strlen(cols[i] ? cols[i] : "");
 			if (len > w) w = len;
 		}
 		_printf("\n");

@@ -14,7 +14,7 @@ namespace Core
 	{
 		RC rc = RC_OK;
 		_mutex_enter(ctx->Mutex);
-		int nameLength = _strlen30(name);
+		int nameLength = _strlen(name);
 		if (ctx->Modules.Find(name, nameLength))
 			rc = SysEx_MISUSE_BKPT;
 		else
@@ -245,7 +245,7 @@ namespace Core
 			v->AddOp2(OP_Expire, 0, 0);
 			char *where_ = _mtagprintf(ctx, "name='%q' AND type='table'", table->Name);
 			v->AddParseSchemaOp(db, where_);
-			v->AddOp4(OP_VCreate, db, 0, 0, table->Name, _strlen30(table->Name) + 1);
+			v->AddOp4(OP_VCreate, db, 0, 0, table->Name, _strlen(table->Name) + 1);
 		}
 
 		// If we are rereading the sqlite_master table create the in-memory record of the table. The xConnect() method is not called until
@@ -255,7 +255,7 @@ namespace Core
 		{
 			Schema *schema = table->Schema;
 			const char *name = table->Name;
-			int nameLength = _strlen30(name);
+			int nameLength = _strlen(name);
 			_assert(Btree::SchemaMutexHeld(ctx, 0, schema));
 			Table *oldTable = (Table *)schema->TableHash.Insert(name, nameLength, table);
 			if (oldTable)
@@ -358,7 +358,7 @@ namespace Core
 				{
 					char *type = table->Cols[col].Type;
 					if (!type) continue;
-					int typeLength = _strlen30(type);
+					int typeLength = _strlen(type);
 					int i = 0;
 					if (_strncmp("hidden", type, 6) || (type[6] && type[6] != ' '))
 					{
@@ -398,7 +398,7 @@ namespace Core
 
 		// Locate the required virtual table module
 		const char *moduleName = table->ModuleArgs[0];
-		TableModule *module = (TableModule *)ctx->Modules.Find(moduleName, _strlen30(moduleName));
+		TableModule *module = (TableModule *)ctx->Modules.Find(moduleName, _strlen(moduleName));
 		if (!module)
 		{
 			parse->ErrorMsg("no such module: %s", moduleName);
@@ -443,7 +443,7 @@ namespace Core
 
 		// Locate the required virtual table module
 		const char *moduleName = table->ModuleArgs[0];
-		TableModule *module = (TableModule *)ctx->Modules.Find(moduleName, _strlen30(moduleName));
+		TableModule *module = (TableModule *)ctx->Modules.Find(moduleName, _strlen(moduleName));
 
 		// If the module has been registered and includes a Create method, invoke it now. If the module has not been registered, return an 
 		// error. Otherwise, do nothing.
@@ -694,11 +694,11 @@ namespace Core
 			return def;
 
 		// Create a new ephemeral function definition for the overloaded function
-		FuncDef *newFunc = (FuncDef *)_tagallocZero(ctx, sizeof(FuncDef) + _strlen30(def->Name) + 1);
+		FuncDef *newFunc = (FuncDef *)_tagallocZero(ctx, sizeof(FuncDef) + _strlen(def->Name) + 1);
 		if (!newFunc) return def;
 		*newFunc = *def;
 		newFunc->Name = (char *)&newFunc[1];
-		_memcpy(newFunc->Name, def->Name, _strlen30(def->Name) + 1);
+		_memcpy(newFunc->Name, def->Name, _strlen(def->Name) + 1);
 		newFunc->Func = func;
 		newFunc->UserData = args;
 		newFunc->Flags |= FUNC_EPHEM;

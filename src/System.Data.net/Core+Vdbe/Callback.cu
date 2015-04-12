@@ -77,7 +77,7 @@ namespace Core
 
 	__device__ static CollSeq *FindCollSeqEntry(Context *ctx, const char *name, bool create)
 	{
-		int nameLength = _strlen30(name);
+		int nameLength = _strlen(name);
 		CollSeq *coll = (CollSeq *)ctx->CollSeqs.Find(name, nameLength);
 		if (!coll && create)
 		{
@@ -141,7 +141,7 @@ namespace Core
 
 	__device__ void Callback::FuncDefInsert(FuncDefHash *hash, FuncDef *def)
 	{
-		int nameLength = _strlen30(def->Name);
+		int nameLength = _strlen(def->Name);
 		int h = (_tolower(def->Name[0]) + nameLength) % _lengthof(hash->data); // Hash value
 		FuncDef *other = FunctionSearch(hash, h, def->Name, nameLength);
 		if (other)

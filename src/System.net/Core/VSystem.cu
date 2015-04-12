@@ -74,7 +74,7 @@ namespace Core
 #if ENABLE_8_3_NAMES<2
 		if (!UriBoolean(baseFilename, "8_3_names", 0)) return;
 #endif
-		int size = _strlen30(z);
+		int size = _strlen(z);
 		int i;
 		for (i = size-1; i > 0 && z[i] != '/' && z[i] !='.'; i--) { }
 		if (z[i] == '.' && _ALWAYS(size > i+4)) _memmove(&z[i+1], &z[size-3], 4);
@@ -109,7 +109,7 @@ namespace Core
 
 		VSystem::OPEN flags = *flagsRef;
 		const char *vfsName = defaultVfsName;
-		int uriLength = _strlen30(uri);
+		int uriLength = _strlen(uri);
 
 		RC rc = RC_OK;
 		char *fileName;
@@ -197,12 +197,12 @@ namespace Core
 
 			// Check if there were any options specified that should be interpreted here. Options that are interpreted here include "vfs" and those that
 			// correspond to flags that may be passed to the sqlite3_open_v2() method.
-			char *opt = &fileName[_strlen30(fileName)+1];
+			char *opt = &fileName[_strlen(fileName)+1];
 			while (opt[0])
 			{
-				int optLength = _strlen30(opt);
+				int optLength = _strlen(opt);
 				char *val = &opt[optLength+1];
-				int valLength = _strlen30(val);
+				int valLength = _strlen(val);
 				if (optLength == 3 && !_memcmp("vfs", opt, 3))
 					vfsName = val;
 				else
@@ -231,7 +231,7 @@ namespace Core
 						for (int i = 0; modes[i].Z; i++)
 						{
 							const char *z = modes[i].Z;
-							if (valLength == _strlen30(z) && !_memcmp(val, z, valLength))
+							if (valLength == _strlen(z) && !_memcmp(val, z, valLength))
 							{
 								mode = modes[i].Mode;
 								break;
@@ -286,13 +286,13 @@ parse_uri_out:
 	__device__ const char *VSystem::UriParameter(const char *filename, const char *param)
 	{
 		if (!filename) return nullptr;
-		filename += _strlen30(filename) + 1;
+		filename += _strlen(filename) + 1;
 		while (filename[0])
 		{
 			int x = _strcmp(filename, param);
-			filename += _strlen30(filename) + 1;
+			filename += _strlen(filename) + 1;
 			if (x == 0) return filename;
-			filename += _strlen30(filename) + 1;
+			filename += _strlen(filename) + 1;
 		}
 		return nullptr;
 	}
@@ -307,7 +307,7 @@ parse_uri_out:
 	{
 		const char *z = UriParameter(filename, param);
 		int64 v;
-		return (z && ConvertEx::Atoi64(z, &v, _strlen30(z), TEXTENCODE_UTF8) == RC_OK ? v : dflt);
+		return (z && ConvertEx::Atoi64(z, &v, _strlen(z), TEXTENCODE_UTF8) == RC_OK ? v : dflt);
 	}
 
 #pragma endregion

@@ -698,7 +698,7 @@ namespace Core
 			(!func && (final_ && !step)) ||
 			(!func && (!final_ && step)) ||
 			(args < -1 || args > MAX_FUNCTION_ARG) ||
-			(255 < (funcNameLength = _strlen30(funcName))))
+			(255 < (funcNameLength = _strlen(funcName))))
 			return SysEx_MISUSE_BKPT;
 
 #ifndef OMIT_UTF16
@@ -801,7 +801,7 @@ _out:
 
 	__device__ RC Main::OverloadFunction(Context *ctx, const char *funcName, int args)
 	{
-		int funcNameLength = _strlen30(funcName);
+		int funcNameLength = _strlen(funcName);
 		RC rc;
 		_mutex_enter(ctx->Mutex);
 		if (!Callback::FindFunction(ctx, funcName, funcNameLength, args, TEXTENCODE_UTF8, false))
@@ -1082,7 +1082,7 @@ _out:
 
 	__device__ static RC CreateCollation(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*), void (*del)(void*))
 	{
-		int nameLength = _strlen30(name);
+		int nameLength = _strlen(name);
 		_assert(_mutex_held(ctx->Mutex));
 
 		// If SQLITE_UTF16 is specified as the encoding type, transform this to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
@@ -1821,7 +1821,7 @@ error_out:
 			// This test feature is only available in the amalgamation since the SQLITE_N_KEYWORD macro is not defined in this file if SQLite
 			// is built using separate source files.
 			const char *word = va_arg(args, const char*);
-			int n = _strlen30(word);
+			int n = _strlen(word);
 			rc = (KeywordCode((uint8 *)word, n) != TK_ID ? N_KEYWORD : 0);
 			break; }
 #endif 

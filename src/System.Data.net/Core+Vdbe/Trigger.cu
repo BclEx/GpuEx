@@ -123,7 +123,7 @@ namespace Core
 		if (!nameAsString || parse->CheckObjectName(nameAsString) != RC_OK)
 			goto trigger_cleanup;
 		_assert(Btree::SchemaMutexHeld(ctx, db, 0));
-		if (ctx->DBs[db].Schema->TriggerHash.Find(nameAsString, _strlen30(nameAsString)))
+		if (ctx->DBs[db].Schema->TriggerHash.Find(nameAsString, _strlen(nameAsString)))
 		{
 			if (!noErr)
 				parse->ErrorMsg("trigger %T already exists", name);
@@ -214,7 +214,7 @@ trigger_cleanup:
 			stepList = stepList->Next;
 		}
 		nameToken.data = trig->Name;
-		nameToken.length = _strlen30(nameToken.data);
+		nameToken.length = _strlen(nameToken.data);
 		DbFixer sFix; // Fixer object
 		if (sFix.FixInit(parse, db, "trigger", &nameToken) && sFix.FixTriggerStep(trig->StepList))
 			goto triggerfinish_cleanup;
@@ -237,12 +237,12 @@ trigger_cleanup:
 		{
 			Trigger *link = trig;
 			_assert(Btree::SchemaMutexHeld(ctx, db, nullptr));
-			trig = (Trigger *)ctx->DBs[db].Schema->TriggerHash.Insert(name, _strlen30(name), trig);
+			trig = (Trigger *)ctx->DBs[db].Schema->TriggerHash.Insert(name, _strlen(name), trig);
 			if (trig)
 				ctx->MallocFailed = true;
 			else if (link->Schema == link->TabSchema)
 			{
-				int tableLength = _strlen30(link->Table);
+				int tableLength = _strlen(link->Table);
 				Core::Table *table = (Core::Table *)link->TabSchema->TableHash.Find(link->Table, tableLength);
 				_assert(table);
 				link->Next = table->Triggers;
@@ -349,7 +349,7 @@ triggerfinish_cleanup:
 		_assert(name->Srcs == 1);
 		const char *dbName = name->Ids[0].Database;
 		const char *nameAsString = name->Ids[0].Name;
-		int nameLength = _strlen30(nameAsString);
+		int nameLength = _strlen(nameAsString);
 		_assert(dbName != 0 || Btree::HoldsAllMutexes(ctx));
 		Trigger *trigger = nullptr;
 		for (int i = E_OMIT_TEMPDB; i < ctx->DBs.length; i++)
@@ -377,7 +377,7 @@ drop_trigger_cleanup:
 
 	__device__ static Table *TableOfTrigger(Trigger *trigger)
 	{
-		int tableLength = _strlen30(trigger->Table);
+		int tableLength = _strlen(trigger->Table);
 		return (Table *)trigger->TabSchema->TableHash.Find(trigger->Table, tableLength);
 	}
 
@@ -432,7 +432,7 @@ drop_trigger_cleanup:
 	__device__ void Trigger::UnlinkAndDeleteTrigger(Context *ctx, int db, const char *name)
 	{
 		_assert(Btree::SchemaMutexHeld(ctx, db, nullptr));
-		Trigger *trigger = (Trigger *)ctx->DBs[db].Schema->TriggerHash.Insert(name, _strlen30(name), 0);
+		Trigger *trigger = (Trigger *)ctx->DBs[db].Schema->TriggerHash.Insert(name, _strlen(name), 0);
 		if (_ALWAYS(trigger))
 		{
 			if (trigger->Schema == trigger->TabSchema)

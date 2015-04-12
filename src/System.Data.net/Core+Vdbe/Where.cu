@@ -881,7 +881,7 @@ findTerm_success:
 			Expr *str2 = Expr::Dup(ctx, str1, 0); // Copy of pStr1 - RHS of LIKE/GLOB operator
 			if (!ctx->MallocFailed)
 			{
-				uint8 *cRef = (uint8 *)&str2->u.Token[_strlen30(str2->u.Token)-1];
+				uint8 *cRef = (uint8 *)&str2->u.Token[_strlen(str2->u.Token)-1];
 				uint8 c = *cRef; // Last character before the first wildcard
 				if (noCase)
 				{
@@ -3855,7 +3855,7 @@ cancel:
 			SrcList::SrcListItem *tabItem = &tabList->Ids[level->From];
 			char *z = tabItem->Alias;
 			if (!z) z = tabItem->Table->Name;
-			int n = _strlen30(z);
+			int n = _strlen(z);
 			if (n + _queryPlanIdx < sizeof(_queryPlan)-10)
 			{
 				if ((w & WHERE_IDX_ONLY) != 0 && (w & WHERE_COVER_SCAN) == 0)
@@ -3879,7 +3879,7 @@ cancel:
 			}
 			else if ((w & WHERE_INDEXED) != 0 && (w & WHERE_COVER_SCAN) == 0)
 			{
-				n = _strlen30(level->Plan.u.Index->Name);
+				n = _strlen(level->Plan.u.Index->Name);
 				if (n + _queryPlanIdx < sizeof(_queryPlan)-2)
 				{
 					_memcpy(&_queryPlan[_queryPlanIdx], level->Plan.u.Index->Name, n);

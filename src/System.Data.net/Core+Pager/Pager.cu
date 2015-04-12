@@ -1061,7 +1061,7 @@ namespace Core
 				if (c) // We have a match. Do not delete the master journal file.
 					goto delmaster_out;
 			}
-			journal += (_strlen30(journal) + 1);
+			journal += (_strlen(journal) + 1);
 		}
 
 		masterFile->Close();
@@ -2212,7 +2212,7 @@ end_playback:
 			{
 				pathname = _tagstrdup(nullptr, filename);
 				if (pathname == nullptr) return RC_NOMEM;
-				pathnameLength = _strlen30(pathname);
+				pathnameLength = _strlen(pathname);
 				filename = nullptr;
 			}
 		}
@@ -2228,12 +2228,12 @@ end_playback:
 			if (!pathname) return RC_NOMEM;
 			pathname[0] = 0; // Make sure initialized even if FullPathname() fails
 			rc = vfs->FullPathname(filename, pathnameLength, pathname);
-			pathnameLength = _strlen30(pathname);
-			const char *z = uri = &filename[_strlen30(filename) + 1];
+			pathnameLength = _strlen(pathname);
+			const char *z = uri = &filename[_strlen(filename) + 1];
 			while (*z)
 			{
-				z += _strlen30(z) + 1;
-				z += _strlen30(z) + 1;
+				z += _strlen(z) + 1;
+				z += _strlen(z) + 1;
 			}
 			uriLength = (int)(&z[1] - uri);
 			_assert(uriLength >= 0);

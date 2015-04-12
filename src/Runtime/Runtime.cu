@@ -655,7 +655,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 					if (prefix == '-') bufpt = "-Inf";
 					else if (prefix == '+') bufpt = "+Inf";
 					else bufpt = "Inf";
-					length = _strlen30(bufpt);
+					length = _strlen(bufpt);
 					break;
 				}
 			}
@@ -762,7 +762,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			if (bufpt == 0) bufpt = "";
 			else if (type == TYPE_DYNSTRING) extra = bufpt;
 			if (precision >= 0) for (length = 0; length < precision && bufpt[length]; length++) { }
-			else length = _strlen30(bufpt);
+			else length = _strlen(bufpt);
 			break;
 		case TYPE_SQLESCAPE:
 		case TYPE_SQLESCAPE2:
@@ -854,7 +854,7 @@ __device__ void TextBuilder::Append(const char *z, int length)
 	}
 	_assert(Text != nullptr || Index == 0);
 	if (length < 0)
-		length = _strlen30(z);
+		length = _strlen(z);
 	if (length == 0 || _NEVER(z == nullptr))
 		return;
 	if (Index + length >= Size)

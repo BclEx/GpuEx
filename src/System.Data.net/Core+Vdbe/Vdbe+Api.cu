@@ -731,7 +731,7 @@ __device__ int Vdbe::ParameterIndex(Vdbe *p, const char *name, int nameLength)
 	}
 	return 0;
 }
-__device__ int Vdbe::Bind_ParameterIndex(Vdbe *p, const char *name) { return ParameterIndex(p, name, _strlen30(name)); }
+__device__ int Vdbe::Bind_ParameterIndex(Vdbe *p, const char *name) { return ParameterIndex(p, name, _strlen(name)); }
 
 __device__ RC Vdbe::TransferBindings(Vdbe *from, Vdbe *to)
 {

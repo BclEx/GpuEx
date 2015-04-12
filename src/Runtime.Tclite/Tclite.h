@@ -182,7 +182,7 @@ __device__ static inline array_t<const char *> Y(const char *arg1, const char *a
 
 #define PA(n) Tcl_Obj **v = new Tcl_Obj *[n]
 #define P_(n) v[n-1] = arg##n
-#define PC(n) v[n-1] = Tcl_Obj::NewStringObj(arg##n, _strlen30(arg##n))
+#define PC(n) v[n-1] = Tcl_Obj::NewStringObj(arg##n, _strlen(arg##n))
 #define PF(n) v[n-1] = Tcl_Obj::NewLambdaObj(arg##n)
 #define PZ(n) return array_t<Tcl_Obj *>(v, n)
 

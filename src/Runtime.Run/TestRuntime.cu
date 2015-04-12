@@ -123,19 +123,22 @@ __global__ static void runtime9(void *r)
 {
 	_runtimeSetHeap(r);
 	char buf[100];
-	int a0 = _strcmp("Test", "Test"); _assert(!a0);
-	int a1 = _strncmp("Tesa", "Tesb", 3); _assert(!a1);
-	_memcpy(buf, "Test", 4); int a2 = _memcmp(buf, "Test", 4); _assert(!a2);
-	_memset(buf, 0, sizeof(buf)); int a3 = _memcmp(buf, "\0\0\0\0", 4); _assert(!a3);
-	int a4 = _memcmp("Test", "Test", 4); _assert(!a4);
-	_memmove(buf, "Test", 4); int a5 = _memcmp(buf, "Test", 4); _assert(!a5);
-	int a6 = _strlen30("Test"); _assert(a6 == 4);
-	int a7 = _hextobyte('a'); _assert(a7 == 10);
+	_strcpy(buf, "Test"); int a0 = _memcmp(buf, "Test", 4); _assert(!a0);
+	const char *a1 = _strchr("Test", 'E'); _assert(a1);
+	int a2 = _strcmp("Test", "Test"); _assert(!a2);
+	int a3 = _strncmp("Tesa", "Tesb", 3); _assert(!a3);
+	_memcpy(buf, "Test", 4); int a4 = _memcmp(buf, "Test", 4); _assert(!a4);
+	_memset(buf, 0, sizeof(buf)); int a5 = _memcmp(buf, "\0\0\0\0", 4); _assert(!a5);
+	const char *a6 = _memchr("Test", 'e'); _assert(a6);
+	int a7 = _memcmp("Test", "Test", 4); _assert(!a7);
+	_memmove(buf, "Test", 4); int a8 = _memcmp(buf, "Test", 4); _assert(!a8);
+	int a9 = _strlen("Test"); _assert(a9 == 4);
+	int a10 = _hextobyte('a'); _assert(a10 == 10);
 #ifndef OMIT_BLOB_LITERAL
-	void *a8 = _taghextoblob(nullptr, "z", 1); _assert(a8);
+	void *a11 = _taghextoblob(nullptr, "z", 1); _assert(a11);
 #endif
 #ifndef OMIT_FLOATING_POINT
-	bool a9 = _isnan(0.0); _assert(!a9);
+	bool a12 = _isnan(0.0); _assert(!a12);
 #endif
 	printf("Example: 9\n");
 }
@@ -186,6 +189,8 @@ __global__ static void runtime12(void *r)
 	char *aD = __snprintf(buf, sizeof(buf), "td %s %d %d %d %d %d %d %d %d %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D"); _assert(!_strcmp(aD, "td 1 2 3 4 5 6 7 8 9 A B C D\n"));
 	char *aE = __snprintf(buf, sizeof(buf), "te %s %d %d %d %d %d %d %d %d %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E"); _assert(!_strcmp(aE, "te 1 2 3 4 5 6 7 8 9 A B C D E\n"));
 	char *aF = __snprintf(buf, sizeof(buf), "tf %s %d %d %d %d %d %d %d %d %s %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"); _assert(!_strcmp(aF, "tf 1 2 3 4 5 6 7 8 9 A B C D E F\n"));
+	//
+	char *b0 = _sprintf(buf, "t0\n"); _assert(!_strcmp(b0, "t0\n"));
 	printf("Example: 12\n");
 }
 
@@ -265,7 +270,7 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime2<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime3<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime4<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
-	runtime5<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+	//runtime5<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime6<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime7<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime8<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);

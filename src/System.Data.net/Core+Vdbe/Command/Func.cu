@@ -266,7 +266,7 @@ namespace Core { namespace Command
 				Vdbe::Result_ErrorNoMem(fctx);
 				return;
 			}
-			ConvertEx::Atof(buf, &r, _strlen30(buf), TEXTENCODE_UTF8);
+			ConvertEx::Atof(buf, &r, _strlen(buf), TEXTENCODE_UTF8);
 			_free(buf);
 		}
 		Vdbe::Result_Double(fctx, r);
@@ -1138,7 +1138,7 @@ namespace Core { namespace Command
 
 	__device__ static void SetLikeOptFlag(Context *ctx, const char *name, FUNC flagVal)
 	{
-		FuncDef *def = Callback::FindFunction(ctx, name, _strlen30(name), 2, TEXTENCODE_UTF8, 0);
+		FuncDef *def = Callback::FindFunction(ctx, name, _strlen(name), 2, TEXTENCODE_UTF8, 0);
 		if (_ALWAYS(def))
 			def->Flags = flagVal;
 	}
@@ -1158,7 +1158,7 @@ namespace Core { namespace Command
 		if (expr->OP != TK_FUNCTION  || !expr->x.List || expr->x.List->Exprs != 2)
 			return false;
 		_assert(!ExprHasProperty(expr, EP_xIsSelect));
-		FuncDef *def = Callback::FindFunction(ctx, expr->u.Token, _strlen30(expr->u.Token), 2, TEXTENCODE_UTF8, 0);
+		FuncDef *def = Callback::FindFunction(ctx, expr->u.Token, _strlen(expr->u.Token), 2, TEXTENCODE_UTF8, 0);
 		if (_NEVER(def == nullptr) || (def->Flags & FUNC_LIKE) == 0)
 			return false;
 		// The memcpy() statement assumes that the wildcard characters are the first three statements in the compareInfo structure.  The asserts() that follow verify that assumption

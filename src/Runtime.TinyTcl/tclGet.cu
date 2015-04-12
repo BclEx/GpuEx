@@ -43,7 +43,7 @@ __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr)
 	char *end;
 	long i;
 
-	i = strtol(string, &end, 0);
+	i = _strtol(string, &end, 0);
 	while ((*end != '\0') && _isspace(*end)) {
 		end++;
 	}
@@ -81,7 +81,7 @@ __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr
 	char *end;
 	double d;
 
-	d = strtod(string, &end);
+	d = _strtod(string, &end);
 	while ((*end != '\0') && _isspace(*end)) {
 		end++;
 	}
@@ -136,7 +136,7 @@ __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr)
 	}
 	lowerCase[i] = 0;
 
-	length = _strlen30(lowerCase);
+	length = _strlen(lowerCase);
 	c = lowerCase[0];
 	if ((c == '0') && (lowerCase[1] == '\0')) {
 		*boolPtr = 0;

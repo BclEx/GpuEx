@@ -292,7 +292,7 @@ namespace Core
 
 	__device__ FKey *Parse::FKReferences(Table *table)
 	{
-		int nameLength = _strlen30(table->Name);
+		int nameLength = _strlen(table->Name);
 		return (FKey *)table->Schema->FKeyHash.Find(table->Name, nameLength);
 	}
 
@@ -565,8 +565,8 @@ namespace Core
 				Token toCol; // Name of column in parent table
 				toCol.data = (index ? table->Cols[index->Columns[i]].Name : "oid");
 				fromCol.data = key->From->Cols[fromColId].Name;
-				toCol.length = _strlen30(toCol.data);
-				fromCol.length = _strlen30(fromCol.data);
+				toCol.length = _strlen(toCol.data);
+				fromCol.length = _strlen(fromCol.data);
 
 				// Create the expression "OLD.zToCol = zFromCol". It is important that the "OLD.zToCol" term is on the LHS of the = operator, so
 				// that the affinity and collation sequence associated with the parent table are used for the comparison.
@@ -623,7 +623,7 @@ namespace Core
 			_tagfree(ctx, cols);
 
 			char const *fromName = key->From->Name; // Name of child table
-			int fromNameLength = _strlen30(fromName); // Length in bytes of fromName
+			int fromNameLength = _strlen(fromName); // Length in bytes of fromName
 
 			Select *select = nullptr; // If RESTRICT, "SELECT RAISE(...)"
 			if (action == OE_Restrict)
@@ -737,7 +737,7 @@ namespace Core
 				{
 					void *p = (void *)fkey->NextTo;
 					const char *z = (p ? fkey->NextTo->To : fkey->To);
-					table->Schema->FKeyHash.Insert(z, _strlen30(z), p);
+					table->Schema->FKeyHash.Insert(z, _strlen(z), p);
 				}
 				if (fkey->NextTo)
 					fkey->NextTo->PrevTo = fkey->PrevTo;

@@ -2162,7 +2162,7 @@ namespace Core
 		// Allocate space for the new sqlite3_shm object.  Also speculatively allocate space for a new winShmNode and filename.
 		struct winShm *p = (struct winShm *)_alloc(sizeof(*p), true); // The connection to be opened */
 		if (!p) return RC_IOERR_NOMEM;
-		int nameLength = _strlen30(file->Path); // Size of zName in bytes
+		int nameLength = _strlen(file->Path); // Size of zName in bytes
 		struct winShmNode *shmNode; // The underlying mmapped file
 		struct winShmNode *newNode = (struct winShmNode *)_alloc(sizeof(*shmNode) + nameLength + 17, true); // Newly allocated winShmNode
 		if (!newNode)
@@ -2514,15 +2514,15 @@ shmpage_out:
 #endif
 #endif
 		// Check that the output buffer is large enough for the temporary file name. If it is not, return SQLITE_ERROR.
-		int tempPathLength = _strlen30(tempPath);
-		if ((tempPathLength + _strlen30(TEMP_FILE_PREFIX) + 18) >= bufLength)
+		int tempPathLength = _strlen(tempPath);
+		if ((tempPathLength + _strlen(TEMP_FILE_PREFIX) + 18) >= bufLength)
 			return RC_ERROR;
 		size_t i;
 		for (i = tempPathLength; i > 0 && tempPath[i-1] == '\\'; i--) { }
 		tempPath[i] = 0;
 		size_t j;
 		__snprintf(buf, bufLength-18, (tempPathLength > 0 ? "%s\\"TEMP_FILE_PREFIX : TEMP_FILE_PREFIX), tempPath);
-		j = _strlen30(buf);
+		j = _strlen(buf);
 		SysEx::PutRandom(15, &buf[j]);
 		for (i = 0; i < 15; i++, j++)
 			buf[j] = (char)chars[((unsigned char)buf[j])%(sizeof(chars)-1)];

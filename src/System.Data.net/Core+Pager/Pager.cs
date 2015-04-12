@@ -2190,11 +2190,11 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
                 rc = vfs.FullPathname(filename, out pathname);
                 var z = uri = filename;
                 // TODO: CONVERT
-                //const char* z = uri = &filename[_strlen30(filename) + 1];
+                //const char* z = uri = &filename[_strlen(filename) + 1];
                 //while (*z)
                 //{
-                //    z += _strlen30(z) + 1;
-                //    z += _strlen30(z) + 1;
+                //    z += _strlen(z) + 1;
+                //    z += _strlen(z) + 1;
                 //}
                 //uriLength = (int)(&z[1] - uri);
                 Debug.Assert(uri.Length >= 0);

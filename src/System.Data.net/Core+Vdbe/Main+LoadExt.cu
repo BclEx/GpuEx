@@ -353,7 +353,7 @@ namespace Core
 		VSystem *vfs = ctx->Vfs;
 		void *handle = vfs->DlOpen(fileName);
 		char *errmsg = nullptr;
-		int msgLength = 300 + _strlen30(fileName);
+		int msgLength = 300 + _strlen(fileName);
 		if (!handle)
 		{
 			if (errMsgOut)
@@ -373,7 +373,7 @@ namespace Core
 		{
 			if (errMsgOut)
 			{
-				msgLength += _strlen30(procName);
+				msgLength += _strlen(procName);
 				*errMsgOut = errmsg = (char *)_alloc(msgLength);
 				if (errmsg)
 				{

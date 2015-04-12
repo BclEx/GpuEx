@@ -1,5 +1,6 @@
 #define __EMBED__ 1
 #include "Falloc.cu"
+#include "Regex.1\Regex.cu"
 #include "Runtime.cu"
 #include "Runtime+Alloc.cu"
 #include "Runtime+BenignAlloc.cu"

@@ -225,7 +225,7 @@ zulu_time:
 		if (ParseYyyyMmDd(date, p) == 0) return false;
 		else if (ParseHhMmSs(date, p) == 0) return false;
 		else if (!_strcmp(date, "now")) return SetDateTimeToCurrent(fctx, p);
-		else if (ConvertEx::Atof(date, &r, _strlen30(date), TEXTENCODE_UTF8))
+		else if (ConvertEx::Atof(date, &r, _strlen(date), TEXTENCODE_UTF8))
 		{
 			p->JD = (int64)(r*86400000.0 + 0.5);
 			p->ValidJD = true;
@@ -417,7 +417,7 @@ zulu_time:
 			break; }
 		case 'w': {
 			// weekday N - Move the date to the same time on the next occurrence of weekday N where 0==Sunday, 1==Monday, and so forth.  If the date is already on the appropriate weekday, this is a no-op.
-			if (!_strncmp(z, "weekday ", 8) && ConvertEx::Atof(&z[8], &r, _strlen30(&z[8]), TEXTENCODE_UTF8) && (n = (int)r) == r && n >= 0 && r < 7)
+			if (!_strncmp(z, "weekday ", 8) && ConvertEx::Atof(&z[8], &r, _strlen(&z[8]), TEXTENCODE_UTF8) && (n = (int)r) == r && n >= 0 && r < 7)
 			{
 				ComputeYMD_HMS(p);
 				p->ValidTZ = false;
@@ -495,7 +495,7 @@ zulu_time:
 			}
 			z += n;
 			while (_isspace(*z)) z++;
-			n = _strlen30(z);
+			n = _strlen(z);
 			if (n > 10 || n < 3) break;
 			if (z[n-1] == 's') { z[n-1] = 0; n--; }
 			ComputeJD(p);
@@ -691,7 +691,7 @@ zulu_time:
 					double s = x.s;
 					if (s > 59.999) s = 59.999;
 					__snprintf(&z[j], 7, "%06.3f", s);
-					j += _strlen30(&z[j]);
+					j += _strlen(&z[j]);
 					break; }
 				case 'H': __snprintf(&z[j], 3, "%02d", x.h); j+=2; break;
 				case 'W': // Fall thru
@@ -716,20 +716,20 @@ zulu_time:
 					break; }
 				case 'J': {
 					__snprintf(&z[j], 20, "%.16g", x.JD/86400000.0);
-					j += _strlen30(&z[j]);
+					j += _strlen(&z[j]);
 					break; }
 				case 'm': __snprintf(&z[j], 3, "%02d", x.M); j+=2; break;
 				case 'M': __snprintf(&z[j], 3, "%02d", x.m); j+=2; break;
 				case 's': {
 					__snprintf(&z[j], 30, "%lld", (int64)(x.JD/1000 - 21086676*(int64)10000));
-					j += _strlen30(&z[j]);
+					j += _strlen(&z[j]);
 					break; }
 				case 'S':  __snprintf(&z[j], 3, "%02d",(int)x.s); j+=2; break;
 				case 'w': {
 					z[j++] = (char)(((x.JD+129600000)/86400000) % 7) + '0';
 					break; }
 				case 'Y': {
-					__snprintf(&z[j], 5, "%04d", x.Y); j += _strlen30(&z[j]);
+					__snprintf(&z[j], 5, "%04d", x.Y); j += _strlen(&z[j]);
 					break; }
 				default: z[j++] = '%'; break; }
 			}

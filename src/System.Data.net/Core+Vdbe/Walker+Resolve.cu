@@ -450,7 +450,7 @@ lookupname_end:
 			ASSERTCOVERAGE(expr->OP == TK_CONST_FUNC);
 			_assert(!ExprHasProperty(expr, EP_xIsSelect));
 			const char *id = expr->u.Token; // The function name.
-			int idLength = _strlen30(id); // Number of characters in function name
+			int idLength = _strlen(id); // Number of characters in function name
 			FuncDef *def = Callback::FindFunction(ctx, id, idLength, n, encode, false); // Information about the function
 			if (!def)
 			{

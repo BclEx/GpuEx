@@ -540,7 +540,7 @@ __device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
 __device__ char *_tagstrdup(TagBase *tag, const char *z)
 {
 	if (z == nullptr) return nullptr;
-	size_t n = _strlen30(z) + 1;
+	size_t n = _strlen(z) + 1;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_tagalloc(tag, (int)n);
 	if (newZ) _memcpy(newZ, (char *)z, n);

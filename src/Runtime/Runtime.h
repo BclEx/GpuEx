@@ -111,16 +111,16 @@ __device__ void _runtime_utfselftest();
 #define char_t unsigned short
 #define MAX_CHAR 0xFFFF
 #define _L(c) L##c
-#define _isprint iswprint
-#define _strlen wcslen
-#define _printf wprintf
+//#define _isprint iswprint
+//#define _strlen wcslen
+//#define _printf wprintf
 #else
 #define char_t char
 #define MAX_CHAR 0xFF
 #define _L(c) (c) 
-#define _isprint isprint
-#define _strlen strlen
-#define _printf printf
+//#define _isprint isprint
+//#define _strlen strlen
+//#define _printf printf
 #endif
 
 #pragma endregion
@@ -297,6 +297,25 @@ template <typename TLength, typename T> struct array_t2 { TLength length; T *dat
 template <typename TLength, typename T, size_t size> struct array_t3 { TLength length; T data[size]; __forceinline array_t3() { length = 0; } __device__ __forceinline void operator=(T *a) { data = a; } __device__ __forceinline operator T *() { return data; } };
 #define _lengthof(symbol) (sizeof(symbol) / sizeof(symbol[0]))
 
+// strcpy
+template <typename T> __device__ __forceinline void _strcpy(const T *dest, const T *src)
+{
+	register unsigned char *a, *b;
+	a = (unsigned char *)dest;
+	b = (unsigned char *)src;
+	while (*a) { *a++ = *b++; }
+}
+
+// strchr
+template <typename T> __device__ __forceinline const T *_strchr(const T *src, char character)
+{
+	register unsigned char *a, b;
+	a = (unsigned char *)src;
+	b = (unsigned char)__curtUpperToLower[character];
+	while (*a != 0 && __curtUpperToLower[*a] != b) { a++; }
+	return (const T *)*a;
+}
+
 // strcmp
 template <typename T> __device__ __forceinline int _strcmp(const T *left, const T *right)
 {
@@ -352,6 +371,16 @@ template <typename T> __device__ __forceinline void _memset(T *dest, const char 
 }
 #endif
 
+// memchr
+template <typename T> __device__ __forceinline const T *_memchr(const T *src, char character)
+{
+	register unsigned char *a, b;
+	a = (unsigned char *)src;
+	b = (unsigned char)character;
+	while (*a != 0 && *a != b) { a++; }
+	return (const T *)*a;
+}
+
 // memcmp
 template <typename T, typename Y> __device__ __forceinline int _memcmp(T *left, Y *right, size_t length)
 {
@@ -379,7 +408,7 @@ template <typename T, typename Y> __device__ __forceinline void _memmove(T *left
 }
 
 // strlen30
-__device__ __forceinline int _strlen30(const char *z)
+__device__ __forceinline int _strlen(const char *z)
 {
 	register const char *z2 = z;
 	if (z == nullptr) return 0;
@@ -510,7 +539,7 @@ __device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size
 __device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
 {
 	if (z == nullptr) return nullptr;
-	size_t n = _strlen30(z) + 1;
+	size_t n = _strlen(z) + 1;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_tagalloc(tag, (int)n);
 	if (newZ) _memcpy(newZ, (char *)z, n);
@@ -629,6 +658,7 @@ __device__ inline static char *__snprintf(const char *buf, size_t bufLen, const 
 	return z;
 }
 #endif
+#define _sprintf(buf, fmt, ...) __snprintf(buf, sizeof(buf), fmt, __VA_ARGS__)
 
 #pragma endregion
 

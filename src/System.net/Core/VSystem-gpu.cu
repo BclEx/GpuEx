@@ -275,7 +275,7 @@ namespace Core
 	__device__ static void *ConvertFilename(const char *name)
 	{
 		void *converted = nullptr;
-		int length = _strlen30(name);
+		int length = _strlen(name);
 		converted = _alloc(length);
 		_memcpy(converted, name, length);
 		return converted;
@@ -954,15 +954,15 @@ namespace Core
 		if (g_temp_directory)
 			__snprintf(tempPath, MAX_PATH-30, "%s", g_temp_directory);
 		// Check that the output buffer is large enough for the temporary file name. If it is not, return SQLITE_ERROR.
-		int tempPathLength = _strlen30(tempPath);
-		if ((tempPathLength + _strlen30(TEMP_FILE_PREFIX) + 18) >= bufLength)
+		int tempPathLength = _strlen(tempPath);
+		if ((tempPathLength + _strlen(TEMP_FILE_PREFIX) + 18) >= bufLength)
 			return RC_ERROR;
 		size_t i;
 		for (i = tempPathLength; i > 0 && tempPath[i-1] == '\\'; i--) { }
 		tempPath[i] = 0;
 		size_t j;
 		__snprintf(buf, bufLength-18, (tempPathLength > 0 ? "%s\\"TEMP_FILE_PREFIX : TEMP_FILE_PREFIX), tempPath);
-		j = _strlen30(buf);
+		j = _strlen(buf);
 		SysEx::PutRandom(15, &buf[j]);
 		for (i = 0; i < 15; i++, j++)
 			buf[j] = (char)_chars[((unsigned char)buf[j])%(sizeof(_chars)-1)];
@@ -1041,7 +1041,7 @@ namespace Core
 		}
 
 		// Database filenames are double-zero terminated if they are not URIs with parameters.  Hence, they can always be passed into sqlite3_uri_parameter().
-		_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[_strlen30(utf8Name)+1] == 0);
+		_assert(type != OPEN_MAIN_DB || (flags & OPEN_URI) || utf8Name[_strlen(utf8Name)+1] == 0);
 
 		// Convert the filename to the system encoding.
 		void *converted = ConvertFilename(utf8Name); // Filename in OS encoding

@@ -3,6 +3,7 @@
 
 void __testFalloc(cudaDeviceFalloc &f);
 void __testRuntime(cudaDeviceHeap &r);
+void __testRegex1(cudaDeviceHeap &r);
 
 #if __CUDACC__
 void GMain(cudaDeviceHeap &r) {
@@ -11,6 +12,7 @@ void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
 //__testFalloc(f);
 __testRuntime(r);
+//__testRegex1(r);
 }
 
 #if __CUDACC__
@@ -25,7 +27,7 @@ int main(int argc, char **argv)
 	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost), return -1);
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
-	cudaDeviceReset();
+	cudaCheckErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024*4), return -2);
 
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	//cudaDeviceFalloc fallocHost = cudaDeviceFallocCreate(100, 1024);

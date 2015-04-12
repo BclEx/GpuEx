@@ -372,13 +372,13 @@ namespace Core
         public static string UriParameter(string filename, string param)
         {
             if (filename == null) return null;
-            //int filenameIdx _strlen30(filename) + 1;
+            //int filenameIdx _strlen(filename) + 1;
             //while (filename[0])
             //{
             //    int x = _strcmp(filename, param);
-            //    filename += _strlen30(filename) + 1;
+            //    filename += _strlen(filename) + 1;
             //    if (x == 0) return filename;
-            //    filename += _strlen30(filename) + 1;
+            //    filename += _strlen(filename) + 1;
             //}
             return null;
         }

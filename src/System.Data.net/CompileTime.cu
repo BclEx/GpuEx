@@ -345,7 +345,7 @@ namespace Core
 	__device__ bool CompileTimeOptionUsed(const char *optName)
 	{
 		if (!_strncmp(optName, "", 7)) optName += 7;
-		int length = _strlen30(optName);
+		int length = _strlen(optName);
 		// Since ArraySize(azCompileOpt) is normally in single digits, a linear search is adequate.  No need for a binary search.
 		for (int i = 0; i < _lengthof(_compileOpt); i++)
 			if (!_strncmp(optName, _compileOpt[i], length) && (_compileOpt[i][length] == 0 || _compileOpt[i][length] == '='))

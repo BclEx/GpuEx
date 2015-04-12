@@ -546,7 +546,7 @@ do_atof_calc:
 	{
 		if (_isdigit(*z))
 			return (uint8)Atoi(z);
-		int n = _strlen30(z);
+		int n = _strlen(z);
 		for (int i = 0; i < _lengthof(_safetyLevelLength) - omitFull; i++)
 			if (_safetyLevelLength[i] == n && !_strncmp(&_safetyLevelText[_safetyLevelOffset[i]],z,n))
 				return _safetyLevelValue[i];

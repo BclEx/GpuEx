@@ -101,7 +101,7 @@ exec_out:
 		rc = ApiExit(ctx, rc);
 		if (rc != RC_OK && _ALWAYS(rc == ErrCode(ctx)) && errmsg)
 		{
-			int errMsgLength = 1 + _strlen30(ErrMsg(ctx));
+			int errMsgLength = 1 + _strlen(ErrMsg(ctx));
 			*errmsg = (char *)_alloc(errMsgLength);
 			if (*errmsg)
 				_memcpy(*errmsg, ErrMsg(ctx), errMsgLength);

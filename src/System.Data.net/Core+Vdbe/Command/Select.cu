@@ -952,7 +952,7 @@ namespace Core
 			}
 
 			// Make sure the column name is unique.  If the name is not unique, append a integer to the name so that it becomes unique.
-			int nameLength = _strlen30(name); // Size of name in zName[]
+			int nameLength = _strlen(name); // Size of name in zName[]
 			int cnt; // Index added to make the name unique
 			for (j = cnt = 0; j < i; j++)
 			{
@@ -2448,7 +2448,7 @@ multi_select_end:
 								expr = right;
 							newList = Expr::ListAppend(parse, newList, expr);
 							sColname.data = colname;
-							sColname.length = _strlen30(colname);
+							sColname.length = _strlen(colname);
 							Expr::ListSetName(parse, newList, &sColname, 0);
 							if (newList && (p->SelFlags & SF_NestedFrom) != 0)
 							{

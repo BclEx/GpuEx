@@ -55,7 +55,7 @@ namespace Core
 		_assert(z);
 		Token s;
 		s.data = z;
-		s.length = _strlen30(z);
+		s.length = _strlen(z);
 		return AddCollateToken(parse, expr, &s);
 	}
 
@@ -308,7 +308,7 @@ namespace Core
 	{
 		Token x;
 		x.data = (char *)token;
-		x.length = (token ? _strlen30(token) : 0);
+		x.length = (token ? _strlen(token) : 0);
 		return Alloc(ctx, op, &x, false);
 	}
 
@@ -413,7 +413,7 @@ namespace Core
 		else
 		{
 			yVars x = 0;
-			uint32 length = _strlen30(z);
+			uint32 length = _strlen(z);
 			if (z[0] == '?') 
 			{
 				// Wildcard of the form "?nnn".  Convert "nnn" to an integer and use it as the variable number
@@ -519,7 +519,7 @@ namespace Core
 	{
 		int bytes = DupedExprStructSize(expr, flags) & 0xfff;
 		if (!ExprHasProperty(expr, EP_IntValue) && expr->u.Token)
-			bytes += _strlen30(expr->u.Token) + 1;
+			bytes += _strlen(expr->u.Token) + 1;
 		return _ROUND8(bytes);
 	}
 
@@ -563,7 +563,7 @@ namespace Core
 				// EXPR_TOKENONLYSIZE. nToken is set to the number of bytes consumed * by the copy of the p->u.zToken string (if any).
 				const unsigned structSize = DupedExprStructSize(expr, flags);
 				const int newSize = structSize & 0xfff;
-				int tokenLength = (!ExprHasProperty(expr, EP_IntValue) && expr->u.Token ? _strlen30(expr->u.Token) + 1 : 0);
+				int tokenLength = (!ExprHasProperty(expr, EP_IntValue) && expr->u.Token ? _strlen(expr->u.Token) + 1 : 0);
 				if (isReduced)
 				{
 					_assert(!ExprHasProperty(expr, EP_Reduced));
@@ -1358,7 +1358,7 @@ no_mem:
 		if (_ALWAYS(z))
 		{
 			double value;
-			ConvertEx::Atof(z, &value, _strlen30(z), TEXTENCODE_UTF8);
+			ConvertEx::Atof(z, &value, _strlen(z), TEXTENCODE_UTF8);
 			_assert(!_isnan(value)); // The new AtoF never returns NaN
 			if (negateFlag) value = -value;
 			char *value2 = Dup8bytes(v, (char *)&value);
@@ -1382,7 +1382,7 @@ no_mem:
 			const char *z = expr->u.Token;
 			_assert(z);
 			int64 value;
-			int c = ConvertEx::Atoi64(z, &value, _strlen30(z), TEXTENCODE_UTF8);
+			int c = ConvertEx::Atoi64(z, &value, _strlen(z), TEXTENCODE_UTF8);
 			if (c == 0 || (c == 2 && negateFlag))
 			{
 				if (negateFlag) { value = (c == 2 ? SMALLEST_INT64 : -value); }
@@ -1666,7 +1666,7 @@ no_mem:
 			_assert(expr->u.Token[0] == 'x' || expr->u.Token[0] == 'X');
 			_assert(expr->u.Token[1] == '\'' );
 			const char *z = &expr->u.Token[2];
-			int n = _strlen30(z) - 1;
+			int n = _strlen(z) - 1;
 			_assert(z[n] == '\'');
 			char *blob = (char *)_taghextoblob(ctx, z, n);
 			v->AddOp4(OP_Blob, n/2, target, 0, blob, Vdbe::P4T_DYNAMIC);
@@ -1871,7 +1871,7 @@ no_mem:
 			int fargLength = (farg ? farg->Exprs : 0); // Number of function arguments */
 			_assert(!ExprHasProperty(expr, EP_IntValue));
 			const char *id = expr->u.Token; // The function name
-			int idLength = _strlen30(id); // Length of the function name in bytes
+			int idLength = _strlen(id); // Length of the function name in bytes
 			TEXTENCODE encode = CTXENCODE(ctx); // The text encoding used by this database
 			FuncDef *def = Callback::FindFunction(ctx, id, idLength, fargLength, encode, false); // The function definition object
 			if (!def)
@@ -3015,7 +3015,7 @@ no_mem:
 						item->Expr = expr;
 						item->Mem = ++parse->Mems;
 						_assert(!ExprHasProperty(expr, EP_IntValue));
-						item->Func = Callback::FindFunction(ctx, expr->u.Token, _strlen30(expr->u.Token), (expr->x.List ? expr->x.List->Exprs : 0), encode, false);
+						item->Func = Callback::FindFunction(ctx, expr->u.Token, _strlen(expr->u.Token), (expr->x.List ? expr->x.List->Exprs : 0), encode, false);
 						item->Distinct = (expr->Flags & EP_Distinct ? parse->Tabs++ : -1);
 					}
 				}

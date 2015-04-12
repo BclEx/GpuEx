@@ -227,9 +227,9 @@ EXTERN void		Tcl_ValidateAllMemory _ANSI_ARGS_((char *file,
 
 #else
 
-#  define ckalloc(x) malloc(x)
-#  define ckfree(x)  free(x)
-#  define ckrealloc(x,y) realloc(x,y)
+#  define ckalloc(x) _alloc(x)
+#  define ckfree(x) _free(x)
+#  define ckrealloc(x,y) _realloc(x,y)
 #  define Tcl_DumpActiveMemory(x)
 #  define Tcl_ValidateAllMemory(x,y)
 

@@ -168,14 +168,14 @@ namespace Core
 				c = 's';
 
 			__snprintf(csr, 100, "%c", c);
-			csr += _strlen30(csr);
+			csr += _strlen(csr);
 			__snprintf(csr, 100, "%d[", mem->N);
-			csr += _strlen30(csr);
+			csr += _strlen(csr);
 			int i;
 			for (i = 0; i < 16 && i < mem->N; i++)
 			{
 				__snprintf(csr, 100, "%02X", ((int)mem->Z[i] & 0xFF));
-				csr += _strlen30(csr);
+				csr += _strlen(csr);
 			}
 			for (i = 0; i < 16 && i < mem->N; i++)
 			{
@@ -184,11 +184,11 @@ namespace Core
 				else *csr++ = z;
 			}
 			__snprintf(csr, 100, "]%s", _encnames[mem->Encode]);
-			csr += _strlen30(csr);
+			csr += _strlen(csr);
 			if (f & MEM_Zero)
 			{
 				__snprintf(csr, 100, "+%dz", mem->u.Zeros);
-				csr += _strlen30(csr);
+				csr += _strlen(csr);
 			}
 			*csr = '\0';
 		}
@@ -214,7 +214,7 @@ namespace Core
 				buf[1] = 's';
 			int k = 2;
 			__snprintf(&buf[k], 100, "%d", mem->N);
-			k += _strlen30(&buf[k]);
+			k += _strlen(&buf[k]);
 			buf[k++] = '[';
 			for (int j = 0; j < 15 && j < mem->N; j++)
 			{
@@ -223,7 +223,7 @@ namespace Core
 			}
 			buf[k++] = ']';
 			__snprintf(&buf[k], 100, _encnames[mem->Encode]);
-			k += _strlen30(&buf[k]);
+			k += _strlen(&buf[k]);
 			buf[k++] = '\0';
 		}
 	}
@@ -603,7 +603,7 @@ namespace Core
 				// P4 points to a nul terminated UTF-8 string. This opcode is transformed into an OP_String before it is executed for the first time.
 				_assert(op->P4.Z != nullptr);
 				op->Opcode = OP_String;
-				op->P1 = _strlen30(op->P4.Z);
+				op->P1 = _strlen(op->P4.Z);
 
 #ifndef OMIT_UTF16
 				if (encoding != TEXTENCODE_UTF8)
@@ -1998,7 +1998,7 @@ op_column_out:
 					}
 					else
 					{
-						int nameLength = _strlen30(name);
+						int nameLength = _strlen(name);
 
 #ifndef OMIT_VIRTUALTABLE
 						// This call is Ok even if this savepoint is actually a transaction savepoint (and therefore should not prompt xSavepoint()) callbacks.
@@ -4233,7 +4233,7 @@ op_column_out:
 				const char *filename = pager->get_Filename(true); // Name of database file for pager
 
 				// Do not allow a transition to journal_mode=WAL for a database in temporary storage or if the VFS does not support shared memory 
-				if (newMode == IPager::JOURNALMODE_WAL && (_strlen30(filename) == 0 || !pager->WalSupported())) // Temp file || No shared-memory support
+				if (newMode == IPager::JOURNALMODE_WAL && (_strlen(filename) == 0 || !pager->WalSupported())) // Temp file || No shared-memory support
 					newMode = oldMode;
 
 				if ((newMode != oldMode) && (oldMode == IPager::JOURNALMODE_WAL || newMode == IPager::JOURNALMODE_WAL))
@@ -4272,7 +4272,7 @@ op_column_out:
 				out_ = &mems[op->P2];
 				out_->Flags = (MEM)(MEM_Str|MEM_Static|MEM_Term);
 				out_->Z = (char *)Pragma::JournalModename(newMode);
-				out_->N = _strlen30(out_->Z);
+				out_->N = _strlen(out_->Z);
 				out_->Encode = TEXTENCODE_UTF8;
 				ChangeEncoding(out_, encoding);
 				break; }

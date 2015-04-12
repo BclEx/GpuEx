@@ -141,7 +141,7 @@ namespace Core {
 			_assert(f & MEM_Real);
 			__snprintf(mem->Z, bytes, "%!.15g", mem->R);
 		}
-		mem->N = _strlen30(mem->Z);
+		mem->N = _strlen(mem->Z);
 		mem->Encode = TEXTENCODE_UTF8;
 		mem->Flags |= MEM_Str|MEM_Term;
 		ChangeEncoding(mem, encode);
@@ -732,7 +732,7 @@ namespace Core {
 			mem = ValueNew(ctx);
 			if (!mem) goto no_mem;
 			memAsString = &expr->u.Token[2];
-			int memAsStringLength = _strlen30(memAsString) - 1;
+			int memAsStringLength = _strlen(memAsString) - 1;
 			_assert(memAsString[memAsStringLength] == '\'');
 			MemSetStr(mem, (const char *)_taghextoblob(ctx, memAsString, memAsStringLength), memAsStringLength / 2, (TEXTENCODE)0, DESTRUCTOR_DYNAMIC);
 		}

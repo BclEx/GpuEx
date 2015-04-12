@@ -258,7 +258,7 @@ __device__ static bool SafeToUseEvalObjv(Tcl_Interp *interp, Tcl_Obj *cmd)
 // Find an SqlFunc structure with the given name.  Or create a new one if an existing one cannot be found.  Return a pointer to the structure.
 __device__ static SqlFunc *FindSqlFunc(TestCtx *tctx, const char *name)
 {
-	SqlFunc *newFunc = (SqlFunc *)_alloc(sizeof(*newFunc) + _strlen30(name) + 1);
+	SqlFunc *newFunc = (SqlFunc *)_alloc(sizeof(*newFunc) + _strlen(name) + 1);
 	newFunc->Name = (char *)&newFunc[1];
 	int i;
 	for (i = 0; name[i]; i++) { newFunc->Name[i] = _tolower(name[i]); }
@@ -748,7 +748,7 @@ __device__ static RC DbPrepareAndBind(TestCtx *tctx, char const *sql, char const
 
 	// Trim spaces from the start of zSql and calculate the remaining length.
 	while(_isspace(sql[0])) sql++;
-	int sqlLength = _strlen30(sql);
+	int sqlLength = _strlen(sql);
 
 	SqlPreparedStmt *p;
 	Vdbe *stmt;
@@ -817,7 +817,7 @@ __device__ static RC DbPrepareAndBind(TestCtx *tctx, char const *sql, char const
 #endif
 	}
 	_assert(p);
-	_assert(_strlen30(p->Sql) == p->SqlLength);
+	_assert(_strlen(p->Sql) == p->SqlLength);
 	_assert(!_memcmp(p->Sql, sql, p->SqlLength));
 
 	// Bind values to parameters that begin with $ or :

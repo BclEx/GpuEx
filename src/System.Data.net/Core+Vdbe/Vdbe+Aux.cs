@@ -633,7 +633,7 @@ namespace Core
             }
             else
             {
-                //: if (n == 0) n = _strlen30(p4);
+                //: if (n == 0) n = _strlen(p4);
                 op.P4.Z = p4.Z;
                 op.P4Type = P4T.DYNAMIC;
             }

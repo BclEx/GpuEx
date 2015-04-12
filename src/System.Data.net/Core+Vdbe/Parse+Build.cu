@@ -168,7 +168,7 @@ namespace Core
 	__device__ Table *Parse::FindTable(Context *ctx, const char *name, const char *dbName)
 	{
 		_assert(name);
-		int nameLength = _strlen30(name);
+		int nameLength = _strlen(name);
 		// All mutexes are required for schema access.  Make sure we hold them. */
 		_assert(dbName || Btree::HoldsAllMutexes(ctx));
 		Table *table = nullptr;
@@ -223,7 +223,7 @@ namespace Core
 		// All mutexes are required for schema access.  Make sure we hold them.
 		_assert(Btree::HoldsAllMutexes(ctx));
 		Index *p = nullptr;
-		int nameLength = _strlen30(name);
+		int nameLength = _strlen(name);
 		for (int i = E_OMIT_TEMPDB; i < ctx->DBs.length; i++)
 		{
 			int j = (i < 2 ? i ^ 1 : i); // Search TEMP before MAIN
@@ -252,7 +252,7 @@ namespace Core
 	{
 		_assert(Btree::SchemaMutexHeld(ctx, db, 0));
 		Hash *hash = &ctx->DBs[db].Schema->IndexHash;
-		int indexNameLength = _strlen30(indexName);
+		int indexNameLength = _strlen(indexName);
 		Index *index = (Index *)hash->Insert(indexName, indexNameLength, 0);
 		if (_ALWAYS(index))
 		{
@@ -377,7 +377,7 @@ namespace Core
 			if (!ctx || ctx->BytesFreed == 0)
 			{
 				char *name = index->Name; 
-				ASSERTONLY(Index *oldIndex = (Index *)) index->Schema->IndexHash.Insert(name, _strlen30(name), nullptr);
+				ASSERTONLY(Index *oldIndex = (Index *)) index->Schema->IndexHash.Insert(name, _strlen(name), nullptr);
 				_assert(!ctx || Btree::SchemaMutexHeld(ctx, 0, index->Schema));
 				_assert(!oldIndex || oldIndex == index);
 			}
@@ -412,7 +412,7 @@ namespace Core
 		_assert(Btree::SchemaMutexHeld(ctx, db, nullptr));
 		ASSERTCOVERAGE(tableName[0] == 0);  // Zero-length table names are allowed
 		Context::DB *db2 = &ctx->DBs[db];
-		Table *table = (Table *)db2->Schema->TableHash.Insert(tableName, _strlen30(tableName), nullptr);
+		Table *table = (Table *)db2->Schema->TableHash.Insert(tableName, _strlen(tableName), nullptr);
 		DeleteTable(ctx, table);
 		ctx->Flags |= Context::FLAG_InternChanges;
 	}
@@ -443,10 +443,10 @@ namespace Core
 		int db = -1; // Database number
 		if (name)
 		{
-			int nameLength = _strlen30(name);
+			int nameLength = _strlen(name);
 			Context::DB *db2;
 			for (db = (ctx->DBs.length - 1), db2 = &ctx->DBs[db]; db >= 0; db--, db2--)
-				if ((!E_OMIT_TEMPDB || db != 1) && _strlen30(db2->Name) == nameLength && !_strcmp(db2->Name, name))
+				if ((!E_OMIT_TEMPDB || db != 1) && _strlen(db2->Name) == nameLength && !_strcmp(db2->Name, name))
 					break;
 		}
 		return db;
@@ -951,13 +951,13 @@ primary_key_exit:
 			return nullptr;
 		}
 		__snprintf(stmt, n, "CREATE TABLE ");
-		int k = _strlen30(stmt);
+		int k = _strlen(stmt);
 		IdentPut(stmt, &k, table->Name);
 		stmt[k++] = '(';
 		for (col = table->Cols, i = 0; i < table->Cols.length; i++, col++)
 		{
 			__snprintf(&stmt[k], n - k, sep);
-			k += _strlen30(&stmt[k]);
+			k += _strlen(&stmt[k]);
 			sep = sep2;
 			IdentPut(stmt, &k, col->Name);
 			_assert(col->Affinity - AFF_TEXT >= 0);
@@ -969,7 +969,7 @@ primary_key_exit:
 			ASSERTCOVERAGE(col->Affinity == AFF_REAL);
 
 			const char *type = _createTableStmt_Types[col->Affinity - AFF_TEXT];
-			int typeLength = _strlen30(type);
+			int typeLength = _strlen(type);
 			_assert(col->Affinity == AFF_NONE || col->Affinity == Parse::AffinityType(type));
 			_memcpy(&stmt[k], type, typeLength);
 			k += typeLength;
@@ -1119,7 +1119,7 @@ primary_key_exit:
 		{
 			_assert(Btree::SchemaMutexHeld(ctx, db, nullptr));
 			Schema *schema = table->Schema;
-			Table *oldTable = (Table *)schema->TableHash.Insert(table->Name, _strlen30(table->Name), table);
+			Table *oldTable = (Table *)schema->TableHash.Insert(table->Name, _strlen(table->Name), table);
 			if (oldTable)
 			{
 				_assert(table == oldTable);  // Malloc must have failed inside HashInsert()
@@ -1564,7 +1564,7 @@ exit_drop_table:
 		int bytes = sizeof(*fkey) + (cols-1)*sizeof(fkey->Cols[0]) + to->length + 1;
 		if (toCol)
 			for (i = 0; i < toCol->Exprs; i++)
-				bytes += _strlen30(toCol->Ids[i].Name) + 1;
+				bytes += _strlen(toCol->Ids[i].Name) + 1;
 		fkey = (FKey *)_tagallocZero(ctx, bytes);
 		if (!fkey)
 			goto fk_end;
@@ -1603,7 +1603,7 @@ exit_drop_table:
 		{
 			for (i = 0; i < cols; i++)
 			{
-				int n = _strlen30(toCol->Ids[i].Name);
+				int n = _strlen(toCol->Ids[i].Name);
 				fkey->Cols[i].Col = z;
 				_memcpy(z, toCol->Ids[i].Name, n);
 				z[n] = 0;
@@ -1615,7 +1615,7 @@ exit_drop_table:
 		fkey->Actions[1] = (OE)((flags >> 8 ) & 0xff);    // ON UPDATE action
 
 		_assert(Btree::SchemaMutexHeld(ctx, 0, table->Schema));
-		nextTo = (FKey *)table->Schema->FKeyHash.Insert(fkey->To, _strlen30(fkey->To), (void *)fkey);
+		nextTo = (FKey *)table->Schema->FKeyHash.Insert(fkey->To, _strlen(fkey->To), (void *)fkey);
 		if (nextTo == fkey)
 		{
 			ctx->MallocFailed = true;
@@ -1853,7 +1853,7 @@ fk_end:
 		{
 			Token nullId; // Fake token for an empty ID list
 			nullId.data = table->Cols[table->Cols.length-1].Name;
-			nullId.length = _strlen30((char *)nullId.data);
+			nullId.length = _strlen((char *)nullId.data);
 			list = Expr::ListAppend(this, nullptr, nullptr);
 			if (!list)
 				goto exit_create_index;
@@ -1870,12 +1870,12 @@ fk_end:
 			{
 				CollSeq *coll = expr->CollSeq(this);
 				if (coll)
-					extraLength += (1 + _strlen30(coll->Name));
+					extraLength += (1 + _strlen(coll->Name));
 			}
 		}
 
 		// Allocate the index structure. 
-		int nameLength = _strlen30(name); // Number of characters in zName
+		int nameLength = _strlen(name); // Number of characters in zName
 		int cols = list->Exprs;
 		Index *index = (Index *)_tagallocZero(ctx, 
 			_ROUND8(sizeof(Index)) +			// Index structure
@@ -1933,7 +1933,7 @@ fk_end:
 			if (listItem->Expr && (coll = listItem->Expr->CollSeq(this)) != nullptr)
 			{
 				collName = coll->Name;
-				int collNameLength = _strlen30(collName) + 1;
+				int collNameLength = _strlen(collName) + 1;
 				_assert(extraLength >= collNameLength);
 				_memcpy(extra, collName, collNameLength);
 				collName = extra;
@@ -2004,7 +2004,7 @@ fk_end:
 		if (!ctx->Init.Busy)
 		{
 			_assert(Btree::SchemaMutexHeld(ctx, 0, index->Schema));
-			Index *p = (Index *)index->Schema->IndexHash.Insert(index->Name, _strlen30(index->Name), index);
+			Index *p = (Index *)index->Schema->IndexHash.Insert(index->Name, _strlen(index->Name), index);
 			if (p)
 			{
 				_assert(p == index); // Malloc must have failed

@@ -526,7 +526,7 @@ namespace Core { namespace Command
 			else
 			{
 				const char *modeName;
-				int n = _strlen30(right);
+				int n = _strlen(right);
 				for (mode = 0; (modeName = JournalModename((IPager::JOURNALMODE)mode)) != 0; mode++)
 					if (!_strncmp(right, modeName, n)) break;
 				if (!modeName)
@@ -1458,9 +1458,9 @@ namespace Core { namespace Command
 
 #ifdef HAS_CODEC
 		else if (!_strcmp(left, "key") && right)
-			Codec::Key(ctx, right, _strlen30(right));
+			Codec::Key(ctx, right, _strlen(right));
 		else if (!_strcmp(left, "rekey") && right)
-			Codec::Rekey(ctx, right, _strlen30(right));
+			Codec::Rekey(ctx, right, _strlen(right));
 		else if (right && (!_strcmp(left, "hexkey") || !_strcmp(left, "hexrekey")))
 		{
 			int i, h1, h2;

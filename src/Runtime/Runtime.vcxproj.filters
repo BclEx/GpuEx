@@ -6,9 +6,6 @@
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
     <ClCompile Include="Falloc.cu" />
-    <ClCompile Include="Regex+Main.cu" />
-    <ClCompile Include="Regex+Parser.cu" />
-    <ClCompile Include="Regex+Util.cu" />
     <ClCompile Include="Runtime.cu" />
     <ClCompile Include="Runtime+Alloc.cu" />
     <ClCompile Include="Runtime+BenignAlloc.cu" />
@@ -33,14 +30,8 @@
     <ClInclude Include="FallocHost.h" />
     <ClInclude Include="RuntimeTypes.h" />
     <ClInclude Include="RuntimeOS.h" />
-    <ClInclude Include="Regex.1\Regex.h">
-      <Filter>Regex.1</Filter>
-    </ClInclude>
     <ClInclude Include="Regex.2\Regex.h">
       <Filter>Regex.2</Filter>
-    </ClInclude>
-    <ClInclude Include="Regex.3\Regex.h">
-      <Filter>Regex.3</Filter>
     </ClInclude>
     <ClInclude Include="Regex.h" />
   </ItemGroup>
@@ -50,12 +41,6 @@
     </CudaCompile>
     <CudaCompile Include="Regex.2\Regex.cu">
       <Filter>Regex.2</Filter>
-    </CudaCompile>
-    <CudaCompile Include="Regex.3\Regex+Main.cu">
-      <Filter>Regex.3</Filter>
-    </CudaCompile>
-    <CudaCompile Include="Regex.3\Regex+Parser.cu">
-      <Filter>Regex.3</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -69,9 +54,6 @@
     </Filter>
     <Filter Include="Regex.2">
       <UniqueIdentifier>{7901ad92-e5d7-45d0-b0df-2622c3a86cbf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Regex.3">
-      <UniqueIdentifier>{b6a26353-201f-4241-b10c-79482963fcf1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

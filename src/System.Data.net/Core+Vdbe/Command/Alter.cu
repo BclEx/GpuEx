@@ -228,7 +228,7 @@ namespace Core { namespace Command
 
 	__device__ static bool IsSystemTable(Parse *parse, const char *name)
 	{
-		if (_strlen30(name) > 6 && !_strncmp(name, "sqlite_", 7))
+		if (_strlen(name) > 6 && !_strncmp(name, "sqlite_", 7))
 		{
 			parse->ErrorMsg("table %s may not be altered", name);
 			return true;

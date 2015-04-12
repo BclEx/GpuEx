@@ -1218,7 +1218,7 @@ ptrmap_exit:
 					return RC_NOMEM;
 				}
 				if (memoryDB)
-					_memcpy(fullPathname, filename, _strlen30(filename) + 1);
+					_memcpy(fullPathname, filename, _strlen(filename) + 1);
 				else
 				{
 					rc = vfs->FullPathname(filename, fullPathnameLength, fullPathname);

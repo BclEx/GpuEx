@@ -496,7 +496,7 @@ __device__ void Vdbe::ChangeP4(int addr, const char *p4, int n)
 	}
 	else
 	{
-		if (n == 0) n = _strlen30(p4);
+		if (n == 0) n = _strlen(p4);
 		op->P4.Z = _tagstrndup(ctx, p4, n);
 		op->P4Type = P4T_DYNAMIC;
 	}
@@ -556,12 +556,12 @@ __device__ static char *DisplayP4(Vdbe::VdbeOp *op, char *temp, int tempLength)
 		KeyInfo *keyInfo = op->P4.KeyInfo;
 		_assert(keyInfo->SortOrders);
 		__snprintf(temp, tempLength, "keyinfo(%d", keyInfo->Fields);
-		int i = _strlen30(temp);
+		int i = _strlen(temp);
 		for (int j = 0; j < keyInfo->Fields; j++)
 		{
 			CollSeq *coll = keyInfo->Colls[j];
 			const char *collName = (coll ? coll->Name : "nil");
-			int collNameLength = _strlen30(collName);
+			int collNameLength = _strlen(collName);
 			if (i+collNameLength > tempLength-6)
 			{
 				_memcpy(&temp[i], ",...", 4);
@@ -819,7 +819,7 @@ __device__ RC Vdbe::List()
 			mem->Flags = (MEM)(MEM_Static|MEM_Str|MEM_Term);
 			mem->Z = (char *)OpcodeName(op->Opcode); // Opcode
 			_assert(mem->Z != nullptr);
-			mem->N = _strlen30(mem->Z);
+			mem->N = _strlen(mem->Z);
 			mem->Type = TYPE_TEXT;
 			mem->Encode = TEXTENCODE_UTF8;
 			mem++;
@@ -869,7 +869,7 @@ __device__ RC Vdbe::List()
 		else
 		{
 			_assert(mem->Z != nullptr);
-			mem->N = _strlen30(mem->Z);
+			mem->N = _strlen(mem->Z);
 			mem->Encode = TEXTENCODE_UTF8;
 		}
 		mem->Type = TYPE_TEXT;
@@ -894,7 +894,7 @@ __device__ RC Vdbe::List()
 			{
 				mem->Flags = (MEM)(MEM_Str|MEM_Term);
 				mem->Z = op->Comment; // Comment
-				mem->N = _strlen30(mem->Z);
+				mem->N = _strlen(mem->Z);
 				mem->Encode = TEXTENCODE_UTF8;
 				mem->Type = TYPE_TEXT;
 			}
@@ -1252,7 +1252,7 @@ __device__ static RC VdbeCommit(Context *ctx, Vdbe *p)
 	//
 	// If the return value of sqlite3BtreeGetFilename() is a zero length string, it means the main database is :memory: or a temp file.  In 
 	// that case we do not support atomic multi-file commits, so use the simple case then too.
-	if (_strlen30(ctx->DBs[0].Bt->get_Filename()) == 0 || trans <= 1)
+	if (_strlen(ctx->DBs[0].Bt->get_Filename()) == 0 || trans <= 1)
 	{
 		for (i = 0; rc == RC_OK && i < ctx->DBs.length; i++)
 		{
@@ -1282,7 +1282,7 @@ __device__ static RC VdbeCommit(Context *ctx, Vdbe *p)
 		char const *mainFileName = ctx->DBs[0].Bt->get_Filename();
 
 		// Select a master journal file name
-		int mainFileNameLength = _strlen30(mainFileName);
+		int mainFileNameLength = _strlen(mainFileName);
 		char *masterName = _mtagprintf(ctx, "%s-mjXXXXXX9XXz", mainFileName); // File-name for the master journal
 		if (!masterName) return RC_NOMEM;
 		int res;
@@ -1306,7 +1306,7 @@ __device__ static RC VdbeCommit(Context *ctx, Vdbe *p)
 			SysEx::PutRandom(sizeof(random), &random);
 			__snprintf(&masterName[mainFileNameLength], 13, "-mj%06X9%02X", (random>>8)&0xffffff, random&0xff);
 			// The antipenultimate character of the master journal name must be "9" to avoid name collisions when using 8+3 filenames.
-			_assert(masterName[_strlen30(masterName)-3] == '9');
+			_assert(masterName[_strlen(masterName)-3] == '9');
 			VSystem::FileSuffix3(mainFileName, masterName);
 			rc = vfs->Access(masterName, VSystem::ACCESS_EXISTS, &res);
 		} while (rc == RC_OK && res);
@@ -1334,8 +1334,8 @@ __device__ static RC VdbeCommit(Context *ctx, Vdbe *p)
 				_assert(fileName[0] != 0);
 				if (!needSync && !bt->SyncDisabled())
 					needSync = true;
-				rc = master->Write(fileName, _strlen30(fileName)+1, offset);
-				offset += _strlen30(fileName)+1;
+				rc = master->Write(fileName, _strlen(fileName)+1, offset);
+				offset += _strlen(fileName)+1;
 				if (rc != RC_OK)
 				{
 					master->CloseAndFree();

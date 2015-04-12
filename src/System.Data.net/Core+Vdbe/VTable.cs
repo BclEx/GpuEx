@@ -706,7 +706,7 @@ namespace Core
                 return def;
 
             // Create a new ephemeral function definition for the overloaded function
-            FuncDef newFunc = new FuncDef();//: (FuncDef*)_tagalloc(ctx, sizeof(FuncDef) + _strlen30(def->Name) + 1, true);
+            FuncDef newFunc = new FuncDef();//: (FuncDef*)_tagalloc(ctx, sizeof(FuncDef) + _strlen(def->Name) + 1, true);
             if (newFunc == null) return def;
             newFunc = def._memcpy();
             newFunc.Name = def.Name;

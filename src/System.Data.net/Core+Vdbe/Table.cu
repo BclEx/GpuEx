@@ -60,7 +60,7 @@ namespace Core
 					z = nullptr;
 				else
 				{
-					int n = _strlen30(argv[i]) + 1;
+					int n = _strlen(argv[i]) + 1;
 					z = (char *)_alloc(n);
 					if (!z) goto malloc_failed;
 					_memcpy(z, argv[i], n);
