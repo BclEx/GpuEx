@@ -17,8 +17,8 @@
  */
 
 #include "tclExtdInt.h"
-#include <stdio.h>
-#include <sys/time.h>
+//#include <stdio.h>
+//#include <sys/time.h>
 
 /*
  * Client data structure for the cmdtrace command.

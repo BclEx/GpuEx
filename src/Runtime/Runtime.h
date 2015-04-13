@@ -281,6 +281,7 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #undef _toupper
 #undef _tolower
 #define _toupper(x) ((x)&~(__curtCtypeMap[(unsigned char)(x)]&0x20))
+#define _isupper(x) ((__curtCtypeMap[(unsigned char)(x)]&0x20)==x)
 #define _isspace(x) ((__curtCtypeMap[(unsigned char)(x)]&0x01)!=0)
 #define _isalnum(x) ((__curtCtypeMap[(unsigned char)(x)]&0x06)!=0)
 #define _isalpha(x) ((__curtCtypeMap[(unsigned char)(x)]&0x02)!=0)
@@ -288,6 +289,7 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #define _isxdigit(x) ((__curtCtypeMap[(unsigned char)(x)]&0x08)!=0)
 #define _isidchar(x) ((__curtCtypeMap[(unsigned char)(x)]&0x46)!=0)
 #define _tolower(x) (__curtUpperToLower[(unsigned char)(x)])
+#define _islower(x) ((__curtUpperToLower[(unsigned char)(x)])==x)
 #define _ispoweroftwo(x) (((x)&((x)-1))==0)
 __device__ inline static bool _isalpha2(unsigned char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 
@@ -303,7 +305,31 @@ template <typename T> __device__ __forceinline void _strcpy(const T *dest, const
 	register unsigned char *a, *b;
 	a = (unsigned char *)dest;
 	b = (unsigned char *)src;
-	while (*a) { *a++ = *b++; }
+	while (*b) { *a++ = *b++; } *a = *b;
+}
+
+// strncpy
+template <typename T> __device__ __forceinline void _strncpy(T *dest, const T *src, size_t length)
+{
+	register unsigned char *a, *b;
+	a = (unsigned char *)dest;
+	b = (unsigned char *)src;
+	size_t i = 0;
+	for (; i < length && *b; ++i, ++a, ++b)
+		*a = *b;
+	for (; i < length; ++i, ++a, ++b)
+		*a = 0;
+}
+template <typename T> __device__ __forceinline void _strncpy(T *dest, T *src, size_t length)
+{
+	register unsigned char *a, *b;
+	a = (unsigned char *)dest;
+	b = (unsigned char *)src;
+	size_t i = 0;
+	for (; i < length && *b; ++i, ++a, ++b)
+		*a = *b;
+	for (; i < length; ++i, ++a, ++b)
+		*a = 0;
 }
 
 // strchr
@@ -314,6 +340,18 @@ template <typename T> __device__ __forceinline const T *_strchr(const T *src, ch
 	b = (unsigned char)__curtUpperToLower[character];
 	while (*a != 0 && __curtUpperToLower[*a] != b) { a++; }
 	return (const T *)*a;
+}
+
+// strstr
+template <typename T> __device__ __forceinline const T *_strstr(const T *src, const T *str)
+{
+	return nullptr;
+	//http://articles.leetcode.com/2010/10/implement-strstr-to-find-substring-in.html
+	//register unsigned char *a, b;
+	//a = (unsigned char *)src;
+	//b = (unsigned char)__curtUpperToLower[character];
+	//while (*a != 0 && __curtUpperToLower[*a] != b) { a++; }
+	//return (const T *)*a;
 }
 
 // strcmp

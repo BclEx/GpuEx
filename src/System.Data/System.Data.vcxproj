@@ -231,7 +231,9 @@
     <ClCompile Include="..\System.Data.net\Core+Test\Test9.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\System.Data.net\Core+Test\TestCtx.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Test\TestCtx.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="System.Data.cu" />

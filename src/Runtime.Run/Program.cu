@@ -12,7 +12,7 @@ void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
 //__testFalloc(f);
 __testRuntime(r);
-//__testRegex1(r);
+__testRegex1(r);
 }
 
 #if __CUDACC__

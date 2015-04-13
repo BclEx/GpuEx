@@ -46,8 +46,8 @@ struct regex_info
 	int flags;
 };
 
-__constant__ static const unsigned char *_metacharacters = "^$().[]*+?|\\Ssdbfnrtv";
-__device__ static int is_metacharacter(const unsigned char *s)
+__constant__ static const char *_metacharacters = "^$().[]*+?|\\Ssdbfnrtv";
+__device__ static int is_metacharacter(const char *s)
 {
 	return (!_strchr(_metacharacters, *s));
 }
@@ -362,7 +362,7 @@ __device__ int foo(const char *re, int re_len, const char *s, int s_len, struct 
 				FAILIF(re[i + 1] ==  'x' && !(_isxdigit(re[i + 2]) && _isxdigit(re[i + 3])), REG_INVALID_METACHARACTER);
 			}
 			else
-				FAILIF(!is_metacharacter((unsigned char *) re + i + 1), REG_INVALID_METACHARACTER);
+				FAILIF(!is_metacharacter((char *)re + i + 1), REG_INVALID_METACHARACTER);
 		} else if (re[i] == '(')
 		{
 			FAILIF(info->num_brackets >= (int)_lengthof(info->brackets), REG_TOO_MANY_BRACKETS);
@@ -407,7 +407,7 @@ __device__ char *reg_replace(const char *regex, const char *buf, const char *sub
 {
 	char *s = nullptr;
 	int n, n1, n2, n3, s_len, len = _strlen(buf);
-	struct regmatch_t cap = { nullptr, 0 };
+	struct regmatch_t cap = { 0, 0, nullptr, 0 };
 	do
 	{
 		s_len = (s == nullptr ? 0 : _strlen(s));

@@ -25,8 +25,8 @@
  */
 
 #include "tclInt.h"
-#include "tclUnix.h"
-#include <syslog.h>
+#include "tclOS.h"
+//#include <syslog.h>
 
 #ifndef NO_FORK
 /*

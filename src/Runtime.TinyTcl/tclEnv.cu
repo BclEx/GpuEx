@@ -17,7 +17,7 @@
  */
 
 #include "tclInt.h"
-#include "tclUnix.h"
+#include "tclOS.h"
 
 
 /*

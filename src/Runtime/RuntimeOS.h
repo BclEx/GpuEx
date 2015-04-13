@@ -130,4 +130,22 @@ __device__ void osUnmapViewOfFile(HANDLE h);
 
 #pragma endregion
 
+//////////////////////
+// DIR ENT
+#pragma region DIR ENT
+
+typedef struct DIR DIR;
+
+struct dirent
+{
+	char *d_name;
+};
+
+__device__ DIR *_opendir(const char *);
+__device__ int _closedir(DIR *);
+__device__ struct dirent *_readdir(DIR *);
+__device__ void _rewinddir(DIR *);
+
+#pragma endregion
+
 #endif // __RUNTIMEOS_H__

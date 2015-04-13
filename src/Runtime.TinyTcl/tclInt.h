@@ -45,10 +45,15 @@
 #include "regex_compat.h"
 #endif
 
-long int _strtol(const char* str, char** endptr, int base);
-double _strtod(const char* str, char** endptr);
-unsigned long int _strtoul (const char* str, char** endptr, int base);
+#define _panic(fmt, ...) printf(fmt, __VA_ARGS__)
+int _atoi(const char *str);
 
+long int _strtol(const char *str, char **endptr, int base);
+double _strtod(const char *str, char **endptr);
+unsigned long int _strtoul(const char *str, char **endptr, int base);
+
+void _qsort(void *base, size_t num, size_t size, int (*compar)(const void*,const void*));
+char *_getenv (const char *name);
 
 //#include <ctype.h>
 //#include <stdlib.h>
