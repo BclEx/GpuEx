@@ -1,0 +1,44 @@
+#define __USE_BSD
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#define CAT_BUF_SIZE 4096
+
+int cat_read_size = CAT_BUF_SIZE;
+char colon[2] = { ':', ' ' };
+char nl = '\n';
+
+void dumpfile(int fd)
+{
+	int nred;
+	static char readbuf[CAT_BUF_SIZE];
+	while ((nred = read(fd, readbuf, cat_read_size)) > 0) {
+		write(STDOUT_FILENO, readbuf, nred);
+	}
+}
+
+int main(int argc, char **argv)
+{
+	int i, fd;
+	if (argc <= 1) {
+		dumpfile(STDIN_FILENO);
+	} else {
+		for (i = 1; i < argc; i++) {
+			fd = open(argv[i], O_RDONLY);
+			if (fd == -1) {
+				write(STDERR_FILENO, argv[0], strlen(argv[0]));
+				write(STDERR_FILENO, colon, 2);
+				write(STDERR_FILENO, argv[i], strlen(argv[i]));
+				write(STDERR_FILENO, colon, 2);
+				write(STDERR_FILENO, strerror(errno), strlen(strerror(errno)));
+				write(STDERR_FILENO, &nl, 1);
+			} else {
+				dumpfile(fd);
+				close(fd);
+			}
+		}
+	}
+}

@@ -101,7 +101,6 @@ MutexEx _mutex_alloc(MUTEX id)
 void _mutex_free(MutexEx p)
 {
 	if (!p) return;
-	_assert(p);
 	_assert(p->Refs == 0 && p->Owner == 0);
 	_assert(p->Id == MUTEX_FAST || p->Id == MUTEX_RECURSIVE);
 	DeleteCriticalSection(&p->Mutex);

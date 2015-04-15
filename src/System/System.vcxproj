@@ -136,6 +136,7 @@
     <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu" />
     <ClCompile Include="..\System.net\Core\VSystem.cu" />
     <None Include="..\System.net\Core\VSystem-gpu.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -154,6 +155,7 @@
     <None Include="..\System.net\Core\IO\IO.VFile.cu" />
     <None Include="..\System.net\Core\VSystem.cu" />
     <None Include="..\System.net\Core\VSystem-gpu.cu" />
+    <None Include="..\System.net\Core\VSystem-unix.cu" />
     <None Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

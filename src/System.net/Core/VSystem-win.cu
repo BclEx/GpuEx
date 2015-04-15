@@ -140,7 +140,8 @@ namespace Core
 
 #pragma region WinVFile
 
-#ifndef OMIT_WAL // Forward references
+#ifndef OMIT_WAL
+	// Forward references
 	typedef struct winShm winShm;           // A connection to shared-memory
 	typedef struct winShmNode winShmNode;   // A region of shared-memory
 #endif
@@ -690,9 +691,9 @@ namespace Core
 	RC WinVSystem::SetSystemCall(const char *name, syscall_ptr newFunc)
 	{
 		RC rc = RC_NOTFOUND;
-		if (name == nullptr)
+		if (!name)
 		{
-			/// If no zName is given, restore all system calls to their default settings and return NULL
+			// If no zName is given, restore all system calls to their default settings and return NULL
 			rc = RC_OK;
 			for (int i = 0; i < _lengthof(Syscalls); i++)
 				if (Syscalls[i].Default)
@@ -702,7 +703,7 @@ namespace Core
 		// If zName is specified, operate on only the one system call specified.
 		for (int i = 0; i < _lengthof(Syscalls); i++)
 		{
-			if (!strcmp(name, Syscalls[i].Name))
+			if (!_strcmp(name, Syscalls[i].Name))
 			{
 				if (!Syscalls[i].Default)
 					Syscalls[i].Default = Syscalls[i].Current;
@@ -718,7 +719,7 @@ namespace Core
 	syscall_ptr WinVSystem::GetSystemCall(const char *name)
 	{
 		for (int i = 0; i < _lengthof(Syscalls); i++)
-			if (!strcmp(name, Syscalls[i].Name)) return Syscalls[i].Current;
+			if (!_strcmp(name, Syscalls[i].Name)) return Syscalls[i].Current;
 		return nullptr;
 	}
 
