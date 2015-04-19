@@ -113,4 +113,3 @@ void rewinddir(DIR *dir)
 		errno = EBADF;
 	}
 }
-

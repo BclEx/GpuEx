@@ -4,9 +4,6 @@
     <ClInclude Include="..\System.net\Core\Bitvec.cu.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="..\System.net\Core\ConvertEx.cu.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="..\System.net\Core\Core.cu.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -41,47 +38,23 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\System.net\Core\Bitvec.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\ConvertEx.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\Hash.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\MathEx.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\SysEx+Random.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\SysEx.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VSystem.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\IO\IO.JournalVFile.cu">
-      <Filter>Core\IO</Filter>
-    </None>
-    <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu">
-      <Filter>Core\IO</Filter>
-    </None>
-    <None Include="..\System.net\Core\IO\IO.VFile.cu">
-      <Filter>Core\IO</Filter>
-    </None>
-    <None Include="..\System.net\Core\MutexEx.cu" />
-    <None Include="..\System.net\Core\StatusEx.cu" />
-    <None Include="..\System.net\Core\VSystem-win.cu">
-      <Filter>Core</Filter>
-    </None>
     <None Include="..\System.net\Core\VSystem-gpu.cu">
       <Filter>Core</Filter>
     </None>
+    <None Include="System.cu" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="System.cu" />
-    <CudaCompile Include="Program.cu" />
+    <ClCompile Include="Program.cu" />
+    <ClCompile Include="..\System.net\Core\SysEx.cu" />
+    <ClCompile Include="..\System.net\Core\Bitvec.cu" />
+    <ClCompile Include="..\System.net\Core\Hash.cu" />
+    <ClCompile Include="..\System.net\Core\MathEx.cu" />
+    <ClCompile Include="..\System.net\Core\SysEx+Random.cu" />
+    <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
+    <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
+    <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
 </Project>

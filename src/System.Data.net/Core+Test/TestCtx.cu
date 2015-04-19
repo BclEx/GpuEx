@@ -357,7 +357,7 @@ __device__ static int DbBusyHandler(void *cd, int tries)
 	char b[30];
 	__snprintf(b, sizeof(b), "%d", tries);
 	RC rc = tctx->Interp->VarEval(tctx->Busy, " ", b, (char *)nullptr);
-	if (rc != RC_OK || ConvertEx::Atoi(tctx->Interp->GetStringResult()))
+	if (rc != RC_OK || _atoi(tctx->Interp->GetStringResult()))
 		return 0;
 	return 1;
 }
@@ -369,7 +369,7 @@ __device__ static bool DbProgressHandler(void *cd)
 	TestCtx *tctx = (TestCtx *)cd;
 	_assert(tctx->Progress);
 	RC rc = tctx->Interp->Eval(tctx->Progress);
-	if (rc != RC_OK || ConvertEx::Atoi(tctx->Interp->GetStringResult()))
+	if (rc != RC_OK || _atoi(tctx->Interp->GetStringResult()))
 		return true;
 	return false;
 }
@@ -412,7 +412,7 @@ __device__ static bool DbCommitHandler(void *cd)
 {
 	TestCtx *tctx = (TestCtx *)cd;
 	RC rc = tctx->Interp->Eval(tctx->Commit);
-	if (rc != RC_OK || ConvertEx::Atoi(tctx->Interp->GetStringResult()))
+	if (rc != RC_OK || _atoi(tctx->Interp->GetStringResult()))
 		return true;
 	return false;
 }
@@ -508,7 +508,7 @@ __device__ static int TclSqlCollate(void *p1, int aLength, const void *a, int bL
 	cmd->ListObjAppendElement(p->Interp, Tcl_Obj::NewStringObj((const char *)b, bLength));
 	p->Interp->EvalObjEx(cmd, TCL_EVAL_DIRECT);
 	cmd->DecrRefCount();
-	return (ConvertEx::Atoi(p->Interp->GetStringResult()));
+	return (_atoi(p->Interp->GetStringResult()));
 }
 
 // This routine is called to evaluate an SQL function implemented using TCL script.

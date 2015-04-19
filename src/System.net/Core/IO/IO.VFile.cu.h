@@ -115,14 +115,14 @@ namespace Core { namespace IO
 			unsigned char ac[4];
 			RC rc = Read(ac, sizeof(ac), offset);
 			if (rc == RC_OK)
-				*valueOut = ConvertEx::Get4(ac);
+				*valueOut = _convert_get4(ac);
 			return rc;
 		}
 
 		__device__ inline RC Write4(int64 offset, uint32 value)
 		{
 			char ac[4];
-			ConvertEx::Put4((uint8 *)ac, value);
+			_convert_put4((uint8 *)ac, value);
 			return Write(ac, 4, offset);
 		}
 

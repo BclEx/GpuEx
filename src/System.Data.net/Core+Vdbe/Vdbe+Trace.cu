@@ -58,7 +58,7 @@ namespace Core {
 					if (tokenLength > 1)
 					{
 						_assert(_isdigit(rawSql[1]));
-						ConvertEx::Atoi(&rawSql[1], &idx);
+						_atoi(&rawSql[1], &idx);
 					}
 					else
 						idx = nextIndex;

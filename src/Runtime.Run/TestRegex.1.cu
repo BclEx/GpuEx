@@ -4,6 +4,7 @@
 // NATIVE: assert
 __global__ static void regex0(void *r)
 {
+	return;
 	_runtimeSetHeap(r);
 	struct regmatch_t caps[10];
 
@@ -169,6 +170,7 @@ __global__ static void regex0(void *r)
 // NATIVE: heap
 __global__ static void regex1(void *r)
 {
+	return;
 	_runtimeSetHeap(r);
 
 	// Example: HTTP request

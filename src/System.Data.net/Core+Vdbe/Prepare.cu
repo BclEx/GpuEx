@@ -40,7 +40,7 @@ namespace Core
 			// or executed.  All the parser does is build the internal data structures that describe the table, index, or view.
 			_assert(ctx->Init.Busy);
 			ctx->Init.DB = db;
-			ctx->Init.NewTid = ConvertEx::Atoi(argv[1]);
+			ctx->Init.NewTid = _atoi(argv[1]);
 			ctx->Init.OrphanTrigger = false;
 			Vdbe *stmt;
 #if _DEBUG
@@ -80,7 +80,7 @@ namespace Core
 				// the permanent table is hidden by the TEMP table, we can also safely ignore the index on the permanent table.
 				// Do Nothing
 			}
-			else if (!ConvertEx::Atoi(argv[1], &index->Id))
+			else if (!_atoi(argv[1], &index->Id))
 				CorruptSchema(data, argv[0], "invalid rootpage");
 		}
 		return false;

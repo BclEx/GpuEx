@@ -133,7 +133,7 @@ namespace Core
 	{
 		int bufferIdx = (int)(p->ReadOffset % p->Buffer.length);
 		if (bufferIdx && (p->Buffer.length - bufferIdx) >= 9)
-			p->ReadOffset += ConvertEx::GetVarint(&p->Buffer[bufferIdx], out_);
+			p->ReadOffset += _convert_getvarint(&p->Buffer[bufferIdx], out_);
 		else
 		{
 			uint8 varint[16], *a;
@@ -144,7 +144,7 @@ namespace Core
 				if (rc) return rc;
 				varint[(i++) & 0xf] = a[0];
 			} while ((a[0] & 0x80) != 0);
-			ConvertEx::GetVarint(varint, out_);
+			_convert_getvarint(varint, out_);
 		}
 		return RC_OK;
 	}
@@ -440,7 +440,7 @@ namespace Core
 	__device__ static void FileWriterWriteVarint(FileWriter *p, uint64 value)
 	{
 		uint8 bytes[10];
-		int length = ConvertEx::PutVarint(bytes, value);
+		int length = _convert_putvarint(bytes, value);
 		FileWriterWrite(p, bytes, length);
 	}
 
@@ -487,7 +487,7 @@ namespace Core
 	{
 		VdbeSorter *sorter = cursor->Sorter;
 		_assert(sorter);
-		sorter->InMemory += ConvertEx::GetVarintLength(mem->N) + mem->N;
+		sorter->InMemory += _convert_getvarintLength(mem->N) + mem->N;
 		SorterRecord *newRecord = (SorterRecord *)_tagalloc(ctx, mem->N + sizeof(SorterRecord)); // New list element
 		RC rc = RC_OK;
 		if (!newRecord)
@@ -505,7 +505,7 @@ namespace Core
 		//   * The total memory allocated for the in-memory list is greater than (page-size * 10) and sqlite3HeapNearlyFull() returns true.
 		if (rc == RC_OK && sorter->MaxPmaSize > 0 && ((sorter->InMemory > sorter->MaxPmaSize) || (sorter->InMemory > sorter->MaxPmaSize && _alloc_heapnearlyfull()))){
 #ifdef _DEBUG
-			int64 expect = sorter->WriteOffset + ConvertEx::GetVarintLength(sorter->InMemory) + sorter->InMemory;
+			int64 expect = sorter->WriteOffset + _convert_getvarintLength(sorter->InMemory) + sorter->InMemory;
 #endif
 			rc = VdbeSorterListToPMA(ctx, cursor);
 			sorter->InMemory = 0;

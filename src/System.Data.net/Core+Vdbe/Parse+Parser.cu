@@ -2718,7 +2718,7 @@ __device__ static void yy_reduce(YYPARSER *yyparser, int yyruleno)
 	else
 	{
 		yygotominor.yy4.Expr = Expr::PExpr_(parse, TK_REGISTER, 0, 0, &yymsp[0].minor.yy0);
-		if (yygotominor.yy4.Expr) ConvertEx::Atoi(&yymsp[0].minor.yy0.data[1], &yygotominor.yy4.Expr->TableId);
+		if (yygotominor.yy4.Expr) _atoi(&yymsp[0].minor.yy0.data[1], &yygotominor.yy4.Expr->TableId);
 	}
 	SpanSet(&yygotominor.yy4, &yymsp[0].minor.yy0, &yymsp[0].minor.yy0);
 }

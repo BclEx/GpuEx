@@ -1,6 +1,6 @@
 // os_unix.c
 #include "Core.cu.h"
-#define OS_UNIX 1
+//#define OS_UNIX 1
 #if OS_UNIX // This file is used on unix only
 
 namespace Core

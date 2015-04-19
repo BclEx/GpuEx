@@ -300,14 +300,14 @@ parse_uri_out:
 	__device__ bool VSystem::UriBoolean(const char *filename, const char *param, bool dflt)
 	{
 		const char *z = UriParameter(filename, param);
-		return (z ? ConvertEx::GetBoolean(z, dflt) : dflt);
+		return (z ? __atob(z, dflt) : dflt);
 	}
 
 	__device__ int64 VSystem::UriInt64(const char *filename, const char *param, int64 dflt)
 	{
 		const char *z = UriParameter(filename, param);
 		int64 v;
-		return (z && ConvertEx::Atoi64(z, &v, _strlen(z), TEXTENCODE_UTF8) == RC_OK ? v : dflt);
+		return (z && _atoi64(z, &v, _strlen(z), TEXTENCODE_UTF8) == RC_OK ? v : dflt);
 	}
 
 #pragma endregion

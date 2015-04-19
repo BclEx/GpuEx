@@ -2072,13 +2072,13 @@ __device__ void Vdbe::RecordUnpack(KeyInfo *keyInfo, int keyLength, const void *
 	p->Flags = (UNPACKED)0;
 	_assert(_HASALIGNMENT8(mem));
 	uint32 szHdr;
-	uint32 idx = ConvertEx_GetVarint32(keys, szHdr); // Offset in keys[] to read from
+	uint32 idx = _convert_GetVarint32(keys, szHdr); // Offset in keys[] to read from
 	int d = szHdr;
 	uint16 u = 0; // Unsigned loop counter
 	while (idx < szHdr && u < p->Fields && d <= keyLength)
 	{
 		uint32 serialType;
-		idx += ConvertEx_GetVarint32(&keys[idx], serialType);
+		idx += _convert_GetVarint32(&keys[idx], serialType);
 		mem->Encode = keyInfo->Encode;
 		mem->Ctx = (Context *)keyInfo->Ctx;
 		//mem->Flags = 0; // sqlite3VdbeSerialGet() will set this for us
@@ -2111,7 +2111,7 @@ __device__ int Vdbe::RecordCompare(int key1Length, const void *key1, UnpackedRec
 	// impact, since this routine is a very high runner.  And so, we choose to ignore the compiler warnings and leave this variable uninitialized.
 	//  mem1.u.i = 0;  // not needed, here to silence compiler warning
 	uint32 szHdr1; // Number of bytes in header
-	uint32 idx1 = ConvertEx_GetVarint32(key1s, szHdr1); // Offset into keys[] of next header element
+	uint32 idx1 = _convert_GetVarint32(key1s, szHdr1); // Offset into keys[] of next header element
 	int d1 = szHdr1; // Offset into keys[] of next data element
 	int fields = keyInfo->Fields;
 	_assert(keyInfo->SortOrders != nullptr);
@@ -2120,7 +2120,7 @@ __device__ int Vdbe::RecordCompare(int key1Length, const void *key1, UnpackedRec
 		uint32 serialType1;
 
 		// Read the serial types for the next element in each key.
-		idx1 += ConvertEx_GetVarint32(key1s+idx1, serialType1);
+		idx1 += _convert_GetVarint32(key1s+idx1, serialType1);
 		if (d1 >= key1Length && SerialTypeLen(serialType1) > 0) break;
 
 		// Extract the values to be compared.
@@ -2188,7 +2188,7 @@ __device__ RC Vdbe::IdxRowid(Context *ctx, BtCursor *cur, int64 *rowid)
 
 	// The index entry must begin with a header size
 	uint32 szHdr; // Size of the header
-	ConvertEx_GetVarint32((uint8 *)m.Z, szHdr);
+	_convert_GetVarint32((uint8 *)m.Z, szHdr);
 	ASSERTCOVERAGE(szHdr == 3);
 	ASSERTCOVERAGE(szHdr == m.N);
 	if (unlikely(szHdr<3 || (int)szHdr>m.N))
@@ -2196,7 +2196,7 @@ __device__ RC Vdbe::IdxRowid(Context *ctx, BtCursor *cur, int64 *rowid)
 
 	// The last field of the index should be an integer - the ROWID. Verify that the last entry really is an integer.
 	uint32 typeRowid; // Serial type of the rowid
-	ConvertEx_GetVarint32((uint8 *)&m.Z[szHdr-1], typeRowid);
+	_convert_GetVarint32((uint8 *)&m.Z[szHdr-1], typeRowid);
 	ASSERTCOVERAGE(typeRowid == 1);
 	ASSERTCOVERAGE(typeRowid == 2);
 	ASSERTCOVERAGE(typeRowid == 3);

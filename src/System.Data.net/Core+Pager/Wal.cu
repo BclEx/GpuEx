@@ -186,16 +186,16 @@ namespace Core
 	{
 		uint32 *checksum = wal->Header.FrameChecksum;
 		_assert(WAL_FRAME_HDRSIZE == 24);
-		ConvertEx::Put4(&frame[0], id);
-		ConvertEx::Put4(&frame[4], truncate);
+		_convert_put4(&frame[0], id);
+		_convert_put4(&frame[4], truncate);
 		_memcpy(&frame[8], (uint8 *)wal->Header.Salt, 8);
 
 		bool nativeChecksum = (wal->Header.BigEndianChecksum == TYPE_BIGENDIAN); // True for native byte-order checksums
 		walChecksumBytes(nativeChecksum, frame, 8, checksum, checksum);
 		walChecksumBytes(nativeChecksum, data, wal->SizePage, checksum, checksum);
 
-		ConvertEx::Put4(&frame[16], checksum[0]);
-		ConvertEx::Put4(&frame[20], checksum[1]);
+		_convert_put4(&frame[16], checksum[0]);
+		_convert_put4(&frame[20], checksum[1]);
 	}
 
 	__device__ static int walDecodeFrame(Wal *wal, Pid *idOut, uint32 *truncateOut, uint8 *data, uint8 *frame)
@@ -208,7 +208,7 @@ namespace Core
 			return false;
 
 		// A frame is only valid if the page number is creater than zero.
-		Pid id = ConvertEx::Get4(&frame[0]); // Page number of the frame
+		Pid id = _convert_get4(&frame[0]); // Page number of the frame
 		if (id == 0)
 			return false;
 
@@ -217,12 +217,12 @@ namespace Core
 		bool nativeChecksum = (wal->Header.BigEndianChecksum == TYPE_BIGENDIAN); // True for native byte-order checksums
 		walChecksumBytes(nativeChecksum, frame, 8, checksum, checksum);
 		walChecksumBytes(nativeChecksum, data, wal->SizePage, checksum, checksum);
-		if (checksum[0] != ConvertEx::Get4(&frame[16]) || checksum[1]!=ConvertEx::Get4(&frame[20])) // Checksum failed.
+		if (checksum[0] != _convert_get4(&frame[16]) || checksum[1]!=_convert_get4(&frame[20])) // Checksum failed.
 			return false;
 
 		// If we reach this point, the frame is valid.  Return the page number and the new database size.
 		*idOut = id;
-		*truncateOut = ConvertEx::Get4(&frame[4]);
+		*truncateOut = _convert_get4(&frame[4]);
 		return true;
 	}
 
@@ -479,8 +479,8 @@ namespace Core
 
 			// If the database page size is not a power of two, or is greater than SQLITE_MAX_PAGE_SIZE, conclude that the WAL file contains no valid 
 			// data. Similarly, if the 'magic' value is invalid, ignore the whole WAL file.
-			uint32 magic = ConvertEx::Get4(&buf[0]); // Magic value read from WAL header
-			int sizePage = ConvertEx::Get4(&buf[8]); // Page size according to the log
+			uint32 magic = _convert_get4(&buf[0]); // Magic value read from WAL header
+			int sizePage = _convert_get4(&buf[8]); // Page size according to the log
 			if ((magic & 0xFFFFFFFE) != WAL_MAGIC ||
 				sizePage & (sizePage - 1) ||
 				sizePage > MAX_PAGE_SIZE ||
@@ -488,16 +488,16 @@ namespace Core
 				goto finished;
 			wal->Header.BigEndianChecksum = (uint8)(magic & 0x00000001);
 			wal->SizePage = sizePage;
-			wal->Checkpoints = ConvertEx::Get4(&buf[12]);
+			wal->Checkpoints = _convert_get4(&buf[12]);
 			_memcpy((uint8 *)&wal->Header.Salt, &buf[16], 8);
 
 			// Verify that the WAL header checksum is correct
 			walChecksumBytes(wal->Header.BigEndianChecksum == TYPE_BIGENDIAN, buf, WAL_HDRSIZE - 2 * 4, 0, wal->Header.FrameChecksum);
-			if (wal->Header.FrameChecksum[0] != ConvertEx::Get4(&buf[24]) || wal->Header.FrameChecksum[1] != ConvertEx::Get4(&buf[28]))
+			if (wal->Header.FrameChecksum[0] != _convert_get4(&buf[24]) || wal->Header.FrameChecksum[1] != _convert_get4(&buf[28]))
 				goto finished;
 
 			// Verify that the version number on the WAL format is one that are able to understand
-			uint32 version = ConvertEx::Get4(&buf[4]); // Magic value read from WAL header
+			uint32 version = _convert_get4(&buf[4]); // Magic value read from WAL header
 			if (version != WAL_MAX_VERSION)
 			{
 				rc = SysEx_CANTOPEN_BKPT;
@@ -1486,7 +1486,7 @@ walcheckpoint_out:
 
 					wal->Checkounts++;
 					wal->Header.MaxFrame = 0;
-					ConvertEx::Put4((uint8 *)&salt[0], 1 + ConvertEx::Get4((uint8 *)&salt[0]));
+					_convert_put4((uint8 *)&salt[0], 1 + _convert_get4((uint8 *)&salt[0]));
 					salt[1] = salt1;
 					walIndexWriteHeader(wal);
 					info->Backfills = 0;
@@ -1588,15 +1588,15 @@ walcheckpoint_out:
 			uint8 walHdr[WAL_HDRSIZE]; // Buffer to assemble wal-header in
 			uint32 checksum[2]; // Checksum for wal-header
 
-			ConvertEx::Put4(&walHdr[0], (WAL_MAGIC | TYPE_BIGENDIAN));
-			ConvertEx::Put4(&walHdr[4], WAL_MAX_VERSION);
-			ConvertEx::Put4(&walHdr[8], sizePage);
-			ConvertEx::Put4(&walHdr[12], Checkpoints);
+			_convert_put4(&walHdr[0], (WAL_MAGIC | TYPE_BIGENDIAN));
+			_convert_put4(&walHdr[4], WAL_MAX_VERSION);
+			_convert_put4(&walHdr[8], sizePage);
+			_convert_put4(&walHdr[12], Checkpoints);
 			if (Checkpoints == 0) SysEx::PutRandom(8, Header.Salt);
 			_memcpy(&walHdr[16], (uint8 *)Header.Salt, 8);
 			walChecksumBytes(1, walHdr, WAL_HDRSIZE - 2 * 4, 0, checksum);
-			ConvertEx::Put4(&walHdr[24], checksum[0]);
-			ConvertEx::Put4(&walHdr[28], checksum[1]);
+			_convert_put4(&walHdr[24], checksum[0]);
+			_convert_put4(&walHdr[28], checksum[1]);
 
 			SizePage = sizePage;
 			Header.BigEndianChecksum = TYPE_BIGENDIAN;

@@ -160,7 +160,7 @@ namespace Core
 				_memcpy(out_, in_, copy);
 				((uint8 *)Pager::GetExtra(destPg))[0] = 0;
 				if (off == 0 && !update)
-					ConvertEx::Put4(&out_[28], p->Src->LastPage());
+					_convert_put4(&out_[28], p->Src->LastPage());
 			}
 			Pager::Unref(destPg);
 		}

@@ -266,7 +266,7 @@ namespace Core { namespace Command
 				Vdbe::Result_ErrorNoMem(fctx);
 				return;
 			}
-			ConvertEx::Atof(buf, &r, _strlen(buf), TEXTENCODE_UTF8);
+			_atof(buf, &r, _strlen(buf), TEXTENCODE_UTF8);
 			_free(buf);
 		}
 		Vdbe::Result_Double(fctx, r);
@@ -611,7 +611,7 @@ namespace Core { namespace Command
 			char b[50];
 			__snprintf(b, sizeof(b), "%!.15g", r1);
 			double r2;
-			ConvertEx::Atof(b, &r2, 20, TEXTENCODE_UTF8);
+			_atof(b, &r2, 20, TEXTENCODE_UTF8);
 			if (r1 != r2)
 				__snprintf(b, sizeof(b), "%!.20e", r1);
 			Vdbe::Result_Text(fctx, b, -1, DESTRUCTOR_TRANSIENT);

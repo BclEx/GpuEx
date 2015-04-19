@@ -505,14 +505,14 @@ namespace Core
 		_assert(offset <= (int)bt->UsableSize - 5);
 		ptrmap = (uint8 *)Pager::GetData(page);// The pointer map data
 
-		if (type != (PTRMAP)ptrmap[offset] || ConvertEx::Get4(&ptrmap[offset + 1]) != parent)
+		if (type != (PTRMAP)ptrmap[offset] || _convert_get4(&ptrmap[offset + 1]) != parent)
 		{
 			TRACE("PTRMAP_UPDATE: %d->(%d,%d)\n", key, type, parent);
 			*rcRef = rc = Pager::Write(page);
 			if (rc == RC_OK)
 			{
 				ptrmap[offset] = (uint8)type;
-				ConvertEx::Put4(&ptrmap[offset + 1], parent);
+				_convert_put4(&ptrmap[offset + 1], parent);
 			}
 		}
 
@@ -540,7 +540,7 @@ ptrmap_exit:
 		_assert(offset <= (int)bt->UsableSize - 5);
 		_assert(type != 0);
 		*type = (PTRMAP)ptrmap[offset];
-		if (id) *id = ConvertEx::Get4(&ptrmap[offset + 1]);
+		if (id) *id = _convert_get4(&ptrmap[offset + 1]);
 
 		Pager::Unref(page);
 		if ((uint8)*type < 1 || (uint8)*type > 5) return SysEx_CORRUPT_BKPT;
@@ -553,8 +553,8 @@ ptrmap_exit:
 #define PtrmapPutOvflPtr(x, y, rc)
 #endif
 
-#define FindCell(P,I) ((P)->Data + ((P)->MaskPage & ConvertEx::Get2(&(P)->CellIdx[2*(I)])))
-#define FindCellv2(D,M,O,I) (D + (M & ConvertEx::Get2(D+(O+2*(I)))))
+#define FindCell(P,I) ((P)->Data + ((P)->MaskPage & _convert_get2(&(P)->CellIdx[2*(I)])))
+#define FindCellv2(D,M,O,I) (D + (M & _convert_get2(D+(O+2*(I)))))
 
 	__device__ static uint8 *FindOverflowCell(MemPage *page, uint cell)
 	{
@@ -583,16 +583,16 @@ ptrmap_exit:
 		if (page->IntKey)
 		{
 			if (page->HasData)
-				n += ConvertEx::GetVarint32(&cell[n], &payloadLength);
+				n += _convert_getvarint32(&cell[n], &payloadLength);
 			else
 				payloadLength = 0;
-			n += ConvertEx::GetVarint(&cell[n], (uint64 *)&info->Key);
+			n += _convert_getvarint(&cell[n], (uint64 *)&info->Key);
 			info->Data = payloadLength;
 		}
 		else
 		{
 			info->Data = 0;
-			n += ConvertEx::GetVarint32(&cell[n], &payloadLength);
+			n += _convert_getvarint32(&cell[n], &payloadLength);
 			info->Key = payloadLength;
 		}
 		info->Payload = payloadLength;
@@ -643,7 +643,7 @@ ptrmap_exit:
 		if (page->IntKey)
 		{
 			if (page->HasData)
-				iter += ConvertEx::GetVarint32(iter, &size);
+				iter += _convert_getvarint32(iter, &size);
 			else
 				size = 0;
 
@@ -653,7 +653,7 @@ ptrmap_exit:
 			while ((*iter++) & 0x80 && iter < end) { }
 		}
 		else
-			iter += ConvertEx::GetVarint32(iter, &size);
+			iter += _convert_getvarint32(iter, &size);
 
 		ASSERTCOVERAGE(size == page->MaxLocal);
 		ASSERTCOVERAGE(size == page->MaxLocal + 1);
@@ -694,7 +694,7 @@ ptrmap_exit:
 		_assert((info.Data + (page->IntKey ? 0 : info.Key)) == info.Payload);
 		if (info.Overflow)
 		{
-			Pid ovfl = ConvertEx::Get4(&cell[info.Overflow]);
+			Pid ovfl = _convert_get4(&cell[info.Overflow]);
 			PtrmapPut(page->Bt, ovfl, PTRMAP_OVERFLOW1, page->ID, rcRef);
 		}
 	}
@@ -716,9 +716,9 @@ ptrmap_exit:
 		int hdr = page->HdrOffset; // Offset to the page header
 		int cellOffset = page->CellOffset; // Offset to the cell pointer array
 		int cells = page->Cells; // Number of cells on the page
-		_assert(cells == ConvertEx::Get2(&data[hdr+3]) );
+		_assert(cells == _convert_get2(&data[hdr+3]) );
 		uint usableSize = page->Bt->UsableSize; // Number of usable bytes on a page
-		uint cbrk = (uint)ConvertEx::Get2(&data[hdr+5]); // Offset to the cell content area
+		uint cbrk = (uint)_convert_get2(&data[hdr+5]); // Offset to the cell content area
 		_memcpy(&temp[cbrk], &data[cbrk], usableSize - cbrk);
 		cbrk = usableSize;
 		uint16 cellFirst = cellOffset + 2 * cells; // First allowable cell index
@@ -726,7 +726,7 @@ ptrmap_exit:
 		for (int i = 0; i < cells; i++)
 		{
 			uint8 *addr = &data[cellOffset + i*2]; // The i-th cell pointer
-			uint pc = ConvertEx::Get2(addr); // Address of a i-th cell
+			uint pc = _convert_get2(addr); // Address of a i-th cell
 			ASSERTCOVERAGE(pc == cellFirst);
 			ASSERTCOVERAGE(pc == cellLast);
 #if !defined(ENABLE_OVERSIZE_CELL_CHECK)
@@ -748,10 +748,10 @@ ptrmap_exit:
 			ASSERTCOVERAGE(cbrk + size == usableSize);
 			ASSERTCOVERAGE(pc + size == usableSize);
 			_memcpy(&data[cbrk], &temp[pc], size);
-			ConvertEx::Put2(addr, cbrk);
+			_convert_put2(addr, cbrk);
 		}
 		_assert(cbrk >= cellFirst);
-		ConvertEx::Put2(&data[hdr + 5], cbrk);
+		_convert_put2(&data[hdr + 5], cbrk);
 		data[hdr + 1] = 0;
 		data[hdr + 2] = 0;
 		data[hdr + 7] = 0;
@@ -778,7 +778,7 @@ ptrmap_exit:
 		int frags = data[hdr + 7]; // Number of fragmented bytes on pPage
 		_assert(page->CellOffset == hdr + 12 - 4 * page->Leaf);
 		uint gap = page->CellOffset + 2 * page->Cells; // First byte of gap between cell pointers and cell content
-		uint top = (uint)ConvertEx::Get2nz(&data[hdr + 5]); // First byte of cell content area
+		uint top = (uint)_convert_get2nz(&data[hdr + 5]); // First byte of cell content area
 		if (gap > top) return SysEx_CORRUPT_BKPT;
 		ASSERTCOVERAGE(gap + 2 == top);
 		ASSERTCOVERAGE(gap + 1 == top);
@@ -790,18 +790,18 @@ ptrmap_exit:
 			// Always defragment highly fragmented pages
 			rc = DefragmentPage(page);
 			if (rc) return rc;
-			top = ConvertEx::Get2nz(&data[hdr + 5]);
+			top = _convert_get2nz(&data[hdr + 5]);
 		}
 		else if (gap + 2 <= top)
 		{
 			// Search the freelist looking for a free slot big enough to satisfy the request. The allocation is made from the first free slot in 
 			// the list that is large enough to accomadate it.
 			int pc;
-			for (int addr = hdr + 1; (pc = ConvertEx::Get2(&data[addr])) > 0; addr = pc)
+			for (int addr = hdr + 1; (pc = _convert_get2(&data[addr])) > 0; addr = pc)
 			{
 				if (pc > usableSize - 4 || pc < addr + 4)
 					return SysEx_CORRUPT_BKPT;
-				int size = ConvertEx::Get2(&data[pc+2]); // Size of the free slot
+				int size = _convert_get2(&data[pc+2]); // Size of the free slot
 				if (size >= bytes)
 				{
 					int x = size - bytes;
@@ -816,7 +816,7 @@ ptrmap_exit:
 					else if (size + pc > usableSize)
 						return SysEx_CORRUPT_BKPT;
 					else // The slot remains on the free-list. Reduce its size to account for the portion used by the new allocation.
-						ConvertEx::Put2(&data[pc+2], x);
+						_convert_put2(&data[pc+2], x);
 					*idx = pc + x;
 					return RC_OK;
 				}
@@ -829,7 +829,7 @@ ptrmap_exit:
 		{
 			rc = DefragmentPage(page);
 			if (rc) return rc;
-			top = ConvertEx::Get2nz(&data[hdr + 5]);
+			top = _convert_get2nz(&data[hdr + 5]);
 			_assert(gap + bytes <= top);
 		}
 
@@ -837,7 +837,7 @@ ptrmap_exit:
 		// validated the freelist.  Given that the freelist is valid, there is no way that the allocation can extend off the end of the page.
 		// The assert() below verifies the previous sentence.
 		top -= bytes;
-		ConvertEx::Put2(&data[hdr+5], top);
+		_convert_put2(&data[hdr+5], top);
 		_assert(top+bytes <= (int)page->Bt->UsableSize);
 		*idx = top;
 		return RC_OK;
@@ -865,7 +865,7 @@ ptrmap_exit:
 		int last = page->Bt->UsableSize - 4; // Largest possible freeblock offset
 		_assert(start <= last);
 		int pbegin;
-		while ((pbegin = ConvertEx::Get2(&data[addr])) < start && pbegin > 0)
+		while ((pbegin = _convert_get2(&data[addr])) < start && pbegin > 0)
 		{
 			if (pbegin < addr + 4)
 				return SysEx_CORRUPT_BKPT;
@@ -874,29 +874,29 @@ ptrmap_exit:
 		if (pbegin > last)
 			return SysEx_CORRUPT_BKPT;
 		_assert(pbegin > addr || pbegin == 0);
-		ConvertEx::Put2(&data[addr], start);
-		ConvertEx::Put2(&data[start], pbegin);
-		ConvertEx::Put2(&data[start + 2], size);
+		_convert_put2(&data[addr], start);
+		_convert_put2(&data[start], pbegin);
+		_convert_put2(&data[start + 2], size);
 		page->Frees = page->Frees + (uint16)size;
 
 		// Coalesce adjacent free blocks
 		addr = hdr + 1;
-		while ((pbegin = ConvertEx::Get2(&data[addr])) > 0)
+		while ((pbegin = _convert_get2(&data[addr])) > 0)
 		{
 			_assert(pbegin > addr);
 			_assert(pbegin <= (int)page->Bt->UsableSize - 4);
-			int pnext = ConvertEx::Get2(&data[pbegin]);
-			int psize = ConvertEx::Get2(&data[pbegin + 2]);
+			int pnext = _convert_get2(&data[pbegin]);
+			int psize = _convert_get2(&data[pbegin + 2]);
 			if (pbegin + psize + 3 >= pnext && pnext > 0)
 			{
 				int frag = pnext - (pbegin + psize);
 				if (frag < 0 || frag > (int)data[hdr + 7])
 					return SysEx_CORRUPT_BKPT;
 				data[hdr + 7] -= (uint8)frag;
-				int x = ConvertEx::Get2(&data[pnext]);
-				ConvertEx::Put2(&data[pbegin], x);
-				x = pnext + ConvertEx::Get2(&data[pnext+2]) - pbegin;
-				ConvertEx::Put2(&data[pbegin+2], x);
+				int x = _convert_get2(&data[pnext]);
+				_convert_put2(&data[pbegin], x);
+				x = pnext + _convert_get2(&data[pnext+2]) - pbegin;
+				_convert_put2(&data[pbegin+2], x);
 			}
 			else
 				addr = pbegin;
@@ -905,10 +905,10 @@ ptrmap_exit:
 		// If the cell content area begins with a freeblock, remove it.
 		if (data[hdr + 1] == data[hdr + 5] && data[hdr + 2] == data[hdr + 6])
 		{
-			pbegin = ConvertEx::Get2(&data[hdr + 1]);
+			pbegin = _convert_get2(&data[hdr + 1]);
 			_memcpy(&data[hdr + 1], &data[pbegin], 2);
-			int top = ConvertEx::Get2(&data[hdr + 5]) + ConvertEx::Get2(&data[pbegin + 2]);
-			ConvertEx::Put2(&data[hdr + 5], top);
+			int top = _convert_get2(&data[hdr + 5]) + _convert_get2(&data[pbegin + 2]);
+			_convert_put2(&data[hdr + 5], top);
 		}
 		_assert(Pager::Iswriteable(page->DBPage));
 		return RC_OK;
@@ -965,8 +965,8 @@ ptrmap_exit:
 			page->CellOffset = cellOffset = hdr + 12 - 4 * page->Leaf;
 			page->DataEnd = &data[usableSize];
 			page->CellIdx = &data[cellOffset];
-			int top = ConvertEx::Get2nz(&data[hdr + 5]); // First byte of the cell content area
-			page->Cells = ConvertEx::Get2(&data[hdr + 3]);
+			int top = _convert_get2nz(&data[hdr + 5]); // First byte of the cell content area
+			page->Cells = _convert_get2(&data[hdr + 3]);
 			if (page->Cells > MX_CELL(bt)) // To many cells for a single page.  The page must be corrupt
 				return SysEx_CORRUPT_BKPT;
 			ASSERTCOVERAGE(page->Cells == MX_CELL(bt));
@@ -983,7 +983,7 @@ ptrmap_exit:
 				if (!page->Leaf) cellLast--;
 				for (int i = 0; i < page->Cells; i++)
 				{
-					pc = ConvertEx::Get2(&data[cellOffset + i * 2]);
+					pc = _convert_get2(&data[cellOffset + i * 2]);
 					ASSERTCOVERAGE(pc == cellFirst);
 					ASSERTCOVERAGE(pc == cellLast);
 					if (pc < cellFirst || pc > cellLast)
@@ -998,15 +998,15 @@ ptrmap_exit:
 #endif
 
 			// Compute the total free space on the page
-			pc = ConvertEx::Get2(&data[hdr + 1]);
+			pc = _convert_get2(&data[hdr + 1]);
 			int free = data[hdr + 7] + top; // Number of unused bytes on the page
 			while (pc > 0)
 			{
 				if (pc < cellFirst || pc > cellLast)
 					// Start of free block is off the page
 						return SysEx_CORRUPT_BKPT; 
-				uint16 next = ConvertEx::Get2(&data[pc]);
-				uint16 size = ConvertEx::Get2(&data[pc + 2]);
+				uint16 next = _convert_get2(&data[pc]);
+				uint16 size = _convert_get2(&data[pc + 2]);
 				if ((next > 0 && next <= pc + size + 3) || pc + size > usableSize)
 					// Free blocks must be in ascending order. And the last byte of the free-block must lie on the database page.
 						return SysEx_CORRUPT_BKPT; 
@@ -1041,7 +1041,7 @@ ptrmap_exit:
 		uint16 first = hdr + 8 + 4*((flags & PTF_LEAF) == 0 ? 1 : 0);
 		_memset(&data[hdr + 1], 0, 4);
 		data[hdr + 7] = 0;
-		ConvertEx::Put2(&data[hdr + 5], bt->UsableSize);
+		_convert_put2(&data[hdr + 5], bt->UsableSize);
 		page->Frees = (uint16)(bt->UsableSize - first);
 		DecodeFlags(page, flags);
 		page->HdrOffset = hdr;
@@ -1324,8 +1324,8 @@ ptrmap_exit:
 				reserves = dbHeader[20];
 				bt->BtsFlags |= BTS_PAGESIZE_FIXED;
 #ifndef OMIT_AUTOVACUUM
-				bt->AutoVacuum = (ConvertEx::Get4(&dbHeader[36 + 4 * 4]) ? true : false);
-				bt->IncrVacuum = (ConvertEx::Get4(&dbHeader[36 + 7 * 4]) ? true : false);
+				bt->AutoVacuum = (_convert_get4(&dbHeader[36 + 4 * 4]) ? true : false);
+				bt->IncrVacuum = (_convert_get4(&dbHeader[36 + 7 * 4]) ? true : false);
 #endif
 			}
 			rc = bt->Pager->SetPageSize(&bt->PageSize, reserves);
@@ -1650,7 +1650,7 @@ btree_open_out:
 		if (rc != RC_OK) return rc;
 
 		// Do some checking to help insure the file we opened really is a valid database file. 
-		Pid pages = ConvertEx::Get4(28 + (uint8 *)page1->Data); // Number of pages in the database
+		Pid pages = _convert_get4(28 + (uint8 *)page1->Data); // Number of pages in the database
 		//Pid pagesHeader = pages; // Number of pages in the database according to hdr
 		Pid pagesFile = 0; // Number of pages in the database file
 		bt->Pager->Pages(&pagesFile);
@@ -1725,8 +1725,8 @@ btree_open_out:
 			bt->PageSize = pageSize;
 			bt->UsableSize = usableSize;
 #ifndef OMIT_AUTOVACUUM
-			bt->AutoVacuum = (ConvertEx::Get4(&page1Data[36 + 4 * 4]) ? true : false);
-			bt->IncrVacuum = (ConvertEx::Get4(&page1Data[36 + 7 * 4]) ? true : false);
+			bt->AutoVacuum = (_convert_get4(&page1Data[36 + 4 * 4]) ? true : false);
+			bt->IncrVacuum = (_convert_get4(&page1Data[36 + 7 * 4]) ? true : false);
 #endif
 		}
 
@@ -1800,8 +1800,8 @@ page1_init_failed:
 		ZeroPage(p1, PTF_INTKEY | PTF_LEAF | PTF_LEAFDATA);
 		bt->BtsFlags |= BTS_PAGESIZE_FIXED;
 #ifndef OMIT_AUTOVACUUM
-		ConvertEx::Put4(&data[36 + 4 * 4], bt->AutoVacuum ? 1 : 0 );
-		ConvertEx::Put4(&data[36 + 7 * 4], bt->IncrVacuum ? 1 : 0 );
+		_convert_put4(&data[36 + 4 * 4], bt->AutoVacuum ? 1 : 0 );
+		_convert_put4(&data[36 + 7 * 4], bt->IncrVacuum ? 1 : 0 );
 #endif
 		bt->Pages = 1;
 		data[31] = 1;
@@ -1932,11 +1932,11 @@ page1_init_failed:
 				// If the db-size header field is incorrect (as it may be if an old client has been writing the database file), update it now. Doing
 				// this sooner rather than later means the database size can safely re-read the database size from page 1 if a savepoint or transaction
 				// rollback occurs within the transaction.
-				if (bt->Pages != ConvertEx::Get4(&page1->Data[28]))
+				if (bt->Pages != _convert_get4(&page1->Data[28]))
 				{
 					rc = Pager::Write(page1->DBPage);
 					if (rc == RC_OK)
-						ConvertEx::Put4(&page1->Data[28], bt->Pages);
+						_convert_put4(&page1->Data[28], bt->Pages);
 				}
 			}
 		}
@@ -1978,14 +1978,14 @@ trans_begun:
 			PtrmapPutOvflPtr(page, cell, &rc);
 			if (!page->Leaf)
 			{
-				Pid childID = ConvertEx::Get4(cell);
+				Pid childID = _convert_get4(cell);
 				PtrmapPut(bt, childID, PTRMAP_BTREE, id, &rc);
 			}
 		}
 
 		if (!page->Leaf)
 		{
-			Pid childID = ConvertEx::Get4(&page->Data[page->HdrOffset + 8]);
+			Pid childID = _convert_get4(&page->Data[page->HdrOffset + 8]);
 			PtrmapPut(bt, childID, PTRMAP_BTREE, id, &rc);
 		}
 
@@ -2001,9 +2001,9 @@ set_child_ptrmaps_out:
 		if (type == PTRMAP_OVERFLOW2)
 		{
 			// The pointer is always the first 4 bytes of the page in this case.
-			if (ConvertEx::Get4(page->Data) != from)
+			if (_convert_get4(page->Data) != from)
 				return SysEx_CORRUPT_BKPT;
-			ConvertEx::Put4(page->Data, to);
+			_convert_put4(page->Data, to);
 		}
 		else
 		{
@@ -2022,25 +2022,25 @@ set_child_ptrmaps_out:
 					BtreeParseCellPtr(page, cell, &info);
 					if (info.Overflow &&
 						cell + info.Overflow + 3 <= page->Data + page->MaskPage &&
-						from == ConvertEx::Get4(&cell[info.Overflow]))
+						from == _convert_get4(&cell[info.Overflow]))
 					{
-						ConvertEx::Put4(&cell[info.Overflow], to);
+						_convert_put4(&cell[info.Overflow], to);
 						break;
 					}
 				}
 				else
-					if (ConvertEx::Get4(cell) == from)
+					if (_convert_get4(cell) == from)
 					{
-						ConvertEx::Put4(cell, to);
+						_convert_put4(cell, to);
 						break;
 					}
 			}
 
 			if (i == cells)
 			{
-				if (type != PTRMAP_BTREE || ConvertEx::Get4(&page->Data[page->HdrOffset + 8]) != from)
+				if (type != PTRMAP_BTREE || _convert_get4(&page->Data[page->HdrOffset + 8]) != from)
 					return SysEx_CORRUPT_BKPT;
-				ConvertEx::Put4(&page->Data[page->HdrOffset + 8], to);
+				_convert_put4(&page->Data[page->HdrOffset + 8], to);
 			}
 
 			page->IsInit = isInitOrig;
@@ -2076,7 +2076,7 @@ set_child_ptrmaps_out:
 		}
 		else
 		{
-			Pid nextOvfl = ConvertEx::Get4(page->Data);
+			Pid nextOvfl = _convert_get4(page->Data);
 			if (nextOvfl != 0)
 			{
 				PtrmapPut(bt, nextOvfl, PTRMAP_OVERFLOW2, freePageID, &rc);
@@ -2114,7 +2114,7 @@ set_child_ptrmaps_out:
 
 		if (!PTRMAP_ISPAGE(bt, lastPageID) && lastPageID != PENDING_BYTE_PAGE(bt))
 		{
-			Pid freesList = ConvertEx::Get4(&bt->Page1->Data[36]); // Number of pages still on the free-list
+			Pid freesList = _convert_get4(&bt->Page1->Data[36]); // Number of pages still on the free-list
 			if (freesList == 0)
 				return RC_DONE;
 
@@ -2216,7 +2216,7 @@ set_child_ptrmaps_out:
 		else
 		{
 			Pid origs = BtreePagecount(bt);
-			Pid frees = ConvertEx::Get4(&bt->Page1->Data[36]);
+			Pid frees = _convert_get4(&bt->Page1->Data[36]);
 			Pid fins = FinalDbSize(bt, origs, frees);
 
 			if (origs < fins)
@@ -2228,7 +2228,7 @@ set_child_ptrmaps_out:
 				if (rc == RC_OK)
 				{
 					rc = Pager::Write(bt->Page1->DBPage);
-					ConvertEx::Put4(&bt->Page1->Data[28], bt->Pages);
+					_convert_put4(&bt->Page1->Data[28], bt->Pages);
 				}
 			}
 			else
@@ -2257,7 +2257,7 @@ set_child_ptrmaps_out:
 				return SysEx_CORRUPT_BKPT;
 			}
 
-			Pid frees = ConvertEx::Get4(&bt->Page1->Data[36]); // Number of pages on the freelist initially
+			Pid frees = _convert_get4(&bt->Page1->Data[36]); // Number of pages on the freelist initially
 			Pid fins = FinalDbSize(bt, origs, frees); // Number of pages in database after autovacuuming
 			if (fins > origs) return SysEx_CORRUPT_BKPT;
 
@@ -2266,9 +2266,9 @@ set_child_ptrmaps_out:
 			if ((rc == RC_DONE || rc == RC_OK) && frees > 0)
 			{
 				rc = Pager::Write(bt->Page1->DBPage);
-				ConvertEx::Put4(&bt->Page1->Data[32], 0);
-				ConvertEx::Put4(&bt->Page1->Data[36], 0);
-				ConvertEx::Put4(&bt->Page1->Data[28], fins);
+				_convert_put4(&bt->Page1->Data[32], 0);
+				_convert_put4(&bt->Page1->Data[36], 0);
+				_convert_put4(&bt->Page1->Data[28], fins);
 				bt->DoTruncate = true;
 				bt->Pages = fins;
 			}
@@ -2439,7 +2439,7 @@ set_child_ptrmaps_out:
 			MemPage *page1;
 			if (BtreeGetPage(bt, 1, &page1, false) == RC_OK)
 			{
-				Pid pages = ConvertEx::Get4(28 + (uint8 *)page1->Data);
+				Pid pages = _convert_get4(28 + (uint8 *)page1->Data);
 				ASSERTCOVERAGE(pages == 0);
 				if (pages == 0) bt->Pager->Pages(&pages);
 				ASSERTCOVERAGE(bt->Pages != pages);
@@ -2486,7 +2486,7 @@ set_child_ptrmaps_out:
 				if (savepoints < 0 && (bt->BtsFlags & BTS_INITIALLY_EMPTY) != 0)
 					bt->Pages = 0;
 				rc = NewDatabase(bt);
-				bt->Pages = ConvertEx::Get4(28 + bt->Page1->Data);
+				bt->Pages = _convert_get4(28 + bt->Page1->Data);
 
 				// The database size was written into the offset 28 of the header when the transaction started, so we know that the value at offset
 				// 28 is nonzero.
@@ -2701,7 +2701,7 @@ set_child_ptrmaps_out:
 			rc = BtreeGetPage(bt, ovfl, &page, false);
 			_assert(rc == RC_OK || page == 0);
 			if (rc == RC_OK)
-				next = ConvertEx::Get4(page->Data);
+				next = _convert_get4(page->Data);
 		}
 
 		*idNextOut = next;
@@ -2765,7 +2765,7 @@ set_child_ptrmaps_out:
 		if (rc == RC_OK && amount > 0)
 		{
 			const uint32 ovflSize = bt->UsableSize - 4; // Bytes content per ovfl page
-			Pid nextPage = ConvertEx::Get4(&payload[cur->Info.Local]);
+			Pid nextPage = _convert_get4(&payload[cur->Info.Local]);
 
 #ifndef OMIT_INCRBLOB
 			// If the isIncrblobHandle flag is set and the BtCursor.aOverflow[] has not been allocated, allocate it now. The array is sized at
@@ -2842,7 +2842,7 @@ set_child_ptrmaps_out:
 						uint8 *write = &buf[-4];
 						_memcpy(save, write, 4);
 						rc = fd->Read(write, a + 4, (int64)bt->PageSize * (nextPage - 1));
-						nextPage = ConvertEx::Get4(write);
+						nextPage = _convert_get4(write);
 						_memcpy(write, save, 4);
 					}
 					else
@@ -2854,7 +2854,7 @@ set_child_ptrmaps_out:
 						if (rc == RC_OK)
 						{
 							payload = (uint8 *)Pager::GetData(dbPage);
-							nextPage = ConvertEx::Get4(payload);
+							nextPage = _convert_get4(payload);
 							rc = CopyPayload(&payload[offset + 4], buf, a, op, dbPage);
 							Pager::Unref(dbPage);
 							offset = 0;
@@ -2977,9 +2977,9 @@ set_child_ptrmaps_out:
 	{
 		_assert(idx <= parent->Cells);
 		if (idx == parent->Cells)
-			_assert(ConvertEx::Get4(&parent->Data[parent->HdrOffset + 8]) == child);
+			_assert(_convert_get4(&parent->Data[parent->HdrOffset + 8]) == child);
 		else
-			_assert(ConvertEx::Get4(FindCell(parent, idx)) == child);
+			_assert(_convert_get4(FindCell(parent, idx)) == child);
 	}
 #else
 #define AssertParentIndex(x,y,z) 
@@ -3066,7 +3066,7 @@ set_child_ptrmaps_out:
 		if (root->Cells == 0 && !root->Leaf)
 		{
 			if (root->ID != 1) return SysEx_CORRUPT_BKPT;
-			Pid subpage = ConvertEx::Get4(&root->Data[root->HdrOffset + 8]);
+			Pid subpage = _convert_get4(&root->Data[root->HdrOffset + 8]);
 			cur->State = CURSOR_VALID;
 			rc = MoveToChild(cur, subpage);
 		}
@@ -3084,7 +3084,7 @@ set_child_ptrmaps_out:
 		while (rc == RC_OK && !(page = cur->Pages[cur->ID])->Leaf)
 		{
 			_assert(cur->Idxs[cur->ID] < page->Cells);
-			Pid id = ConvertEx::Get4(FindCell(page, cur->Idxs[cur->ID]));
+			Pid id = _convert_get4(FindCell(page, cur->Idxs[cur->ID]));
 			rc = MoveToChild(cur, id);
 		}
 		return rc;
@@ -3098,7 +3098,7 @@ set_child_ptrmaps_out:
 		RC rc = RC_OK;
 		while (rc == RC_OK && !(page = cur->Pages[cur->ID])->Leaf)
 		{
-			Pid id = ConvertEx::Get4(&page->Data[page->HdrOffset + 8]);
+			Pid id = _convert_get4(&page->Data[page->HdrOffset + 8]);
 			cur->Idxs[cur->ID] = page->Cells;
 			rc = MoveToChild(cur, id);
 		}
@@ -3232,10 +3232,10 @@ set_child_ptrmaps_out:
 					if (page->HasData)
 					{
 						uint32 dummy;
-						cell += ConvertEx::GetVarint32(cell, &dummy);
+						cell += _convert_getvarint32(cell, &dummy);
 					}
 					int64 cellKeyLength;
-					ConvertEx::GetVarint(cell, (uint64 *)&cellKeyLength);
+					_convert_getvarint(cell, (uint64 *)&cellKeyLength);
 					if (cellKeyLength == intKey)
 						c = 0;
 					else if (cellKeyLength < intKey)
@@ -3315,9 +3315,9 @@ set_child_ptrmaps_out:
 			if (page->Leaf)
 				childID = 0;
 			else if (lwr >= page->Cells)
-				childID = ConvertEx::Get4(&page->Data[page->HdrOffset + 8]);
+				childID = _convert_get4(&page->Data[page->HdrOffset + 8]);
 			else
-				childID = ConvertEx::Get4(FindCell(page, lwr));
+				childID = _convert_get4(FindCell(page, lwr));
 			if (childID == 0)
 			{
 				_assert(cur->Idxs[cur->ID] < cur->Pages[cur->ID]->Cells);
@@ -3377,7 +3377,7 @@ moveto_finish:
 		{
 			if (!page->Leaf)
 			{
-				rc = MoveToChild(cur, ConvertEx::Get4(&page->Data[page->HdrOffset + 8]));
+				rc = MoveToChild(cur, _convert_get4(&page->Data[page->HdrOffset + 8]));
 				if (rc) return rc;
 				rc = MoveToLeftmost(cur);
 				*eof = 0;
@@ -3433,7 +3433,7 @@ moveto_finish:
 		if (!page->Leaf)
 		{
 			uint idx = cur->Idxs[cur->ID];
-			rc = MoveToChild(cur, ConvertEx::Get4(FindCell(page, idx)));
+			rc = MoveToChild(cur, _convert_get4(FindCell(page, idx)));
 			if (rc)
 				return rc;
 			rc = MoveToRightmost(cur);
@@ -3474,7 +3474,7 @@ moveto_finish:
 		_assert(mode == BTALLOC::ANY || (nearby > 0 && IFAUTOVACUUM(bt->AutoVacuum)));
 		MemPage *page1 = bt->Page1;
 		Pid maxPage = BtreePagecount(bt); // Total size of the database file
-		uint32 n = ConvertEx::Get4(&page1->Data[36]); // Number of pages on the freelist
+		uint32 n = _convert_get4(&page1->Data[36]); // Number of pages on the freelist
 		ASSERTCOVERAGE(n == maxPage - 1);
 		if (n >= maxPage)
 			return SysEx_CORRUPT_BKPT;
@@ -3509,7 +3509,7 @@ moveto_finish:
 			// Decrement the free-list count by 1. Set iTrunk to the index of the first free-list trunk page. iPrevTrunk is initially 1.
 			rc = Pager::Write(page1->DBPage);
 			if (rc) return rc;
-			ConvertEx::Put4(&page1->Data[36], n - 1);
+			_convert_put4(&page1->Data[36], n - 1);
 
 			// The code within this loop is run only once if the 'searchList' variable is not true. Otherwise, it runs once for each trunk-page on the
 			// free-list until the page 'nearby' is located (eMode==BTALLOC_EXACT) or until a page less than 'nearby' is located (eMode==BTALLOC_LT)
@@ -3518,9 +3518,9 @@ moveto_finish:
 			{
 				prevTrunk = trunk;
 				if (prevTrunk)
-					trunkID = ConvertEx::Get4(&prevTrunk->Data[0]);
+					trunkID = _convert_get4(&prevTrunk->Data[0]);
 				else
-					trunkID = ConvertEx::Get4(&page1->Data[32]);
+					trunkID = _convert_get4(&page1->Data[32]);
 
 				ASSERTCOVERAGE(trunkID == maxPage);
 				if (trunkID > maxPage)
@@ -3535,7 +3535,7 @@ moveto_finish:
 				_assert(trunk != nullptr);
 				_assert(trunk->Data != nullptr);
 
-				uint32 k = ConvertEx::Get4(&trunk->Data[4]); // # of leaves on this trunk page, Number of leaves on the trunk of the freelist
+				uint32 k = _convert_get4(&trunk->Data[4]); // # of leaves on this trunk page, Number of leaves on the trunk of the freelist
 				if (k == 0 && !searchList)
 				{
 					// The trunk has no leaves and the list is not being searched. So extract the trunk page itself and use it as the newly allocated page
@@ -3581,7 +3581,7 @@ moveto_finish:
 					{
 						// The trunk page is required by the caller but it contains pointers to free-list leaves. The first leaf becomes a trunk
 						// page in this case.
-						Pid newTrunkID = ConvertEx::Get4(&trunk->Data[8]);
+						Pid newTrunkID = _convert_get4(&trunk->Data[8]);
 						if (newTrunkID > maxPage)
 						{ 
 							rc = SysEx_CORRUPT_BKPT;
@@ -3599,20 +3599,20 @@ moveto_finish:
 							goto end_allocate_page;
 						}
 						_memcpy(&newTrunk->Data[0], &trunk->Data[0], 4);
-						ConvertEx::Put4(&newTrunk->Data[4], k - 1);
+						_convert_put4(&newTrunk->Data[4], k - 1);
 						_memcpy(&newTrunk->Data[8], &trunk->Data[12], (k - 1) * 4);
 						ReleasePage(newTrunk);
 						if (!prevTrunk)
 						{
 							_assert(Pager::Iswriteable(page1->DBPage));
-							ConvertEx::Put4(&page1->Data[32], newTrunkID);
+							_convert_put4(&page1->Data[32], newTrunkID);
 						}
 						else
 						{
 							rc = Pager::Write(prevTrunk->DBPage);
 							if (rc)
 								goto end_allocate_page;
-							ConvertEx::Put4(&prevTrunk->Data[0], newTrunkID);
+							_convert_put4(&prevTrunk->Data[0], newTrunkID);
 						}
 					}
 					trunk = nullptr;
@@ -3632,7 +3632,7 @@ moveto_finish:
 						{
 							for (uint32 i = 0U; i < k; i++)
 							{
-								pageID = ConvertEx::Get4(&data[8 + i * 4]);
+								pageID = _convert_get4(&data[8 + i * 4]);
 								if (pageID <= nearby)
 								{
 									closest = i;
@@ -3642,10 +3642,10 @@ moveto_finish:
 						}
 						else
 						{
-							int dist = MathEx::Abs(ConvertEx::Get4(&data[8]) - nearby);
+							int dist = MathEx::Abs(_convert_get4(&data[8]) - nearby);
 							for (uint32 i = 1U; i < k; i++)
 							{
-								int d2 = MathEx::Abs(ConvertEx::Get4(&data[8 + i * 4]) - nearby);
+								int d2 = MathEx::Abs(_convert_get4(&data[8 + i * 4]) - nearby);
 								if (d2 < dist)
 								{
 									closest = i;
@@ -3657,7 +3657,7 @@ moveto_finish:
 					else
 						closest = 0;
 
-					pageID = ConvertEx::Get4(&data[8 + closest * 4]);
+					pageID = _convert_get4(&data[8 + closest * 4]);
 					ASSERTCOVERAGE(pageID == maxPage);
 					if (pageID > maxPage)
 					{
@@ -3673,7 +3673,7 @@ moveto_finish:
 						if (rc) goto end_allocate_page;
 						if (closest < k - 1)
 							_memcpy(&data[8 + closest * 4], &data[4 + k * 4], 4);
-						ConvertEx::Put4(&data[4], k - 1);
+						_convert_put4(&data[4], k - 1);
 						bool noContent = !BtreeGetHasContent(bt, *id);
 						rc = BtreeGetPage(bt, *id, page, noContent);
 						if (rc == RC_OK)
@@ -3726,7 +3726,7 @@ moveto_finish:
 				if (bt->Pages == PENDING_BYTE_PAGE(bt)) bt->Pages++;
 			}
 #endif
-			ConvertEx::Put4(&bt->Page1->Data[28], bt->Pages);
+			_convert_put4(&bt->Page1->Data[28], bt->Pages);
 			*id = bt->Pages;
 
 			_assert(*id != PENDING_BYTE_PAGE(bt));
@@ -3780,8 +3780,8 @@ end_allocate_page:
 		int frees;
 		Pid trunkID;
 		if (rc) goto freepage_out;
-		frees = ConvertEx::Get4(&page1->Data[36]); // Initial number of pages on free-list
-		ConvertEx::Put4(&page1->Data[36], frees + 1);
+		frees = _convert_get4(&page1->Data[36]); // Initial number of pages on free-list
+		_convert_put4(&page1->Data[36], frees + 1);
 
 		if (bt->BtsFlags & BTS_SECURE_DELETE)
 		{
@@ -3806,12 +3806,12 @@ end_allocate_page:
 		trunkID = 0; // Page number of free-list trunk page
 		if (frees != 0)
 		{
-			trunkID = ConvertEx::Get4(&page1->Data[32]);
+			trunkID = _convert_get4(&page1->Data[32]);
 			rc = BtreeGetPage(bt, trunkID, &trunk, false);
 			if (rc != RC_OK)
 				goto freepage_out;
 
-			uint32 leafs = ConvertEx::Get4(&trunk->Data[4]); // Initial number of leaf cells on trunk page
+			uint32 leafs = _convert_get4(&trunk->Data[4]); // Initial number of leaf cells on trunk page
 			_assert(bt->UsableSize > 32);
 			if (leafs > (uint32)bt->UsableSize / 4 - 2)
 			{
@@ -3830,8 +3830,8 @@ end_allocate_page:
 				rc = Pager::Write(trunk->DBPage);
 				if (rc == RC_OK)
 				{
-					ConvertEx::Put4(&trunk->Data[4], leafs + 1);
-					ConvertEx::Put4(&trunk->Data[8 + leafs * 4], pageID);
+					_convert_put4(&trunk->Data[4], leafs + 1);
+					_convert_put4(&trunk->Data[8 + leafs * 4], pageID);
 					if (page && (bt->BtsFlags & BTS_SECURE_DELETE) == 0)
 						Pager::DontWrite(page->DBPage);
 					rc = BtreeSetHasContent(bt, pageID);
@@ -3849,9 +3849,9 @@ end_allocate_page:
 		rc = Pager::Write(page->DBPage);
 		if (rc != RC_OK)
 			goto freepage_out;
-		ConvertEx::Put4(page->Data, trunkID);
-		ConvertEx::Put4(&page->Data[4], 0);
-		ConvertEx::Put4(&page1->Data[32], pageID);
+		_convert_put4(page->Data, trunkID);
+		_convert_put4(&page->Data[4], 0);
+		_convert_put4(&page1->Data[32], pageID);
 		TRACE("FREE-PAGE: %d new trunk page replacing %d\n", page->ID, trunkID);
 
 freepage_out:
@@ -3877,7 +3877,7 @@ freepage_out:
 			return RC_OK; // No overflow pages. Return without doing anything 
 		if (cell + info.Overflow + 3 > page->Data + page->MaskPage)
 			return SysEx_CORRUPT_BKPT; // Cell extends past end of page
-		Pid ovflID = ConvertEx::Get4(&cell[info.Overflow]);
+		Pid ovflID = _convert_get4(&cell[info.Overflow]);
 		BtShared *bt = page->Bt;
 		_assert(bt->UsableSize > 4);
 		uint32 ovflPageSize = bt->UsableSize - 4;
@@ -3932,10 +3932,10 @@ freepage_out:
 		if (!page->Leaf)
 			header += 4;
 		if (page->HasData)
-			header += ConvertEx::PutVarint(&cell[header], dataLength + zeros);
+			header += _convert_putvarint(&cell[header], dataLength + zeros);
 		else
 			dataLength = zeros = 0;
-		header += ConvertEx::PutVarint(&cell[header], keyLength);
+		header += _convert_putvarint(&cell[header], keyLength);
 		CellInfo info;
 		BtreeParseCellPtr(page, cell, &info);
 		_assert(info.Header == header);
@@ -4011,11 +4011,11 @@ freepage_out:
 				// If pPrior is part of the data area of pPage, then make sure pPage is still writeable
 				_assert(prior < page->Data || prior >= &page->Data[bt->PageSize] || Pager::Iswriteable(page->DBPage));
 
-				ConvertEx::Put4(prior, idOvfl);
+				_convert_put4(prior, idOvfl);
 				ReleasePage(toRelease);
 				toRelease = ovfl;
 				prior = ovfl->Data;
-				ConvertEx::Put4(prior, 0);
+				_convert_put4(prior, 0);
 				payload = &ovfl->Data[4];
 				spaceLeft = bt->UsableSize - 4;
 			}
@@ -4061,11 +4061,11 @@ freepage_out:
 		_assert(_mutex_held(page->Bt->Mutex));
 		uint8 *data = page->Data;
 		uint8 *ptr = &page->CellIdx[2 * idx]; // Used to move bytes around within data[]
-		uint32 pc = ConvertEx::Get2(ptr); // Offset to cell content of cell being deleted
+		uint32 pc = _convert_get2(ptr); // Offset to cell content of cell being deleted
 		int hdr = page->HdrOffset; // Beginning of the header.  0 most pages.  100 page 1
-		ASSERTCOVERAGE(pc == ConvertEx::Get2(&data[hdr + 5]));
+		ASSERTCOVERAGE(pc == _convert_get2(&data[hdr + 5]));
 		ASSERTCOVERAGE(pc + size == page->Bt->UsableSize);
-		if (pc < (uint32)ConvertEx::Get2(&data[hdr + 5]) || pc + size > page->Bt->UsableSize)
+		if (pc < (uint32)_convert_get2(&data[hdr + 5]) || pc + size > page->Bt->UsableSize)
 		{
 			*rcRef = SysEx_CORRUPT_BKPT;
 			return;
@@ -4084,7 +4084,7 @@ freepage_out:
 			ptr += 2;
 		}
 		page->Cells--;
-		ConvertEx::Put2(&data[hdr + 3], page->Cells);
+		_convert_put2(&data[hdr + 3], page->Cells);
 		page->Frees += 2;
 	}
 
@@ -4110,7 +4110,7 @@ freepage_out:
 				cell = temp;
 			}
 			if (childID)
-				ConvertEx::Put4(cell, childID);
+				_convert_put4(cell, childID);
 			int j = page->Overflows++;
 			_assert(j < (int)(sizeof(page->Ovfls) / sizeof(page->Ovfls[0])));
 			page->Ovfls[j] = cell;
@@ -4139,7 +4139,7 @@ freepage_out:
 			page->Frees -= (uint16)(2 + size);
 			_memcpy(&data[idx + skip], cell + skip, size - skip);
 			if (childID)
-				ConvertEx::Put4(&data[idx], childID);
+				_convert_put4(&data[idx], childID);
 			uint8 *ptr = &data[end]; // Used for moving information around in data[]
 			uint8 *endPtr = &data[ins]; // End of the loop
 			_assert((PTR_TO_INT(ptr) & 1) == 0); // ptr is always 2-byte aligned
@@ -4148,8 +4148,8 @@ freepage_out:
 				*(uint16 *)ptr = *(uint16 *)&ptr[-2];
 				ptr -= 2;
 			}
-			ConvertEx::Put2(&data[ins], idx);
-			ConvertEx::Put2(&data[page->HdrOffset + 3], page->Cells);
+			_convert_put2(&data[ins], idx);
+			_convert_put2(&data[page->HdrOffset + 3], page->Cells);
 #ifndef OMIT_AUTOVACUUM
 			if (page->Bt->AutoVacuum)
 			{
@@ -4171,7 +4171,7 @@ freepage_out:
 		uint8 *const data = page->Data; // Pointer to data for pPage
 		const int hdr = page->HdrOffset; // Offset of header on pPage
 		const int usable = page->Bt->UsableSize; // Usable size of page	_assert(page->Cells == 0);
-		_assert(ConvertEx::Get2nz(&data[hdr + 5]) == usable);
+		_assert(_convert_get2nz(&data[hdr + 5]) == usable);
 
 		uint8 *cellptr = &page->CellIdx[cells * 2]; // Address of next cell pointer
 		int cellbody = usable; // Address of next cell body
@@ -4180,11 +4180,11 @@ freepage_out:
 			uint16 sz = sizes[i];
 			cellptr -= 2;
 			cellbody -= sz;
-			ConvertEx::Put2(cellptr, cellbody);
+			_convert_put2(cellptr, cellbody);
 			_memcpy(&data[cellbody], cellSet[i], sz);
 		}
-		ConvertEx::Put2(&data[hdr + 3], cells);
-		ConvertEx::Put2(&data[hdr + 5], cellbody);
+		_convert_put2(&data[hdr + 3], cells);
+		_convert_put2(&data[hdr + 5], cellbody);
 		page->Frees -= (cells * 2 + usable - cellbody);
 		page->Cells = (uint16)cells;
 	}
@@ -4255,7 +4255,7 @@ freepage_out:
 			InsertCell(parent, parent->Cells, space, (int)(out - space), 0, page->ID, &rc);
 
 			// Set the right-child pointer of pParent to point to the new page. */
-			ConvertEx::Put4(&parent->Data[parent->HdrOffset + 8], newPageID);
+			_convert_put4(&parent->Data[parent->HdrOffset + 8], newPageID);
 
 			// Release the reference to the new page.
 			ReleasePage(newPage);
@@ -4283,20 +4283,20 @@ freepage_out:
 				BtreeParseCellPtr(page, z, &info);
 				if (info.Overflow)
 				{
-					Pid ovfl = ConvertEx::Get4(&z[info.Overflow]);
+					Pid ovfl = _convert_get4(&z[info.Overflow]);
 					PtrmapGet(bt, ovfl, &e, &n);
 					_assert(n == page->ID && e == PTRMAP_OVERFLOW1);
 				}
 				if (!page->Leaf)
 				{
-					Pid child = ConvertEx::Get4(z);
+					Pid child = _convert_get4(z);
 					PtrmapGet(bt, child, &e, &n);
 					_assert(n == page->ID && e == PTRMAP_BTREE);
 				}
 			}
 			if (!page->Leaf)
 			{
-				Pid child = ConvertEx::Get4(&page->Data[page->HdrOffset + 8]);
+				Pid child = _convert_get4(&page->Data[page->HdrOffset + 8]);
 				PtrmapGet(bt, child, &e, &n);
 				_assert(n == page->ID && e == PTRMAP_BTREE);
 			}
@@ -4317,10 +4317,10 @@ freepage_out:
 
 			_assert(from->IsInit);
 			_assert(from->Frees >= toHdr);
-			_assert(ConvertEx::Get2(&toData[fromHdr + 5]) <= (int)bt->UsableSize);
+			_assert(_convert_get2(&toData[fromHdr + 5]) <= (int)bt->UsableSize);
 
 			// Copy the b-tree node content from page pFrom to page pTo.
-			int data = ConvertEx::Get2(&fromData[fromHdr + 5]);
+			int data = _convert_get2(&fromData[fromHdr + 5]);
 			_memcpy(&toData[data], &fromData[data], bt->UsableSize - data);
 			_memcpy(&toData[toHdr], &fromData[fromHdr], from->CellOffset + 2 * from->Cells);
 
@@ -4391,7 +4391,7 @@ freepage_out:
 			right = &parent->Data[parent->HdrOffset + 8U];
 		else
 			right = FindCell(parent, i + nxDiv - parent->Overflows);
-		Pid id = ConvertEx::Get4(right); // Temp var to store a page number in
+		Pid id = _convert_get4(right); // Temp var to store a page number in
 		RC rc;
 		MemPage *oldPages[NB]; // pPage and up to two siblings
 		MemPage *copyPages[NB]; // Private copies of apOld[] pages
@@ -4429,14 +4429,14 @@ freepage_out:
 			if (i + nxDiv == parent->OvflIdxs[0] && parent->Overflows)
 			{
 				divs[i] = parent->Ovfls[0];
-				id = ConvertEx::Get4(divs[i]);
+				id = _convert_get4(divs[i]);
 				sizeNew[i] = CellSizePtr(parent, divs[i]);
 				parent->Overflows = 0;
 			}
 			else
 			{
 				divs[i] = FindCell(parent, i + nxDiv - parent->Overflows);
-				id = ConvertEx::Get4(divs[i]);
+				id = _convert_get4(divs[i]);
 				sizeNew[i] = CellSizePtr(parent, divs[i]);
 
 				// Drop the cell from the parent page. apDiv[i] still points to the cell within the parent, even though it has been dropped.
@@ -4711,7 +4711,7 @@ freepage_out:
 			newPagesUsed >= 5 ? newPages[4]->ID : 0, newPagesUsed >= 5 ? sizeNew[4] : 0);
 
 		_assert(Pager::Iswriteable(parent->DBPage));
-		ConvertEx::Put4(right, newPages[newPagesUsed - 1]->ID);
+		_convert_put4(right, newPages[newPagesUsed - 1]->ID);
 
 		// Evenly distribute the data in apCell[] across the new pages. Insert divider cells into pParent as necessary.
 		ovflSpaceID = 0; // First unused byte of aOvflSpace[]
@@ -4746,7 +4746,7 @@ freepage_out:
 					CellInfo info;
 					BtreeParseCellPtr(newPage, cell[j], &info);
 					pCell = pTemp;
-					sz = 4 + ConvertEx::PutVarint(&pCell[4], info.Key);
+					sz = 4 + _convert_putvarint(&pCell[4], info.Key);
 					pTemp = nullptr;
 				}
 				else
@@ -4796,7 +4796,7 @@ freepage_out:
 			// The second assert below verifies that the child page is defragmented (it must be, as it was just reconstructed using AssemblePage()). This
 			// is important if the parent page happens to be page 1 of the database image.
 			_assert(newPagesUsed == 1);
-			_assert(newPages[0]->Frees == (ConvertEx::Get2(&newPages[0]->Data[5]) - newPages[0]->CellOffset - newPages[0]->Cells * 2));
+			_assert(newPages[0]->Frees == (_convert_get2(&newPages[0]->Data[5]) - newPages[0]->CellOffset - newPages[0]->Cells * 2));
 			CopyNodeContent(newPages[0], parent, &rc);
 			FreePage(newPages[0], &rc);
 		}
@@ -4875,7 +4875,7 @@ freepage_out:
 				if (isDivider || oldPage->ID != newPage->ID)
 				{
 					if (leafCorrection == 0)
-						PtrmapPut(bt, ConvertEx::Get4(cell[i]), PTRMAP_BTREE, newPage->ID, &rc);
+						PtrmapPut(bt, _convert_get4(cell[i]), PTRMAP_BTREE, newPage->ID, &rc);
 					if (sizeCell[i] > newPage->MinLocal)
 						PtrmapPutOvflPtr(newPage, cell[i], &rc);
 				}
@@ -4886,7 +4886,7 @@ freepage_out:
 			{
 				for (i = 0; i < newPagesUsed; i++)
 				{
-					uint32 key = ConvertEx::Get4(&newPages[i]->Data[8]);
+					uint32 key = _convert_get4(&newPages[i]->Data[8]);
 					PtrmapPut(bt, key, PTRMAP_BTREE, newPages[i]->ID, &rc);
 				}
 			}
@@ -4956,7 +4956,7 @@ balance_cleanup:
 
 		// Zero the contents of pRoot. Then install pChild as the right-child.
 		ZeroPage(root, child->Data[0] & ~PTF_LEAF);
-		ConvertEx::Put4(&root->Data[root->HdrOffset + 8], childID);
+		_convert_put4(&root->Data[root->HdrOffset + 8], childID);
 
 		*childOut = child;
 		return RC_OK;
@@ -5398,7 +5398,7 @@ end_insert:
 			unsigned char *cell = FindCell(page, i);
 			if (!page->Leaf)
 			{
-				rc = ClearDatabasePage(bt, ConvertEx::Get4(cell), true, changes);
+				rc = ClearDatabasePage(bt, _convert_get4(cell), true, changes);
 				if (rc) goto cleardatabasepage_out;
 			}
 			rc = ClearCell(page, cell);
@@ -5406,7 +5406,7 @@ end_insert:
 		}
 		if (!page->Leaf)
 		{
-			rc = ClearDatabasePage(bt, ConvertEx::Get4(&page->Data[8]), true, changes);
+			rc = ClearDatabasePage(bt, _convert_get4(&page->Data[8]), true, changes);
 			if (rc) goto cleardatabasepage_out;
 		}
 		else if (changes)
@@ -5554,7 +5554,7 @@ cleardatabasepage_out:
 		_assert(QuerySharedCacheTableLock(this, MASTER_ROOT, LOCK_READ) == RC_OK);
 		_assert(bt->Page1 != nullptr);
 		_assert((int)id >= 0 && (int)id <= 15);
-		*meta = ConvertEx::Get4(&bt->Page1->Data[36 + (int)id * 4]);
+		*meta = _convert_get4(&bt->Page1->Data[36 + (int)id * 4]);
 		// If auto-vacuum is disabled in this build and this is an auto-vacuum database, mark the database as read-only.
 #ifdef OMIT_AUTOVACUUM
 		if (idx == BTREE_LARGEST_ROOT_PAGE && *meta > 0)
@@ -5574,7 +5574,7 @@ cleardatabasepage_out:
 		RC rc = Pager::Write(bt->Page1->DBPage);
 		if (rc == RC_OK)
 		{
-			ConvertEx::Put4(&p1[36 + (int)id * 4], meta);
+			_convert_put4(&p1[36 + (int)id * 4], meta);
 #ifndef OMIT_AUTOVACUUM
 			if (id == META_INCR_VACUUM)
 			{
@@ -5632,9 +5632,9 @@ cleardatabasepage_out:
 			// Descend to the child node of the cell that the cursor currently points at. This is the right-child if (iIdx==pPage->nCell).
 			uint idx = cur->Idxs[cur->ID]; // Index of child node in parent
 			if (idx == page->Cells)
-				rc = MoveToChild(cur, ConvertEx::Get4(&page->Data[page->HdrOffset + 8]));
+				rc = MoveToChild(cur, _convert_get4(&page->Data[page->HdrOffset + 8]));
 			else
-				rc = MoveToChild(cur, ConvertEx::Get4(FindCell(page, idx)));
+				rc = MoveToChild(cur, _convert_get4(FindCell(page, idx)));
 		}
 
 		// An error has occurred. Return an error code.
@@ -5745,7 +5745,7 @@ cleardatabasepage_out:
 			uint8 *ovflData = (uint8 *)Pager::GetData(ovflPage);
 			if (isFreeList)
 			{
-				int n = ConvertEx::Get4(&ovflData[4]);
+				int n = _convert_get4(&ovflData[4]);
 #ifndef OMIT_AUTOVACUUM
 				if (check->Bt->AutoVacuum)
 					CheckPtrmap(check, pageID, PTRMAP_FREEPAGE, 0, context);
@@ -5759,7 +5759,7 @@ cleardatabasepage_out:
 				{
 					for (int i = 0; i < n; i++)
 					{
-						Pid freePageID = ConvertEx::Get4(&ovflData[8 + i * 4]);
+						Pid freePageID = _convert_get4(&ovflData[8 + i * 4]);
 #ifndef OMIT_AUTOVACUUM
 						if (check->Bt->AutoVacuum)
 							CheckPtrmap(check, freePageID, PTRMAP_FREEPAGE, 0, context);
@@ -5776,12 +5776,12 @@ cleardatabasepage_out:
 				// the following page matches iPage.
 				if (check->Bt->AutoVacuum && length > 0)
 				{
-					int i = ConvertEx::Get4(ovflData);
+					int i = _convert_get4(ovflData);
 					CheckPtrmap(check, i, PTRMAP_OVERFLOW2, pageID, context);
 				}
 			}
 #endif
-			pageID = ConvertEx::Get4(ovflData);
+			pageID = _convert_get4(ovflData);
 			Pager::Unref(ovflPage);
 		}
 	}
@@ -5841,7 +5841,7 @@ cleardatabasepage_out:
 			if (sizeCell > info.Local && &cell[info.Overflow] <= &page->Data[bt->UsableSize])
 			{
 				int pages = (sizeCell - info.Local + usableSize - 5) / (usableSize - 4);
-				Pid ovflID = ConvertEx::Get4(&cell[info.Overflow]);
+				Pid ovflID = _convert_get4(&cell[info.Overflow]);
 #ifndef OMIT_AUTOVACUUM
 				if (bt->AutoVacuum)
 					CheckPtrmap(check, ovflID, PTRMAP_OVERFLOW1, pageID, msg);
@@ -5852,7 +5852,7 @@ cleardatabasepage_out:
 			// Check sanity of left child page.
 			if (!page->Leaf)
 			{
-				id = ConvertEx::Get4(cell);
+				id = _convert_get4(cell);
 #ifndef OMIT_AUTOVACUUM
 				if (bt->AutoVacuum)
 					CheckPtrmap(check, id, PTRMAP_BTREE, pageID, msg);
@@ -5866,7 +5866,7 @@ cleardatabasepage_out:
 
 		if (!page->Leaf)
 		{
-			id = ConvertEx::Get4(&page->Data[page->HdrOffset + 8]);
+			id = _convert_get4(&page->Data[page->HdrOffset + 8]);
 			__snprintf(msg, sizeof(msg), "On page %d at right child: ", pageID);
 #ifndef OMIT_AUTOVACUUM
 			if (bt->AutoVacuum)
@@ -5910,16 +5910,16 @@ cleardatabasepage_out:
 			check->MallocFailed = true;
 		else
 		{
-			uint contentOffset = ConvertEx::Get2nz(&data[hdr + 5]);
+			uint contentOffset = _convert_get2nz(&data[hdr + 5]);
 			_assert(contentOffset <= usableSize); // Enforced by BtreeInitPage()
 			_memset(hit + contentOffset, 0, usableSize - contentOffset);
 			_memset(hit, 1, contentOffset);
-			uint cells = ConvertEx::Get2(&data[hdr + 3]);
+			uint cells = _convert_get2(&data[hdr + 3]);
 			uint cellStart = hdr + 12 - 4 * page->Leaf;
 			for (i = 0; i < cells; i++)
 			{
 				uint32 sizeCell = 65536U;
-				uint pc = ConvertEx::Get2(&data[cellStart + i * 2]);
+				uint pc = _convert_get2(&data[cellStart + i * 2]);
 				if (pc <= usableSize - 4)
 					sizeCell = CellSizePtr(page, &data[pc]);
 				if ((int)(pc + sizeCell - 1) >= usableSize)
@@ -5927,15 +5927,15 @@ cleardatabasepage_out:
 				else
 					for (int j = pc + sizeCell - 1; j >= pc; j--) hit[j]++;
 			}
-			i = ConvertEx::Get2(&data[hdr + 1]);
+			i = _convert_get2(&data[hdr + 1]);
 			while (i > 0)
 			{
 				_assert(i <= usableSize - 4); // Enforced by BtreeInitPage()
-				uint size = ConvertEx::Get2(&data[i + 2]);
+				uint size = _convert_get2(&data[i + 2]);
 				_assert(i + size <= usableSize); // Enforced by BtreeInitPage()
 				uint j;
 				for (j = i + size - 1; j >= i; j--) hit[j]++;
-				j = ConvertEx::Get2(&data[i]);
+				j = _convert_get2(&data[i]);
 				_assert(j == 0 || j > i + size); // Enforced by BtreeInitPage()
 				_assert(j <= usableSize - 4); // Enforced by BtreeInitPage()
 				i = j;
@@ -5993,7 +5993,7 @@ cleardatabasepage_out:
 		check.ErrMsg.AllocType = 2;
 
 		// Check the integrity of the freelist
-		CheckList(&check, true, (Pid)ConvertEx::Get4(&bt->Page1->Data[32]), (int)ConvertEx::Get4(&bt->Page1->Data[36]), "Main freelist: ");
+		CheckList(&check, true, (Pid)_convert_get4(&bt->Page1->Data[32]), (int)_convert_get4(&bt->Page1->Data[36]), "Main freelist: ");
 
 		// Check all the tables.
 		for (i = 0; (int)i < rootsLength && check.MaxErrors; i++)

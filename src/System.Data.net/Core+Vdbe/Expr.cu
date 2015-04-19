@@ -263,7 +263,7 @@ namespace Core
 		int value = 0;
 		if (token)
 		{
-			if (op != TK_INTEGER || !token->data || !ConvertEx::Atoi(token->data, &value))
+			if (op != TK_INTEGER || !token->data || !_atoi(token->data, &value))
 			{
 				extraSize = token->length + 1;
 				_assert(value >= 0);
@@ -418,7 +418,7 @@ namespace Core
 			{
 				// Wildcard of the form "?nnn".  Convert "nnn" to an integer and use it as the variable number
 				int64 i;
-				bool ok = !ConvertEx::Atoi64(&z[1], &i, length-1, TEXTENCODE_UTF8);
+				bool ok = !_atoi64(&z[1], &i, length-1, TEXTENCODE_UTF8);
 				expr->ColumnId = x = (yVars)i;
 				ASSERTCOVERAGE(i == 0);
 				ASSERTCOVERAGE(i == 1);
@@ -899,7 +899,7 @@ no_mem:
 	{
 		// If an expression is an integer literal that fits in a signed 32-bit integer, then the EP_IntValue flag will have already been set
 		int rc = 0;
-		_assert(OP != TK_INTEGER || (Flags & EP_IntValue) != 0 || !ConvertEx::Atoi(u.Token, &rc));
+		_assert(OP != TK_INTEGER || (Flags & EP_IntValue) != 0 || !_atoi(u.Token, &rc));
 		if (Flags & EP_IntValue)
 		{
 			*value = u.I;
@@ -1358,7 +1358,7 @@ no_mem:
 		if (_ALWAYS(z))
 		{
 			double value;
-			ConvertEx::Atof(z, &value, _strlen(z), TEXTENCODE_UTF8);
+			_atof(z, &value, _strlen(z), TEXTENCODE_UTF8);
 			_assert(!_isnan(value)); // The new AtoF never returns NaN
 			if (negateFlag) value = -value;
 			char *value2 = Dup8bytes(v, (char *)&value);
@@ -1382,7 +1382,7 @@ no_mem:
 			const char *z = expr->u.Token;
 			_assert(z);
 			int64 value;
-			int c = ConvertEx::Atoi64(z, &value, _strlen(z), TEXTENCODE_UTF8);
+			int c = _atoi64(z, &value, _strlen(z), TEXTENCODE_UTF8);
 			if (c == 0 || (c == 2 && negateFlag))
 			{
 				if (negateFlag) { value = (c == 2 ? SMALLEST_INT64 : -value); }

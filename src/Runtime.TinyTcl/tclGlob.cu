@@ -241,7 +241,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		int l1, l2;
 		char *pattern, *newDir, *dirName;
 		char static1[STATIC_SIZE], static2[STATIC_SIZE];
-		struct stat statBuf;
+		struct _stat statBuf;
 
 		/*
 		* Be careful not to do any actual file system operations on a
@@ -254,7 +254,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		} else {
 			dirName = dir;
 		}
-		if ((stat(dirName, &statBuf) != 0) || !S_ISDIR(statBuf.st_mode)) {
+		if ((_stat(dirName, &statBuf) != 0) || !S_ISDIR(statBuf.st_mode)) {
 			return TCL_OK;
 		}
 		d = _opendir(dirName);

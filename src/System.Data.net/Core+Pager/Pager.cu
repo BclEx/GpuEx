@@ -434,15 +434,15 @@ namespace Core
 		if (pager->NoSync || (pager->JournalMode == IPager::JOURNALMODE_JMEMORY) || (pager->File->get_DeviceCharacteristics() & VFile::IOCAP_SAFE_APPEND) != 0)
 		{
 			_memcpy(header, _journalMagic, sizeof(_journalMagic));
-			ConvertEx::Put4(&header[sizeof(header)], 0xffffffff);
+			_convert_put4(&header[sizeof(header)], 0xffffffff);
 		}
 		else
 			_memset(header, 0, sizeof(_journalMagic) + 4);
 		SysEx::PutRandom(sizeof(pager->ChecksumInit), &pager->ChecksumInit);
-		ConvertEx::Put4(&header[sizeof(_journalMagic) + 4], pager->ChecksumInit);	// The random check-hash initializer
-		ConvertEx::Put4(&header[sizeof(_journalMagic) + 8], pager->DBOrigSize);		// The initial database size
-		ConvertEx::Put4(&header[sizeof(_journalMagic) + 12], pager->SectorSize);	// The assumed sector size for this process
-		ConvertEx::Put4(&header[sizeof(_journalMagic) + 16], pager->PageSize);		// The page size
+		_convert_put4(&header[sizeof(_journalMagic) + 4], pager->ChecksumInit);	// The random check-hash initializer
+		_convert_put4(&header[sizeof(_journalMagic) + 8], pager->DBOrigSize);		// The initial database size
+		_convert_put4(&header[sizeof(_journalMagic) + 12], pager->SectorSize);	// The assumed sector size for this process
+		_convert_put4(&header[sizeof(_journalMagic) + 16], pager->PageSize);		// The page size
 		// Initializing the tail of the buffer is not necessary.  Everything works find if the following memset() is omitted.  But initializing
 		// the memory prevents valgrind from complaining, so we are willing to take the performance hit.
 		_memset(&header[sizeof(_journalMagic) + 20], 0, headerSize - (sizeof(_journalMagic) + 20));
@@ -1336,12 +1336,12 @@ end_playback:
 	__device__ static void Pager_WriteChangecounter(PgHdr *pg)
 	{
 		// Increment the value just read and write it back to byte 24.
-		uint32 change_counter = ConvertEx::Get4((uint8 *)pg->Pager->DBFileVersion) + 1;
-		ConvertEx::Put4(((uint8 *)pg->Data) + 24, change_counter);
+		uint32 change_counter = _convert_get4((uint8 *)pg->Pager->DBFileVersion) + 1;
+		_convert_put4(((uint8 *)pg->Data) + 24, change_counter);
 
 		// Also store the SQLite version number in bytes 96..99 and in bytes 92..95 store the change counter for which the version number is valid.
-		ConvertEx::Put4(((uint8 *)pg->Data) + 92, change_counter);
-		ConvertEx::Put4(((uint8 *)pg->Data) + 96, CORE_VERSION_NUMBER);
+		_convert_put4(((uint8 *)pg->Data) + 92, change_counter);
+		_convert_put4(((uint8 *)pg->Data) + 96, CORE_VERSION_NUMBER);
 	}
 
 #ifndef OMIT_WAL
@@ -1939,7 +1939,7 @@ end_playback:
 					// as a temporary buffer to inspect the first couple of bytes of the potential journal header.
 					uint8 header[sizeof(_journalMagic) + 4];
 					_memcpy(header, _journalMagic, sizeof(_journalMagic));
-					ConvertEx::Put4(&header[sizeof(_journalMagic)], pager->Records);
+					_convert_put4(&header[sizeof(_journalMagic)], pager->Records);
 
 					uint8 magic[8];
 					int64 nextHdrOffset = JournalHdrOffset(pager);

@@ -43,11 +43,15 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <None Include="RT.cu" />
     <ClCompile Include="Falloc.cu" />
-    <ClCompile Include="Regex.1\Regex.cu" />
-    <None Include="Regex.2\Regex.cu" />
+    <ClCompile Include="Regex.1\Regex.1.cu" />
+    <ClCompile Include="Regex.2\Regex.2.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Regex.cu" />
     <ClCompile Include="Runtime.cu" />
     <ClCompile Include="Runtime+Alloc.cu" />
     <ClCompile Include="Runtime+BenignAlloc.cu" />
+    <ClCompile Include="Runtime+Convert.cu" />
     <ClCompile Include="Runtime+Mem0.cu" />
     <ClCompile Include="Runtime+Mem1.cu" />
     <ClCompile Include="Runtime+Mutex-gpu.cu" />
@@ -63,11 +67,13 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
     <None Include="Falloc.cu" />
-    <None Include="Regex.1\Regex.cu" />
-    <None Include="Regex.2\Regex.cu" />
+    <None Include="Regex.1\Regex.1.cu" />
+    <None Include="Regex.2\Regex.2.cu" />
+    <None Include="Regex.cu" />
     <None Include="Runtime.cu" />
     <None Include="Runtime+Alloc.cu" />
     <None Include="Runtime+BenignAlloc.cu" />
+    <None Include="Runtime+Convert.cu" />
     <None Include="Runtime+Mem0.cu" />
     <None Include="Runtime+Mem1.cu" />
     <None Include="Runtime+Mutex-gpu.cu" />

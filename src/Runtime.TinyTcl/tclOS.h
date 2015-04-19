@@ -69,7 +69,8 @@
 //#define HAVE_GETHOSTNAME
 
 #include <RuntimeOS.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
 
 /*
  * On systems without symbolic links (i.e. S_IFLNK isn't defined)

@@ -13,7 +13,7 @@ namespace Core { namespace Command
 {
 	// moved to ConvertEx
 	//__device__ static uint8 GetSafetyLevel(const char *z, int omitFull, uint8 dflt);
-	//__device__ bool ConvertEx::GetBoolean(const char *z, uint8 dflt);
+	//__device__ bool __atob(const char *z, uint8 dflt);
 
 #if !defined(OMIT_PRAGMA)
 
@@ -33,7 +33,7 @@ namespace Core { namespace Command
 		if (!_strcmp(z, "none")) return Btree::AUTOVACUUM_NONE;
 		if (!_strcmp(z, "full")) return Btree::AUTOVACUUM_FULL;
 		if (!_strcmp(z, "incremental")) return Btree::AUTOVACUUM_INCR;
-		int i = ConvertEx::Atoi(z);
+		int i = _atoi(z);
 		return (Btree::AUTOVACUUM)(i>=0 && i<=2 ? i : 0);
 	}
 #endif
@@ -155,7 +155,7 @@ namespace Core { namespace Command
 						Context::FLAG mask = p->Mask; // Mask of bits to set or clear.
 						if (ctx->AutoCommit == 0)
 							mask &= (Context::FLAG)~Context::FLAG_ForeignKeys; // Foreign key support may not be enabled or disabled while not in auto-commit mode.
-						if (ConvertEx::GetBoolean(right, 0))
+						if (__atob(right, 0))
 							ctx->Flags |= mask;
 						else
 							ctx->Flags &= (Context::FLAG)~mask;
@@ -393,7 +393,7 @@ namespace Core { namespace Command
 			}
 			else
 			{
-				int size = MathEx::Abs(ConvertEx::Atoi(right));
+				int size = MathEx::Abs(_atoi(right));
 				parse->BeginWriteOperation(0, db);
 				v->AddOp2(OP_Integer, size, 1);
 				v->AddOp3(OP_SetCookie, db, Btree::META_DEFAULT_CACHE_SIZE, 1);
@@ -422,7 +422,7 @@ namespace Core { namespace Command
 			else
 			{
 				// Malloc may fail when setting the page-size, as there is an internal buffer that the pager module resizes using sqlite3_realloc().
-				ctx->NextPagesize = ConvertEx::Atoi(right);
+				ctx->NextPagesize = _atoi(right);
 				if (bt->SetPageSize(ctx->NextPagesize, -1, false) == RC_NOMEM)
 					ctx->MallocFailed = true;
 			}
@@ -437,7 +437,7 @@ namespace Core { namespace Command
 		{
 			Btree *bt = dbAsObj->Bt;
 			_assert(bt != nullptr);
-			int b = (right ? (int)ConvertEx::GetBoolean(right, 0) : -1);
+			int b = (right ? (int)__atob(right, 0) : -1);
 			if (id2->length == 0 && b >= 0)
 				for (int ii = 0; ii < ctx->DBs.length; ii++)
 					ctx->DBs[ii].Bt->SecureDelete(b != 0);
@@ -465,7 +465,7 @@ namespace Core { namespace Command
 			if (_tolower(left[0]) == 'p')
 				v->AddOp2(OP_Pagecount, db, regId);
 			else
-				v->AddOp3(OP_MaxPgcnt, db, regId, MathEx::Abs(ConvertEx::Atoi(right)));
+				v->AddOp3(OP_MaxPgcnt, db, regId, MathEx::Abs(_atoi(right)));
 			v->AddOp2(OP_ResultRow, regId, 1);
 			v->SetNumCols(1);
 			v->SetColName(0, COLNAME_NAME, left, DESTRUCTOR_TRANSIENT);
@@ -558,7 +558,7 @@ namespace Core { namespace Command
 			int64 limit = -2;
 			if (right)
 			{
-				ConvertEx::Atoi64(right, &limit, 1000000, TEXTENCODE_UTF8);
+				_atoi64(right, &limit, 1000000, TEXTENCODE_UTF8);
 				if (limit < -1) limit = -1;
 			}
 			limit = pager->SetJournalSizeLimit(limit);
@@ -614,7 +614,7 @@ namespace Core { namespace Command
 		{
 			if (Prepare::ReadSchema(parse)) goto pragma_out;
 			int limit;
-			if (right == 0 || !ConvertEx::Atoi(right, &limit) || limit <= 0)
+			if (right == 0 || !_atoi(right, &limit) || limit <= 0)
 				limit = 0x7fffffff;
 			parse->BeginWriteOperation(0, db);
 			v->AddOp2(OP_Integer, limit, 1);
@@ -641,7 +641,7 @@ namespace Core { namespace Command
 				ReturnSingleInt(parse, "cache_size", dbAsObj->Schema->CacheSize);
 			else
 			{
-				int size = ConvertEx::Atoi(right);
+				int size = _atoi(right);
 				dbAsObj->Schema->CacheSize = size;
 				dbAsObj->Bt->SetCacheSize(dbAsObj->Schema->CacheSize);
 			}
@@ -791,7 +791,7 @@ namespace Core { namespace Command
 				if (!ctx->AutoCommit)
 					parse->ErrorMsg("Safety level may not be changed inside a transaction");
 				else
-					dbAsObj->SafetyLevel = ConvertEx::GetSafetyLevel(right, 0, 1) + 1;
+					dbAsObj->SafetyLevel = __atolevel(right, 0, 1) + 1;
 			}
 		}
 #endif
@@ -1117,7 +1117,7 @@ namespace Core { namespace Command
 		{
 			if (right)
 			{
-				if (ConvertEx::GetBoolean(right, 0))
+				if (__atob(right, 0))
 #if __CUDACC__
 					ParserTrace(nullptr, "parser: ");
 #else
@@ -1133,7 +1133,7 @@ namespace Core { namespace Command
 		else if (!_strcmp(left, "case_sensitive_like"))
 		{
 			if (right)
-				Func::RegisterLikeFunctions(ctx, ConvertEx::GetBoolean(right, 0));
+				Func::RegisterLikeFunctions(ctx, __atob(right, 0));
 		}
 
 #ifndef OMIT_INTEGRITY_CHECK
@@ -1162,7 +1162,7 @@ namespace Core { namespace Command
 			int maxErr = INTEGRITY_CHECK_ERROR_MAX;
 			if (right)
 			{
-				ConvertEx::Atoi(right, &maxErr);
+				_atoi(right, &maxErr);
 				if (maxErr <= 0)
 					maxErr = INTEGRITY_CHECK_ERROR_MAX;
 			}
@@ -1345,7 +1345,7 @@ namespace Core { namespace Command
 			{
 				int addr = v->AddOpList(_lengthof(_setCookie), _setCookie);
 				v->ChangeP1(addr, db);
-				v->ChangeP1(addr+1, ConvertEx::Atoi(right));
+				v->ChangeP1(addr+1, _atoi(right));
 				v->ChangeP1(addr+2, db);
 				v->ChangeP2(addr+2, cookie);
 			}
@@ -1410,7 +1410,7 @@ namespace Core { namespace Command
 		else if (!_strcmp(left, "wal_autocheckpoint"))
 		{
 			if (right)
-				sqlite3_wal_autocheckpoint(ctx, ConvertEx::Atoi(right));
+				sqlite3_wal_autocheckpoint(ctx, _atoi(right));
 			ReturnSingleInt(parse, "wal_autocheckpoint", ctx->WalCallback == sqlite3WalDefaultHook ? PTR_TO_INT(ctx->WalArg) : 0);
 		}
 #endif
@@ -1429,7 +1429,7 @@ namespace Core { namespace Command
 		else if (!_strcmp(left, "busy_timeout"))
 		{
 			if (right)
-				Main::BusyTmeout(ctx, ConvertEx::Atoi(right));
+				Main::BusyTmeout(ctx, _atoi(right));
 			ReturnSingleInt(parse, "timeout",  ctx->BusyTimeout);
 		}
 

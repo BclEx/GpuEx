@@ -2,7 +2,7 @@
 #define __TESTCTX_CU_H__
 
 #include "..\Core+Vdbe\Core+Vdbe.cu.h"
-#include "TestTcl.cu.h"
+#include "..\..\Runtime.TinyTcl\tcl.h"
 
 typedef struct TestCtx TestCtx;
 

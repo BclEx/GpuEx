@@ -223,7 +223,7 @@ namespace Core {
 			_assert(mem->Z || mem->Z == 0);
 			ASSERTCOVERAGE(mem->Z == 0);
 			int64 value = 0;
-			ConvertEx::Atoi64(mem->Z, &value, mem->N, mem->Encode);
+			_atoi64(mem->Z, &value, mem->N, mem->Encode);
 			return value;
 		}
 		return 0;
@@ -235,7 +235,7 @@ namespace Core {
 		_assert(_HASALIGNMENT8(mem));
 		if (mem->Flags & MEM_Real) return mem->R;
 		else if (mem->Flags & MEM_Int) return (double)mem->u.I;
-		else if (mem->Flags & (MEM_Str | MEM_Blob)) { double val = (double)0; ConvertEx::Atof(mem->Z, &val, mem->N, mem->Encode); return val; } // (double)0 In case of SQLITE_OMIT_FLOATING_POINT...
+		else if (mem->Flags & (MEM_Str | MEM_Blob)) { double val = (double)0; _atof(mem->Z, &val, mem->N, mem->Encode); return val; } // (double)0 In case of SQLITE_OMIT_FLOATING_POINT...
 		return (double)0; // (double)0 In case of SQLITE_OMIT_FLOATING_POINT...
 	}
 
@@ -288,7 +288,7 @@ namespace Core {
 		{
 			_assert((mem->Flags & (MEM_Blob | MEM_Str)) != 0);
 			_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
-			if (ConvertEx::Atoi64(mem->Z, &mem->u.I, mem->N, mem->Encode) == 0)
+			if (_atoi64(mem->Z, &mem->u.I, mem->N, mem->Encode) == 0)
 				MemSetTypeFlag(mem, MEM_Int);
 			else
 			{

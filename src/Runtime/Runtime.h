@@ -1,5 +1,6 @@
 #ifndef __RUNTIME_H__
 #define __RUNTIME_H__
+#include "RuntimeTypes.h"
 
 //////////////////////
 // NATIVE
@@ -122,6 +123,71 @@ __device__ void _runtime_utfselftest();
 //#define _strlen strlen
 //#define _printf printf
 #endif
+
+#pragma endregion
+
+//////////////////////
+// CONVERT
+#pragma region CONVERT
+
+enum TEXTENCODE : uint8
+{
+	TEXTENCODE_UTF8 = 1,
+	TEXTENCODE_UTF16LE = 2,
+	TEXTENCODE_UTF16BE = 3,
+	TEXTENCODE_UTF16 = 4, // Use native byte order
+	TEXTENCODE_ANY = 5, // sqlite3_create_function only
+	TEXTENCODE_UTF16_ALIGNED = 8, // sqlite3_create_collation only
+};
+__device__ __forceinline void operator|=(TEXTENCODE &a, int b) { a = (TEXTENCODE)(a | b); }
+__device__ __forceinline void operator&=(TEXTENCODE &a, int b) { a = (TEXTENCODE)(a & b); }
+
+#define _convert_GetVarint32(A,B) \
+	(uint8)((*(A)<(uint8)0x80)?((B)=(uint32)*(A)),1:\
+	_convert_getvarint32((A),(uint32 *)&(B)))
+#define _convert_PutVarint32(A,B) \
+	(uint8)(((uint32)(B)<(uint32)0x80)?(*(A)=(unsigned char)(B)),1:\
+	_convert_putvarint32((A),(B)))
+
+#pragma region Varint
+__device__ int _convert_putvarint(unsigned char *p, uint64 v);
+__device__ int _convert_putvarint32(unsigned char *p, uint32 v);
+__device__ uint8 _convert_getvarint(const unsigned char *p, uint64 *v);
+__device__ uint8 _convert_getvarint32(const unsigned char *p, uint32 *v);
+__device__ int _convert_getvarintLength(uint64 v);
+#pragma endregion
+#pragma region AtoX
+__device__ bool _atof(const char *z, double *out, int length, TEXTENCODE encode);
+__device__ int _atoi64(const char *z, int64 *out, int length, TEXTENCODE encode);
+__device__ bool _atoi(const char *z, int *out);
+__device__ inline int _atoi(const char *z)
+{
+	int out = 0;
+	if (z) _atoi(z, &out);
+	return out;
+}
+#pragma endregion
+
+__device__ inline uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }
+__device__ inline uint16 _convert_get2(const uint8 *p) { return (p[0]<<8) | p[1]; }
+__device__ inline void _convert_put2(unsigned char *p, uint32 v)
+{
+	p[0] = (uint8)(v>>8);
+	p[1] = (uint8)v;
+}
+__device__ inline uint32 _convert_get4(const uint8 *p) { return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3]; }
+__device__ inline void _convert_put4(unsigned char *p, uint32 v)
+{
+	p[0] = (uint8)(v>>24);
+	p[1] = (uint8)(v>>16);
+	p[2] = (uint8)(v>>8);
+	p[3] = (uint8)v;
+}
+
+#pragma region From: Pragma_c
+__device__ uint8 __atolevel(const char *z, int omitFull, uint8 dflt);
+__device__ bool __atob(const char *z, uint8 dflt);
+#pragma region
 
 #pragma endregion
 
@@ -281,7 +347,7 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #undef _toupper
 #undef _tolower
 #define _toupper(x) ((x)&~(__curtCtypeMap[(unsigned char)(x)]&0x20))
-#define _isupper(x) ((__curtCtypeMap[(unsigned char)(x)]&0x20)==x)
+#define _isupper(x) (((x)&~(__curtCtypeMap[(unsigned char)(x)]&0x20))==x)
 #define _isspace(x) ((__curtCtypeMap[(unsigned char)(x)]&0x01)!=0)
 #define _isalnum(x) ((__curtCtypeMap[(unsigned char)(x)]&0x06)!=0)
 #define _isalpha(x) ((__curtCtypeMap[(unsigned char)(x)]&0x02)!=0)
@@ -289,7 +355,7 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #define _isxdigit(x) ((__curtCtypeMap[(unsigned char)(x)]&0x08)!=0)
 #define _isidchar(x) ((__curtCtypeMap[(unsigned char)(x)]&0x46)!=0)
 #define _tolower(x) (__curtUpperToLower[(unsigned char)(x)])
-#define _islower(x) ((__curtUpperToLower[(unsigned char)(x)])==x)
+#define _islower(x) (__curtUpperToLower[(unsigned char)(x)]==x)
 #define _ispoweroftwo(x) (((x)&((x)-1))==0)
 __device__ inline static bool _isalpha2(unsigned char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 

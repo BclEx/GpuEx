@@ -172,7 +172,9 @@
     <ClCompile Include="tclTest.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclunxaz.cu" />
+    <ClCompile Include="tclunxaz.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="tclUtil.cu" />
     <ClCompile Include="tcluxstr.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>

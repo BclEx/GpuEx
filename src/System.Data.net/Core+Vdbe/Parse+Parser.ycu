@@ -622,7 +622,7 @@ expr(A) ::= REGISTER(X).			{
 	else
 	{
 		A.Expr = Expr::PExpr_(parse, TK_REGISTER, 0, 0, &X);
-		if (A.Expr) ConvertEx::Atoi(&X.data[1], &A.Expr->TableId);
+		if (A.Expr) _atoi(&X.data[1], &A.Expr->TableId);
 	}
 	SpanSet(&A, &X, &X);
 }

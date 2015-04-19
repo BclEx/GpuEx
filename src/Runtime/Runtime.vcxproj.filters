@@ -15,6 +15,16 @@
     <ClCompile Include="Runtime+Mutex-noop.cu" />
     <ClCompile Include="Runtime+Mutex-win.cu" />
     <ClCompile Include="Runtime+Status.cu" />
+    <ClCompile Include="Runtime+Mutex-unix.cu" />
+    <ClCompile Include="RuntimeOS+DirSystem-win.cu" />
+    <ClCompile Include="Regex.1\Regex.1.cu">
+      <Filter>Regex.1</Filter>
+    </ClCompile>
+    <ClCompile Include="Regex.cu" />
+    <ClCompile Include="Runtime+Convert.cu" />
+    <ClCompile Include="Regex.2\Regex.2.cu">
+      <Filter>Regex.2</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RuntimeGL.h" />
@@ -36,17 +46,10 @@
     <ClInclude Include="Regex.h" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Regex.1\Regex.cu">
-      <Filter>Regex.1</Filter>
-    </CudaCompile>
-    <CudaCompile Include="Regex.2\Regex.cu">
-      <Filter>Regex.2</Filter>
-    </CudaCompile>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="RuntimeOS.cu" />
-    <None Include="RuntimeOS+FileSystem.cu" />
     <None Include="RT.cu" />
+    <None Include="RuntimeOS+DirSystem-gpu.cu" />
+    <None Include="RuntimeOS+FileSystem-gpu.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Regex.1">

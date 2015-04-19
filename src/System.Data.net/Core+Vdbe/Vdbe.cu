@@ -92,8 +92,8 @@ namespace Core
 			int64 i;
 			TEXTENCODE encode = rec->Encode;
 			if ((rec->Flags & MEM_Str) == 0) return;
-			if (!ConvertEx::Atof(rec->Z, &r, rec->N, encode)) return;
-			if (!ConvertEx::Atoi64(rec->Z, &i, rec->N, encode))
+			if (!_atof(rec->Z, &r, rec->N, encode)) return;
+			if (!_atoi64(rec->Z, &i, rec->N, encode))
 			{
 				rec->u.I = i;
 				rec->Flags |= MEM_Int;
@@ -1699,7 +1699,7 @@ arithmetic_result_is_null:
 					// The following assert is true in all cases except when the database file has been corrupted externally.
 					//_assert(rec != 0 || avail >= payloadSize || avail >= 9);
 					uint32 offset; // Offset into the data
-					int sizeHdr = ConvertEx_GetVarint32((uint8 *)data, offset); // Size of the header size field at start of record
+					int sizeHdr = _convert_GetVarint32((uint8 *)data, offset); // Size of the header size field at start of record
 
 					// Make sure a corrupt database has not given us an oversize header. Do this now to avoid an oversize memory allocation.
 					//
@@ -1749,7 +1749,7 @@ arithmetic_result_is_null:
 								idx++;
 							}
 							else
-								idx += ConvertEx::GetVarint32(idx, &t);
+								idx += _convert_getvarint32(idx, &t);
 							types[i] = t;
 							uint32 sizeField = SerialTypeLen(t); // Number of bytes in the content of a field
 							offset += sizeField;
@@ -1914,7 +1914,7 @@ op_column_out:
 					serialType = SerialType(rec, fileFormat);
 					int len = SerialTypeLen(serialType); // Length of a field
 					dataLength += len;
-					hdrLength += ConvertEx::GetVarintLength(serialType);
+					hdrLength += _convert_getvarintLength(serialType);
 					if (rec->Flags & MEM_Zero)
 						zeros += rec->u.Zeros; // Only pure zero-filled BLOBs can be input to this Opcode. We do not allow blobs with a prefix and a zero-filled tail.
 					else if (len)
@@ -1923,8 +1923,8 @@ op_column_out:
 
 				// Add the initial header varint and total the size
 				int varintLength; // Number of bytes in a varint
-				hdrLength += varintLength = ConvertEx::GetVarintLength(hdrLength);
-				if (varintLength < ConvertEx::GetVarintLength(hdrLength))
+				hdrLength += varintLength = _convert_getvarintLength(hdrLength);
+				if (varintLength < _convert_getvarintLength(hdrLength))
 					hdrLength++;
 				int64 bytes = hdrLength + dataLength - zeros; // Data space required for this record
 				if (bytes > ctx->Limits[LIMIT_LENGTH])
@@ -1937,11 +1937,11 @@ op_column_out:
 				uint8 *newRecord = (uint8 *)out_->Z; // A buffer to hold the data for the new record
 
 				// Write the record
-				int i = ConvertEx_PutVarint32(newRecord, hdrLength); // Space used in newRecord[]
+				int i = _convert_PutVarint32(newRecord, hdrLength); // Space used in newRecord[]
 				for (rec = data0; rec <= last; rec++)
 				{
 					serialType = SerialType(rec, fileFormat);
-					i += ConvertEx_PutVarint32(&newRecord[i], serialType); // serial type
+					i += _convert_PutVarint32(&newRecord[i], serialType); // serial type
 				}
 				for (rec = data0; rec <= last; rec++) // serial data
 					i += SerialPut(&newRecord[i], (int)(bytes-i), rec, fileFormat);

@@ -225,7 +225,7 @@ zulu_time:
 		if (ParseYyyyMmDd(date, p) == 0) return false;
 		else if (ParseHhMmSs(date, p) == 0) return false;
 		else if (!_strcmp(date, "now")) return SetDateTimeToCurrent(fctx, p);
-		else if (ConvertEx::Atof(date, &r, _strlen(date), TEXTENCODE_UTF8))
+		else if (_atof(date, &r, _strlen(date), TEXTENCODE_UTF8))
 		{
 			p->JD = (int64)(r*86400000.0 + 0.5);
 			p->ValidJD = true;
@@ -417,7 +417,7 @@ zulu_time:
 			break; }
 		case 'w': {
 			// weekday N - Move the date to the same time on the next occurrence of weekday N where 0==Sunday, 1==Monday, and so forth.  If the date is already on the appropriate weekday, this is a no-op.
-			if (!_strncmp(z, "weekday ", 8) && ConvertEx::Atof(&z[8], &r, _strlen(&z[8]), TEXTENCODE_UTF8) && (n = (int)r) == r && n >= 0 && r < 7)
+			if (!_strncmp(z, "weekday ", 8) && _atof(&z[8], &r, _strlen(&z[8]), TEXTENCODE_UTF8) && (n = (int)r) == r && n >= 0 && r < 7)
 			{
 				ComputeYMD_HMS(p);
 				p->ValidTZ = false;
@@ -468,7 +468,7 @@ zulu_time:
 		case '8':
 		case '9': {
 			for (n = 1; z[n] && z[n] != ':' && !_isspace(z[n]); n++) { }
-			if (!ConvertEx::Atof(z, &r, n, TEXTENCODE_UTF8))
+			if (!_atof(z, &r, n, TEXTENCODE_UTF8))
 			{
 				rc = RC_ERROR;
 				break;
