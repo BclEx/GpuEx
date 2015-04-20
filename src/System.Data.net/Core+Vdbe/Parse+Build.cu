@@ -22,7 +22,7 @@ namespace Core
 	{
 		_assert(db >= 0);
 		Parse *toplevel = Parse_Toplevel(this);
-		Core::TableLock *tableLock;
+		::TableLock *tableLock;
 		for (int i = 0; i < toplevel->TableLocks.length; i++)
 		{
 			tableLock = &toplevel->TableLocks[i];
