@@ -13,7 +13,6 @@
 #endif
 
 #define _dprintf printf
-#include "ConvertEx.cu.h"
 #include "RC.cu.h"
 #include "VAlloc.cu.h"
 #include "SysEx.cu.h"

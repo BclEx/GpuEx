@@ -2,6 +2,7 @@
 
 namespace Core
 {
+
 #pragma region Busy Handler
 
 	__device__ int BContext::InvokeBusyHandler()
@@ -16,4 +17,5 @@ namespace Core
 	}
 
 #pragma endregion
+
 }

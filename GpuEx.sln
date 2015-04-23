@@ -62,6 +62,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runtime.Tclite", "src\Runti
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runtime.TinyTcl", "src\Runtime.TinyTcl\Runtime.TinyTcl.vcxproj", "{9E735B14-3DDD-4703-A408-1FD099B4CA92}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dSql", "src\dSql\dSql.vcxproj", "{4CBB97BD-16C4-4698-BC63-16F2499254B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug.cpu|Any CPU = Debug.cpu|Any CPU
@@ -329,6 +331,26 @@ Global
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cu|Mixed Platforms.Build.0 = Release.cu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cu|x64.ActiveCfg = Release.cu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cu|x64.Build.0 = Release.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|Any CPU.ActiveCfg = Debug.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|Mixed Platforms.ActiveCfg = Debug.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|Mixed Platforms.Build.0 = Debug.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|x64.ActiveCfg = Debug.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|Mixed Platforms.ActiveCfg = Debug.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|Mixed Platforms.Build.0 = Debug.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|x64.Build.0 = Debug.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|Mixed Platforms.ActiveCfg = Release.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|Mixed Platforms.Build.0 = Release.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|x64.Build.0 = Release.cpu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cu|Mixed Platforms.ActiveCfg = Release.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cu|Mixed Platforms.Build.0 = Release.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cu|x64.ActiveCfg = Release.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cu|x64.Build.0 = Release.cu|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

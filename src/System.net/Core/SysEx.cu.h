@@ -114,7 +114,7 @@ namespace Core
 #pragma endregion
 
 #pragma region Func
-		__device__ static RC SysEx::SetupLookaside(TagBase *tag, void *buf, int size, int count);
+		__device__ static RC SetupLookaside(TagBase *tag, void *buf, int size, int count);
 		// random
 		__device__ static void PutRandom(int length, void *buffer);
 #pragma endregion

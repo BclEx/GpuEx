@@ -1,6 +1,6 @@
 namespace Core
 {
-	#pragma region Authorization
+#pragma region Authorization
 
 	enum ARC : uint8
 	{
@@ -118,6 +118,21 @@ namespace Core
 	class Context : public BContext
 	{
 	public:
+		enum CTXSTATUS : uint8
+		{
+			CTXSTATUS_LOOKASIDE_USED = 0,
+			CTXSTATUS_CACHE_USED = 1,
+			CTXSTATUS_SCHEMA_USED = 2,
+			CTXSTATUS_STMT_USED = 3,
+			CTXSTATUS_LOOKASIDE_HIT = 4,
+			CTXSTATUS_LOOKASIDE_MISS_SIZE = 5,
+			CTXSTATUS_LOOKASIDE_MISS_FULL = 6,
+			CTXSTATUS_CACHE_HIT = 7,
+			CTXSTATUS_CACHE_MISS = 8,
+			CTXSTATUS_CACHE_WRITE = 9,
+			CTXSTATUS_MAX = 9  // Largest defined CTXSTATUS
+		};
+
 		struct InitInfo
 		{
 			int NewTid;						// Rootpage of table being initialized
@@ -213,6 +228,11 @@ namespace Core
 		//BCONTEXT::UnlockNotify
 		//BCONTEXT::NextBlocked
 #endif
+
+#pragma region From: Status
+		__device__ RC Status(CTXSTATUS op, int *current, int *highwater, bool resetFlag);
+#pragma endregion
+
 	};
 
 }

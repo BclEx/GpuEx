@@ -26,7 +26,7 @@ namespace Core
 	class Vdbe
 	{
 	public:
-		enum  STMTSTATUS : uint8
+		enum STMTSTATUS : uint8
 		{
 			STMTSTATUS_FULLSCAN_STEP = 1,
 			STMTSTATUS_SORT = 2,

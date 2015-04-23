@@ -238,17 +238,17 @@ __device__ void *_scratchalloc(size_t size)
 		p = mem0.ScratchFree;
 		mem0.ScratchFree = mem0.ScratchFree->Next;
 		mem0.ScratchFreeLength--;
-		_status_add(STATUS_LRATCH_USED, 1);
-		_status_set(STATUS_LRATCH_SIZE, (int)size);
+		_status_add(STATUS_SCRATCH_USED, 1);
+		_status_set(STATUS_SCRATCH_SIZE, (int)size);
 		_mutex_leave(mem0.Mutex);
 	}
 	else
 	{
 		if (TagBase_RuntimeStatics.Memstat)
 		{
-			_status_set(STATUS_LRATCH_SIZE, (int)size);
+			_status_set(STATUS_SCRATCH_SIZE, (int)size);
 			size = AllocWithAlarm(size, &p);
-			if (p) _status_add(STATUS_LRATCH_OVERFLOW, (int)size);
+			if (p) _status_add(STATUS_SCRATCH_OVERFLOW, (int)size);
 			_mutex_leave(mem0.Mutex);
 		}
 		else
@@ -287,7 +287,7 @@ __device__ void _scratchfree(void *p)
 			mem0.ScratchFree = slot;
 			mem0.ScratchFreeLength++;
 			_assert(mem0.ScratchFreeLength <= (uint32)TagBase_RuntimeStatics.Scratchs);
-			_status_add(STATUS_LRATCH_USED, -1);
+			_status_add(STATUS_SCRATCH_USED, -1);
 			_mutex_leave(mem0.Mutex);
 		}
 		else
@@ -300,7 +300,7 @@ __device__ void _scratchfree(void *p)
 			{
 				size_t size2 = _allocsize(p);
 				_mutex_enter(mem0.Mutex);
-				_status_add(STATUS_LRATCH_OVERFLOW, -(int)size2);
+				_status_add(STATUS_SCRATCH_OVERFLOW, -(int)size2);
 				_status_add(STATUS_MEMORY_USED, -(int)size2);
 				_status_add(STATUS_MALLOC_COUNT, -1);
 				__allocsystem_free(p);

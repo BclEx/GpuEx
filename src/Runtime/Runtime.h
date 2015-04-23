@@ -187,7 +187,7 @@ __device__ inline void _convert_put4(unsigned char *p, uint32 v)
 #pragma region From: Pragma_c
 __device__ uint8 __atolevel(const char *z, int omitFull, uint8 dflt);
 __device__ bool __atob(const char *z, uint8 dflt);
-#pragma region
+#pragma endregion
 
 #pragma endregion
 
@@ -271,12 +271,12 @@ enum STATUS : unsigned char
 	STATUS_MEMORY_USED = 0,
 	STATUS_PAGECACHE_USED = 1,
 	STATUS_PAGECACHE_OVERFLOW = 2,
-	STATUS_LRATCH_USED = 3,
-	STATUS_LRATCH_OVERFLOW = 4,
+	STATUS_SCRATCH_USED = 3,
+	STATUS_SCRATCH_OVERFLOW = 4,
 	STATUS_MALLOC_SIZE = 5,
 	STATUS_PARSER_STACK = 6,
 	STATUS_PAGECACHE_SIZE = 7,
-	STATUS_LRATCH_SIZE = 8,
+	STATUS_SCRATCH_SIZE = 8,
 	STATUS_MALLOC_COUNT = 9,
 };
 

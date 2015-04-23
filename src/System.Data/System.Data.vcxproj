@@ -74,6 +74,7 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Auth.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Backup.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Callback.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\Context.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Expr.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Main.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu" />
@@ -268,6 +269,7 @@
     <None Include="..\System.Data.net\Core+Vdbe\Auth.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Backup.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Callback.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\Context.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Expr.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Main.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu" />
