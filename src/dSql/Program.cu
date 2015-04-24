@@ -1122,7 +1122,7 @@ namespace Core
 	}
 
 	// Text of a help message
-	static char zHelp[] =
+	static char _help[] =
 		".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
 		".bail ON|OFF           Stop after hitting an error.  Default OFF\n"
 		".databases             List names and files of attached databases\n"
@@ -1178,7 +1178,7 @@ namespace Core
 		".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n"
 		;
 
-	static char zTimerHelp[] =
+	static char _timerHelp[] =
 		".timer ON|OFF          Turn the CPU timer measurement on or off\n"
 		;
 
