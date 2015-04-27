@@ -247,7 +247,6 @@
     <CudaCompile Include="Program.cu" />
     <None Include="..\System.Data.net\CompileTime.cu" />
     <None Include="..\System.Data.net\Opcodes.cu" />
-    <None Include="..\System.Data.net\Shell.cu" />
     <None Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <None Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
     <None Include="..\System.Data.net\Core+Btree\Btree.cu" />

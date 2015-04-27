@@ -668,7 +668,7 @@ namespace Core
 	}
 #endif
 
-	__device__ RC Main::BusyTmeout(Context *ctx, int ms)
+	__device__ RC Main::BusyTimeout(Context *ctx, int ms)
 	{
 		if (ms > 0)
 		{

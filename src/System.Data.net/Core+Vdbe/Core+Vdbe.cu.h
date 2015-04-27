@@ -1203,9 +1203,9 @@ namespace Core
 #pragma endregion
 
 #pragma region From: Parse+Complete_cu
-		__device__ bool Complete(const char *sql);
+		__device__ static bool Complete(const char *sql);
 #ifndef OMIT_UTF16
-		__device__ bool Complete16(const void *sql);
+		__device__ static bool Complete16(const void *sql);
 #endif
 #pragma endregion
 
@@ -1807,7 +1807,7 @@ namespace Core {
 #ifndef OMIT_PROGRESS_CALLBACK
 		__device__ static void ProgressHandler(Context *ctx,  int ops, int (*progress)(void *), void *arg);
 #endif
-		__device__ static RC BusyTmeout(Context *ctx, int ms);
+		__device__ static RC BusyTimeout(Context *ctx, int ms);
 		__device__ static void Interrupt(Context *ctx);
 		__device__ static RC CreateFunc(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *userData, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*), FuncDestructor *destructor);
 		__device__ static RC CreateFunction(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*));
@@ -1880,7 +1880,22 @@ namespace Core {
 			TESTCTRL_EXPLAIN_STMT            =19,
 			TESTCTRL_LAST                    =19,
 		};
-		__device__ RC Main::TestControl_(TESTCTRL op, va_list &args);
+		__device__ static RC TestControl_(TESTCTRL op, va_list &args);
+#if __CUDACC__
+		__device__ inline static RC TestControl(TESTCTRL op) { va_list args; va_start(args); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1) { va_list1<T1> args; va_start(args, arg1); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; va_start(args, arg1, arg2); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; va_start(args, arg1, arg2, arg3); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; va_start(args, arg1, arg2, arg3, arg4); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; va_start(args, arg1, arg2, arg3, arg4, arg5); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); RC rc = TestControl_(op, args); va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline static RC TestControl(TESTCTRL op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); RC rc = TestControl_(op, args); va_end(args); return rc; }
+#else
+		__device__ inline static RC TestControl(TESTCTRL op, ...) { va_list args; va_start(args, op); RC rc = TestControl_(op, args); va_end(args); return rc; }
+#endif
 #endif
 		__device__ static Btree *DbNameToBtree(Context *ctx, const char *dbName);
 		__device__ static const char *CtxFilename(Context *ctx, const char *dbName);

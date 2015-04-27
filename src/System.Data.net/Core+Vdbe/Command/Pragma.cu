@@ -1429,7 +1429,7 @@ namespace Core { namespace Command
 		else if (!_strcmp(left, "busy_timeout"))
 		{
 			if (right)
-				Main::BusyTmeout(ctx, _atoi(right));
+				Main::BusyTimeout(ctx, _atoi(right));
 			ReturnSingleInt(parse, "timeout",  ctx->BusyTimeout);
 		}
 
