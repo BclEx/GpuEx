@@ -359,7 +359,7 @@ namespace Core
 
 	__device__ static RC VdbeSorterSort(const VdbeCursor *cursor)
 	{
-		SorterRecord **slots = (SorterRecord **)_alloc(64 * sizeof(SorterRecord *));
+		SorterRecord **slots = (SorterRecord **)_allocZero(64 * sizeof(SorterRecord *));
 		if (!slots)
 			return RC_NOMEM;
 		VdbeSorter *sorter = cursor->Sorter;

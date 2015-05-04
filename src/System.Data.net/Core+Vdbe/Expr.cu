@@ -983,7 +983,7 @@ no_mem:
 #ifndef OMIT_SUBQUERY
 	__device__ static bool IsCandidateForInOpt(Select *select)
 	{
-		if (select) return false;					// right-hand side of IN is SELECT
+		if (!select) return false;					// right-hand side of IN is SELECT
 		if (select->Prior) return false;			// Not a compound SELECT
 		if (select->SelFlags & (SF_Distinct|SF_Aggregate))
 		{

@@ -1,4 +1,5 @@
 //#define VISUAL
+		//ParserTrace(stdout, "p: ");
 #pragma region PREAMBLE
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_CRT_SECURE_NO_WARNINGS)
@@ -375,6 +376,8 @@ void H_DIRTY(struct CallbackData *p)
 void D_DATA(struct CallbackData *p)
 {
 	CallbackData *h = p->H_;
+	char *destTable;
+	const char *dbFilename;
 	if (!p->H_size)
 	{
 		if (h)
@@ -394,29 +397,32 @@ void D_DATA(struct CallbackData *p)
 		memset(ptr, 0, size);
 		// create close to send to device
 		h = p->H_ = (CallbackData *)(ptr);
-		h->DestTable = (char *)(ptr += _ROUND8(sizeof(CallbackData)));
-		h->DbFilename = (char *)(ptr += destTableLength);
-		if (p->DestTable) memcpy((void *)h->DestTable, p->DestTable, destTableLength);
-		else h->DestTable = nullptr;
-		if (p->DbFilename) memcpy((void *)h->DbFilename, p->DbFilename, dbFilenameLength);
-		else h->DbFilename = nullptr;
+		destTable = (char *)(ptr += _ROUND8(sizeof(CallbackData)));
+		dbFilename = (char *)(ptr += destTableLength);
+		memcpy((void *)destTable, p->DestTable, destTableLength);
+		memcpy((void *)dbFilename, p->DbFilename, dbFilenameLength);
 		p->H_size = size;
 		//
-		cudaCheckErrors(cudaMalloc((void**)&p->D_, p->H_size), return);
+		cudaErrorCheck(cudaMalloc((void**)&ptr, p->H_size));
+		p->D_ = (CallbackData *)(ptr);
+		destTable = (char *)(ptr += _ROUND8(sizeof(CallbackData)));
+		dbFilename = (char *)(ptr += destTableLength);
+		h->DestTable = (p->DestTable ? destTable : nullptr);
+		h->DbFilename = (p->DbFilename ? dbFilename : nullptr);
 	}
 	//
-	char *destTable = h->DestTable;
-	const char *dbFilename = h->DbFilename;
+	destTable = h->DestTable;
+	dbFilename = h->DbFilename;
 	memcpy(h, p, sizeof(CallbackData));
 	h->DestTable = destTable;
 	h->DbFilename = dbFilename;
-	cudaCheckErrors(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice), return);
+	cudaErrorCheck(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice));
 }
 
 void H_DATA(struct CallbackData *p)
 {
 	CallbackData *h = p->H_;
-	cudaCheckErrors(cudaMemcpy(h, p->D_, p->H_size, cudaMemcpyDeviceToHost), return);
+	cudaErrorCheck(cudaMemcpy(h, p->D_, p->H_size, cudaMemcpyDeviceToHost));
 	char *destTable = p->DestTable;
 	const char *dbFilename = p->DbFilename;
 	memcpy(p, h, sizeof(CallbackData));
@@ -437,7 +443,7 @@ __device__ long d_return;
 long h_return;
 void H_RETURN()
 {
-	cudaCheckErrors(cudaMemcpyFromSymbol(&h_return, d_return, sizeof(h_return), 0, cudaMemcpyDeviceToHost),);
+	cudaErrorCheck(cudaMemcpyFromSymbol(&h_return, d_return, sizeof(h_return), 0, cudaMemcpyDeviceToHost));
 }
 #else
 #define H_DIRTY(p) 0
@@ -572,48 +578,48 @@ static void InterruptHandler(int notUsed)
 }
 #endif
 
-__device__ static bool ShellCallback(void *args, int argsLength, char **argNames, char **colNames, int *insertTypes)
+__device__ static bool ShellCallback(void *arg, int colLength, char **colValues, char **colNames, int *colTypes)
 {
 	int i;
-	struct CallbackData *p = (struct CallbackData *)args;
+	struct CallbackData *p = (struct CallbackData *)arg;
 	switch (p->Mode)
 	{
 	case MODE_Line: {
 		int w = 5;
-		if (argNames == 0) break;
-		for (i = 0; i < argsLength; i++)
+		if (colValues == 0) break;
+		for (i = 0; i < colLength; i++)
 		{
 			int len = _strlen(colNames[i] ? colNames[i] : "");
 			if (len > w) w = len;
 		}
 		if (p->Cnt++ > 0) _fprintf(p->Out, "\n");
-		for (i = 0; i < argsLength; i++)
-			_fprintf(p->Out, "%*s = %s\n", w, colNames[i], argNames[i] ? argNames[i] : p->NullValue);
+		for (i = 0; i < colLength; i++)
+			_fprintf(p->Out, "%*s = %s\n", w, colNames[i], colValues[i] ? colValues[i] : p->NullValue);
 		break; }
 	case MODE_Explain:
 	case MODE_Column: {
 		if (p->Cnt++ == 0)
 		{
-			for (i = 0; i < argsLength; i++)
+			for (i = 0; i < colLength; i++)
 			{
 				int w = (i < _lengthof(p->ColWidth) ? p->ColWidth[i] : 0);
 				if (w == 0)
 				{
 					w = _strlen(colNames[i] ? colNames[i] : "");
 					if (w < 10) w = 10;
-					int n = _strlen(argNames && argNames[i] ? argNames[i] : p->NullValue);
+					int n = _strlen(colValues && colValues[i] ? colValues[i] : p->NullValue);
 					if (w < n) w = n;
 				}
 				if (i < _lengthof(p->ActualWidth))
 					p->ActualWidth[i] = w;
 				if (p->ShowHeader)
 				{
-					if (w < 0) _fprintf(p->Out, "%*.*s%s", -w, -w, colNames[i], (i == argsLength-1 ? "\n" : "  "));
-					else _fprintf(p->Out, "%-*.*s%s", w, w, colNames[i], (i == argsLength-1 ? "\n": "  "));
+					if (w < 0) _fprintf(p->Out, "%*.*s%s", -w, -w, colNames[i], (i == colLength-1 ? "\n" : "  "));
+					else _fprintf(p->Out, "%-*.*s%s", w, w, colNames[i], (i == colLength-1 ? "\n": "  "));
 				}
 			}
 			if (p->ShowHeader)
-				for (i = 0; i < argsLength; i++)
+				for (i = 0; i < colLength; i++)
 				{
 					int w;
 					if (i < _lengthof(p->ActualWidth))
@@ -623,31 +629,31 @@ __device__ static bool ShellCallback(void *args, int argsLength, char **argNames
 					}
 					else
 						w = 10;
-					_fprintf(p->Out, "%-*.*s%s", w, w, "---------------------------------------------------------------------------------------------", (i == argsLength-1 ? "\n" : "  "));
+					_fprintf(p->Out, "%-*.*s%s", w, w, "---------------------------------------------------------------------------------------------", (i == colLength-1 ? "\n" : "  "));
 				}
 		}
-		if (argNames == 0) break;
-		for (i = 0; i < argsLength; i++)
+		if (colValues == 0) break;
+		for (i = 0; i < colLength; i++)
 		{
 			int w = (i < _lengthof(p->ActualWidth) ? p->ActualWidth[i] : 10);
-			if (p->Mode == MODE_Explain && argNames[i] && _strlen(argNames[i]) > w)
-				w = _strlen(argNames[i]);
-			if (w < 0) _fprintf(p->Out, "%*.*s%s", -w, -w, (argNames[i] ? argNames[i] : p->NullValue), (i == argsLength-1 ? "\n" : "  "));
-			else _fprintf(p->Out, "%-*.*s%s", w, w, (argNames[i] ? argNames[i] : p->NullValue), (i == argsLength-1 ? "\n" : "  "));
+			if (p->Mode == MODE_Explain && colValues[i] && _strlen(colValues[i]) > w)
+				w = _strlen(colValues[i]);
+			if (w < 0) _fprintf(p->Out, "%*.*s%s", -w, -w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
+			else _fprintf(p->Out, "%-*.*s%s", w, w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
 		}
 		break; }
 	case MODE_Semi:
 	case MODE_List: {
 		if (p->Cnt++ == 0 && p->ShowHeader)
-			for (i = 0; i < argsLength; i++)
-				_fprintf(p->Out, "%s%s", colNames[i], (i == argsLength-1 ? "\n" : p->Separator));
-		if (argNames == 0) break;
-		for (i = 0; i < argsLength; i++)
+			for (i = 0; i < colLength; i++)
+				_fprintf(p->Out, "%s%s", colNames[i], (i == colLength-1 ? "\n" : p->Separator));
+		if (colValues == 0) break;
+		for (i = 0; i < colLength; i++)
 		{
-			char *z = argNames[i];
+			char *z = colValues[i];
 			if (!z) z = p->NullValue;
 			_fprintf(p->Out, "%s", z);
-			if (i < argsLength-1) _fprintf(p->Out, "%s", p->Separator);
+			if (i < colLength-1) _fprintf(p->Out, "%s", p->Separator);
 			else if (p->Mode == MODE_Semi) _fprintf(p->Out, ";\n");
 			else _fprintf(p->Out, "\n");
 		}
@@ -656,7 +662,7 @@ __device__ static bool ShellCallback(void *args, int argsLength, char **argNames
 		if (p->Cnt++ == 0 && p->ShowHeader)
 		{
 			_fprintf(p->Out, "<TR>");
-			for (i = 0; i < argsLength; i++)
+			for (i = 0; i < colLength; i++)
 			{
 				_fprintf(p->Out, "<TH>");
 				OutputHtmlString(p->Out, colNames[i]);
@@ -664,12 +670,12 @@ __device__ static bool ShellCallback(void *args, int argsLength, char **argNames
 			}
 			_fprintf(p->Out, "</TR>\n");
 		}
-		if (argNames == 0) break;
+		if (colValues == 0) break;
 		_fprintf(p->Out, "<TR>");
-		for (i = 0; i < argsLength; i++)
+		for (i = 0; i < colLength; i++)
 		{
 			_fprintf(p->Out, "<TD>");
-			OutputHtmlString(p->Out, (argNames[i] ? argNames[i] : p->NullValue));
+			OutputHtmlString(p->Out, (colValues[i] ? colValues[i] : p->NullValue));
 			_fprintf(p->Out, "</TD>\n");
 		}
 		_fprintf(p->Out, "</TR>\n");
@@ -677,62 +683,62 @@ __device__ static bool ShellCallback(void *args, int argsLength, char **argNames
 	case MODE_Tcl: {
 		if (p->Cnt++ == 0 && p->ShowHeader)
 		{
-			for (i = 0; i < argsLength; i++)
+			for (i = 0; i < colLength; i++)
 			{
 				OutputCString(p->Out, (colNames[i] ? colNames[i] : ""));
-				if (i < argsLength-1) _fprintf(p->Out, "%s", p->Separator);
+				if (i < colLength-1) _fprintf(p->Out, "%s", p->Separator);
 			}
 			_fprintf(p->Out, "\n");
 		}
-		if (argNames == 0) break;
-		for (i = 0; i < argsLength; i++)
+		if (colValues == 0) break;
+		for (i = 0; i < colLength; i++)
 		{
-			OutputCString(p->Out, (argNames[i] ? argNames[i] : p->NullValue));
-			if (i < argsLength-1) _fprintf(p->Out, "%s", p->Separator);
+			OutputCString(p->Out, (colValues[i] ? colValues[i] : p->NullValue));
+			if (i < colLength-1) _fprintf(p->Out, "%s", p->Separator);
 		}
 		_fprintf(p->Out, "\n");
 		break; }
 	case MODE_Csv: {
 		if (p->Cnt++ == 0 && p->ShowHeader)
 		{
-			for (i = 0; i < argsLength; i++)
-				OutputCsv(p, (colNames[i] ? colNames[i] : ""), i < argsLength-1);
+			for (i = 0; i < colLength; i++)
+				OutputCsv(p, (colNames[i] ? colNames[i] : ""), i < colLength-1);
 			_fprintf(p->Out, "\n");
 		}
-		if (argNames == 0) break;
-		for (i = 0; i < argsLength; i++)
-			OutputCsv(p, argNames[i], i < argsLength-1);
+		if (colValues == 0) break;
+		for (i = 0; i < colLength; i++)
+			OutputCsv(p, colValues[i], i < colLength-1);
 		_fprintf(p->Out, "\n");
 		break; }
 	case MODE_Insert: {
 		p->Cnt++;
-		if (argNames == 0) break;
+		if (colValues == 0) break;
 		_fprintf(p->Out, "INSERT INTO %s VALUES(", p->DestTable);
-		for (i = 0; i < argsLength; i++)
+		for (i = 0; i < colLength; i++)
 		{
 			char *sep = (i > 0 ? "," : "");
-			if ((argNames[i] == 0) || (insertTypes && insertTypes[i] == TYPE_NULL))
+			if ((colValues[i] == 0) || (colTypes && colTypes[i] == TYPE_NULL))
 				_fprintf(p->Out, "%sNULL", sep);
-			else if (insertTypes && insertTypes[i] == TYPE_TEXT)
+			else if (colTypes && colTypes[i] == TYPE_TEXT)
 			{
 				if (sep[0]) _fprintf(p->Out, "%s", sep);
-				OutputQuotedString(p->Out, argNames[i]);
+				OutputQuotedString(p->Out, colValues[i]);
 			}
-			else if (insertTypes && (insertTypes[i] == TYPE_INTEGER || insertTypes[i] == TYPE_FLOAT))
-				_fprintf(p->Out, "%s%s", sep, argNames[i]);
-			else if (insertTypes && insertTypes[i] == TYPE_BLOB && p->Stmt)
+			else if (colTypes && (colTypes[i] == TYPE_INTEGER || colTypes[i] == TYPE_FLOAT))
+				_fprintf(p->Out, "%s%s", sep, colValues[i]);
+			else if (colTypes && colTypes[i] == TYPE_BLOB && p->Stmt)
 			{
 				const void *blob = Vdbe::Column_Blob(p->Stmt, i);
 				int blobLength = Vdbe::Column_Bytes(p->Stmt, i);
 				if (sep[0]) _fprintf(p->Out, "%s", sep);
 				OutputHexBlob(p->Out, blob, blobLength);
 			}
-			else if (isNumber(argNames[i], 0))
-				_fprintf(p->Out, "%s%s", sep, argNames[i]);
+			else if (isNumber(colValues[i], 0))
+				_fprintf(p->Out, "%s%s", sep, colValues[i]);
 			else
 			{
 				if (sep[0]) _fprintf(p->Out, "%s", sep);
-				OutputQuotedString(p->Out, argNames[i]);
+				OutputQuotedString(p->Out, colValues[i]);
 			}
 		}
 		_fprintf(p->Out, ");\n");
@@ -741,7 +747,7 @@ __device__ static bool ShellCallback(void *args, int argsLength, char **argNames
 	return false;
 }
 
-__device__ static bool Callback(void *args, int colLength, char **colValues, char **colNames) { return ShellCallback(args, colLength, colValues, colNames, nullptr);  } // since we don't have type info, call the ShellCallback with a NULL value
+__device__ static bool Callback(void *arg, int colLength, char **colValues, char **colNames) { return ShellCallback(arg, colLength, colValues, colNames, nullptr);  } // since we don't have type info, call the ShellCallback with a NULL value
 
 #pragma endregion
 
@@ -820,11 +826,11 @@ __device__ static char *AppendText(char *in, char const *append, char quote)
 	return in;
 }
 
-__device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *selectSql, const char *firstRow)
+__device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *sql, const char *firstRow)
 {
 	int i;
 	Vdbe *select;
-	RC rc = Prepare::Prepare_(p->Ctx, selectSql, -1, &select, 0);
+	RC rc = Prepare::Prepare_(p->Ctx, sql, -1, &select, 0);
 	if (rc != RC_OK || !select)
 	{
 		_fprintf(p->Out, "/**** ERROR: (%d) %s *****/\n", rc, Main::ErrMsg(p->Ctx));
@@ -956,23 +962,23 @@ __device__ static int DisplayStats(Context *ctx, struct CallbackData *arg, bool 
 // Execute a statement or set of statements.  Print any result rows/columns depending on the current mode set via the supplied callback.
 // This is very similar to SQLite's built-in sqlite3_exec() function except it takes a slightly different callback and callback data argument.
 // callback // (not the same as sqlite3_exec)
-__device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,char**,char**,int*), struct CallbackData *arg, char **errMsgOut)
+__device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,char**,char**,int*), struct CallbackData *arg, char **errMsg)
 {
 	Vdbe *stmt = nullptr; // Statement to execute.
 	RC rc = RC_OK;
 	int rc2;
 	const char *leftover; // Tail of unprocessed SQL
 
-	if (errMsgOut)
-		*errMsgOut = nullptr;
+	if (errMsg)
+		*errMsg = nullptr;
 
 	while (sql[0] && (rc == RC_OK))
 	{
 		rc = Prepare::Prepare_(ctx, sql, -1, &stmt, &leftover);
 		if (rc != RC_OK)
 		{
-			if (errMsgOut)
-				*errMsgOut = SaveErrMsg(ctx);
+			if (errMsg)
+				*errMsg = SaveErrMsg(ctx);
 		}
 		else
 		{
@@ -1066,8 +1072,8 @@ __device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(
 				sql = leftover;
 				while (IsSpace(sql[0])) sql++;
 			}
-			else if (errMsgOut)
-				*errMsgOut = SaveErrMsg(ctx);
+			else if (errMsg)
+				*errMsg = SaveErrMsg(ctx);
 
 			// clear saved stmt handle
 			if (arg)
@@ -1079,16 +1085,16 @@ __device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(
 
 // This is a different callback routine used for dumping the database. Each row received by this callback consists of a table name,
 // the table type ("index" or "table") and SQL to create the table. This routine should print text sufficient to recreate the table.
-__device__ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
+__device__ static bool DumpCallback(void *arg, int colLength, char **colValues, char **colNames)
 {
 	RC rc;
 	const char *prepStmt = nullptr;
 	struct CallbackData *p = (struct CallbackData *)arg;
 
-	if (argsLength != 3) return 1;
-	const char *tableName = args[0];
-	const char *typeName = args[1];
-	const char *sql = args[2];
+	if (colLength != 3) return 1;
+	const char *tableName = colValues[0];
+	const char *typeName = colValues[1];
+	const char *sql = colValues[2];
 
 	if (!_strcmp(tableName, "sqlite_sequence")) prepStmt = "DELETE FROM sqlite_sequence;\n";
 	else if (!_strcmp(tableName, "sqlite_stat1")) _fprintf(p->Out, "ANALYZE sqlite_master;\n");
@@ -1535,8 +1541,9 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	else if (c == 'd' && n > 1 && !strncmp(args[0], "databases", n) && argsLength == 1)
 	{
 		_OpenCtx(p);
+		_OpenCtx(p);
 #if __CUDACC__
-		D_DATA(p); d_DoMetaCommand_databases<<<1,1>>>(p->D_); H_DATA(p);
+		D_DATA(p); d_DoMetaCommand_databases<<<1,1>>>(p->D_); cudaErrorCheck(cudaDeviceSynchronize()); H_DATA(p);
 		H_RETURN(); if (h_return) rc = h_return;
 #else
 		struct CallbackData data;
@@ -1618,7 +1625,6 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'e' && !strncmp(args[0], "explain", n) && argsLength < 3)
 	{
-#ifndef __CUDACC__
 		int val = (argsLength >= 2 ? BooleanValue(args[1]) : 1);
 		if (val == 1)
 		{
@@ -1651,7 +1657,6 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			p->ShowHeader = p->ExplainPrev.ShowHeader;
 			memcpy(p->ColWidth, p->ExplainPrev.ColWidth, sizeof(p->ColWidth));
 		}
-#endif
 	}
 	else if (c == 'h' && (!strncmp(args[0], "header", n) || !strncmp(args[0], "headers", n)) && argsLength > 1 && argsLength < 3)
 	{
@@ -2142,8 +2147,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 't' && n > 1 && !strncmp(args[0], "tables", n) && argsLength < 3)
 	{
-#ifndef __CUDACC__
 		_OpenCtx(p);
+#ifndef __CUDACC__
 		Vdbe *stmt;
 		rc = Prepare::Prepare_v2(p->Ctx, "PRAGMA database_list", -1, &stmt, 0);
 		if (rc) return rc;
@@ -2773,12 +2778,12 @@ static void MainInit()
 	_snprintf(_mainPrompt, sizeof(_mainPrompt), "sqlite> ");
 	_snprintf(_continuePrompt, sizeof(_continuePrompt), "   ...> ");
 #if __CUDACC__
-	//cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax), return);
+	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
-	cudaCheckErrors(cudaSetDevice(deviceId), return);
-	cudaCheckErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024*5), return);
+	cudaErrorCheck(cudaSetDevice(deviceId));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*5));
 	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
-	cudaCheckErrors(cudaDeviceHeapSelect(_deviceHeap), return);
+	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
 	//
 	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); H_DATA(&_data);
 	cudaDeviceHeapSynchronize(_deviceHeap);

@@ -40,7 +40,7 @@ typedef struct __align__(8)
 } runtimeBlockHeader;
 
 static FILE *_stream;
-cudaError __cudaLastError;
+//cudaError __cudaLastError;
 
 ///////////////////////////////////////////////////////////////////////////////
 // HOST SIDE

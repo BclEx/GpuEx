@@ -17,16 +17,16 @@ void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #if __CUDACC__
 void __main(cudaDeviceHeap &r)
 {	
-	cudaCheckErrors(cudaDeviceHeapSelect(r), );
+	cudaErrorCheck(cudaDeviceHeapSelect(r));
 	GMain(r); cudaDeviceHeapSynchronize(r);
 }
 
 int main(int argc, char **argv)
 {
-	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax), return -1);
+	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
-	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
-	cudaCheckErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024*8), return -2);
+	cudaErrorCheck(cudaSetDevice(deviceId));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*8));
 
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(); //256, 4096);
 	//cudaDeviceFalloc fallocHost = cudaDeviceFallocCreate(100, 1024);
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	//IVisualRender *render = new RuntimeVisualRender(deviceHeap);
 	//IVisualRender *render = new FallocVisualRender(fallocHost);
 	//if (!Visual::InitGL(render, &argc, argv)) return 0;
-	//cudaCheckErrors(cudaGLSetGLDevice(deviceId), return -3);
+	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
 	__main(deviceHeap);

@@ -9,9 +9,9 @@
 
 int main(int argc, char **argv)
 {
-	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost), return -1);
+	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost));
 	int deviceId = gpuGetMaxGflopsDeviceId();
-	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
+	cudaErrorCheck(cudaSetDevice(deviceId));
 
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	cudaDeviceFalloc deviceFalloc = cudaDeviceFallocCreate(100, 1024);
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 
 	//Visual::Main();
 	//Visual::Dispose();
-	//cudaCheckErrors(cudaDeviceHeapSynchronize(deviceHeap), 0);
+	//cudaErrorCheck(cudaDeviceHeapSynchronize(deviceHeap));
 #endif
 
 	cudaDeviceHeapSelect(deviceHeap);

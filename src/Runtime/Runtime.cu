@@ -1107,7 +1107,7 @@ inline size_t GetRuntimeRenderQuads(size_t blocks)
 
 static void LaunchRuntimeRender(cudaDeviceHeap &host, float4 *b, size_t blocks)
 {
-	cudaCheckErrors(cudaDeviceHeapSelect(host), exit(0));
+	cudaErrorCheck(cudaDeviceHeapSelect(host));
 	dim3 heapBlock(1, 1, 1);
 	dim3 heapGrid(1, 1, 1);
 	RenderHeap<<<heapGrid, heapBlock>>>((runtimeHeap *)host.heap, (quad4 *)b, 0);
@@ -1124,7 +1124,7 @@ static void LaunchRuntimeKeypress(cudaDeviceHeap &host, unsigned char key)
 		cudaDeviceHeapSynchronize(host);
 		return;
 	}
-	cudaCheckErrors(cudaDeviceHeapSelect(host), exit(0));
+	cudaErrorCheck(cudaDeviceHeapSelect(host));
 	dim3 heapBlock(1, 1, 1);
 	dim3 heapGrid(1, 1, 1);
 	Keypress<<<heapGrid, heapBlock>>>((runtimeHeap *)host.heap, key);
@@ -1138,14 +1138,14 @@ static struct cudaGraphicsResource *_runtimeVboResource;
 static void RuntimeRunCuda(cudaDeviceHeap &host, size_t blocks, struct cudaGraphicsResource **resource)
 {
 	// map OpenGL buffer object for writing from CUDA
-	cudaCheckErrors(cudaGraphicsMapResources(1, resource, nullptr), exit(0));
+	cudaErrorCheck(cudaGraphicsMapResources(1, resource, nullptr));
 	float4 *b;
 	size_t size;
-	cudaCheckErrors(cudaGraphicsResourceGetMappedPointer((void **)&b, &size, *resource), exit(0));
+	cudaErrorCheck(cudaGraphicsResourceGetMappedPointer((void **)&b, &size, *resource));
 	//printf("CUDA mapped VBO: May access %ld bytes\n", size);
 	LaunchRuntimeRender(host, b, blocks);
 	// unmap buffer object
-	cudaCheckErrors(cudaGraphicsUnmapResources(1, resource, nullptr), exit(0));
+	cudaErrorCheck(cudaGraphicsUnmapResources(1, resource, nullptr));
 }
 
 static void RuntimeCreateVBO(size_t blocks, GLuint *vbo, struct cudaGraphicsResource **resource, unsigned int vbo_res_flags)
@@ -1159,7 +1159,7 @@ static void RuntimeCreateVBO(size_t blocks, GLuint *vbo, struct cudaGraphicsReso
 	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	// register this buffer object with CUDA
-	cudaCheckErrors(cudaGraphicsGLRegisterBuffer(resource, *vbo, vbo_res_flags), exit(0));
+	cudaErrorCheck(cudaGraphicsGLRegisterBuffer(resource, *vbo, vbo_res_flags));
 	SDK_CHECK_ERROR_GL();
 }
 

@@ -24,15 +24,15 @@ void __main(cudaDeviceHeap &r)
 int main(int argc, char **argv)
 {
 	//cudaThreadSetLimit(cudaLimitStackSize, 1024*6);
-	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost), return -1);
+	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost));
 	int deviceId = gpuGetMaxGflopsDeviceId();
-	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
+	cudaErrorCheck(cudaSetDevice(deviceId));
 
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
 	//IVisualRender *render = new RuntimeVisualRender(runtimeHost);
 	//if (!Visual::InitGL(render, &argc, argv)) return 0;
-	//cudaCheckErrors(cudaGLSetGLDevice(deviceId), return -3);
+	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
 	__main(deviceHeap);

@@ -333,8 +333,7 @@ namespace Core
 				errs++;
 				goto abort_parse; }
 			case TK_SEMI: {
-				Tail = &sql[i]; }
-						  // Fall thru into the default case
+				Tail = &sql[i]; } // Fall thru into the default case
 			default: {
 				Parser(engine, tokenType, LastToken, this);
 				lastTokenParsed = tokenType;

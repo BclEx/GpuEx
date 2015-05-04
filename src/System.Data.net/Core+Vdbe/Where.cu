@@ -475,9 +475,9 @@ findTerm_success:
 		{
 			Vdbe *reprepare = parse->Reprepare;
 			int column = right->ColumnId;
-			val = reprepare->GetValue(column, AFF_NONE);
+			val = (reprepare ? reprepare->GetValue(column, AFF_NONE) : nullptr);
 			if (val && Vdbe::Value_Type(val) == TYPE_TEXT)
-				z = (char *)Vdbe::Value_Type(val);
+				z = (char *)Vdbe::Value_Text(val);
 			parse->V->SetVarmask(column);
 			_assert(right->OP == TK_VARIABLE || right->OP == TK_REGISTER);
 		}
@@ -1771,7 +1771,7 @@ findTerm_success:
 		{
 			int varId = expr->ColumnId;
 			parse->V->SetVarmask(varId);
-			*val = parse->Reprepare->GetValue(varId, aff);
+			*val = (parse->Reprepare ? parse->Reprepare->GetValue(varId, aff) : nullptr);
 			return RC_OK;
 		}
 		return Vdbe::ValueFromExpr(parse->Ctx, expr, TEXTENCODE_UTF8, aff, val);

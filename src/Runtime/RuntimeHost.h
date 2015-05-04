@@ -1,6 +1,8 @@
 #ifndef __RUNTIMEHOST_H__
 #define __RUNTIMEHOST_H__
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <cuda_runtime.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -78,8 +80,22 @@ extern "C" cudaError_t cudaDeviceHeapSynchronize(cudaDeviceHeap &host, void *str
 // EX
 // Extra methods for host-side code
 #pragma region EX
-extern cudaError __cudaLastError;
-#define cudaCheckErrors(action, failure) if ((__cudaLastError = action) != cudaSuccess) { printf("CudaError: %s \"%s\"\n", #action, cudaGetErrorString(__cudaLastError)); failure; }
+//extern cudaError __cudaLastError;
+//#define cudaErrorCheck(action, failure) if ((__cudaLastError = action) != cudaSuccess) { printf("CudaError: %s \"%s\"\n", #action, cudaGetErrorString(__cudaLastError)); failure; }
+
+#define cudaErrorCheck(x) { gpuAssert((x), #x, __FILE__, __LINE__); }
+#define cudaErrorCheck2(x, f) { if (!gpuAssert((x), #x, __FILE__, __LINE__, false)) f; }
+#define cudaErrorCheckLast() { gpuAssert(cudaPeekAtLastError(), __FILE__, __LINE__); }
+inline bool gpuAssert(cudaError_t code, const char *action, const char *file, int line, bool abort = true)
+{
+	if (code != cudaSuccess) 
+	{
+		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		if (abort) exit(code);
+		return false;
+	}
+	return true;
+}
 
 inline int __convertSMVer2Cores(int major, int minor)
 {

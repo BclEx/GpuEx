@@ -15,23 +15,23 @@ select2_host(r);
 #if __CUDACC__
 void __main(cudaDeviceHeap &r)
 {	
-	cudaCheckErrors(cudaDeviceHeapSelect(r), );
+	cudaErrorCheck(cudaDeviceHeapSelect(r));
 	GMain(r); cudaDeviceHeapSynchronize(r);
 }
 
 int main(int argc, char **argv)
 {
-	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax), return -1);
+	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
-	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
-	cudaCheckErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024*3), return -2);
+	cudaErrorCheck(cudaSetDevice(deviceId));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*3));
 
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
 	//IVisualRender *render = new RuntimeVisualRender(deviceHeap);
 	//if (!Visual::InitGL(render, &argc, argv)) return 0;
-	//cudaCheckErrors(cudaGLSetGLDevice(deviceId), return -3);
+	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
 	__main(deviceHeap);

@@ -5,7 +5,7 @@
 namespace Core
 {
 #if _DEBUG
-	__device__ bool PagerTrace = true;
+	__device__ bool PagerTrace = false;
 #define PAGERTRACE(X, ...) if (PagerTrace) { _printf("PG: "X, __VA_ARGS__); }
 #else
 #define PAGERTRACE(X, ...)

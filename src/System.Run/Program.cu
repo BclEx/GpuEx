@@ -22,9 +22,9 @@ void __main(cudaDeviceHeap &r)
 
 int main(int argc, char **argv)
 {
-	cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost), return -1);
+	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost));
 	int deviceId = gpuGetMaxGflopsDeviceId();
-	cudaCheckErrors(cudaSetDevice(deviceId), return -2);
+	cudaErrorCheck(cudaSetDevice(deviceId));
 	cudaDeviceReset();
 
 	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	//IVisualRender *render = new RuntimeVisualRender(deviceHeap);
 	//IVisualRender *render = new FallocVisualRender(fallocHost);
 	//if (!Visual::InitGL(render, &argc, argv)) return 0;
-	//cudaCheckErrors(cudaGLSetGLDevice(deviceId), return -3);
+	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
 	__main(deviceHeap);

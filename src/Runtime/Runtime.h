@@ -452,7 +452,11 @@ template <typename T> __device__ __forceinline int _strncmp(const T *left, const
 #define _fstrncmp(x, y) (_tolower(*(unsigned char *)(x))==_tolower(*(unsigned char *)(y))&&!_strcmp((x)+1,(y)+1))
 
 // memcpy
+#if __CUDACC__
 #define _memcpy(dest, src, length) if (length) memcpy(dest, src, length)
+#else
+#define _memcpy(dest, src, length) memcpy(dest, src, length)
+#endif
 #if 0
 template <typename T> __device__ __forceinline void _memcpy(T *dest, const T *src, size_t length)
 {
@@ -473,7 +477,11 @@ template <typename T> __device__ __forceinline void _memcpy(T *dest, T *src, siz
 #endif
 
 // memset
+#if __CUDACC__
 #define _memset(dest, value, length) if (length) memset(dest, value, length)
+#else
+#define _memset(dest, value, length) memset(dest, value, length)
+#endif
 #if 0
 template <typename T> __device__ __forceinline void _memset(T *dest, const char value, size_t length)
 {
