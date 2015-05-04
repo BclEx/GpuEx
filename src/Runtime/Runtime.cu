@@ -986,6 +986,16 @@ __device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, va
 
 #pragma endregion
 
+//////////////////////
+// FPRINTF
+#pragma region FPRINTF
+
+__constant__ FILE _stdin_file = {0, 0, 0};
+__constant__ FILE _stdout_file = {0, 1, 0};
+__constant__ FILE _stderr_file = {0, 2, 0};
+
+#pragma endregion
+
 ///////////////////////////////////////////////////////////////////////////////
 // VISUAL
 #pragma region VISUAL

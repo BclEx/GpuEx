@@ -63,6 +63,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runtime.TinyTcl", "src\Runtime.TinyTcl\Runtime.TinyTcl.vcxproj", "{9E735B14-3DDD-4703-A408-1FD099B4CA92}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dSql", "src\dSql\dSql.vcxproj", "{4CBB97BD-16C4-4698-BC63-16F2499254B3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AADAB731-E71B-406B-B023-6A3FD7957591} = {AADAB731-E71B-406B-B023-6A3FD7957591}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

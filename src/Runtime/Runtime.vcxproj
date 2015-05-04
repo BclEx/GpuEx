@@ -28,6 +28,7 @@
     <ClInclude Include="Falloc.cu.h" />
     <ClInclude Include="Falloc.cu+native.h" />
     <ClInclude Include="FallocHost.h" />
+    <ClInclude Include="Hash.cu.h" />
     <ClInclude Include="Regex.h" />
     <ClInclude Include="Regex.2\Regex.h" />
     <ClInclude Include="Runtime.cpu.h" />
@@ -47,6 +48,7 @@
     <ClCompile Include="Regex.2\Regex.2.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Hash.cu" />
     <ClCompile Include="Regex.cu" />
     <ClCompile Include="Runtime.cu" />
     <ClCompile Include="Runtime+Alloc.cu" />
@@ -70,6 +72,7 @@
     <None Include="Regex.1\Regex.1.cu" />
     <None Include="Regex.2\Regex.2.cu" />
     <None Include="Regex.cu" />
+    <None Include="Hash.cu" />
     <None Include="Runtime.cu" />
     <None Include="Runtime+Alloc.cu" />
     <None Include="Runtime+BenignAlloc.cu" />

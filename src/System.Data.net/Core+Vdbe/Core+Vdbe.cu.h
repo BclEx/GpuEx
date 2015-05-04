@@ -1203,7 +1203,7 @@ namespace Core
 #pragma endregion
 
 #pragma region From: Parse+Complete_cu
-		__device__ static bool Complete(const char *sql);
+		__host__ __device__ static bool Complete(const char *sql);
 #ifndef OMIT_UTF16
 		__device__ static bool Complete16(const void *sql);
 #endif

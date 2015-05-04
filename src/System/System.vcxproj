@@ -112,7 +112,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\System.net\Core\Bitvec.cu.h" />
-    <ClInclude Include="..\System.net\Core\Hash.cu.h" />
     <ClInclude Include="..\System.net\Core\RC.cu.h" />
     <ClInclude Include="..\System.net\Core\VAlloc.cu.h" />
     <ClInclude Include="..\System.net\Core\SysEx.cu.h" />
@@ -126,7 +125,6 @@
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.net\Core\SysEx.cu" />
     <ClCompile Include="..\System.net\Core\Bitvec.cu" />
-    <ClCompile Include="..\System.net\Core\Hash.cu" />
     <ClCompile Include="..\System.net\Core\MathEx.cu" />
     <ClCompile Include="..\System.net\Core\SysEx+Random.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
@@ -142,7 +140,6 @@
     <CudaCompile Include="Program.cu" />
     <None Include="..\System.net\Core\SysEx.cu" />
     <None Include="..\System.net\Core\Bitvec.cu" />
-    <None Include="..\System.net\Core\Hash.cu" />
     <None Include="..\System.net\Core\MathEx.cu" />
     <None Include="..\System.net\Core\SysEx+Random.cu" />
     <None Include="..\System.net\Core\IO\IO.JournalVFile.cu" />

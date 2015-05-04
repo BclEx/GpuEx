@@ -41,7 +41,7 @@
 #if !defined(HAVE_EDITLINE) && (!defined(HAVE_READLINE) || HAVE_READLINE!=1)
 #define readline(p) LocalGetLine(p, stdin, 0)
 #define add_history(X)
-#define read_history(X)
+#define ReadHistory(X)
 #define write_history(X)
 #define stifle_history(X)
 #endif
@@ -173,7 +173,7 @@ static void EndTimer()
 
 static int _bailOnError = 0; // If the following flag is set, then command execution stops at an error if we are not interactive.
 static int _stdinIsInteractive = 1; // Threat stdin as an interactive input if the following variable is true.  Otherwise, assume stdin is connected to a file or pipe.
-static Context *_ctx = nullptr; // The following is the open SQLite database.  We make a pointer to this database a static variable so that it can be accessed by the SIGINT handler to interrupt database processing.
+__device__ static Context *_ctx = nullptr; // The following is the open SQLite database.  We make a pointer to this database a static variable so that it can be accessed by the SIGINT handler to interrupt database processing.
 static volatile int _seenInterrupt = 0; // True if an interrupt (Control-C) has been received.
 static char *Argv0; // This is the name of our program. It is set in main(), used in a number of other places, mostly for error messages.
 
@@ -199,7 +199,7 @@ static void iotracePrintf(const char *fmt, ...)
 }
 #endif
 
-static bool isNumber(const char *z, int *realnum)
+__device__ static bool isNumber(const char *z, int *realnum)
 {
 	if (*z == '-' || *z == '+') z++;
 	if (!IsDigit(*z))
@@ -225,8 +225,8 @@ static bool isNumber(const char *z, int *realnum)
 	return (*z == 0);
 }
 
-static const char *_shellStatic = nullptr;
-static void ShellStaticFunc(FuncContext *fctx, int argc, Mem **argv)
+__device__ static const char *_shellStatic = nullptr;
+__device__ static void ShellStaticFunc(FuncContext *fctx, int argc, Mem **argv)
 {
 	_assert(argc == 0);
 	_assert(_shellStatic);
@@ -313,7 +313,7 @@ struct PreviousModeData
 	int ColWidth[100];
 };
 
-static const char *modeDescr[] =
+static const char *_modeDescr[] =
 {
 	"line",
 	"column",
@@ -328,6 +328,9 @@ static const char *modeDescr[] =
 
 struct CallbackData
 {
+	int H_size;
+	struct CallbackData *H_;
+	struct CallbackData *D_;
 	Context *Ctx;				// The database
 	int EchoOn;					// True to echo input commands
 	int StatsOn;				// True to display memory stats before each finalize
@@ -347,19 +350,12 @@ struct CallbackData
 	// Holds the mode information just before .explain ON
 	char Outfile[FILENAME_MAX]; // Filename for *out_
 	const char *DbFilename;		// name of the database file
-	const char *Vfs;			// Name of VFS to use
+	//const char *Vfs;			// Name of VFS to use
 	Vdbe *Stmt;					// Current statement if any.
 	FILE *Log;					// Write log output here
 };
 
-//static int _strlen(const char *z)
-//{
-//	const char *z2 = z;
-//	while (*z2) { z2++; }
-//	return 0x3fffffff & (int)(z2 - z);
-//}
-
-static void ShellLog(void *arg, int errCode, const char *msg)
+__device__ static void ShellLog(void *arg, int errCode, const char *msg)
 {
 	struct CallbackData *p = (struct CallbackData*)arg;
 	if (!p->Log) return;
@@ -369,9 +365,88 @@ static void ShellLog(void *arg, int errCode, const char *msg)
 
 #pragma endregion
 
+#pragma region CUDA
+#if __CUDACC__
+void H_DIRTY(struct CallbackData *p)
+{
+	p->H_size = 0;
+}
+
+void D_DATA(struct CallbackData *p)
+{
+	CallbackData *h = p->H_;
+	if (!p->H_size)
+	{
+		if (h)
+			free(h);
+		// Allocate memory for the CallbackData structure, PCache object, the three file descriptors, the database file name and the journal file name.
+		int destTableLength = (p->DestTable ? (int)strlen(p->DestTable) : 0);
+		int dbFilenameLength = (p->DbFilename ? (int)strlen(p->DbFilename) : 0);
+		int size = _ROUND8(sizeof(CallbackData)) + // CallbackData structure
+			destTableLength + 1 + // DestTable
+			dbFilenameLength + 1; // DbFilename
+		uint8 *ptr = (uint8 *)malloc(size);
+		if (!ptr)
+		{
+			printf("D_DATA: RC_NOMEM");
+			return;
+		}
+		memset(ptr, 0, size);
+		// create close to send to device
+		h = p->H_ = (CallbackData *)(ptr);
+		h->DestTable = (char *)(ptr += _ROUND8(sizeof(CallbackData)));
+		h->DbFilename = (char *)(ptr += destTableLength);
+		if (p->DestTable) memcpy((void *)h->DestTable, p->DestTable, destTableLength);
+		else h->DestTable = nullptr;
+		if (p->DbFilename) memcpy((void *)h->DbFilename, p->DbFilename, dbFilenameLength);
+		else h->DbFilename = nullptr;
+		p->H_size = size;
+		//
+		cudaCheckErrors(cudaMalloc((void**)&p->D_, p->H_size), return);
+	}
+	//
+	char *destTable = h->DestTable;
+	const char *dbFilename = h->DbFilename;
+	memcpy(h, p, sizeof(CallbackData));
+	h->DestTable = destTable;
+	h->DbFilename = dbFilename;
+	cudaCheckErrors(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice), return);
+}
+
+void H_DATA(struct CallbackData *p)
+{
+	CallbackData *h = p->H_;
+	cudaCheckErrors(cudaMemcpy(h, p->D_, p->H_size, cudaMemcpyDeviceToHost), return);
+	char *destTable = p->DestTable;
+	const char *dbFilename = p->DbFilename;
+	memcpy(p, h, sizeof(CallbackData));
+	p->DestTable = destTable;
+	p->DbFilename = dbFilename;
+}
+
+void D_FREE(struct CallbackData *p)
+{
+	if (p->D_)
+	{
+		cudaFree(p->D_);
+		p->D_ = nullptr;
+	}
+}
+
+__device__ long d_return;
+long h_return;
+void H_RETURN()
+{
+	cudaCheckErrors(cudaMemcpyFromSymbol(&h_return, d_return, sizeof(h_return), 0, cudaMemcpyDeviceToHost),);
+}
+#else
+#define H_DIRTY(p) 0
+#endif
+#pragma endregion
+
 #pragma region Output
 
-static void OutputHexBlob(FILE *out_, const void *blob, int blobLength)
+__device__ static void OutputHexBlob(FILE *out_, const void *blob, int blobLength)
 {
 	char *blob2 = (char *)blob;
 	_fprintf(out_, "X'");
@@ -379,7 +454,7 @@ static void OutputHexBlob(FILE *out_, const void *blob, int blobLength)
 	_fprintf(out_, "'");
 }
 
-static void OutputQuotedString(FILE *out_, const char *z)
+__device__ static void OutputQuotedString(FILE *out_, const char *z)
 {
 	int i;
 	int singles = 0;
@@ -401,24 +476,24 @@ static void OutputQuotedString(FILE *out_, const char *z)
 	}
 }
 
-static void OutputCString(FILE *out_, const char *z)
+__host__ __device__ static void OutputCString(FILE *out_, const char *z)
 {
 	unsigned int c;
-	fputc('"', out_);
+	_fputc('"', out_);
 	while ((c = *(z++)) != 0)
 	{
-		if (c == '\\') { fputc(c, out_); fputc(c, out_); }
-		else if (c == '"') { fputc('\\', out_); fputc('"', out_); }
-		else if (c == '\t') { fputc('\\', out_); fputc('t', out_); }
-		else if (c == '\n') { fputc('\\', out_); fputc('n', out_); }
-		else if (c == '\r') { fputc('\\', out_); fputc('r', out_); }
-		else if (!isprint(c)) _fprintf(out_, "\\%03o", c&0xff);
-		else fputc(c, out_);
+		if (c == '\\') { _fputc(c, out_); _fputc(c, out_); }
+		else if (c == '"') { _fputc('\\', out_); _fputc('"', out_); }
+		else if (c == '\t') { _fputc('\\', out_); _fputc('t', out_); }
+		else if (c == '\n') { _fputc('\\', out_); _fputc('n', out_); }
+		else if (c == '\r') { _fputc('\\', out_); _fputc('r', out_); }
+		else if (!_isprint(c)) _fprintf(out_, "\\%03o", c&0xff);
+		else _fputc(c, out_);
 	}
-	fputc('"', out_);
+	_fputc('"', out_);
 }
 
-static void OutputHtmlString(FILE *out_, const char *z)
+__device__ static void OutputHtmlString(FILE *out_, const char *z)
 {
 	int i;
 	while (*z)
@@ -435,7 +510,7 @@ static void OutputHtmlString(FILE *out_, const char *z)
 	}
 }
 
-static const char _needCsvQuote[] = {
+__constant__ static const char _needCsvQuote[] = {
 	1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
 	1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
 	1, 0, 1, 0, 0, 0, 0, 1,   0, 0, 0, 0, 0, 0, 0, 0, 
@@ -454,7 +529,7 @@ static const char _needCsvQuote[] = {
 	1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
 };
 
-static void OutputCsv(struct CallbackData *p, const char *z, bool sep)
+__device__ static void OutputCsv(struct CallbackData *p, const char *z, bool sep)
 {
 	FILE *out_ = p->Out;
 	if (!z) _fprintf(out_, "%s", p->NullValue);
@@ -464,7 +539,7 @@ static void OutputCsv(struct CallbackData *p, const char *z, bool sep)
 		int sepLength = _strlen(p->Separator);
 		for (i = 0; z[i]; i++)
 		{
-			if (_needCsvQuote[((unsigned char*)z)[i]] || (z[i] == p->Separator[0] &&  (sepLength == 1 || _memcmp(z, p->Separator, sepLength) == 0)))
+			if (_needCsvQuote[((unsigned char*)z)[i]] || (z[i] == p->Separator[0] && (sepLength == 1 || _memcmp(z, p->Separator, sepLength) == 0)))
 			{
 				i = 0;
 				break;
@@ -472,13 +547,13 @@ static void OutputCsv(struct CallbackData *p, const char *z, bool sep)
 		}
 		if (i == 0)
 		{
-			putc('"', out_);
+			_fputc('"', out_);
 			for (i = 0; z[i]; i++)
 			{
-				if (z[i] == '"') putc('"', out_);
-				putc(z[i], out_);
+				if (z[i] == '"') _fputc('"', out_);
+				_fputc(z[i], out_);
 			}
-			putc('"', out_);
+			_fputc('"', out_);
 		}
 		else _fprintf(out_, "%s", z);
 	}
@@ -497,7 +572,7 @@ static void InterruptHandler(int notUsed)
 }
 #endif
 
-static bool ShellCallback(void *args, int argsLength, char **argNames, char **colNames, int *insertTypes)
+__device__ static bool ShellCallback(void *args, int argsLength, char **argNames, char **colNames, int *insertTypes)
 {
 	int i;
 	struct CallbackData *p = (struct CallbackData *)args;
@@ -666,10 +741,7 @@ static bool ShellCallback(void *args, int argsLength, char **argNames, char **co
 	return false;
 }
 
-static bool Callback(void *args, int colLength, char **colValues, char **colNames)
-{
-	return ShellCallback(args, colLength, colValues, colNames, nullptr); // since we don't have type info, call the ShellCallback with a NULL value
-}
+__device__ static bool Callback(void *args, int colLength, char **colValues, char **colNames) { return ShellCallback(args, colLength, colValues, colNames, nullptr);  } // since we don't have type info, call the ShellCallback with a NULL value
 
 #pragma endregion
 
@@ -677,6 +749,7 @@ static bool Callback(void *args, int colLength, char **colValues, char **colName
 
 static void SetTableName(struct CallbackData *p, const char *name)
 {
+	H_DIRTY(p);
 	if (p->DestTable)
 	{
 		free(p->DestTable);
@@ -711,7 +784,7 @@ static void SetTableName(struct CallbackData *p, const char *name)
 	z[n] = 0;
 }
 
-static char *AppendText(char *in, char const *append, char quote)
+__device__ static char *AppendText(char *in, char const *append, char quote)
 {
 	int i;
 	int appendLength = _strlen(append);
@@ -723,7 +796,7 @@ static char *AppendText(char *in, char const *append, char quote)
 		for (i = 0; i < appendLength; i++)
 			if (append[i] == quote) newLength++;
 	}
-	in = (char *)realloc(in, newLength);
+	in = (char *)_realloc(in, newLength);
 	if (!in)
 		return nullptr;
 	if (quote)
@@ -747,7 +820,7 @@ static char *AppendText(char *in, char const *append, char quote)
 	return in;
 }
 
-static RC RunTableDumpQuery(struct CallbackData *p, const char *selectSql, const char *firstRow)
+__device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *selectSql, const char *firstRow)
 {
 	int i;
 	Vdbe *select;
@@ -786,7 +859,7 @@ static RC RunTableDumpQuery(struct CallbackData *p, const char *selectSql, const
 	return rc;
 }
 
-static char *save_err_msg(Context *ctx)
+__device__ static char *SaveErrMsg(Context *ctx)
 {
 	int errMsgLength = 1+_strlen(Main::ErrMsg(ctx));
 	char *errMsg = (char *)_alloc(errMsgLength);
@@ -795,7 +868,7 @@ static char *save_err_msg(Context *ctx)
 	return errMsg;
 }
 
-static int display_stats(Context *ctx, struct CallbackData *arg, bool reset)
+__device__ static int DisplayStats(Context *ctx, struct CallbackData *arg, bool reset)
 {
 	int cur;
 	int high;
@@ -883,7 +956,7 @@ static int display_stats(Context *ctx, struct CallbackData *arg, bool reset)
 // Execute a statement or set of statements.  Print any result rows/columns depending on the current mode set via the supplied callback.
 // This is very similar to SQLite's built-in sqlite3_exec() function except it takes a slightly different callback and callback data argument.
 // callback // (not the same as sqlite3_exec)
-static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,char**,char**,int*), struct CallbackData *arg, char **errMsgOut)
+__device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,char**,char**,int*), struct CallbackData *arg, char **errMsgOut)
 {
 	Vdbe *stmt = nullptr; // Statement to execute.
 	RC rc = RC_OK;
@@ -899,7 +972,7 @@ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,c
 		if (rc != RC_OK)
 		{
 			if (errMsgOut)
-				*errMsgOut = save_err_msg(ctx);
+				*errMsgOut = SaveErrMsg(ctx);
 		}
 		else
 		{
@@ -983,7 +1056,7 @@ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,c
 
 			// print Usage stats if stats on
 			if (arg && arg->StatsOn)
-				display_stats(ctx, arg, 0);
+				DisplayStats(ctx, arg, 0);
 
 			// Finalize the statement just executed. If this fails, save a copy of the error message. Otherwise, set sql to point to the next statement to execute.
 			rc2 = Vdbe::Finalize(stmt);
@@ -994,7 +1067,7 @@ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,c
 				while (IsSpace(sql[0])) sql++;
 			}
 			else if (errMsgOut)
-				*errMsgOut = save_err_msg(ctx);
+				*errMsgOut = SaveErrMsg(ctx);
 
 			// clear saved stmt handle
 			if (arg)
@@ -1006,7 +1079,7 @@ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(void*,int,c
 
 // This is a different callback routine used for dumping the database. Each row received by this callback consists of a table name,
 // the table type ("index" or "table") and SQL to create the table. This routine should print text sufficient to recreate the table.
-static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
+__device__ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
 {
 	RC rc;
 	const char *prepStmt = nullptr;
@@ -1017,10 +1090,10 @@ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
 	const char *typeName = args[1];
 	const char *sql = args[2];
 
-	if (!strcmp(tableName, "sqlite_sequence")) prepStmt = "DELETE FROM sqlite_sequence;\n";
-	else if (!strcmp(tableName, "sqlite_stat1")) _fprintf(p->Out, "ANALYZE sqlite_master;\n");
-	else if (!strncmp(tableName, "sqlite_", 7)) return false;
-	else if (!strncmp(sql, "CREATE VIRTUAL TABLE", 20))
+	if (!_strcmp(tableName, "sqlite_sequence")) prepStmt = "DELETE FROM sqlite_sequence;\n";
+	else if (!_strcmp(tableName, "sqlite_stat1")) _fprintf(p->Out, "ANALYZE sqlite_master;\n");
+	else if (!_strncmp(tableName, "sqlite_", 7)) return false;
+	else if (!_strncmp(sql, "CREATE VIRTUAL TABLE", 20))
 	{
 		if (!p->WritableSchema)
 		{
@@ -1037,7 +1110,7 @@ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
 	}
 	else _fprintf(p->Out, "%s;\n", sql);
 
-	if (!strcmp(typeName, "table"))
+	if (!_strcmp(typeName, "table"))
 	{
 		char *tableInfoSql = nullptr;
 		tableInfoSql = AppendText(tableInfoSql, "PRAGMA table_info(", 0);
@@ -1046,7 +1119,7 @@ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
 
 		Vdbe *tableInfo = nullptr;
 		rc = Prepare::Prepare_(p->Ctx, tableInfoSql, -1, &tableInfo, 0);
-		free(tableInfoSql);
+		_free(tableInfoSql);
 		if (rc != RC_OK || !tableInfo)
 			return true;
 
@@ -1058,7 +1131,7 @@ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
 		if (tmp)
 		{
 			select = AppendText(select, tmp, '\'');
-			free(tmp);
+			_free(tmp);
 		}
 		select = AppendText(select, " || ' VALUES(' || ", 0);
 		rc = tableInfo->Step();
@@ -1075,7 +1148,7 @@ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
 		rc = Vdbe::Finalize(tableInfo);
 		if (rc != RC_OK || rows == 0)
 		{
-			free(select);
+			_free(select);
 			return 1;
 		}
 		select = AppendText(select, "|| ')' FROM  ", 0);
@@ -1087,14 +1160,14 @@ static bool DumpCallback(void *arg, int argsLength, char **args, char **cols)
 			select = AppendText(select, " ORDER BY rowid DESC", 0);
 			RunTableDumpQuery(p, select, nullptr);
 		}
-		free(select);
+		_free(select);
 	}
 	return false;
 }
 
 // Run zQuery.  Use DumpCallback() as the callback routine so that the contents of the query are output as SQL statements.
 // If we get a SQLITE_CORRUPT error, rerun the query after appending "ORDER BY rowid DESC" to the end.
-static int RunSchemaDumpQuery(struct CallbackData *p, const char *query)
+__device__ static int RunSchemaDumpQuery(struct CallbackData *p, const char *query)
 {
 	char *err = nullptr;
 	RC rc = Main::Exec(p->Ctx, query, DumpCallback, p, &err);
@@ -1110,7 +1183,7 @@ static int RunSchemaDumpQuery(struct CallbackData *p, const char *query)
 		}
 		char *q2 = (char *)malloc(length+100);
 		if (!q2) return rc;
-		_snprintf(q2, length+100, "%s ORDER BY rowid DESC", query);
+		__snprintf(q2, length+100, "%s ORDER BY rowid DESC", query);
 		rc = Main::Exec(p->Ctx, q2, DumpCallback, p, &err);
 		if (rc)
 			_fprintf(p->Out, "/****** ERROR: %s ******/\n", err);
@@ -1187,7 +1260,7 @@ static char _timerHelp[] =
 static bool ProcessInput(struct CallbackData *p, FILE *in); // Forward reference
 
 // Make sure the database is open.  If it is not, then open it.  If the database fails to open, print an error message and exit.
-static void OpenCtx(struct CallbackData *p)
+__global__ static void OpenCtx(struct CallbackData *p)
 {
 	if (!p->Ctx)
 	{
@@ -1198,8 +1271,12 @@ static void OpenCtx(struct CallbackData *p)
 			Main::CreateFunction(_ctx, "shellstatic", 0, TEXTENCODE_UTF8, 0, ShellStaticFunc, 0, 0);
 		if (!_ctx || Main::ErrCode(_ctx) != RC_OK)
 		{
-			_fprintf(stderr,"Error: unable to open database \"%s\": %s\n", p->DbFilename, Main::ErrMsg(_ctx));
+			_fprintf(stderr, "Error: unable to open database \"%s\": %s\n", p->DbFilename, Main::ErrMsg(_ctx));
+#if __CUDACC__
+			d_return = -1; return;
+#else
 			exit(1);
+#endif
 		}
 #ifndef OMIT_LOAD_EXTENSION
 		//Main::enable_load_extension(p->db, 1);
@@ -1217,7 +1294,19 @@ static void OpenCtx(struct CallbackData *p)
 		}
 #endif
 	}
+#if __CUDACC__
+	d_return = 0;
+#endif
 }
+#if __CUDACC__
+static void _OpenCtx(struct CallbackData *p)
+{
+	D_DATA(p); OpenCtx<<<1,1>>>(p->D_); H_DATA(p);
+	H_RETURN(); if (h_return) exit(1);
+}
+#else
+#define _OpenCtx OpenCtx
+#endif
 
 // Do C-language style dequoting.
 //
@@ -1259,8 +1348,8 @@ static bool BooleanValue(char *arg)
 	int i;
 	for (i = 0; arg[i] >= '0' && arg[i] <= '9'; i++) { }
 	if (i > 0 && arg[i] == 0) return (atoi(arg) != 0);
-	if (!_strcmp(arg, "on") || !strcmp(arg, "yes")) return true;
-	if (!_strcmp(arg, "off") || !_strcmp(arg, "no")) return false;
+	if (!strcmp(arg, "on") || !strcmp(arg, "yes")) return true;
+	if (!strcmp(arg, "off") || !strcmp(arg, "no")) return false;
 	_fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n", arg);
 	return false;
 }
@@ -1275,9 +1364,9 @@ static void OutputFileClose(FILE *f)
 static FILE *OutputFileOpen(const char *file)
 {
 	FILE *f;
-	if (!_strcmp(file, "stdout")) f = stdout;
-	else if (!_strcmp(file, "stderr")) f = stderr;
-	else if (!_strcmp(file, "off")) f = 0;
+	if (!strcmp(file, "stdout")) f = stdout;
+	else if (!strcmp(file, "stderr")) f = stderr;
+	else if (!strcmp(file, "off")) f = 0;
 	else
 	{
 		f = fopen(file, "wb");
@@ -1301,12 +1390,34 @@ static void TestBreakpoint()
 	calls++;
 }
 
-
-
 #pragma endregion
 
 #pragma region META
 
+#if __CUDACC__
+__global__ void d_DoMetaCommand_databases(struct CallbackData *p)
+{
+	printf("d_DoMetaCommand_databases\n");
+	struct CallbackData data;
+	memcpy(&data, p, sizeof(data));
+	data.ShowHeader = 1;
+	data.Mode = MODE_Column;
+	data.ColWidth[0] = 3;
+	data.ColWidth[1] = 15;
+	data.ColWidth[2] = 58;
+	data.Cnt = 0;
+	char *errMsg = nullptr;
+	Main::Exec(p->Ctx, "PRAGMA database_list; ", ::Callback, &data, &errMsg);
+	if (errMsg)
+	{
+		_fprintf(stderr,"Error: %s\n", errMsg);
+		_free(errMsg);
+		d_return = 1;
+		return;
+	}
+	d_return = 0;
+}
+#endif
 static int DoMetaCommand(char *line, struct CallbackData *p)
 {
 	int i = 1;
@@ -1339,10 +1450,11 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 
 	// Process the input line.
 	if (argsLength == 0) return 0; // no tokens, no error
-	int n = _strlen(args[0]);
+	int n = (int)strlen(args[0]);
 	int c = args[0][0];
 	if (c == 'b' && n >= 3 && !strncmp(args[0], "backup", n))
 	{
+#ifndef __CUDACC__
 		const char *destFile = nullptr;
 		const char *dbName = nullptr;
 		const char *key = nullptr;
@@ -1391,7 +1503,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 #ifdef HAS_CODEC
 		sqlite3_key(dest, key, (int)strlen(key));
 #endif
-		OpenCtx(p);
+		_OpenCtx(p);
 		backup = Backup::Init(dest, "main", p->Ctx, dbName);
 		if (!backup)
 		{
@@ -1409,19 +1521,24 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			rc = 1;
 		}
 		Main::Close(dest);
+#endif
 	}
 	else if (c == 'b' && n >= 3 && !strncmp(args[0], "bail", n) && argsLength > 1 && argsLength < 3)
 	{
 		_bailOnError = BooleanValue(args[1]);
 	}
 	else if (c == 'b' && n >= 3 && !strncmp(args[0], "breakpoint", n))
-		// The undocumented ".breakpoint" command causes a call to the no-op routine named TestBreakpoint().
 	{
+		// The undocumented ".breakpoint" command causes a call to the no-op routine named TestBreakpoint().
 		TestBreakpoint();
 	}
 	else if (c == 'd' && n > 1 && !strncmp(args[0], "databases", n) && argsLength == 1)
 	{
-		OpenCtx(p);
+		_OpenCtx(p);
+#if __CUDACC__
+		D_DATA(p); d_DoMetaCommand_databases<<<1,1>>>(p->D_); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 		struct CallbackData data;
 		memcpy(&data, p, sizeof(data));
 		data.ShowHeader = 1;
@@ -1430,7 +1547,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		data.ColWidth[1] = 15;
 		data.ColWidth[2] = 58;
 		data.Cnt = 0;
-		char *errMsg = 0;
+		char *errMsg = nullptr;
 		Main::Exec(p->Ctx, "PRAGMA database_list; ", ::Callback, &data, &errMsg);
 		if (errMsg)
 		{
@@ -1438,10 +1555,12 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			_free(errMsg);
 			rc = 1;
 		}
+#endif
 	}
 	else if (c == 'd' && !strncmp(args[0], "dump", n) && argsLength < 3)
 	{
-		OpenCtx(p);
+#ifndef __CUDACC__
+		_OpenCtx(p);
 		// When playing back a "dump", the content might appear in an order which causes immediate foreign key constraints to be violated.
 		// So disable foreign-key constraint enforcement to prevent problems.
 		_fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
@@ -1486,6 +1605,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Main::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
 		Main::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
 		_fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
+#endif
 	}
 	else if (c == 'e' && !strncmp(args[0], "echo", n) && argsLength > 1 && argsLength < 3)
 	{
@@ -1498,6 +1618,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'e' && !strncmp(args[0], "explain", n) && argsLength < 3)
 	{
+#ifndef __CUDACC__
 		int val = (argsLength >= 2 ? BooleanValue(args[1]) : 1);
 		if (val == 1)
 		{
@@ -1530,6 +1651,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			p->ShowHeader = p->ExplainPrev.ShowHeader;
 			memcpy(p->ColWidth, p->ExplainPrev.ColWidth, sizeof(p->ColWidth));
 		}
+#endif
 	}
 	else if (c == 'h' && (!strncmp(args[0], "header", n) || !strncmp(args[0], "headers", n)) && argsLength > 1 && argsLength < 3)
 	{
@@ -1543,11 +1665,12 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'i' && !strncmp(args[0], "import", n) && argsLength == 3)
 	{
-		char *tableName = args[2];    // Insert data into this table
-		char *file = args[1];     // The file from which to extract data
+#ifndef __CUDACC__
+		char *tableName = args[2]; // Insert data into this table
+		char *file = args[1]; // The file from which to extract data
 		Vdbe *stmt = nullptr; // A statement
-		int i;                   // Loop counters
-		OpenCtx(p);
+		int i; 
+		_OpenCtx(p);
 		int sepLength = _strlen(p->Separator); // Number of bytes in p->separator[]
 		if (sepLength == 0)
 		{
@@ -1674,12 +1797,14 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		fclose(in);
 		Vdbe::Finalize(stmt);
 		Main::Exec(p->Ctx, commit, 0, 0, 0);
+#endif
 	}
 	else if (c == 'i' && !strncmp(args[0], "indices", n) && argsLength < 3)
 	{
+#ifndef __CUDACC__
 		struct CallbackData data;
 		char *errMsg = nullptr;
-		OpenCtx(p);
+		_OpenCtx(p);
 		memcpy(&data, p, sizeof(data));
 		data.ShowHeader = 0;
 		data.Mode = MODE_List;
@@ -1716,6 +1841,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			_fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
 			rc = 1;
 		}
+#endif
 	}
 #ifdef ENABLE_IOTRACE
 	else if (c == 'i' && !strncmp(args[0], "iotrace", n))
@@ -1749,7 +1875,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	{
 		const char *file = args[1];
 		const char *proc = (argsLength >= 3 ? args[2] : 0);
-		OpenCtx(p);
+		_OpenCtx(p);
 		char *errMsg = 0;
 		rc = sqlite3_load_extension(p->Ctx, file, proc, &errMsg);
 		if (rc != RC_OK)
@@ -1768,7 +1894,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'm' && !strncmp(args[0], "mode", n) && argsLength == 2)
 	{
-		int n2 = _strlen(args[1]);
+		int n2 = (int)strlen(args[1]);
 		if ((n2 == 4 && !strncmp(args[1],"line",n2)) || (n2 == 5 && !strncmp(args[1],"lines",n2))) p->Mode = MODE_Line;
 		else if ((n2 == 6 && !strncmp(args[1],"column",n2)) || (n2 == 7 && !strncmp(args[1],"columns",n2))) p->Mode = MODE_Column;
 		else if (n2 == 4 && !strncmp(args[1],"list",n2)) p->Mode = MODE_List;
@@ -1785,7 +1911,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'm' && !strncmp(args[0], "mode", n) && argsLength == 3)
 	{
-		int n2 = _strlen(args[1]);
+		int n2 = (int)strlen(args[1]);
 		if (n2 == 6 && !strncmp(args[1],"insert",n2)) { p->Mode = MODE_Insert; SetTableName(p, args[2]); }
 		else
 		{
@@ -1864,6 +1990,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'r' && n >= 3 && !strncmp(args[0], "restore", n) && argsLength > 1 && argsLength < 4)
 	{
+#ifndef __CUDACC__
 		const char *srcFile;
 		const char *dbName;
 		if (argsLength == 2)
@@ -1884,7 +2011,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			Main::Close(src);
 			return 1;
 		}
-		OpenCtx(p);
+		_OpenCtx(p);
 		Backup *backup = Backup::Init(p->Ctx, dbName, src, "main");
 		if (!backup)
 		{
@@ -1906,12 +2033,14 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		else if (rc == RC_BUSY || rc == RC_LOCKED) { _fprintf(stderr, "Error: source database is busy\n"); rc = 1; }
 		else { _fprintf(stderr, "Error: %s\n", Main::ErrMsg(p->Ctx)); rc = 1; }
 		Main::Close(src);
+#endif
 	}
 	else if (c == 's' && !strncmp(args[0], "schema", n) && argsLength < 3)
 	{
+#ifndef __CUDACC__
 		struct CallbackData data;
 		char *errMsg = 0;
-		OpenCtx(p);
+		_OpenCtx(p);
 		memcpy(&data, p, sizeof(data));
 		data.ShowHeader = 0;
 		data.Mode = MODE_Semi;
@@ -1982,6 +2111,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		if (errMsg) { _fprintf(stderr,"Error: %s\n", errMsg); _free(errMsg); rc = 1; }
 		else if (rc != RC_OK) { _fprintf(stderr,"Error: querying schema information\n"); rc = 1; }
 		else rc = 0;
+#endif	
 	}
 	else if (c == 's' && !strncmp(args[0], "separator", n) && argsLength == 2)
 	{
@@ -1992,11 +2122,11 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		_fprintf(p->Out,"%9.9s: %s\n","echo", p->EchoOn ? "on" : "off");
 		_fprintf(p->Out,"%9.9s: %s\n","explain", p->ExplainPrev.Valid ? "on" :"off");
 		_fprintf(p->Out,"%9.9s: %s\n","headers", p->ShowHeader ? "on" : "off");
-		_fprintf(p->Out,"%9.9s: %s\n","mode", modeDescr[p->Mode]);
+		_fprintf(p->Out,"%9.9s: %s\n","mode", _modeDescr[p->Mode]);
 		_fprintf(p->Out,"%9.9s: ", "nullvalue");
 		OutputCString(p->Out, p->NullValue);
 		_fprintf(p->Out, "\n");
-		_fprintf(p->Out,"%9.9s: %s\n","output", _strlen(p->Outfile) ? p->Outfile : "stdout");
+		_fprintf(p->Out,"%9.9s: %s\n","output", strlen(p->Outfile) ? p->Outfile : "stdout");
 		_fprintf(p->Out,"%9.9s: ", "separator");
 		OutputCString(p->Out, p->Separator);
 		_fprintf(p->Out, "\n");
@@ -2012,7 +2142,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 't' && n > 1 && !strncmp(args[0], "tables", n) && argsLength < 3)
 	{
-		OpenCtx(p);
+#ifndef __CUDACC__
+		_OpenCtx(p);
 		Vdbe *stmt;
 		rc = Prepare::Prepare_v2(p->Ctx, "PRAGMA database_list", -1, &stmt, 0);
 		if (rc) return rc;
@@ -2094,9 +2225,11 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		for (int ii = 0; ii < rows; ii++) _free(results[ii]);
 		_free(results);
+#endif
 	}
 	else if (c == 't' && n >= 8 && !strncmp(args[0], "testctrl", n) && argsLength >= 2)
 	{
+#ifndef __CUDACC__
 		static const struct
 		{
 			const char *CtrlName;   // Name of a test-control option
@@ -2119,9 +2252,9 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Main::TESTCTRL testctrl = (Main::TESTCTRL)-1;
 		int rc = 0;
 		int i;
-		OpenCtx(p);
+		_OpenCtx(p);
 		// convert testctrl text option to value. allow any unique prefix of the option name, or a numerical value.
-		int n = _strlen(args[1]);
+		int n = (int)strlen(args[1]);
 		for (i = 0; i < (int)_lengthof(_ctrls); i++)
 		{
 			if (!strncmp(args[1], _ctrls[i].CtrlName, n))
@@ -2212,11 +2345,14 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				break;
 			}
 		}
+#endif
 	}
 	else if (c == 't' && n > 4 && !strncmp(args[0], "timeout", n) && argsLength == 2)
 	{
-		OpenCtx(p);
+#ifndef __CUDACC__
+		_OpenCtx(p);
 		Main::BusyTimeout(p->Ctx, atoi(args[1]));
+#endif
 	}
 	else if (HAS_TIMER && c == 't' && n >= 5 && !strncmp(args[0], "timer", n) && argsLength == 2)
 	{
@@ -2224,7 +2360,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 't' && !strncmp(args[0], "trace", n) && argsLength > 1)
 	{
-		OpenCtx(p);
+#ifndef __CUDACC__
+		_OpenCtx(p);
 		OutputFileClose(p->TraceOut);
 		p->TraceOut = OutputFileOpen(args[1]);
 #if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
@@ -2233,6 +2370,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		else
 			Main::Trace(p->Ctx, SqlTraceCallback, p->TraceOut);
 #endif
+#endif
 	}
 	else if (c == 'v' && !strncmp(args[0], "version", n))
 	{
@@ -2240,6 +2378,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'v' && !strncmp(args[0], "vfsname", n))
 	{
+#ifndef __CUDACC__
 		const char *dbName = (argsLength == 2 ? args[1] : "main");
 		char *vfsName = 0;
 		if (p->Ctx)
@@ -2251,6 +2390,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				_free(vfsName);
 			}
 		}
+#endif
 	}
 #if defined(_DEBUG) && defined(ENABLE_WHERETRACE)
 	else if (c == 'w' && !strncmp(args[0], "wheretrace", n))
@@ -2335,13 +2475,39 @@ static bool _is_complete(char *sql, int sqlLength)
 // cause this routine to exit immediately, unless input is interactive.
 //
 // Return the number of errors.
+#if __CUDACC__
+__global__ void d_ProcessInput_0(struct CallbackData *p, char *sql, int startline)
+{
+	int rc;
+	char *errMsg;
+	rc = ShellExec(p->Ctx, sql, ShellCallback, p, &errMsg);
+	if (rc || errMsg)
+	{
+		char prefix[100];
+		if (startline != -1)
+			__snprintf(prefix, sizeof(prefix), "Error: near line %d:", startline);
+		else
+			__snprintf(prefix, sizeof(prefix), "Error:");
+		if (errMsg)
+		{
+			_fprintf(stderr, "%s %s\n", prefix, errMsg);
+			_free(errMsg);
+			errMsg = nullptr;
+		}
+		else
+			_fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
+		d_return = -1;
+		return;
+	}
+	d_return = 0;
+}
+#endif
 static bool ProcessInput(struct CallbackData *p, FILE *in)
 {
 	char *line = 0;
 	char *sql = 0;
 	int sqlLength = 0;
 	int sqlLengthPrior = 0;
-	char *errMsg;
 	int rc;
 	int errCnt = 0;
 	int lineno = 0;
@@ -2380,7 +2546,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 			for (i = 0; line[i] && IsSpace(line[i]); i++) { }
 			if (line[i] != 0)
 			{
-				sqlLength = _strlen(line);
+				sqlLength = (int)strlen(line);
 				sql = (char *)malloc(sqlLength+3);
 				if (!sql)
 				{
@@ -2393,7 +2559,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 		}
 		else
 		{
-			int lineLength = _strlen(line);
+			int lineLength = (int)strlen(line);
 			sql = (char *)realloc(sql, sqlLength + lineLength + 4);
 			if (!sql)
 			{
@@ -2407,10 +2573,19 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 		if (sql && _contains_semicolon(&sql[sqlLengthPrior], sqlLength-sqlLengthPrior) && Parse::Complete(sql))
 		{
 			p->Cnt = 0;
-			OpenCtx(p);
+			_OpenCtx(p);
 			BEGIN_TIMER;
+#if __CUDACC__
+			char *d_sql;
+			cudaMalloc((void**)&d_sql, sqlLength);
+			cudaMemcpy(d_sql, sql, sqlLength, cudaMemcpyHostToDevice);
+			int d_startline = (in != 0 || !_stdinIsInteractive ? startline : -1);
+			D_DATA(p); d_ProcessInput_0<<<1,1>>>(p->D_, d_sql, d_startline); H_DATA(p);
+			cudaFree(d_sql);
+			H_RETURN(); if (h_return) errCnt++;
+#else
+			char *errMsg;
 			rc = ShellExec(p->Ctx, sql, ShellCallback, p, &errMsg);
-			END_TIMER;
 			if (rc || errMsg)
 			{
 				char prefix[100];
@@ -2428,6 +2603,8 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 					_fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
 				errCnt++;
 			}
+#endif
+			END_TIMER;
 			free(sql);
 			sql = nullptr;
 			sqlLength = 0;
@@ -2450,73 +2627,71 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 // Return a pathname which is the user's home directory.  A 0 return indicates an error of some kind.
 static char *FindHomeDir()
 {
-	static char *home_dir = NULL;
-	if (home_dir) return home_dir;
+	static char *homeDir = NULL;
+	if (homeDir) return homeDir;
 #if !defined(_WIN32) && !defined(WIN32) && !defined(_WIN32_WCE) && !defined(__RTP__) && !defined(_WRS_KERNEL)
 	{
 		struct passwd *pwent;
 		uid_t uid = getuid();
 		if ((pwent = getpwuid(uid)) != NULL)
-			home_dir = pwent->pw_dir;
+			homeDir = pwent->pw_dir;
 	}
 #endif
 #if defined(_WIN32_WCE)
-	home_dir = "/"; // Windows CE (arm-wince-mingw32ce-gcc) does not provide getenv()
+	homeDir = "/"; // Windows CE (arm-wince-mingw32ce-gcc) does not provide getenv()
 #else
 #if defined(_WIN32) || defined(WIN32)
-	if (!home_dir) home_dir = getenv("USERPROFILE");
+	if (!homeDir) homeDir = getenv("USERPROFILE");
 #endif
-	if (!home_dir) home_dir = getenv("HOME");
+	if (!homeDir) homeDir = getenv("HOME");
 
 #if defined(_WIN32) || defined(WIN32)
-	if (!home_dir)
+	if (!homeDir)
 	{
 		char *drive = getenv("HOMEDRIVE");
 		char *path = getenv("HOMEPATH");
 		if (drive && path)
 		{
-			int n = _strlen(drive) + _strlen(path) + 1;
-			home_dir = (char *)malloc(n);
-			if (!home_dir) return nullptr;
-			_snprintf(home_dir, n, "%s%s", drive, path);
-			return home_dir;
+			int n = (int)strlen(drive) + (int)strlen(path) + 1;
+			homeDir = (char *)malloc(n);
+			if (!homeDir) return nullptr;
+			_snprintf(homeDir, n, "%s%s", drive, path);
+			return homeDir;
 		}
-		home_dir = "c:\\";
+		homeDir = "c:\\";
 	}
 #endif
 #endif // !_WIN32_WCE
-	if (home_dir)
+	if (homeDir)
 	{
-		int n = _strlen(home_dir) + 1;
+		int n = (int)strlen(homeDir) + 1;
 		char *z = (char *)malloc(n);
-		if (z) memcpy(z, home_dir, n);
-		home_dir = z;
+		if (z) memcpy(z, homeDir, n);
+		homeDir = z;
 	}
-	return home_dir;
+	return homeDir;
 }
 
 // Read input from the file given by sqliterc_override.  Or if that parameter is NULL, take input from ~/.sqliterc
 // Returns the number of errors.
-static int ProcessSqliteRC(struct CallbackData *p,  const char *sqliterc_override)
+static int ProcessSqliteRC(struct CallbackData *p, const char *sqliterc)
 {
-	char *home_dir = nullptr;
-	const char *sqliterc = sqliterc_override;
-	char *buf = 0;
+	char *homeDir = nullptr;
+	char b[FILENAME_MAX];
 	FILE *in = nullptr;
 	int rc = 0;
 	if (sqliterc == nullptr)
 	{
-		home_dir = FindHomeDir();
-		if (!home_dir)
+		homeDir = FindHomeDir();
+		if (!homeDir)
 		{
 #if !defined(__RTP__) && !defined(_WRS_KERNEL)
 			_fprintf(stderr,"%s: Error: cannot locate your home directory\n", Argv0);
 #endif
 			return 1;
 		}
-		Main::Initialize();
-		buf = _mprintf("%s/.sqliterc", home_dir);
-		sqliterc = buf;
+		_snprintf(b, sizeof(b), "%s/.sqliterc", homeDir);
+		sqliterc = b;
 	}
 	in = fopen(sqliterc, "rb");
 	if (in)
@@ -2526,7 +2701,6 @@ static int ProcessSqliteRC(struct CallbackData *p,  const char *sqliterc_overrid
 		rc = ProcessInput(p, in);
 		fclose(in);
 	}
-	_free(buf);
 	return rc;
 }
 
@@ -2578,17 +2752,66 @@ static void Usage(bool showDetail)
 }
 
 // Initialize the state information in data
-static void MainInit(struct CallbackData *data)
+struct CallbackData _data;
+#if __CUDACC__
+cudaDeviceHeap _deviceHeap;
+__global__ void d_MainInit_0(struct CallbackData *data)
 {
-	memset(data, 0, sizeof(*data));
-	data->Mode = MODE_List;
-	memcpy(data->Separator,"|", 2);
-	data->ShowHeader = 0;
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, data);
+	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
+	Main::Initialize();
+	printf("Rdy\n");
+}
+#endif
+static void MainInit()
+{
+	memset(&_data, 0, sizeof(_data));
+	_data.Mode = MODE_List;
+	memcpy(_data.Separator,"|", 2);
+	_data.ShowHeader = 0;
 	_snprintf(_mainPrompt, sizeof(_mainPrompt), "sqlite> ");
 	_snprintf(_continuePrompt, sizeof(_continuePrompt), "   ...> ");
+#if __CUDACC__
+	//cudaCheckErrors(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax), return);
+	int deviceId = gpuGetMaxGflopsDeviceId();
+	cudaCheckErrors(cudaSetDevice(deviceId), return);
+	cudaCheckErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024*5), return);
+	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
+	cudaCheckErrors(cudaDeviceHeapSelect(_deviceHeap), return);
+	//
+	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); H_DATA(&_data);
+	cudaDeviceHeapSynchronize(_deviceHeap);
+#else
+	SysEx::Config(SysEx::CONFIG_URI, 1);
+	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, _data);
 	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
+	//Main::Initialize();
+#endif
+}
+
+#if __CUDACC__
+__global__ void d_MainShutdown_0(struct CallbackData *data)
+{
+	if (data->Ctx)
+		Main::Close(data->Ctx);
+	Main::Shutdown();
+	printf("End\n");
+}
+#endif
+static void MainShutdown()
+{
+#if __CUDACC__
+	D_DATA(&_data); d_MainShutdown_0<<<1,1>>>(_data.D_); H_DATA(&_data);
+	D_FREE(&_data);
+	//
+	cudaDeviceHeapDestroy(_deviceHeap);
+	cudaDeviceReset();
+#else
+	if (_data.Ctx)
+		Main::Close(_data.Ctx);
+	Main::Shutdown();
+#endif
 }
 
 // Get the argument to an --option.  Throw an error and die if no argument is available.
@@ -2602,10 +2825,42 @@ static char *CmdlineOptionValue(int argc, char **argv, int i)
 	return argv[i];
 }
 
-int main(int argc, char **argv)
+#if __CUDACC__
+__global__ void d_main_Vfs(char *name)
+{
+	VSystem *vfs = VSystem::FindVfs(name);
+	if (vfs)
+		VSystem::RegisterVfs(vfs, true);
+	else
+	{
+		d_return = -1; return;
+	}
+	d_return = 0;
+}
+
+__global__ void d_main_ShellExec(struct CallbackData *p, char *sql)
 {
 	char *errMsg = 0;
-	struct CallbackData data;
+	int rc = ShellExec(p->Ctx, sql, ShellCallback, p, &errMsg);
+	if (errMsg)
+	{
+		_fprintf(stderr, "Error: %s\n", errMsg);
+		d_return = (rc ? rc : 1);
+		return;
+	}
+	else if (rc)
+	{
+		_fprintf(stderr, "Error: unable to process SQL \"%s\"\n", sql);
+		d_return = rc;
+		return;
+	}
+	d_return = 0;
+}
+#endif
+int main(int argc, char **argv)
+{
+	//atexit(MainShutdown);
+	char *errMsg = 0;
 	const char *initFile = 0;
 	char *firstCmd = 0;
 	int i;
@@ -2617,12 +2872,12 @@ int main(int argc, char **argv)
 	//	exit(1);
 	//}
 	Argv0 = argv[0];
-	MainInit(&data);
+	MainInit();
 	_stdinIsInteractive = isatty(0);
 
 	// Make sure we have a valid signal handler early, before anything else is done.
 #ifdef SIGINT
-	signal(SIGINT, interrupt_handler);
+	signal(SIGINT, InterruptHandler);
 #endif
 
 	// Do an initial pass through the command-line argument to locate the name of the database file, the name of the initialization file,
@@ -2633,9 +2888,9 @@ int main(int argc, char **argv)
 		z = argv[i];
 		if (z[0] != '-')
 		{
-			if (!data.DbFilename)
+			if (!_data.DbFilename)
 			{
-				data.DbFilename = z;
+				_data.DbFilename = z;
 				continue;
 			}
 			if (!firstCmd)
@@ -2666,7 +2921,10 @@ int main(int argc, char **argv)
 				if (c == 'G') { sizeHeap *= 1000000000; break; }
 			}
 			if (sizeHeap > 0x7fff0000) sizeHeap = 0x7fff0000;
+#if __CUDACC__
+#else
 			Main::Config(CONFIG_HEAP, malloc((int)sizeHeap), (int)sizeHeap, 64);
+#endif
 		}
 #else
 		else if (!strcmp(z, "-heap")) { }
@@ -2687,35 +2945,50 @@ int main(int argc, char **argv)
 #endif
 		else if (!strcmp(z, "-vfs"))
 		{
+#if __CUDACC__
+			char *vfsName = CmdlineOptionValue(argc, argv, ++i);
+			int vfsNameLength = (int)strlen(vfsName);
+			char *d_vfsName;
+			cudaMalloc((void**)&d_vfsName, vfsNameLength);
+			cudaMemcpy(d_vfsName, vfsName, vfsNameLength, cudaMemcpyHostToDevice);
+			d_main_Vfs<<<1,1>>>(d_vfsName);
+			cudaFree(d_vfsName);
+			H_RETURN; if (h_return) { _fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]); exit(1); }
+#else
+			Main::Initialize();
 			VSystem *vfs = VSystem::FindVfs(CmdlineOptionValue(argc, argv, ++i));
 			if (vfs)
-				VSystem::RegisterVfs(vfs, 1);
+				VSystem::RegisterVfs(vfs, true);
 			else
 			{
 				_fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]);
 				exit(1);
 			}
+#endif
 		}
 	}
-	if (!data.DbFilename)
+	if (!_data.DbFilename)
 	{
 #ifndef OMIT_MEMORYDB
-		data.DbFilename = ":memory:";
+		H_DIRTY(&_data);
+		_data.DbFilename = ":memory:";
 #else
 		_fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
 		return 1;
 #endif
 	}
-	data.Out = stdout;
+	_data.Out = stdout;
 
 	// Go ahead and open the database file if it already exists.  If the file does not exist, delay opening it.  This prevents empty database
 	// files from being created if a user mistypes the database name argument to the sqlite command-line tool.
-	if (!access(data.DbFilename, 0))
-		OpenCtx(&data);
+#ifndef __CUDACC__
+	if (!access(_data.DbFilename, 0))
+		_OpenCtx(&_data);
+#endif
 
 	// Process the initialization file if there is one.  If no -init option is given on the command line, look for a file named ~/.sqliterc and
 	// try to process it.
-	rc = ProcessSqliteRC(&data, initFile);
+	rc = ProcessSqliteRC(&_data, initFile);
 	if (rc > 0)
 		return rc;
 
@@ -2728,17 +3001,17 @@ int main(int argc, char **argv)
 		if (z[0] != '-' ) continue;
 		if (z[1] == '-' ) z++;
 		if (!strcmp(z, "-init")) i++;
-		else if (!strcmp(z, "-html")) data.Mode = MODE_Html;
-		else if (!strcmp(z, "-list")) data.Mode = MODE_List;
-		else if (!strcmp(z, "-line")) data.Mode = MODE_Line;
-		else if (!strcmp(z, "-column")) data.Mode = MODE_Column;
-		else if (!strcmp(z, "-csv")) { data.Mode = MODE_Csv; memcpy(data.Separator, ",", 2); }
-		else if (!strcmp(z, "-separator")) _snprintf(data.Separator, sizeof(data.Separator), "%s", CmdlineOptionValue(argc,argv,++i));
-		else if (!strcmp(z, "-nullvalue")) _snprintf(data.NullValue, sizeof(data.NullValue), "%s", CmdlineOptionValue(argc,argv,++i));
-		else if (!strcmp(z, "-header")) data.ShowHeader = 1;
-		else if (!strcmp(z, "-noheader")) data.ShowHeader = 0;
-		else if (!strcmp(z, "-echo")) data.EchoOn = 1;
-		else if (!strcmp(z, "-stats")) data.StatsOn = 1;
+		else if (!strcmp(z, "-html")) _data.Mode = MODE_Html;
+		else if (!strcmp(z, "-list")) _data.Mode = MODE_List;
+		else if (!strcmp(z, "-line")) _data.Mode = MODE_Line;
+		else if (!strcmp(z, "-column")) _data.Mode = MODE_Column;
+		else if (!strcmp(z, "-csv")) { _data.Mode = MODE_Csv; memcpy(_data.Separator, ",", 2); }
+		else if (!strcmp(z, "-separator")) _snprintf(_data.Separator, sizeof(_data.Separator), "%s", CmdlineOptionValue(argc,argv,++i));
+		else if (!strcmp(z, "-nullvalue")) _snprintf(_data.NullValue, sizeof(_data.NullValue), "%s", CmdlineOptionValue(argc,argv,++i));
+		else if (!strcmp(z, "-header")) _data.ShowHeader = 1;
+		else if (!strcmp(z, "-noheader")) _data.ShowHeader = 0;
+		else if (!strcmp(z, "-echo")) _data.EchoOn = 1;
+		else if (!strcmp(z, "-stats")) _data.StatsOn = 1;
 		else if (!strcmp(z, "-bail")) _bailOnError = 1;
 		else if (!strcmp(z, "-version")) { printf("%s %s\n", CORE_VERSION, CORE_SOURCE_ID); return 0; }
 		else if (!strcmp(z, "-interactive")) _stdinIsInteractive = 1;
@@ -2758,16 +3031,25 @@ int main(int argc, char **argv)
 			z = CmdlineOptionValue(argc,argv,++i);
 			if (z[0] == '.')
 			{
-				rc = DoMetaCommand(z, &data);
+				rc = DoMetaCommand(z, &_data);
 				if (rc && _bailOnError) return rc;
 			}
 			else
 			{
-				OpenCtx(&data);
-				rc = ShellExec(data.Ctx, z, ShellCallback, &data, &errMsg);
+				_OpenCtx(&_data);
+#if __CUDACC__
+				int sqlLength = (int)strlen(z);
+				char *d_sql;
+				cudaMalloc((void**)&d_sql, sqlLength);
+				cudaMemcpy(d_sql, z, sqlLength, cudaMemcpyHostToDevice);
+				D_DATA(&_data);  d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); H_DATA(&_data);
+				cudaFree(d_sql);
+				H_RETURN(); if (_bailOnError && h_return) return h_return;
+#else
+				rc = ShellExec(_data.Ctx, z, ShellCallback, &_data, &errMsg);
 				if (errMsg)
 				{
-					_fprintf(stderr,"Error: %s\n", errMsg);
+					_fprintf(stderr, "Error: %s\n", errMsg);
 					if (_bailOnError) return (rc ? rc : 1);
 				}
 				else if (rc)
@@ -2775,6 +3057,7 @@ int main(int argc, char **argv)
 					_fprintf(stderr, "Error: unable to process SQL \"%s\"\n", z);
 					if (_bailOnError) return rc;
 				}
+#endif
 			}
 		}
 		else
@@ -2789,21 +3072,31 @@ int main(int argc, char **argv)
 	{
 		// Run just the command that follows the database name
 		if (firstCmd[0] == '.')
-			rc = DoMetaCommand(firstCmd, &data);
+			rc = DoMetaCommand(firstCmd, &_data);
 		else
 		{
-			OpenCtx(&data);
-			rc = ShellExec(data.Ctx, firstCmd, ShellCallback, &data, &errMsg);
+			_OpenCtx(&_data);
+#if __CUDACC__
+			int sqlLength = (int)strlen(firstCmd);
+			char *d_sql;
+			cudaMalloc((void**)&d_sql, sqlLength);
+			cudaMemcpy(d_sql, firstCmd, sqlLength, cudaMemcpyHostToDevice);
+			D_DATA(&_data); d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); H_DATA(&_data);
+			cudaFree(d_sql);
+			H_RETURN(); if (h_return) return h_return;
+#else
+			rc = ShellExec(_data.Ctx, firstCmd, ShellCallback, &_data, &errMsg);
 			if (errMsg)
 			{
-				_fprintf(stderr,"Error: %s\n", errMsg);
+				_fprintf(stderr, "Error: %s\n", errMsg);
 				return (rc ? rc : 1);
 			}
 			else if (rc)
 			{
-				_fprintf(stderr,"Error: unable to process SQL \"%s\"\n", firstCmd);
+				_fprintf(stderr, "Error: unable to process SQL \"%s\"\n", firstCmd);
 				return rc;
 			}
+#endif
 		}
 	}
 	else
@@ -2820,15 +3113,15 @@ int main(int argc, char **argv)
 			char *home = FindHomeDir();
 			if (home)
 			{
-				int historyLength = _strlen(home) + 20;
+				int historyLength = (int)strlen(home) + 20;
 				if ((history = (char *)malloc(historyLength))!=0 ){
 					_snprintf(history, historyLength, "%s/.sqlite_history", home);
 				}
 			}
 #if defined(HAVE_READLINE) && HAVE_READLINE == 1
-			if (history) read_history(history);
+			if (history) ReadHistory(history);
 #endif
-			rc = ProcessInput(&data, 0);
+			rc = ProcessInput(&_data, 0);
 			if (history)
 			{
 				stifle_history(100);
@@ -2837,11 +3130,10 @@ int main(int argc, char **argv)
 			}
 		}
 		else
-			rc = ProcessInput(&data, stdin);
+			rc = ProcessInput(&_data, stdin);
 	}
-	SetTableName(&data, 0);
-	if (data.Ctx)
-		Main::Close(data.Ctx);
+	SetTableName(&_data, 0);
+	MainShutdown(); //: called by atexit();
 	return rc;
 }
 

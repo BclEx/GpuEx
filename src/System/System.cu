@@ -1,6 +1,5 @@
 #include "..\System.net\Core\SysEx.cu"
 #include "..\System.net\Core\Bitvec.cu"
-#include "..\System.net\Core\Hash.cu"
 #include "..\System.net\Core\MathEx.cu"
 #include "..\System.net\Core\ConvertEx.cu"
 #include "..\System.net\Core\SysEx+Random.cu"

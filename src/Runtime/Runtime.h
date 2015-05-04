@@ -9,8 +9,14 @@
 #include <stdio.h>
 #if __CUDACC__
 #define __forceinline __forceinline__
+#if __CUDA_ARCH__
+#define __host_constant__ __constant__
+#else
+#define __host_constant__
+#endif
 #include "Runtime.cu.h"
 #else
+#define __host_constant__
 #include <string.h>
 #include <malloc.h>
 #include "Runtime.cpu.h"
@@ -358,6 +364,9 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #define _islower(x) (__curtUpperToLower[(unsigned char)(x)]==x)
 #define _ispoweroftwo(x) (((x)&((x)-1))==0)
 __device__ inline static bool _isalpha2(unsigned char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+
+#define _isprint(x) ((unsigned char)c>0x1f&&(unsigned char)c!=0x7f)
+#define _iscntrl(x) ((unsigned char)c<=0x1f||(unsigned char)c==0x7f)
 
 // array
 template <typename T> struct array_t { int length; T *data; __device__ __forceinline array_t() { data = nullptr; length = 0; } __device__ __forceinline array_t(T *a) { data = a; length = 0; } __device__ __forceinline array_t(T *a, int b) { data = a; length = b; } __device__ __forceinline void operator=(T *a) { data = a; } __device__ __forceinline operator T *() { return data; } };
@@ -774,9 +783,12 @@ __device__ inline static char *__snprintf(const char *buf, size_t bufLen, const 
 #undef stdin
 #undef stdout
 #undef stderr
-#define stdin nullptr
-#define stdout nullptr
-#define stderr nullptr
+extern __constant__ FILE _stdin_file;
+extern __constant__ FILE _stdout_file;
+extern __constant__ FILE _stderr_file;
+#define stdin &_stdin_file
+#define stdout &_stdout_file
+#define stderr &_stderr_file
 #endif
 
 #if __CUDACC__
@@ -784,11 +796,15 @@ __device__ inline static char *__snprintf(const char *buf, size_t bufLen, const 
 #define _fopen(f, b) 0
 #define _fflush(f)
 #define _fclose(f)
+#define _fputc(c, f) printf("%c", c)
+#define _fputs(s, f) printf("%s\n", c)
 #else
 #define _fprintf(f, ...) fprintf(f, __VA_ARGS__)
 #define _fopen(f, b) fopen(f, b)
 #define _fflush(f) fflush(f)
 #define _fclose(f) fclose(f)
+#define _fputc(c, f) fputc(c, f)
+#define _fputs(s, f) fputs(s, f)
 #endif
 
 #pragma endregion

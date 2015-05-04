@@ -12,6 +12,7 @@
 #include "..\System.Data.net\Core+Vdbe\Auth.cu"
 #include "..\System.Data.net\Core+Vdbe\Backup.cu"
 #include "..\System.Data.net\Core+Vdbe\Callback.cu"
+#include "..\System.Data.net\Core+Vdbe\Context.cu"
 #include "..\System.Data.net\Core+Vdbe\Expr.cu"
 #include "..\System.Data.net\Core+Vdbe\Main.cu"
 #include "..\System.Data.net\Core+Vdbe\Main+Legacy.cu"

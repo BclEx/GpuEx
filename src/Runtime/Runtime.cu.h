@@ -66,8 +66,8 @@ extern "C" __device__ char *__heap_write(char *dest, const char *src, int maxLen
 extern "C" __device__ void _runtimeSetHeap(void *heap);
 extern "C" __device__ void runtimeRestrict(int threadid, int blockid);
 // embed
-extern __constant__ unsigned char __curtUpperToLower[256];
-extern __constant__ unsigned char __curtCtypeMap[256]; 
+extern __host_constant__ unsigned char __curtUpperToLower[256];
+extern __host_constant__ unsigned char __curtCtypeMap[256]; 
 #endif
 
 __device__ static char *__copyArg(char *ptr, const char *arg, char *end)

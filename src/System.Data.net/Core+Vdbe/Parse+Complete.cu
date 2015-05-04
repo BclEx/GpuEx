@@ -4,6 +4,14 @@
 
 #include "Core+Vdbe.cu.h"
 
+#if !defined(__CUDACC__) || defined(__CUDA_ARCH__)
+#define _isidchar_ _isidchar
+#define _strncmp_ _strncmp
+#else
+#define _isidchar_(x) ((__curtCtypeMap[(unsigned char)(x)]&0x46)!=0)
+#define _strncmp_ strncmp
+#endif
+
 namespace Core
 {
 	enum TKC : uint8
@@ -21,8 +29,7 @@ namespace Core
 	};
 
 #ifndef OMIT_TRIGGER
-
-	__constant__ static const uint8 _trans[8][8] = {
+	__host_constant__ static const uint8 _trans[8][8] = {
 		/* State:       **  SEMI  WS  OTHER  EXPLAIN  CREATE  TEMP  TRIGGER  END */
 		/* 0 INVALID: */ {    1,  0,     2,       3,      4,    2,       2,   2, },
 		/* 1   START: */ {    1,  1,     2,       3,      4,    2,       2,   2, },
@@ -33,13 +40,13 @@ namespace Core
 		/* 6    SEMI: */ {    6,  6,     5,       5,      5,    5,       5,   7, },
 		/* 7     END: */ {    1,  7,     5,       5,      5,    5,       5,   5, } };
 #else
-	__constant__ static const uint8 _trans[3][3] = {
+	__host_constant__ static const uint8 _trans[3][3] = {
 		/* State:       **  SEMI  WS  OTHER */
 		/* 0 INVALID: */ {    1,  0,     2, },
 		/* 1   START: */ {    1,  1,     2, },
 		/* 2  NORMAL: */ {    1,  2,     2, } };
 #endif
-	__device__ bool Parse::Complete(const char *sql)
+	__host__ __device__ bool Parse::Complete(const char *sql)
 	{
 		uint8 state = 0; // Current state, using numbers defined in header comment
 		TKC token; // Value of the next token
@@ -101,32 +108,32 @@ namespace Core
 				break; }
 
 			default: {
-				if (_isidchar(*sql))
+				if (_isidchar_(*sql))
 				{
 					// Keywords and unquoted identifiers
 					int id;
-					for (id = 1; _isidchar(sql[id]); id++) { }
+					for (id = 1; _isidchar_(sql[id]); id++) { }
 #ifdef OMIT_TRIGGER
 					token = TKC_OTHER;
 #else
 					switch (*sql)
 					{
 					case 'c': case 'C': {
-						if (id == 6 && !_strncmp(sql, "create", 6)) token =  TKC_CREATE;
+						if (id == 6 && !_strncmp_(sql, "create", 6)) token =  TKC_CREATE;
 						else token = TKC_OTHER;
 						break; }
 
 					case 't': case 'T': {
-						if (id == 7 && !_strncmp(sql, "trigger", 7)) token = TKC_TRIGGER;
-						else if (id == 4 && !_strncmp(sql, "temp", 4)) token = TKC_TEMP;
-						else if (id == 9 && !_strncmp(sql, "temporary", 9)) token = TKC_TEMP;
+						if (id == 7 && !_strncmp_(sql, "trigger", 7)) token = TKC_TRIGGER;
+						else if (id == 4 && !_strncmp_(sql, "temp", 4)) token = TKC_TEMP;
+						else if (id == 9 && !_strncmp_(sql, "temporary", 9)) token = TKC_TEMP;
 						else token = TKC_OTHER;
 						break; }
 					case 'e':  case 'E': {
-						if (id == 3 && !_strncmp(sql, "end", 3)) token = TKC_END;
+						if (id == 3 && !_strncmp_(sql, "end", 3)) token = TKC_END;
 						else
 #ifndef OMIT_EXPLAIN
-							if (id == 7 && !_strncmp(sql, "explain", 7)) token = TKC_EXPLAIN;
+							if (id == 7 && !_strncmp_(sql, "explain", 7)) token = TKC_EXPLAIN;
 							else
 #endif 
 								token = TKC_OTHER;
