@@ -1,5 +1,5 @@
 //#define VISUAL
-		//ParserTrace(stdout, "p: ");
+//ParserTrace(stdout, "p: ");
 #pragma region PREAMBLE
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_CRT_SECURE_NO_WARNINGS)
@@ -368,6 +368,8 @@ __device__ static void ShellLog(void *arg, int errCode, const char *msg)
 
 #pragma region CUDA
 #if __CUDACC__
+cudaDeviceHeap _deviceHeap;
+
 void H_DIRTY(struct CallbackData *p)
 {
 	p->H_size = 0;
@@ -578,6 +580,8 @@ static void InterruptHandler(int notUsed)
 }
 #endif
 
+#define _lineSpacerLength 93
+__device__ char *_lineSpacer = "---------------------------------------------------------------------------------------------";
 __device__ static bool ShellCallback(void *arg, int colLength, char **colValues, char **colNames, int *colTypes)
 {
 	int i;
@@ -614,8 +618,15 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 					p->ActualWidth[i] = w;
 				if (p->ShowHeader)
 				{
-					if (w < 0) _fprintf(p->Out, "%*.*s%s", -w, -w, colNames[i], (i == colLength-1 ? "\n" : "  "));
-					else _fprintf(p->Out, "%-*.*s%s", w, w, colNames[i], (i == colLength-1 ? "\n": "  "));
+					if (w < 0) w = -w;
+#if __CUDACC__
+					char w_;
+					if (_strlen(colNames[i]) > w) { w_ = colNames[i][w]; colNames[i][w] = 0; } else w_ = 0;
+					_fprintf(p->Out, "%-*s%s", w, colNames[i], (i == colLength-1 ? "\n": "  "));
+					if (w_) colNames[i][w] = w_;
+#else
+					_fprintf(p->Out, "%-*.*s%s", w, w, colNames[i], (i == colLength-1 ? "\n": "  "));
+#endif
 				}
 			}
 			if (p->ShowHeader)
@@ -629,7 +640,14 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 					}
 					else
 						w = 10;
-					_fprintf(p->Out, "%-*.*s%s", w, w, "---------------------------------------------------------------------------------------------", (i == colLength-1 ? "\n" : "  "));
+#if __CUDACC__
+					char w_;
+					if (_lineSpacerLength > w) { w_ = _lineSpacer[w]; _lineSpacer[w] = 0; } else w_ = 0;
+					_fprintf(p->Out, "%-*s%s", w, _lineSpacer, (i == colLength-1 ? "\n" : "  "));
+					if (w_) _lineSpacer[w] = '-';
+#else
+					_fprintf(p->Out, "%-*.*s%s", w, w, _lineSpacer, (i == colLength-1 ? "\n" : "  "));
+#endif
 				}
 		}
 		if (colValues == 0) break;
@@ -638,8 +656,15 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 			int w = (i < _lengthof(p->ActualWidth) ? p->ActualWidth[i] : 10);
 			if (p->Mode == MODE_Explain && colValues[i] && _strlen(colValues[i]) > w)
 				w = _strlen(colValues[i]);
-			if (w < 0) _fprintf(p->Out, "%*.*s%s", -w, -w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
-			else _fprintf(p->Out, "%-*.*s%s", w, w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
+			if (w < 0) w = -w;
+#if __CUDACC__
+			char w_;
+			if (_strlen(colValues[i]) > w) { w_ = colValues[i][w]; colValues[i][w] = 0; } else w_ = 0;
+			_fprintf(p->Out, "%-*s%s", w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
+			if (w_) colValues[i][w] = w_;
+#else
+			_fprintf(p->Out, "%-*.*s%s", w, w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
+#endif
 		}
 		break; }
 	case MODE_Semi:
@@ -1307,7 +1332,7 @@ __global__ static void OpenCtx(struct CallbackData *p)
 #if __CUDACC__
 static void _OpenCtx(struct CallbackData *p)
 {
-	D_DATA(p); OpenCtx<<<1,1>>>(p->D_); H_DATA(p);
+	D_DATA(p); OpenCtx<<<1,1>>>(p->D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(p);
 	H_RETURN(); if (h_return) exit(1);
 }
 #else
@@ -1403,7 +1428,6 @@ static void TestBreakpoint()
 #if __CUDACC__
 __global__ void d_DoMetaCommand_databases(struct CallbackData *p)
 {
-	printf("d_DoMetaCommand_databases\n");
 	struct CallbackData data;
 	memcpy(&data, p, sizeof(data));
 	data.ShowHeader = 1;
@@ -1413,7 +1437,7 @@ __global__ void d_DoMetaCommand_databases(struct CallbackData *p)
 	data.ColWidth[2] = 58;
 	data.Cnt = 0;
 	char *errMsg = nullptr;
-	Main::Exec(p->Ctx, "PRAGMA database_list; ", ::Callback, &data, &errMsg);
+	Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
 	if (errMsg)
 	{
 		_fprintf(stderr,"Error: %s\n", errMsg);
@@ -1541,9 +1565,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	else if (c == 'd' && n > 1 && !strncmp(args[0], "databases", n) && argsLength == 1)
 	{
 		_OpenCtx(p);
-		_OpenCtx(p);
 #if __CUDACC__
-		D_DATA(p); d_DoMetaCommand_databases<<<1,1>>>(p->D_); cudaErrorCheck(cudaDeviceSynchronize()); H_DATA(p);
+		D_DATA(p); d_DoMetaCommand_databases<<<1,1>>>(p->D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); cudaErrorCheck(cudaDeviceSynchronize()); H_DATA(p);
 		H_RETURN(); if (h_return) rc = h_return;
 #else
 		struct CallbackData data;
@@ -1555,7 +1578,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		data.ColWidth[2] = 58;
 		data.Cnt = 0;
 		char *errMsg = nullptr;
-		Main::Exec(p->Ctx, "PRAGMA database_list; ", ::Callback, &data, &errMsg);
+		Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
 		if (errMsg)
 		{
 			_fprintf(stderr,"Error: %s\n", errMsg);
@@ -2585,7 +2608,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 			cudaMalloc((void**)&d_sql, sqlLength);
 			cudaMemcpy(d_sql, sql, sqlLength, cudaMemcpyHostToDevice);
 			int d_startline = (in != 0 || !_stdinIsInteractive ? startline : -1);
-			D_DATA(p); d_ProcessInput_0<<<1,1>>>(p->D_, d_sql, d_startline); H_DATA(p);
+			D_DATA(p); d_ProcessInput_0<<<1,1>>>(p->D_, d_sql, d_startline); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(p);
 			cudaFree(d_sql);
 			H_RETURN(); if (h_return) errCnt++;
 #else
@@ -2759,7 +2782,6 @@ static void Usage(bool showDetail)
 // Initialize the state information in data
 struct CallbackData _data;
 #if __CUDACC__
-cudaDeviceHeap _deviceHeap;
 __global__ void d_MainInit_0(struct CallbackData *data)
 {
 	SysEx::Config(SysEx::CONFIG_URI, 1);
@@ -2781,11 +2803,11 @@ static void MainInit()
 	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
-	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*5));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*8));
 	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
 	//
-	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); H_DATA(&_data);
+	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	cudaDeviceHeapSynchronize(_deviceHeap);
 #else
 	SysEx::Config(SysEx::CONFIG_URI, 1);
@@ -2807,7 +2829,7 @@ __global__ void d_MainShutdown_0(struct CallbackData *data)
 static void MainShutdown()
 {
 #if __CUDACC__
-	D_DATA(&_data); d_MainShutdown_0<<<1,1>>>(_data.D_); H_DATA(&_data);
+	D_DATA(&_data); d_MainShutdown_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	D_FREE(&_data);
 	//
 	cudaDeviceHeapDestroy(_deviceHeap);
@@ -2956,7 +2978,7 @@ int main(int argc, char **argv)
 			char *d_vfsName;
 			cudaMalloc((void**)&d_vfsName, vfsNameLength);
 			cudaMemcpy(d_vfsName, vfsName, vfsNameLength, cudaMemcpyHostToDevice);
-			d_main_Vfs<<<1,1>>>(d_vfsName);
+			d_main_Vfs<<<1,1>>>(d_vfsName); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); 
 			cudaFree(d_vfsName);
 			H_RETURN; if (h_return) { _fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]); exit(1); }
 #else
@@ -3047,7 +3069,7 @@ int main(int argc, char **argv)
 				char *d_sql;
 				cudaMalloc((void**)&d_sql, sqlLength);
 				cudaMemcpy(d_sql, z, sqlLength, cudaMemcpyHostToDevice);
-				D_DATA(&_data);  d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); H_DATA(&_data);
+				D_DATA(&_data);  d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 				cudaFree(d_sql);
 				H_RETURN(); if (_bailOnError && h_return) return h_return;
 #else
@@ -3086,7 +3108,7 @@ int main(int argc, char **argv)
 			char *d_sql;
 			cudaMalloc((void**)&d_sql, sqlLength);
 			cudaMemcpy(d_sql, firstCmd, sqlLength, cudaMemcpyHostToDevice);
-			D_DATA(&_data); d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); H_DATA(&_data);
+			D_DATA(&_data); d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 			cudaFree(d_sql);
 			H_RETURN(); if (h_return) return h_return;
 #else
