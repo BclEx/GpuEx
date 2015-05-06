@@ -2787,8 +2787,6 @@ __global__ void d_MainInit_0(struct CallbackData *data)
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, data);
 	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
-	Main::Initialize();
-	printf("Rdy\n");
 }
 #endif
 static void MainInit()
@@ -2813,7 +2811,6 @@ static void MainInit()
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, _data);
 	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
-	//Main::Initialize();
 #endif
 }
 
@@ -2823,7 +2820,6 @@ __global__ void d_MainShutdown_0(struct CallbackData *data)
 	if (data->Ctx)
 		Main::Close(data->Ctx);
 	Main::Shutdown();
-	printf("End\n");
 }
 #endif
 static void MainShutdown()
