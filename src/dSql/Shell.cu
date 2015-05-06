@@ -1038,7 +1038,7 @@ __device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(
 			}
 
 			// perform the first step.  this will tell us if we have a result set or not and how wide it is.
-			RC rc = stmt->Step();
+			rc = stmt->Step();
 			// if we have a result set...
 			if (rc == RC_ROW)
 			{

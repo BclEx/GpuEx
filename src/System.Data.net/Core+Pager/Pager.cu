@@ -409,8 +409,8 @@ namespace Core
 	__device__ static RC WriteJournalHdr(Pager *pager)
 	{
 		_assert(pager->JournalFile->Opened); 
-		unsigned char *header = (unsigned char *)pager->TmpSpace;		// Temporary space used to build header
-		uint32 headerSize = (uint32)pager->PageSize;	// Size of buffer pointed to by zHeader
+		unsigned char *header = (unsigned char *)pager->TmpSpace; // Temporary space used to build header
+		uint32 headerSize = (uint32)pager->PageSize; // Size of buffer pointed to by zHeader
 		if (headerSize > JOURNAL_HDR_SZ(pager))
 			headerSize = JOURNAL_HDR_SZ(pager);
 
@@ -1247,7 +1247,8 @@ end_playback:
 		// Following a rollback, the database file should be back in its original state prior to the start of the transaction, so invoke the
 		// SQLITE_FCNTL_DB_UNCHANGED file-control method to disable the assertion that the transaction counter was modified.
 #ifdef _DEBUG
-		pager->File->FileControl(VFile::FCNTL_DB_UNCHANGED, 0);
+		if (pager->File->Opened)
+			pager->File->FileControl(VFile::FCNTL_DB_UNCHANGED, 0);
 #endif
 
 		// If this playback is happening automatically as a result of an IO or malloc error that occurred after the change-counter was updated but 

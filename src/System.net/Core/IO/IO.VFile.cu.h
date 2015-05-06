@@ -92,7 +92,7 @@ namespace Core { namespace IO
 		__device__ virtual RC Read(void *buffer, int amount, int64 offset) = 0;
 		__device__ virtual RC Write(const void *buffer, int amount, int64 offset) = 0;
 		__device__ virtual RC Truncate(int64 size) = 0;
-		__device__ inline RC Close() { if (!Opened) return RC_OK; Opened = false; return Close_(); }
+		__device__ __forceinline RC Close() { return (!Opened ? RC_OK : Close_()); }
 		__device__ virtual RC Close_() = 0;
 		__device__ virtual RC Sync(SYNC flags) = 0;
 		__device__ virtual RC get_FileSize(int64 &size) = 0;

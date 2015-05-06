@@ -113,6 +113,7 @@ namespace Core { namespace IO
 	__device__ RC MemoryVFile::Close_()
 	{
 		Truncate(0);
+		Opened = false;
 		return RC_OK;
 	}
 

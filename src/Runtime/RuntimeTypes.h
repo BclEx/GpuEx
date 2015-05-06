@@ -16,8 +16,8 @@ typedef unsigned int		uint32;
 typedef long long			int64;
 typedef unsigned long long	uint64;
 
-#define MAX(x,y) ((x)<(y)?(x):(y))
-#define MIN(x,y) ((x)>(y)?(x):(y))
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MIN(x,y) ((x)<(y)?(x):(y))
 #define MAX_TYPE(x) (((((x)1<<((sizeof(x)-1)*8-1))-1)<<8)|255)
 #define MIN_TYPE(x) (-MAX_TYPE(x)-1)
 #define MAX_UTYPE(x) (((((x)1U<<((sizeof(x)-1)*8))-1)<<8)|255U)
