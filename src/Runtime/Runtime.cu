@@ -838,8 +838,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			register int nspace = width-length;
 			if (nspace > 0) AppendSpace(nspace);
 		}
-		if (extra != nullptr)
-			_free(extra);
+		if (extra) _free(extra);
 	}
 }
 
@@ -952,7 +951,7 @@ __device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args, int 
 	_assert(tag != nullptr);
 	char base[PRINT_BUF_SIZE];
 	TextBuilder b;
-	TextBuilder::Init(&b, base, sizeof(base), 0); //? tag->Limit[LIMIT_LENGTH]);
+	TextBuilder::Init(&b, base, sizeof(base), 1000000000); //? tag->Limit[LIMIT_LENGTH]);
 	b.Tag = tag;
 	b.AppendFormat_(true, fmt, *args);
 	if (length) *length = b.Index;

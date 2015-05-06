@@ -5,7 +5,7 @@
 namespace Core
 {
 #if _DEBUG
-	__device__ bool PagerTrace = true;
+	__device__ bool PagerTrace = false;
 #define PAGERTRACE(X, ...) if (PagerTrace) { _printf("PG: "X, __VA_ARGS__); }
 #else
 #define PAGERTRACE(X, ...)
@@ -248,7 +248,7 @@ namespace Core
 
 	__device__ static bool PageInJournal(PgHdr *pg)
 	{
-		return pg->Pager->InJournal->Get(pg->ID);
+		return (pg->Pager->InJournal ? pg->Pager->InJournal->Get(pg->ID) : 0);
 	}
 
 	__device__ static RC PagerUnlockDb(Pager *pager, VFile::LOCK lock)

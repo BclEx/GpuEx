@@ -216,7 +216,7 @@ namespace Core
 		VdbeSorter *sorter = cursor->Sorter;
 		UnpackedRecord *r2 = sorter->Unpacked;
 		if (key2)
-			Vdbe::RecordUnpack(keyInfo, key2Length, key2, r2);
+			Vdbe_RecordUnpack(keyInfo, key2Length, key2, r2);
 		if (omitRowid)
 		{
 			r2->Fields = keyInfo->Fields;
@@ -229,7 +229,7 @@ namespace Core
 				}
 				r2->Flags |= UNPACKED_PREFIX_MATCH;
 		}
-		*out_ = Vdbe::RecordCompare(key1Length, key1, r2);
+		*out_ = Vdbe_RecordCompare(key1Length, key1, r2);
 	}
 
 	__device__ static RC VdbeSorterDoCompare(const VdbeCursor *cursor, int idx)
@@ -277,7 +277,7 @@ namespace Core
 			return RC_NOMEM;
 
 		char *d;
-		sorter->Unpacked = AllocUnpackedRecord(cursor->KeyInfo, 0, 0, &d);
+		sorter->Unpacked = Vdbe_AllocUnpackedRecord(cursor->KeyInfo, 0, 0, &d);
 		if (!sorter->Unpacked) return RC_NOMEM;
 		_assert(sorter->Unpacked == (UnpackedRecord *)d);
 

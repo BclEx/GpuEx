@@ -439,9 +439,9 @@ namespace Core
 		__device__ static uint32 SerialGet(const unsigned char *buf, uint32 serialType, Mem *mem);
 
 		// unpacked record
-		__device__ static UnpackedRecord *AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **freeOut);
-		__device__ static void RecordUnpack(KeyInfo *keyInfo, int keyLength, const void *key, UnpackedRecord *p);
-		__device__ static int RecordCompare(int key1Length, const void *key1, UnpackedRecord *key2);
+		//__device__ static UnpackedRecord *Vdbe_AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **freeOut);
+		//__device__ static void Vdbe_RecordUnpack(KeyInfo *keyInfo, int keyLength, const void *key, UnpackedRecord *p);
+		//__device__ static int Vdbe_RecordCompare(int key1Length, const void *key1, UnpackedRecord *key2);
 
 		// index entry
 		__device__ static RC IdxRowid(Context *ctx, BtCursor *cur, int64 *rowid);

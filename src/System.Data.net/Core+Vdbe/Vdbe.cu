@@ -111,7 +111,7 @@ namespace Core
 		if (affinity == AFF_TEXT)
 		{
 			// Only attempt the conversion to TEXT if there is an integer or real representation (blob and NULL do not get converted) but no string representation.
-			if ((rec->Flags & MEM_Str) && ((rec->Flags & (MEM_Real | MEM_Int)) == 0))
+			if ((rec->Flags & MEM_Str) == 0 && ((rec->Flags & (MEM_Real | MEM_Int)) == 0))
 				Vdbe::MemStringify(rec, encode);
 			rec->Flags &= ~(MEM_Real|MEM_Int);
 		}
@@ -2789,11 +2789,11 @@ op_column_out:
 					else
 					{
 						char tempRec[_ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*3 + 7];
-						idxKey = AllocUnpackedRecord(cur->KeyInfo, tempRec, sizeof(tempRec), &free); 
+						idxKey = Vdbe_AllocUnpackedRecord(cur->KeyInfo, tempRec, sizeof(tempRec), &free); 
 						if (!idxKey) goto no_mem;
 						_assert(in3->Flags & MEM_Blob);
 						_assert((in3->Flags & MEM_Zero) == 0); // zeroblobs already expanded
-						RecordUnpack(cur->KeyInfo, in3->N, in3->Z, idxKey);
+						Vdbe_RecordUnpack(cur->KeyInfo, in3->N, in3->Z, idxKey);
 						idxKey->Flags |= UNPACKED_PREFIX_MATCH;
 					}
 					rc = Btree::MovetoUnpacked(cur->Cursor, idxKey, 0, 0, &res);

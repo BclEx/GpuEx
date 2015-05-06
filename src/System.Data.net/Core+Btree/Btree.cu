@@ -6,7 +6,7 @@
 namespace Core
 {
 #if _DEBUG
-	__device__ bool BtreeTrace = true;
+	__device__ bool BtreeTrace = false;
 #define TRACE(X, ...) if (BtreeTrace) { _fprintf(stdout, X, __VA_ARGS__); }
 #else
 #define TRACE(X, ...)
@@ -15,7 +15,6 @@ namespace Core
 #pragma region Struct
 
 	__device__ static const char _magicHeader[] = FILE_HEADER;
-	__device__ static IVdbe *_vdbe;
 
 	enum BTALLOC : uint8
 	{
@@ -413,9 +412,9 @@ namespace Core
 		if (key)
 		{
 			_assert(keyLength == (int64)(int)keyLength);
-			idxKey = _vdbe->AllocUnpackedRecord(cur->KeyInfo, space, sizeof(space), &free);
+			idxKey = Vdbe_AllocUnpackedRecord(cur->KeyInfo, space, sizeof(space), &free);
 			if (idxKey == nullptr) return RC_NOMEM;
-			_vdbe->RecordUnpack(cur->KeyInfo, (int)keyLength, (uint8 *)key, idxKey);
+			Vdbe_RecordUnpack(cur->KeyInfo, (int)keyLength, (uint8 *)key, idxKey);
 		}
 		else
 			idxKey = nullptr;
@@ -3256,13 +3255,13 @@ set_child_ptrmaps_out:
 					{
 						// This branch runs if the record-size field of the cell is a single byte varint and the record fits entirely on the main b-tree page.
 						ASSERTCOVERAGE(cell + cellLength + 1 == page->DataEnd);
-						c = _vdbe->RecordCompare(cellLength, (void *)&cell[1], idxKey);
+						c = Vdbe_RecordCompare(cellLength, (void *)&cell[1], idxKey);
 					}
 					else if (!(cell[1] & 0x80) && (cellLength = ((cellLength & 0x7f) << 7) + cell[1]) <= page->MaxLocal /* && (cell + cellLength + 2) <= page->DataEnd */)
 					{
 						// The record-size field is a 2 byte varint and the record fits entirely on the main b-tree page.
 						ASSERTCOVERAGE(cell + cellLength + 2 == page->DataEnd);
-						c = _vdbe->RecordCompare(cellLength, (void *)&cell[2], idxKey);
+						c = Vdbe_RecordCompare(cellLength, (void *)&cell[2], idxKey);
 					}
 					else
 					{
@@ -3283,7 +3282,7 @@ set_child_ptrmaps_out:
 							_free(cellKey);
 							goto moveto_finish;
 						}
-						c = _vdbe->RecordCompare(cellLength, cellKey, idxKey);
+						c = Vdbe_RecordCompare(cellLength, cellKey, idxKey);
 						_free(cellKey);
 					}
 				}

@@ -219,7 +219,7 @@ namespace Core
             VdbeSorter sorter = (VdbeSorter)cursor.Sorter;
             UnpackedRecord r2 = sorter.Unpacked;
             if (key2 != null)
-                Vdbe.RecordUnpack(keyInfo, key2Length, key2, r2);
+                Vdbe_RecordUnpack(keyInfo, key2Length, key2, r2);
             if (omitRowid)
             {
                 r2.Fields = keyInfo.Fields;
@@ -232,7 +232,7 @@ namespace Core
                     }
                 r2.Flags |= UNPACKED.PREFIX_MATCH;
             }
-            out_ = Vdbe.RecordCompare(key1Length, key1, r2);
+            out_ = Vdbe_RecordCompare(key1Length, key1, r2);
         }
 
         static RC VdbeSorterDoCompare(VdbeCursor cursor, int idx)

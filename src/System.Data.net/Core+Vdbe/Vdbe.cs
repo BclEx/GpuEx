@@ -2950,11 +2950,11 @@ namespace Core
                                 else
                                 {
                                     //UnpackedRecord tempRecs = new UnpackedRecord();
-                                    idxKey = AllocUnpackedRecord(cur.KeyInfo);
+                                    idxKey = Vdbe_AllocUnpackedRecord(cur.KeyInfo);
                                     if (idxKey == null) goto no_mem;
                                     Debug.Assert((in3.Flags & MEM.Blob) != 0);
                                     Debug.Assert((in3.Flags & MEM.Zero) == 0); // zeroblobs already expanded
-                                    idxKey = RecordUnpack(cur.KeyInfo, in3.N, in3.Z_, idxKey);
+                                    idxKey = Vdbe_RecordUnpack(cur.KeyInfo, in3.N, in3.Z_, idxKey);
                                     idxKey.Flags |= UNPACKED.PREFIX_MATCH;
                                 }
                                 rc = Btree.MovetoUnpacked(cur.Cursor, idxKey, 0, 0, ref res);

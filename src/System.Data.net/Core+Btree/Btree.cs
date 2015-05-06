@@ -394,9 +394,9 @@ namespace Core
             if (key != null)
             {
                 Debug.Assert(keyLength == (long)(int)keyLength);
-                idxKey = _vdbe.AllocUnpackedRecord(cur.KeyInfo, null, 0, out free);
+                idxKey = Vdbe_AllocUnpackedRecord(cur.KeyInfo, null, 0, out free);
                 if (idxKey == null) return RC.NOMEM;
-                _vdbe.RecordUnpack(cur.KeyInfo, (int)keyLength, key, idxKey);
+                Vdbe_RecordUnpack(cur.KeyInfo, (int)keyLength, key, idxKey);
             }
             else
                 idxKey = null;
@@ -3227,12 +3227,12 @@ namespace Core
                         if (cellLength <= page.Max1bytePayload)
                         {
                             // This branch runs if the record-size field of the cell is a single byte varint and the record fits entirely on the main b-tree page.
-                            c = _vdbe.RecordCompare(cellLength, page.Data, cell_ + 1, idxKey);
+                            c = Vdbe_RecordCompare(cellLength, page.Data, cell_ + 1, idxKey);
                         }
                         else if ((page.Data[cell_ + 1] & 0x80) == 0 && (cellLength = ((cellLength & 0x7f) << 7) + page.Data[cell_ + 1]) <= page.MaxLocal)
                         {
                             // The record-size field is a 2 byte varint and the record fits entirely on the main b-tree page.
-                            c = _vdbe.RecordCompare(cellLength, page.Data, cell_ + 2, idxKey);
+                            c = Vdbe_RecordCompare(cellLength, page.Data, cell_ + 2, idxKey);
                         }
                         else
                         {
@@ -3249,7 +3249,7 @@ namespace Core
                                 cellKey = null;
                                 goto moveto_finish;
                             }
-                            c = _vdbe.RecordCompare(cellLength, cellKey, 0, idxKey);
+                            c = Vdbe_RecordCompare(cellLength, cellKey, 0, idxKey);
                             cellKey = null;
                         }
                     }

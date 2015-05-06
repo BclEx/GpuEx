@@ -12,28 +12,6 @@ namespace Core
 #define SysEx_IOTRACE(X, ...) ((void)0)
 #endif
 
-	//#ifdef _DEBUG
-	//	extern bool IOTrace;
-	//#ifdef __CUDACC__
-	//	__device__ inline static void SysEx_LOG(RC rc, const char *fmt) { }
-	//	template <typename T1> __device__ inline static void SysEx_LOG(RC rc, const char *fmt, T1 arg1) { }
-	//	template <typename T1, typename T2> __device__ inline static void SysEx_LOG(RC rc, const char *fmt, T1 arg1, T2 arg2) { }
-	//	template <typename T1, typename T2, typename T3> __device__ inline static void SysEx_LOG(RC rc, const char *fmt, T1 arg1, T2 arg2, T3 arg3) { }
-	//	template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void SysEx_LOG(RC rc, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { }
-	//	__device__ inline static void SysEx_IOTRACE(const char *fmt) { }
-	//	template <typename T1> __device__ inline static void SysEx_IOTRACE(const char *fmt, T1 arg1) { }
-	//	template <typename T1, typename T2> __device__ inline static void SysEx_IOTRACE(const char *fmt, T1 arg1, T2 arg2) { }
-	//	template <typename T1, typename T2, typename T3> __device__ inline static void SysEx_IOTRACE(const char *fmt, T1 arg1, T2 arg2, T3 arg3) { }
-	//	template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void SysEx_IOTRACE(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { }
-	//#else
-	//	__device__ inline static void SysEx_LOG(RC rc, const char *fmt, ...) { }
-	//	__device__ inline static void SysEx_IOTRACE(const char *fmt, ...) { }
-	//#endif
-	//#else
-	//#define SysEx_LOG(X, ...) ((void)0)
-	//#define SysEx_IOTRACE(X, ...) ((void)0)
-	//#endif
-
 #pragma endregion
 
 #if __CUDACC__

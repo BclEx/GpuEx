@@ -75,12 +75,12 @@ namespace Core
 
     #region IVdbe
 
-    public interface IVdbe
+    public static class Vdbe
     {
-        UnpackedRecord AllocUnpackedRecord(KeyInfo keyInfo, byte[] space, int spaceLength, out object free);
-        void RecordUnpack(KeyInfo keyInfo, int keyLength, byte[] key, UnpackedRecord p);
-        void DeleteUnpackedRecord(UnpackedRecord r);
-        int RecordCompare(int cells, byte[] cellKey, uint offset_, UnpackedRecord idxKey);
+        UnpackedRecord Vdbe_AllocUnpackedRecord(KeyInfo keyInfo, byte[] space, int spaceLength, out object free);
+        void Vdbe_RecordUnpack(KeyInfo keyInfo, int keyLength, byte[] key, UnpackedRecord p);
+        int Vdbe_RecordCompare(int cells, byte[] cellKey, uint offset_, UnpackedRecord idxKey);
+        void Vdbe_DeleteUnpackedRecord(UnpackedRecord r);
     }
 
     #endregion

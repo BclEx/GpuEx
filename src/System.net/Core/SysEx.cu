@@ -14,7 +14,7 @@ namespace Core
 	// The following singleton contains the global configuration for the SQLite library.
 	__device__ _WSD SysEx::GlobalStatics g_GlobalStatics =
 	{
-		true,						// CoreMutex
+		false,						// CoreMutex
 		THREADSAFE == 1,			// FullMutex
 		CORE_USE_URI,				// OpenUri
 		// Main::UseCis

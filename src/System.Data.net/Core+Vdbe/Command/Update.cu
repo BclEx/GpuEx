@@ -391,10 +391,12 @@ namespace Core { namespace Command
 		v->JumpHere(addr);
 
 		// Close all tables
-		_assert(regIdxs);
 		for (i = 0, idx = table->Index; idx; idx = idx->Next, i++)
+		{
+			_assert(regIdxs);
 			if (openAll || regIdxs[i] > 0)
 				v->AddOp2(OP_Close, curId+i+1, 0);
+		}
 		v->AddOp2(OP_Close, curId, 0);
 
 		// Update the sqlite_sequence table by storing the content of the maximum rowid counter values recorded while inserting into
@@ -412,9 +414,9 @@ namespace Core { namespace Command
 		}
 
 update_cleanup:
-		#if !OMIT_AUTHORIZATION
+#if !OMIT_AUTHORIZATION
 		Auth::ContextPop(&sContext);
-		#endif
+#endif
 		_tagfree(ctx, regIdxs);
 		_tagfree(ctx, xrefs);
 		Parse::SrcListDelete(ctx, tabList);

@@ -2286,7 +2286,7 @@ namespace Core
             return p;
         }
 
-        public static void RecordUnpack(KeyInfo keyInfo, int keyLength, byte[] key, UnpackedRecord p)
+        public static void Vdbe_RecordUnpack(KeyInfo keyInfo, int keyLength, byte[] key, UnpackedRecord p)
         {
             byte[] keys = key;
             Mem mem;
@@ -2314,8 +2314,8 @@ namespace Core
 
         static Mem _mem1 = new Mem();
         // ALTERNATE FORM for C#
-        //public static int RecordCompare(int key1Length, byte[] key1, UnpackedRecord key2) { return sqlite3VdbeRecordCompare(key1Length, key1, 0, key2); }
-        public static int RecordCompare(int key1Length, byte[] key1, uint offset, UnpackedRecord key2)
+        //public static int RecordCompare(int key1Length, byte[] key1, UnpackedRecord key2) { return Vdbe_RecordCompare(key1Length, key1, 0, key2); }
+        public static int Vdbe_RecordCompare(int key1Length, byte[] key1, uint offset, UnpackedRecord key2)
         {
             int i = 0;
             int rc = 0;
@@ -2466,7 +2466,7 @@ namespace Core
             if (rc != 0)
                 return rc;
             Debug.Assert((unpacked.Flags & UNPACKED_IGNORE_ROWID) != 0);
-            r = RecordCompare(m.N, m.Z_, unpacked);
+            r = Vdbe_RecordCompare(m.N, m.Z_, unpacked);
             MemRelease(m);
             return RC.OK;
         }

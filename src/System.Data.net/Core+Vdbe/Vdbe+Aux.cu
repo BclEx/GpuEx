@@ -2040,131 +2040,135 @@ __device__ uint32 Vdbe::SerialGet(const unsigned char *buf, uint32 serialType, M
 	return 0;
 }
 
-__device__ UnpackedRecord *Vdbe::AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **freeOut)
+namespace Core
 {
-	// We want to shift the pointer pSpace up such that it is 8-byte aligned. Thus, we need to calculate a value, nOff, between 0 and 7, to shift 
-	// it by.  If pSpace is already 8-byte aligned, nOff should be zero.
-	int offset = (8 - (PTR_TO_INT(space) & 7)) & 7; // Increment pSpace by nOff to align it
-	int bytes = _ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(keyInfo->Fields+1); // Number of bytes required for *p
-	UnpackedRecord *p; // Unpacked record to return
-	if (bytes > spaceLength+offset)
+
+	__device__ UnpackedRecord *Vdbe_AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **freeOut)
 	{
-		p = (UnpackedRecord *)_tagalloc(keyInfo->Ctx, bytes);
-		*freeOut = (char *)p;
-		if (!p) return nullptr;
-	}
-	else
-	{
-		p = (UnpackedRecord *)&space[offset];
-		*freeOut = nullptr;
-	}
-	p->Mems = (Mem *)&((char *)p)[_ROUND8(sizeof(UnpackedRecord))];
-	_assert(keyInfo->SortOrders != nullptr);
-	p->KeyInfo = keyInfo;
-	p->Fields = keyInfo->Fields + 1;
-	return p;
-}
-
-__device__ void Vdbe::RecordUnpack(KeyInfo *keyInfo, int keyLength, const void *key, UnpackedRecord *p)
-{
-	const unsigned char *keys = (const unsigned char *)key;
-	Mem *mem = p->Mems;
-	p->Flags = (UNPACKED)0;
-	_assert(_HASALIGNMENT8(mem));
-	uint32 szHdr;
-	uint32 idx = _convert_getvarint32(keys, szHdr); // Offset in keys[] to read from
-	int d = szHdr;
-	uint16 u = 0; // Unsigned loop counter
-	while (idx < szHdr && u < p->Fields && d <= keyLength)
-	{
-		uint32 serialType;
-		idx += _convert_getvarint32(&keys[idx], serialType);
-		mem->Encode = keyInfo->Encode;
-		mem->Ctx = (Context *)keyInfo->Ctx;
-		//mem->Flags = 0; // sqlite3VdbeSerialGet() will set this for us
-		mem->Malloc = nullptr;
-		d += SerialGet(&keys[d], serialType, mem);
-		mem++;
-		u++;
-	}
-	_assert(u <= keyInfo->Fields + 1 );
-	p->Fields = u;
-}
-
-__device__ int Vdbe::RecordCompare(int key1Length, const void *key1, UnpackedRecord *key2)
-{
-	int i = 0;
-	int rc = 0;
-	const unsigned char *key1s = (const unsigned char *)key1;
-
-	KeyInfo *keyInfo = key2->KeyInfo;
-	Mem mem1;
-	mem1.Encode = keyInfo->Encode;
-	mem1.Ctx = (Context *)keyInfo->Ctx;
-	// mem1.flags = 0; // Will be initialized by sqlite3VdbeSerialGet()
-	{
-		ASSERTONLY(mem1.Malloc = nullptr;) // Only needed by assert() statements
-	}
-
-	// Compilers may complain that mem1.u.i is potentially uninitialized. We could initialize it, as shown here, to silence those complaints.
-	// But in fact, mem1.u.i will never actually be used uninitialized, and doing the unnecessary initialization has a measurable negative performance
-	// impact, since this routine is a very high runner.  And so, we choose to ignore the compiler warnings and leave this variable uninitialized.
-	//  mem1.u.i = 0;  // not needed, here to silence compiler warning
-	uint32 szHdr1; // Number of bytes in header
-	uint32 idx1 = _convert_getvarint32(key1s, szHdr1); // Offset into keys[] of next header element
-	int d1 = szHdr1; // Offset into keys[] of next data element
-	int fields = keyInfo->Fields;
-	_assert(keyInfo->SortOrders != nullptr);
-	while (idx1 < szHdr1 && i < key2->Fields)
-	{
-		uint32 serialType1;
-
-		// Read the serial types for the next element in each key.
-		idx1 += _convert_getvarint32(key1s+idx1, serialType1);
-		if (d1 >= key1Length && SerialTypeLen(serialType1) > 0) break;
-
-		// Extract the values to be compared.
-		d1 += SerialGet(&key1s[d1], serialType1, &mem1);
-
-		// Do the comparison
-		rc = MemCompare(&mem1, &key2->Mems[i], (i < fields ? keyInfo->Colls[i] : nullptr));
-		if (rc != 0)
+		// We want to shift the pointer pSpace up such that it is 8-byte aligned. Thus, we need to calculate a value, nOff, between 0 and 7, to shift 
+		// it by.  If pSpace is already 8-byte aligned, nOff should be zero.
+		int offset = (8 - (PTR_TO_INT(space) & 7)) & 7; // Increment pSpace by nOff to align it
+		int bytes = _ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(keyInfo->Fields+1); // Number of bytes required for *p
+		UnpackedRecord *p; // Unpacked record to return
+		if (bytes > spaceLength+offset)
 		{
-			_assert(mem1.Malloc == nullptr); // See comment below
-
-			// Invert the result if we are using DESC sort order.
-			if (i < fields && keyInfo->SortOrders[i])
-				rc = -rc;
-
-			// If the PREFIX_SEARCH flag is set and all fields except the final rowid field were equal, then clear the PREFIX_SEARCH flag and set 
-			// pPKey2->rowid to the value of the rowid field in (pKey1, nKey1). This is used by the OP_IsUnique opcode.
-			if ((key2->Flags & UNPACKED_PREFIX_SEARCH) && i == (key2->Fields - 1))
-			{
-				_assert(idx1 == szHdr1 && rc);
-				_assert(mem1.Flags & MEM_Int);
-				key2->Flags &= ~UNPACKED_PREFIX_SEARCH;
-				key2->Rowid = mem1.u.I;
-			}
-			return rc;
+			p = (UnpackedRecord *)_tagalloc(keyInfo->Ctx, bytes);
+			*freeOut = (char *)p;
+			if (!p) return nullptr;
 		}
-		i++;
+		else
+		{
+			p = (UnpackedRecord *)&space[offset];
+			*freeOut = nullptr;
+		}
+		p->Mems = (Mem *)&((char *)p)[_ROUND8(sizeof(UnpackedRecord))];
+		_assert(keyInfo->SortOrders != nullptr);
+		p->KeyInfo = keyInfo;
+		p->Fields = keyInfo->Fields + 1;
+		return p;
 	}
 
-	// No memory allocation is ever used on mem1.  Prove this using the following assert().  If the assert() fails, it indicates a
-	// memory leak and a need to call sqlite3VdbeMemRelease(&mem1).
-	_assert(mem1.Malloc == nullptr);
+	__device__ void Vdbe_RecordUnpack(KeyInfo *keyInfo, int keyLength, const void *key, UnpackedRecord *p)
+	{
+		const unsigned char *keys = (const unsigned char *)key;
+		Mem *mem = p->Mems;
+		p->Flags = (UNPACKED)0;
+		_assert(_HASALIGNMENT8(mem));
+		uint32 szHdr;
+		uint32 idx = _convert_getvarint32(keys, szHdr); // Offset in keys[] to read from
+		int d = szHdr;
+		uint16 u = 0; // Unsigned loop counter
+		while (idx < szHdr && u < p->Fields && d <= keyLength)
+		{
+			uint32 serialType;
+			idx += _convert_getvarint32(&keys[idx], serialType);
+			mem->Encode = keyInfo->Encode;
+			mem->Ctx = (Context *)keyInfo->Ctx;
+			//mem->Flags = 0; // sqlite3VdbeSerialGet() will set this for us
+			mem->Malloc = nullptr;
+			d += Vdbe::SerialGet(&keys[d], serialType, mem);
+			mem++;
+			u++;
+		}
+		_assert(u <= keyInfo->Fields + 1 );
+		p->Fields = u;
+	}
 
-	// rc==0 here means that one of the keys ran out of fields and all the fields up to that point were equal. If the UNPACKED_INCRKEY
-	// flag is set, then break the tie by treating key2 as larger. If the UPACKED_PREFIX_MATCH flag is set, then keys with common prefixes
-	// are considered to be equal.  Otherwise, the longer key is the larger.  As it happens, the pPKey2 will always be the longer
-	// if there is a difference.
-	_assert(rc == 0);
-	if (key2->Flags & UNPACKED_INCRKEY) rc = -1;
-	else if (key2->Flags & UNPACKED_PREFIX_MATCH) { } // Leave rc==0 
-	else if (idx1 < szHdr1) rc = 1;
-	return rc;
+	__device__ int Vdbe_RecordCompare(int key1Length, const void *key1, UnpackedRecord *key2)
+	{
+		int i = 0;
+		int rc = 0;
+		const unsigned char *key1s = (const unsigned char *)key1;
+
+		KeyInfo *keyInfo = key2->KeyInfo;
+		Mem mem1;
+		mem1.Encode = keyInfo->Encode;
+		mem1.Ctx = (Context *)keyInfo->Ctx;
+		// mem1.flags = 0; // Will be initialized by sqlite3VdbeSerialGet()
+		{
+			ASSERTONLY(mem1.Malloc = nullptr;) // Only needed by assert() statements
+		}
+
+		// Compilers may complain that mem1.u.i is potentially uninitialized. We could initialize it, as shown here, to silence those complaints.
+		// But in fact, mem1.u.i will never actually be used uninitialized, and doing the unnecessary initialization has a measurable negative performance
+		// impact, since this routine is a very high runner.  And so, we choose to ignore the compiler warnings and leave this variable uninitialized.
+		//  mem1.u.i = 0;  // not needed, here to silence compiler warning
+		uint32 szHdr1; // Number of bytes in header
+		uint32 idx1 = _convert_getvarint32(key1s, szHdr1); // Offset into keys[] of next header element
+		int d1 = szHdr1; // Offset into keys[] of next data element
+		int fields = keyInfo->Fields;
+		_assert(keyInfo->SortOrders != nullptr);
+		while (idx1 < szHdr1 && i < key2->Fields)
+		{
+			uint32 serialType1;
+
+			// Read the serial types for the next element in each key.
+			idx1 += _convert_getvarint32(key1s+idx1, serialType1);
+			if (d1 >= key1Length && Vdbe::SerialTypeLen(serialType1) > 0) break;
+
+			// Extract the values to be compared.
+			d1 += Vdbe::SerialGet(&key1s[d1], serialType1, &mem1);
+
+			// Do the comparison
+			rc = Vdbe::MemCompare(&mem1, &key2->Mems[i], (i < fields ? keyInfo->Colls[i] : nullptr));
+			if (rc != 0)
+			{
+				_assert(mem1.Malloc == nullptr); // See comment below
+
+				// Invert the result if we are using DESC sort order.
+				if (i < fields && keyInfo->SortOrders[i])
+					rc = -rc;
+
+				// If the PREFIX_SEARCH flag is set and all fields except the final rowid field were equal, then clear the PREFIX_SEARCH flag and set 
+				// pPKey2->rowid to the value of the rowid field in (pKey1, nKey1). This is used by the OP_IsUnique opcode.
+				if ((key2->Flags & UNPACKED_PREFIX_SEARCH) && i == (key2->Fields - 1))
+				{
+					_assert(idx1 == szHdr1 && rc);
+					_assert(mem1.Flags & MEM_Int);
+					key2->Flags &= ~UNPACKED_PREFIX_SEARCH;
+					key2->Rowid = mem1.u.I;
+				}
+				return rc;
+			}
+			i++;
+		}
+
+		// No memory allocation is ever used on mem1.  Prove this using the following assert().  If the assert() fails, it indicates a
+		// memory leak and a need to call sqlite3VdbeMemRelease(&mem1).
+		_assert(mem1.Malloc == nullptr);
+
+		// rc==0 here means that one of the keys ran out of fields and all the fields up to that point were equal. If the UNPACKED_INCRKEY
+		// flag is set, then break the tie by treating key2 as larger. If the UPACKED_PREFIX_MATCH flag is set, then keys with common prefixes
+		// are considered to be equal.  Otherwise, the longer key is the larger.  As it happens, the pPKey2 will always be the longer
+		// if there is a difference.
+		_assert(rc == 0);
+		if (key2->Flags & UNPACKED_INCRKEY) rc = -1;
+		else if (key2->Flags & UNPACKED_PREFIX_MATCH) { } // Leave rc==0 
+		else if (idx1 < szHdr1) rc = 1;
+		return rc;
+	}
+
 }
-
 #pragma endregion
 
 #pragma region Index Entry
@@ -2245,7 +2249,7 @@ __device__ RC Vdbe::IdxKeyCompare(VdbeCursor *c, UnpackedRecord *unpacked, int *
 	if (rc)
 		return rc;
 	_assert(unpacked->Flags & UNPACKED_PREFIX_MATCH);
-	*r = RecordCompare(m.N, m.Z, unpacked);
+	*r = Vdbe_RecordCompare(m.N, m.Z, unpacked);
 	MemRelease(&m);
 	return RC_OK;
 }

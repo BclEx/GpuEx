@@ -59,14 +59,9 @@ namespace Core
 {
 #pragma region IVdbe
 
-	class IVdbe
-	{
-	public:
-		__device__ virtual UnpackedRecord *AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **free);
-		__device__ virtual void RecordUnpack(KeyInfo *keyInfo, int keyLength, const void *key, UnpackedRecord *p);
-		__device__ virtual void DeleteUnpackedRecord(UnpackedRecord *r);
-		__device__ virtual int RecordCompare(int cells, const void *cellKey, UnpackedRecord *idxKey);
-	};
+	__device__ UnpackedRecord *Vdbe_AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **free);
+	__device__ void Vdbe_RecordUnpack(KeyInfo *keyInfo, int keyLength, const void *key, UnpackedRecord *p);
+	__device__ int Vdbe_RecordCompare(int cells, const void *cellKey, UnpackedRecord *idxKey);
 
 #pragma endregion
 }
