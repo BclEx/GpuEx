@@ -148,18 +148,18 @@ enum TEXTENCODE : uint8
 __device__ __forceinline void operator|=(TEXTENCODE &a, int b) { a = (TEXTENCODE)(a | b); }
 __device__ __forceinline void operator&=(TEXTENCODE &a, int b) { a = (TEXTENCODE)(a & b); }
 
-#define _convert_GetVarint32(A,B) \
+#define _convert_getvarint32(A,B) \
 	(uint8)((*(A)<(uint8)0x80)?((B)=(uint32)*(A)),1:\
-	_convert_getvarint32((A),(uint32 *)&(B)))
-#define _convert_PutVarint32(A,B) \
+	_convert_getvarint32_((A),(uint32 *)&(B)))
+#define _convert_putvarint32(A,B) \
 	(uint8)(((uint32)(B)<(uint32)0x80)?(*(A)=(unsigned char)(B)),1:\
-	_convert_putvarint32((A),(B)))
+	_convert_putvarint32_((A),(B)))
 
 #pragma region Varint
 __device__ int _convert_putvarint(unsigned char *p, uint64 v);
-__device__ int _convert_putvarint32(unsigned char *p, uint32 v);
+__device__ int _convert_putvarint32_(unsigned char *p, uint32 v);
 __device__ uint8 _convert_getvarint(const unsigned char *p, uint64 *v);
-__device__ uint8 _convert_getvarint32(const unsigned char *p, uint32 *v);
+__device__ uint8 _convert_getvarint32_(const unsigned char *p, uint32 *v);
 __device__ int _convert_getvarintLength(uint64 v);
 #pragma endregion
 #pragma region AtoX

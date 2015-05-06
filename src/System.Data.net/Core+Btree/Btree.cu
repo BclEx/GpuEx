@@ -7,7 +7,7 @@ namespace Core
 {
 #if _DEBUG
 	__device__ bool BtreeTrace = true;
-#define TRACE(X, ...) if (BtreeTrace) { _fprintf(nullptr, X, __VA_ARGS__); }
+#define TRACE(X, ...) if (BtreeTrace) { _fprintf(stdout, X, __VA_ARGS__); }
 #else
 #define TRACE(X, ...)
 #endif
@@ -583,7 +583,7 @@ ptrmap_exit:
 		if (page->IntKey)
 		{
 			if (page->HasData)
-				n += _convert_getvarint32(&cell[n], &payloadLength);
+				n += _convert_getvarint32(&cell[n], payloadLength);
 			else
 				payloadLength = 0;
 			n += _convert_getvarint(&cell[n], (uint64 *)&info->Key);
@@ -592,7 +592,7 @@ ptrmap_exit:
 		else
 		{
 			info->Data = 0;
-			n += _convert_getvarint32(&cell[n], &payloadLength);
+			n += _convert_getvarint32(&cell[n], payloadLength);
 			info->Key = payloadLength;
 		}
 		info->Payload = payloadLength;
@@ -643,7 +643,7 @@ ptrmap_exit:
 		if (page->IntKey)
 		{
 			if (page->HasData)
-				iter += _convert_getvarint32(iter, &size);
+				iter += _convert_getvarint32(iter, size);
 			else
 				size = 0;
 
@@ -653,7 +653,7 @@ ptrmap_exit:
 			while ((*iter++) & 0x80 && iter < end) { }
 		}
 		else
-			iter += _convert_getvarint32(iter, &size);
+			iter += _convert_getvarint32(iter, size);
 
 		ASSERTCOVERAGE(size == page->MaxLocal);
 		ASSERTCOVERAGE(size == page->MaxLocal + 1);
@@ -3232,7 +3232,7 @@ set_child_ptrmaps_out:
 					if (page->HasData)
 					{
 						uint32 dummy;
-						cell += _convert_getvarint32(cell, &dummy);
+						cell += _convert_getvarint32(cell, dummy);
 					}
 					int64 cellKeyLength;
 					_convert_getvarint(cell, (uint64 *)&cellKeyLength);

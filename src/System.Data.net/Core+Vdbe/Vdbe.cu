@@ -1699,7 +1699,7 @@ arithmetic_result_is_null:
 					// The following assert is true in all cases except when the database file has been corrupted externally.
 					//_assert(rec != 0 || avail >= payloadSize || avail >= 9);
 					uint32 offset; // Offset into the data
-					int sizeHdr = _convert_GetVarint32((uint8 *)data, offset); // Size of the header size field at start of record
+					int sizeHdr = _convert_getvarint32((uint8 *)data, offset); // Size of the header size field at start of record
 
 					// Make sure a corrupt database has not given us an oversize header. Do this now to avoid an oversize memory allocation.
 					//
@@ -1749,7 +1749,7 @@ arithmetic_result_is_null:
 								idx++;
 							}
 							else
-								idx += _convert_getvarint32(idx, &t);
+								idx += _convert_getvarint32_(idx, &t);
 							types[i] = t;
 							uint32 sizeField = SerialTypeLen(t); // Number of bytes in the content of a field
 							offset += sizeField;
@@ -1937,11 +1937,11 @@ op_column_out:
 				uint8 *newRecord = (uint8 *)out_->Z; // A buffer to hold the data for the new record
 
 				// Write the record
-				int i = _convert_PutVarint32(newRecord, hdrLength); // Space used in newRecord[]
+				int i = _convert_putvarint32(newRecord, hdrLength); // Space used in newRecord[]
 				for (rec = data0; rec <= last; rec++)
 				{
 					serialType = SerialType(rec, fileFormat);
-					i += _convert_PutVarint32(&newRecord[i], serialType); // serial type
+					i += _convert_putvarint32(&newRecord[i], serialType); // serial type
 				}
 				for (rec = data0; rec <= last; rec++) // serial data
 					i += SerialPut(&newRecord[i], (int)(bytes-i), rec, fileFormat);
@@ -2262,7 +2262,7 @@ op_column_out:
 				// database file used to store temporary tables.
 				//
 				// A transaction must be started before executing this opcode.
-				_assert(op->P2 < N_BTREE_META );
+				_assert(op->P2 < N_BTREE_META);
 				_assert(op->P1 >= 0 && op->P1 < ctx->DBs.length);
 				_assert((BtreeMask & (((yDbMask)1) << op->P1)) != 0);
 				Context::DB *db = &ctx->DBs[op->P1];

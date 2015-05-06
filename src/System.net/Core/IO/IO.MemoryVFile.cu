@@ -28,7 +28,7 @@ namespace Core { namespace IO
 		FilePoint _endpoint;    // Pointer to the end of the file
 		FilePoint _readpoint;   // Pointer to the end of the last xRead()
 	public:
-		//bool Opened;
+		//: VFILE::Opened
 		__device__ virtual RC Read(void *buffer, int amount, int64 offset);
 		__device__ virtual RC Write(const void *buffer, int amount, int64 offset);
 		__device__ virtual RC Truncate(int64 size);
@@ -80,7 +80,7 @@ namespace Core { namespace IO
 			if (chunkOffset == 0)
 			{
 				// New chunk is required to extend the file
-				FileChunk *newChunk = new FileChunk();
+				FileChunk *newChunk = (FileChunk *)_alloc(sizeof(FileChunk));
 				if (!newChunk)
 					return RC_IOERR_NOMEM;
 				newChunk->Next = nullptr;
@@ -134,6 +134,7 @@ namespace Core { namespace IO
 		_memset(file, 0, MemoryVFileSize());
 		file = new (file) MemoryVFile();
 		file->Type = 1;
+		file->Opened = true;
 	}
 
 	__device__ bool VFile::HasMemoryVFile(VFile *file)

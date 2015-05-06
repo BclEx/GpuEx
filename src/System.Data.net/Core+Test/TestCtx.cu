@@ -480,7 +480,7 @@ __device__ static void DbUpdateHandler(void *p, TK op, const char *dbName, const
 
 	Tcl_Obj *cmd = tctx->UpdateHook->DuplicateObj();
 	cmd->IncrRefCount();
-	cmd->ListObjAppendElement(nullptr, Tcl_Obj::NewStringObj(op == TK_INSERT?"INSERT":(op == TK_UPDATE?"UPDATE":"DELETE"), -1));
+	cmd->ListObjAppendElement(nullptr, Tcl_Obj::NewStringObj(op == TK_INSERT?_convert_putvarint32:(op == TK_UPDATE?"UPDATE":"DELETE"), -1));
 	cmd->ListObjAppendElement(nullptr, Tcl_Obj::NewStringObj(dbName, -1));
 	cmd->ListObjAppendElement(nullptr, Tcl_Obj::NewStringObj(tableName, -1));
 	cmd->ListObjAppendElement(nullptr, Tcl_Obj::NewWideIntObj(rowid));

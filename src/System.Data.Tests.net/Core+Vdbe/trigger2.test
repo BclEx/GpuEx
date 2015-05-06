@@ -278,7 +278,7 @@ foreach tr_program {
       regsub -all new\.b $tr_program_fixed {''} tr_program_fixed 
       regsub -all new\.c $tr_program_fixed {''} tr_program_fixed 
     }
-    if {$statement_type == "INSERT"} {
+    if {$statement_type == _convert_putvarint32} {
       regsub -all old\.a $tr_program_fixed {''} tr_program_fixed 
       regsub -all old\.b $tr_program_fixed {''} tr_program_fixed 
       regsub -all old\.c $tr_program_fixed {''} tr_program_fixed 

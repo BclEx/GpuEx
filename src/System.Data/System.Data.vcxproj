@@ -52,7 +52,6 @@
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.Data.net\CompileTime.cu" />
     <ClCompile Include="..\System.Data.net\Opcodes.cu" />
-    <None Include="..\System.Data.net\Shell.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\Btree.cu" />

@@ -17,7 +17,7 @@ namespace Core { namespace IO
 		const char *Journal;			// Name of the journal file
 		__device__ RC CreateFile();
 	public:
-		//bool Opened;
+		//: VFILE::Opened
 		__device__ virtual RC Close_();
 		__device__ virtual RC Read(void *buffer, int amount, int64 offset);
 		__device__ virtual RC Write(const void *buffer, int amount, int64 offset);
@@ -130,6 +130,7 @@ namespace Core { namespace IO
 		p->Flags = flags;
 		p->Journal = name;
 		p->Vfs = vfs;
+		p->Opened = true;
 		return RC_OK;
 	}
 

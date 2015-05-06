@@ -1688,7 +1688,7 @@ error_out:
 				*(VFile **)arg = fd;
 				rc = RC_OK;
 			}
-			else if (fd->Type)
+			else if (fd->Opened)
 				rc = fd->FileControl(op, arg);
 			else
 				rc = RC_NOTFOUND;

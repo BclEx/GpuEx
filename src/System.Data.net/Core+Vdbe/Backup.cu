@@ -470,7 +470,7 @@ namespace Core
 		_assert(to && to->IsInTrans());
 		RC rc;
 		VFile *fd = to->get_Pager()->get_File(); // File descriptor for database pTo
-		if (fd->Type)
+		if (fd->Opened)
 		{
 			int64 bytes = from->GetPageSize()*(int64)from->LastPage();
 			rc = fd->FileControl(VFile::FCNTL_OVERWRITE, &bytes);

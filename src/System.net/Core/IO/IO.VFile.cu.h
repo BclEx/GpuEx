@@ -86,8 +86,8 @@ namespace Core { namespace IO
 			SHM_MAX = 8,
 		};
 
-		uint8 Type;
 		bool Opened;
+		uint8 Type;
 
 		__device__ virtual RC Read(void *buffer, int amount, int64 offset) = 0;
 		__device__ virtual RC Write(const void *buffer, int amount, int64 offset) = 0;

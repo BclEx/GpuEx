@@ -49,7 +49,7 @@ __device__ int _convert_putvarint(unsigned char *p, uint64 v)
 	return n;
 }
 
-__device__ int _convert_putvarint32(unsigned char *p, uint32 v)
+__device__ int _convert_putvarint32_(unsigned char *p, uint32 v)
 {
 	if ((v & ~0x3fff) == 0)
 	{
@@ -204,7 +204,7 @@ __device__ uint8 _convert_getvarint(const unsigned char *p, uint64 *v)
 	return 9;
 }
 
-__device__ uint8 _convert_getvarint32(const unsigned char *p, uint32 *v)
+__device__ uint8 _convert_getvarint32_(const unsigned char *p, uint32 *v)
 {
 	uint32 a, b;
 	// The 1-byte case.  Overwhelmingly the most common.  Handled inline by the getVarin32() macro
