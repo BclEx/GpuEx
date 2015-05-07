@@ -305,7 +305,7 @@ namespace Core
             if (bt.HasContent == null)
             {
                 Debug.Assert(id <= bt.Pages);
-                bt.HasContent = new Bitvec(bt.Pages);
+                bt.HasContent = Bitvec.New(bt.Pages);
             }
             if (rc == RC.OK && id <= bt.HasContent.Length)
                 rc = bt.HasContent.Set(id);

@@ -35,12 +35,12 @@
 
 __device__ inline static void *_cudarealloc(void *old, size_t newSize)
 { 
-	void *new_ = malloc(newSize);
+	void *new_ = malloc(newSize + 8);
 	if (old)
 	{ 
 		int64 *p = (int64 *)old;
 		size_t oldSize = (size_t)p[0];
-		if (oldSize != 0) _memcpy(new_, old, oldSize);
+		if (oldSize != 0) _memcpy(new_, old, oldSize + 8);
 		free(old);
 	}
 	return new_;
@@ -53,9 +53,9 @@ __device__ inline static void *_cudarealloc(void *old, size_t newSize)
 #include <malloc/malloc.h>
 #include <libkern/OSAtomic.h>
 static malloc_zone_t * _zoneMalloc;
-#define RUNTIME_ALLOC(x) malloc_zone_malloc(_zoneMalloc, (x))
-#define RUNTIME_FREE(x) malloc_zone_free(_zoneMalloc, (x));
-#define RUNTIME_REALLOC(x,y) malloc_zone_realloc(_zoneMalloc, (x), (y))
+#define RUNTIME_ALLOC(x) malloc_zone_malloc(_zoneMalloc,(x))
+#define RUNTIME_FREE(x) malloc_zone_free(_zoneMalloc,(x));
+#define RUNTIME_REALLOC(x,y) malloc_zone_realloc(_zoneMalloc,(x),(y))
 #define RUNTIME_ALLOCSIZE(x) (_zoneMalloc ? _zoneMalloc->size(_sqliteZone_,x) : malloc_size(x))
 
 #else /* if not __APPLE__ */
@@ -159,7 +159,7 @@ __device__ void *__allocsystem_realloc(void *prior, size_t size)
 	_assert(size == _ROUND8(size)); /* EV: R-46199-30249 */
 	int64 *p = (int64 *)prior;
 	p--;
-	p = (int64 *)RUNTIME_REALLOC(p, size + 8);
+	p = (int64 *)RUNTIME_REALLOC(p, size);
 	if (p)
 	{
 		p[0] = size;

@@ -89,7 +89,7 @@ namespace Core
                 uint bin = index / p._divisor;
                 index %= p._divisor;
                 if (p.u.Sub[bin] == null)
-                    p.u.Sub[bin] = new Bitvec(p._divisor);
+                    p.u.Sub[bin] = Bitvec.New(p._divisor);
                 p = p.u.Sub[bin];
             }
             if (p._size <= BITVEC_NBIT)

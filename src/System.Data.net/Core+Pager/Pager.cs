@@ -1501,7 +1501,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
             // Allocate a bitvec to use to store the set of pages rolled back
             Bitvec done = null; // Bitvec to ensure pages played back only once
             if (savepoint != null)
-                done = new Bitvec(savepoint.Orig);
+                done = Bitvec.New(savepoint.Orig);
 
             // Set the database size back to the value it was before the savepoint being reverted was opened.
             DBSize = (savepoint != null ? savepoint.Orig : DBOrigSize);
@@ -2704,7 +2704,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
             var rc = RC.OK;
             if (!UseWal() && JournalMode != IPager.JOURNALMODE.OFF)
             {
-                InJournal = new Bitvec(DBSize);
+                InJournal = Bitvec.New(DBSize);
 
                 // Open the journal file if it is not already open.
                 if (!JournalFile.Opened)
@@ -3397,7 +3397,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
                     newSavepoints[ii].Orig = DBSize;
                     newSavepoints[ii].Offset = (JournalFile.Opened && JournalOffset > 0 ? JournalOffset : (int)JOURNAL_HDR_SZ(this));
                     newSavepoints[ii].SubRecords = SubRecords;
-                    newSavepoints[ii].InSavepoint = new Bitvec(DBSize);
+                    newSavepoints[ii].InSavepoint = Bitvec.New(DBSize);
                     if (UseWal())
                         Wal.Savepoint(newSavepoints[ii].WalData);
                     var savepointsLength = ii + 1;

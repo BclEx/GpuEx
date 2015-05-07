@@ -3,11 +3,13 @@
 
 namespace Core
 {
-	__device__ Bitvec::Bitvec(uint32 size)
+	__device__ Bitvec *Bitvec::New(uint32 size)
 	{
 		_assert(sizeof(Bitvec) == BITVEC_SZ);
-		_memset(this, 0, sizeof(Bitvec));
-		_size = size;		
+		Bitvec *p = (Bitvec *)_allocZero(sizeof(Bitvec));
+		if (p)
+			p->_size = size;
+		return p;
 	}
 
 	__device__ bool Bitvec::Get(uint32 index)
@@ -44,8 +46,7 @@ namespace Core
 		{
 			uint32 bin = index / p->_divisor;
 			index %= p->_divisor;
-			if (!p->u.Sub[bin])
-				if (!(p->u.Sub[bin] = new Bitvec(p->_divisor))) return RC_NOMEM;
+			if (!p->u.Sub[bin] && !(p->u.Sub[bin] = New(p->_divisor))) return RC_NOMEM;
 			p = p->u.Sub[bin];
 		}
 		if (p->_size <= BITVEC_NBIT)
@@ -135,7 +136,7 @@ bitvec_set_end:
 	{
 		int rc = -1;
 		// Allocate the Bitvec to be tested and a linear array of bits to act as the reference
-		Bitvec *bitvec = new Bitvec(size);
+		Bitvec *bitvec = Bitvec::New(size);
 		unsigned char *v = (unsigned char *)_allocZero((size + 7) / 8 + 1);
 		void *tmpSpace = _alloc(BITVEC_SZ);
 		int pc = 0;

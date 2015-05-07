@@ -1,5 +1,6 @@
 ﻿// pager.c
 #include "Core+Pager.cu.h"
+#include <new.h>
 #define PAGER Pager::PAGER
 
 namespace Core
@@ -1535,7 +1536,7 @@ end_playback:
 		Bitvec *done = nullptr; // Bitvec to ensure pages played back only once
 		if (savepoint)
 		{
-			done = new Bitvec(savepoint->Orig);
+			done = Bitvec::New(savepoint->Orig);
 			if (!done)
 				return RC_NOMEM;
 		}
@@ -2782,7 +2783,7 @@ pager_acquire_err:
 		RC rc = RC_OK;
 		if (!UseWal(pager) && pager->JournalMode != IPager::JOURNALMODE_OFF)
 		{
-			pager->InJournal = new Bitvec(pager->DBSize);
+			pager->InJournal = Bitvec::New(pager->DBSize);
 			if (pager->InJournal == nullptr)
 				return RC_NOMEM;
 
@@ -3474,7 +3475,7 @@ commit_phase_one_exit:
 				newSavepoints[ii].Orig = DBSize;
 				newSavepoints[ii].Offset = (JournalFile->Opened && JournalOffset > 0 ? JournalOffset : JOURNAL_HDR_SZ(this));
 				newSavepoints[ii].SubRecords = SubRecords;
-				newSavepoints[ii].InSavepoint = new Bitvec(DBSize);
+				newSavepoints[ii].InSavepoint = Bitvec::New(DBSize);
 				if (!newSavepoints[ii].InSavepoint)
 					return RC_NOMEM;
 				if (UseWal(this))

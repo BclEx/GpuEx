@@ -27,7 +27,7 @@ namespace Core
 			Bitvec *Sub[BITVEC_NPTR];	// Recursive representation
 		} u;
 	public:
-		__device__ Bitvec(uint32 size);
+		__device__ static Bitvec *New(uint32 size);
 		__device__ bool Get(uint32 index);
 		__device__ RC Set(uint32 index);
 		__device__ void Clear(uint32 index, void *buffer);

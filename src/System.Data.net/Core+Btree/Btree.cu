@@ -306,7 +306,7 @@ namespace Core
 		if (!bt->HasContent)
 		{
 			_assert(id <= bt->Pages);
-			bt->HasContent = new Bitvec(bt->Pages);
+			bt->HasContent = Bitvec::New(bt->Pages);
 			if (!bt->HasContent)
 				rc = RC_NOMEM;
 		}

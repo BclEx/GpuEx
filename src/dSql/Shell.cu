@@ -385,11 +385,11 @@ void D_DATA(struct CallbackData *p)
 		if (h)
 			free(h);
 		// Allocate memory for the CallbackData structure, PCache object, the three file descriptors, the database file name and the journal file name.
-		int destTableLength = (p->DestTable ? (int)strlen(p->DestTable) : 0);
-		int dbFilenameLength = (p->DbFilename ? (int)strlen(p->DbFilename) : 0);
+		int destTableLength = (p->DestTable ? (int)strlen(p->DestTable) + 1 : 0);
+		int dbFilenameLength = (p->DbFilename ? (int)strlen(p->DbFilename) + 1 : 0);
 		int size = _ROUND8(sizeof(CallbackData)) + // CallbackData structure
-			destTableLength + 1 + // DestTable
-			dbFilenameLength + 1; // DbFilename
+			destTableLength + // DestTable
+			dbFilenameLength; // DbFilename
 		uint8 *ptr = (uint8 *)malloc(size);
 		if (!ptr)
 		{
@@ -2605,8 +2605,8 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 			BEGIN_TIMER;
 #if __CUDACC__
 			char *d_sql;
-			cudaMalloc((void**)&d_sql, sqlLength);
-			cudaMemcpy(d_sql, sql, sqlLength, cudaMemcpyHostToDevice);
+			cudaMalloc((void**)&d_sql, sqlLength + 1);
+			cudaMemcpy(d_sql, sql, sqlLength + 1, cudaMemcpyHostToDevice);
 			int d_startline = (in != 0 || !_stdinIsInteractive ? startline : -1);
 			D_DATA(p); d_ProcessInput_0<<<1,1>>>(p->D_, d_sql, d_startline); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(p);
 			cudaFree(d_sql);
@@ -2970,7 +2970,7 @@ int main(int argc, char **argv)
 		{
 #if __CUDACC__
 			char *vfsName = CmdlineOptionValue(argc, argv, ++i);
-			int vfsNameLength = (int)strlen(vfsName);
+			int vfsNameLength = (int)strlen(vfsName) + 1;
 			char *d_vfsName;
 			cudaMalloc((void**)&d_vfsName, vfsNameLength);
 			cudaMemcpy(d_vfsName, vfsName, vfsNameLength, cudaMemcpyHostToDevice);
@@ -3061,7 +3061,7 @@ int main(int argc, char **argv)
 			{
 				_OpenCtx(&_data);
 #if __CUDACC__
-				int sqlLength = (int)strlen(z);
+				int sqlLength = (int)strlen(z) + 1;
 				char *d_sql;
 				cudaMalloc((void**)&d_sql, sqlLength);
 				cudaMemcpy(d_sql, z, sqlLength, cudaMemcpyHostToDevice);
@@ -3100,7 +3100,7 @@ int main(int argc, char **argv)
 		{
 			_OpenCtx(&_data);
 #if __CUDACC__
-			int sqlLength = (int)strlen(firstCmd);
+			int sqlLength = (int)strlen(firstCmd) + 1;
 			char *d_sql;
 			cudaMalloc((void**)&d_sql, sqlLength);
 			cudaMemcpy(d_sql, firstCmd, sqlLength, cudaMemcpyHostToDevice);
