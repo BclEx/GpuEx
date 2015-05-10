@@ -781,7 +781,7 @@ namespace Core
 				if (nc->Parse)
 				{
 					Context *ctx = nc->Parse->Ctx;
-					int db = Prepare::SchemaToIndex(ctx, table->Schema);
+					int db = Schema::ToIndex(ctx, table->Schema);
 					originDbName = ctx->DBs[db].Name;
 				}
 			}
@@ -2397,7 +2397,7 @@ multi_select_end:
 							sub = nullptr;
 							if (tokenName && _strcmp(tokenName, tableName))
 								continue;
-							db = Prepare::SchemaToIndex(ctx, table->Schema);
+							db = Schema::ToIndex(ctx, table->Schema);
 							schemaName = (db >= 0 ? ctx->DBs[db].Name : "*");
 						}
 						for (j = 0; j < table->Cols.length; j++)
@@ -3183,7 +3183,7 @@ multi_select_end:
 					// This statement is so common that it is optimized specially. The OP_Count instruction is executed either on the intkey table that
 					// contains the data for table <tbl> or on one of its indexes. It is better to execute the op on an index, as indexes are almost
 					// always spread across less pages than their corresponding tables.
-					const int db = Prepare::SchemaToIndex(ctx, table->Schema);
+					const int db = Schema::ToIndex(ctx, table->Schema);
 					const int csr = parse->Tabs++; // Cursor to scan b-tree
 
 					parse->CodeVerifySchema(db);

@@ -17,7 +17,7 @@ namespace Core
 	__device__ void Parse::ErrorMsg_(const char *fmt, va_list &args)
 	{
 		Context *ctx = Ctx;
-		char *msg = _vmtagprintf(ctx, fmt, &args, nullptr);
+		char *msg = _vmtagprintf(ctx, fmt, &args);
 		if (ctx->SuppressErr)
 			_tagfree(ctx, msg);
 		else
@@ -36,7 +36,7 @@ namespace Core
 			ctx->ErrCode = errCode;
 			if (fmt)
 			{
-				char *z = _vmtagprintf(ctx, fmt, &args, nullptr);
+				char *z = _vmtagprintf(ctx, fmt, &args);
 				Vdbe::ValueSetStr(ctx->Err, -1, z, TEXTENCODE_UTF8, DESTRUCTOR_DYNAMIC);
 			}
 			else
@@ -83,6 +83,30 @@ namespace Core
 
 #pragma endregion
 
+#pragma region From: Printf_c
+
+	__device__ static void TextBuilder_AppendFormat_T(TextBuilder *b, va_list &args)
+	{
+		Token *token = va_arg(args, Token*);
+		if (token) b->Append((const char *)token->data, token->length);
+	}
+
+	__device__ static void TextBuilder_AppendFormat_S(TextBuilder *b, va_list &args)
+	{
+		SrcList *src = va_arg(args, SrcList*);
+		int k = va_arg(args, int);
+		SrcList::SrcListItem *item = &src->Ids[k];
+		_assert(k >= 0 && k < src->Srcs);
+		if (item->Database)
+		{
+			b->Append(item->Database, -1);
+			b->Append(".", 1);
+		}
+		b->Append(item->Name, -1);
+	}
+
+#pragma endregion
+
 	//#if !defined(OMIT_TRACE) && defined(ENABLE_IOTRACE)
 	//	// If the following function pointer is not NULL and if SQLITE_ENABLE_IOTRACE is enabled, then messages describing
 	//	// I/O active are written using this function.  These messages are intended for debugging activity only.
@@ -120,6 +144,8 @@ namespace Core
 
 	__device__ RC Main::Initialize()
 	{
+		_textBuilder_AppendFormat[0] = TextBuilder_AppendFormat_T;
+		_textBuilder_AppendFormat[1] = TextBuilder_AppendFormat_S;
 		if (SysEx_GlobalStatics.IsInit) return RC_OK;
 
 		MutexEx masterMutex;

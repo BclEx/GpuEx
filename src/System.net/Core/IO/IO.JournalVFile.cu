@@ -32,7 +32,7 @@ namespace Core { namespace IO
 		if (!Real)
 		{
 			VFile *real = (VFile *)&this[1];
-			rc = Vfs->Open(Journal, Real, Flags, 0);
+			rc = Vfs->Open(Journal, real, Flags, 0);
 			if (rc == RC_OK)
 			{
 				Real = real;

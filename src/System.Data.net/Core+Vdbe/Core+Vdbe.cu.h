@@ -941,7 +941,7 @@ namespace Core
 		__device__ static RC InitOne(Context *ctx, int db, char **errMsg);
 		__device__ static RC Init(Context *ctx, char **errMsg);
 		__device__ static RC ReadSchema(Parse *parse);
-		__device__ static int SchemaToIndex(Context *ctx, Schema *schema);
+		//SCHEMA::SchemaToIndex(Context *ctx, Schema *schema);
 		__device__ static RC Prepare_(Context *ctx, const char *sql, int bytes, bool isPrepareV2, Vdbe *reprepare, Vdbe **stmtOut, const char **tailOut);
 		__device__ static RC LockAndPrepare(Context *ctx, const char *sql, int bytes, bool isPrepareV2, Vdbe *reprepare, Vdbe **stmtOut, const char **tailOut);
 		__device__ static RC Reprepare(Vdbe *p);

@@ -198,14 +198,14 @@ namespace Core { namespace Command
 		Vdbe *v = parse->GetVdbe();
 		if (_NEVER(v == nullptr)) return;
 		_assert(Btree::HoldsAllMutexes(ctx));
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // Index of database containing pTab
+		int db = Schema::ToIndex(ctx, table->Schema); // Index of database containing pTab
 		_assert(db >= 0);
 
 #ifndef OMIT_TRIGGER
 		// Drop any table triggers from the internal schema.
 		for (Trigger *trig = Trigger::List(parse, table); trig; trig = trig->Next)
 		{
-			int trigDb = Prepare::SchemaToIndex(ctx, trig->Schema);
+			int trigDb = Schema::ToIndex(ctx, trig->Schema);
 			_assert(trigDb == db || trigDb == 1);
 			v->AddOp4(OP_DropTrigger, trigDb, 0, 0, trig->Name, 0);
 		}
@@ -247,7 +247,7 @@ namespace Core { namespace Command
 
 		Table *table = parse->LocateTableItem(false, &src->Ids[0]); // Table being renamed
 		if (!table) goto exit_rename_table;
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // Database that contains the table
+		int db = Schema::ToIndex(ctx, table->Schema); // Database that contains the table
 		char *dbName = ctx->DBs[db].Name; // Name of database iDb
 		ctx->Flags |= BContext::FLAG_PreferBuiltin;
 
@@ -428,7 +428,7 @@ exit_rename_table:
 		Table *newTable = parse->NewTable; // Copy of pParse->pNewTable
 		_assert(newTable);
 		_assert(Btree::HoldsAllMutexes(ctx));
-		int db = Prepare::SchemaToIndex(ctx, newTable->Schema); // Database number
+		int db = Schema::ToIndex(ctx, newTable->Schema); // Database number
 		const char *dbName = ctx->DBs[db].Name; // Database name
 		const char *tableName = &newTable->Name[16];  // Table name: Skip the "sqlite_altertab_" prefix on the name
 		Column *col = &newTable->Cols[newTable->Cols.length-1]; // The new column
@@ -541,7 +541,7 @@ exit_rename_table:
 			goto exit_begin_add_column;
 
 		_assert(table->AddColOffset > 0);
-		int db = Prepare::SchemaToIndex(ctx, table->Schema);
+		int db = Schema::ToIndex(ctx, table->Schema);
 
 		// Put a copy of the Table struct in Parse.pNewTable for the sqlite3AddColumn() function and friends to modify.  But modify
 		// the name by adding an "sqlite_altertab_" prefix.  By adding this prefix, we insure that the name will not collide with an existing

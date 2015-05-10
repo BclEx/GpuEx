@@ -3783,7 +3783,7 @@ cancel:
 			SrcList::SrcListItem *tabItem = &tabList->Ids[level->From];
 			Table *table = tabItem->Table; // Table to open
 			winfo->RowOuts *= level->Plan.Rows;
-			int db = Prepare::SchemaToIndex(ctx, table->Schema); // Index of database containing table/index
+			int db = Schema::ToIndex(ctx, table->Schema); // Index of database containing table/index
 			if ((table->TabFlags & TF_Ephemeral) != 0 || table->Select) { } // Do nothing
 			else
 #ifndef OMIT_VIRTUALTABLE

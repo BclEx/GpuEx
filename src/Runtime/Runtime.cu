@@ -352,6 +352,8 @@ __device__ static const Info _info[] = {
 	{ 'r', 10, (FLAG)3, TYPE_ORDINAL,    0,  0 },
 };
 
+__device__ void (*_textBuilder_AppendFormat[2])(TextBuilder *b, va_list &args);
+
 #ifndef OMIT_FLOATING_POINT
 __device__ static char GetDigit(double64 *val, int *cnt)
 {
@@ -803,25 +805,14 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			// The precision in %q and %Q means how many input characters to consume, not the length of the output...
 			// if (precision>=0 && precision<length) length = precision;
 			break; }
-
-							  //case TYPE_TOKEN: {
-							  //	Token *token = va_arg(args, Token*);
-							  //	if (token) Append((const char *)token->z, token->n);
-							  //	length = width = 0;
-							  //	break; }
-							  //case TYPE_SRCLIST: {
-							  //	SrcList *src = va_arg(args, SrcList*);
-							  //	int k = va_arg(args, int);
-							  //	SrcList::SrcListItem *item = &src->Ids[k];
-							  //	_assert(k >= 0 && k < src->Srcs);
-							  //	if (item->DatabaseName)
-							  //	{
-							  //		Append(item->DatabaseName, -1);
-							  //		Append(".", 1);
-							  //	}
-							  //	Append(item->Name, -1);
-							  //	length = width = 0;
-							  //	break; }
+		case TYPE_TOKEN: {
+			_textBuilder_AppendFormat[0](this, args);
+			length = width = 0;
+			break; }
+		case TYPE_SRCLIST: {
+			_textBuilder_AppendFormat[1](this, args);
+			length = width = 0;
+			break; }
 		default: {
 			_assert(type == TYPE_INVALID);
 			return; }
@@ -945,7 +936,7 @@ __device__ void TextBuilder::Init(TextBuilder *b, char *text, int capacity, int 
 	b->AllocFailed = false;
 }
 
-__device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args, int *length)
+__device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args)
 {
 	//if (!RuntimeInitialize()) return nullptr;
 	_assert(tag != nullptr);
@@ -954,13 +945,12 @@ __device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args, int 
 	TextBuilder::Init(&b, base, sizeof(base), 1000000000); //? tag->Limit[LIMIT_LENGTH]);
 	b.Tag = tag;
 	b.AppendFormat_(true, fmt, *args);
-	if (length) *length = b.Index;
 	char *z = b.ToString();
-	//? if (b.AllocFailed) _tagallocfailed(tag);
+	// if (b.AllocFailed) _tagallocfailed(tag);
 	return z;
 }
 
-__device__ char *_vmprintf(const char *fmt, va_list *args, int *length)
+__device__ char *_vmprintf(const char *fmt, va_list *args)
 {
 	//if (!RuntimeInitialize()) return nullptr;
 	char base[PRINT_BUF_SIZE];
@@ -968,18 +958,16 @@ __device__ char *_vmprintf(const char *fmt, va_list *args, int *length)
 	TextBuilder::Init(&b, base, sizeof(base), CORE_MAX_LENGTH);
 	b.AllocType = 2;
 	b.AppendFormat_(false, fmt, *args);
-	if (length) *length = b.Index;
 	return b.ToString();
 }
 
-__device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, va_list *args, int *length)
+__device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, va_list *args)
 {
 	if (bufLen <= 0) return (char *)buf;
 	TextBuilder b;
 	TextBuilder::Init(&b, (char *)buf, (int)bufLen, 0);
 	b.AllocType = 0;
 	b.AppendFormat_(false, fmt, *args);
-	if (length) *length = b.Index;
 	return b.ToString();
 }
 

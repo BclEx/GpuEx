@@ -356,7 +356,7 @@ namespace Core
 		// If foreign-keys are disabled, this function is a no-op.
 		if ((ctx->Flags & Context::FLAG_ForeignKeys) == 0) return;
 
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // Index of database containing table
+		int db = Schema::ToIndex(ctx, table->Schema); // Index of database containing table
 		const char *dbName = ctx->DBs[db].Name; // Name of database containing table
 
 		// Loop through all the foreign key constraints for which table is the child table (the table that the foreign key definition is part of).

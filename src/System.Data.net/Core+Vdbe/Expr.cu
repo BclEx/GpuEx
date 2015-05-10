@@ -1032,7 +1032,7 @@ no_mem:
 			int col = expr2->ColumnId; // Index of column <column>
 
 			// Code an OP_VerifyCookie and OP_TableLock for <table>.
-			int db = Prepare::SchemaToIndex(ctx, table->Schema); // Database idx for pTab
+			int db = Schema::ToIndex(ctx, table->Schema); // Database idx for pTab
 			parse->CodeVerifySchema(db);
 			parse->TableLock(db, table->Id, 0, table->Name);
 

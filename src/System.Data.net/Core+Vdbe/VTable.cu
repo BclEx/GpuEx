@@ -177,7 +177,7 @@ namespace Core
 		_assert(table->Index == nullptr);
 
 		Context *ctx = parse->Ctx; // Database connection
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // The database the table is being created in
+		int db = Schema::ToIndex(ctx, table->Schema); // The database the table is being created in
 		_assert(db >= 0);
 
 		table->TabFlags |= TF_Virtual;
@@ -232,7 +232,7 @@ namespace Core
 			//
 			// The VM register number pParse->regRowid holds the rowid of an entry in the sqlite_master table tht was created for this vtab
 			// by sqlite3StartTable().
-			int db = Prepare::SchemaToIndex(ctx, table->Schema);
+			int db = Schema::ToIndex(ctx, table->Schema);
 			parse->NestedParse("UPDATE %Q.%s SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q WHERE rowid=#%d",
 				ctx->DBs[db].Name, SCHEMA_TABLE(db),
 				table->Name, table->Name,
@@ -306,7 +306,7 @@ namespace Core
 		vtable->Ctx = ctx;
 		vtable->Module = module;
 
-		int db = Prepare::SchemaToIndex(ctx, table->Schema);
+		int db = Schema::ToIndex(ctx, table->Schema);
 		table->ModuleArgs[1] = ctx->DBs[db].Name;
 
 		// Invoke the virtual table constructor

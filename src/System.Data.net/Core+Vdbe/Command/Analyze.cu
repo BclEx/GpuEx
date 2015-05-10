@@ -258,7 +258,7 @@ namespace Core { namespace Command
 		if (table->Id == 0 || !_strncmp(table->Name, "sqlite_", 7)) // Do not gather statistics on views or virtual tables + Do not gather statistics on system tables
 			return;
 		_assert(Btree::HoldsAllMutexes(ctx));
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // Index of database containing table
+		int db = Schema::ToIndex(ctx, table->Schema); // Index of database containing table
 		_assert(db >= 0);
 		_assert(Btree::SchemaMutexHeld(ctx, db, 0));
 #ifndef OMIT_AUTHORIZATION
@@ -284,7 +284,7 @@ namespace Core { namespace Command
 				parse->Mems = memId+1+(cols*2);
 
 			// Open a cursor to the index to be analyzed.
-			_assert(db == Prepare::SchemaToIndex(ctx, idx->Schema));
+			_assert(db == Schema::ToIndex(ctx, idx->Schema));
 			v->AddOp4(OP_OpenRead, idxCurId, idx->Id, db, (char *)key, Vdbe::P4T_KEYINFO_HANDOFF);
 			Vdbe_Comment(v, "%s", idx->Name);
 
@@ -481,7 +481,7 @@ namespace Core { namespace Command
 	__device__ static void AnalyzeTable(Parse *parse, Table *table, Index *onlyIdx)
 	{
 		_assert(table && Btree::HoldsAllMutexes(parse->Ctx));
-		int db = Prepare::SchemaToIndex(parse->Ctx, table->Schema);
+		int db = Schema::ToIndex(parse->Ctx, table->Schema);
 		parse->BeginWriteOperation(0, db);
 		int statCurId = parse->Tabs;
 		parse->Tabs += 3;

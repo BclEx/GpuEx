@@ -3,8 +3,8 @@
 
 __device__ static _WSD struct Stat
 {
-	int NowValue[10];	// Current value
-	int MaxValue[10];	// Maximum value
+	int NowValue[10]; // Current value
+	int MaxValue[10]; // Maximum value
 } g_stat = { {0,}, {0,} };
 #ifndef OMIT_WSD
 #define _stat_Init

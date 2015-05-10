@@ -241,7 +241,7 @@ namespace Core { namespace Command
 		Table *table = Delete::SrcListLookup(parse, tabList); // The table to insert into.  aka TABLE
 		if (!table)
 			goto insert_cleanup;
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // Index of database holding TABLE
+		int db = Schema::ToIndex(ctx, table->Schema); // Index of database holding TABLE
 		_assert( db<ctx->DBs.length);
 #if !OMIT_AUTHORIZATION
 		Context::DB *dbAsObj = &ctx->DBs[db]; // The database containing table being inserted into
@@ -983,7 +983,7 @@ insert_cleanup:
 	__device__ int Insert::OpenTableAndIndices(Parse *parse, Table *table, int baseCur, OP op)
 	{
 		if (IsVirtual(table)) return 0;
-		int db = Prepare::SchemaToIndex(parse->Ctx, table->Schema);
+		int db = Schema::ToIndex(parse->Ctx, table->Schema);
 		Vdbe *v = parse->GetVdbe();
 		_assert(v);
 		OpenTable(parse, baseCur, db, table, op);
@@ -1101,7 +1101,7 @@ insert_cleanup:
 #ifdef TEST
 		_xferopt_count++;
 #endif
-		int dbSrcId = Prepare::SchemaToIndex(parse->Ctx, src->Schema); // The database of pSrc
+		int dbSrcId = Schema::ToIndex(parse->Ctx, src->Schema); // The database of pSrc
 		Vdbe *v = parse->GetVdbe(); // The VDBE we are building
 		parse->CodeVerifySchema(dbSrcId);
 		int srcId = parse->Tabs++; // Cursors from source and destination

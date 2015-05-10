@@ -149,7 +149,7 @@ namespace Core
 			return;
 		_assert(Nested < 10); // Nesting should only be of limited depth
 		Context *ctx = Ctx;
-		char *sql = _vmtagprintf(ctx, fmt, &args, nullptr);
+		char *sql = _vmtagprintf(ctx, fmt, &args);
 		if (!sql)
 			return; // A malloc must have failed
 		Nested++;
@@ -210,7 +210,7 @@ namespace Core
 		const char *dbName;
 		if (item->Schema)
 		{
-			int db = Prepare::SchemaToIndex(Ctx, item->Schema);
+			int db = Schema::ToIndex(Ctx, item->Schema);
 			dbName = Ctx->DBs[db].Name;
 		}
 		else
@@ -989,7 +989,7 @@ primary_key_exit:
 			return;
 		_assert(!ctx->Init.Busy || !select);
 
-		int db = Prepare::SchemaToIndex(ctx, table->Schema);
+		int db = Schema::ToIndex(ctx, table->Schema);
 #ifndef OMIT_CHECK
 		// Resolve names in all CHECK constraint expressions.
 		if (table->Check)
@@ -1161,7 +1161,7 @@ primary_key_exit:
 		}
 		Token *name = nullptr;
 		TwoPartName(name1, name2, &name);
-		int db = Prepare::SchemaToIndex(ctx, table->Schema);
+		int db = Schema::ToIndex(ctx, table->Schema);
 		DbFixer fix;
 		if (fix.FixInit(this, db, "view", name) && fix.FixSelect(select))
 		{
@@ -1373,7 +1373,7 @@ primary_key_exit:
 				return;
 			else
 			{
-				int db = Prepare::SchemaToIndex(parse->Ctx, table->Schema);
+				int db = Schema::ToIndex(parse->Ctx, table->Schema);
 				_assert(db >= 0 && db < parse->Ctx->DBs.length);
 				DestroyRootPage(parse, largestId, db);
 				destroyedId = largestId;
@@ -1460,7 +1460,7 @@ primary_key_exit:
 				CodeVerifyNamedSchema(name->Ids[0].Database);
 			goto exit_drop_table;
 		}
-		int db = Prepare::SchemaToIndex(ctx, table->Schema);
+		int db = Schema::ToIndex(ctx, table->Schema);
 		_assert(db >= 0 && db < ctx->DBs.length);
 
 		// If pTab is a virtual table, call ViewGetColumnNames() to ensure it is initialized.
@@ -1537,7 +1537,7 @@ exit_drop_table:
 		Table *table = NewTable;
 		int i;
 
-		_assert(!to);
+		_assert(to);
 		FKey *fkey = nullptr;
 		if (!table || INDECLARE_VTABLE(this))
 			goto fk_end;
@@ -1652,7 +1652,7 @@ fk_end:
 	__device__ void Parse::RefillIndex(Index *index, int memRootPage)
 	{
 		Context *ctx = Ctx; // The database connection
-		int db = Prepare::SchemaToIndex(ctx, index->Schema);
+		int db = Schema::ToIndex(ctx, index->Schema);
 
 #ifndef OMIT_AUTHORIZATION
 		if (Auth::Check(this, AUTH_REINDEX, index->Name, 0, ctx->DBs[db].Name))
@@ -1764,7 +1764,7 @@ fk_end:
 			table = NewTable;
 			if (!table)
 				goto exit_create_index;
-			db = Prepare::SchemaToIndex(ctx, table->Schema);
+			db = Schema::ToIndex(ctx, table->Schema);
 		}
 		Context::DB *dbobj = &ctx->DBs[db]; // The specific table containing the indexed database
 		_assert(table);
@@ -2139,7 +2139,7 @@ exit_create_index:
 			ErrorMsg("index associated with UNIQUE or PRIMARY KEY constraint cannot be dropped");
 			goto exit_drop_index;
 		}
-		int db = Prepare::SchemaToIndex(ctx, index->Schema);
+		int db = Schema::ToIndex(ctx, index->Schema);
 #ifndef OMIT_AUTHORIZATION
 		{
 			Table *table = index->Table;
@@ -2561,7 +2561,7 @@ append_from_error:
 		for (Index *index = table->Index; index; index = index->Next)
 			if (!collName || CollationMatch(collName, index))
 			{
-				int db = Prepare::SchemaToIndex(parse->Ctx, table->Schema);
+				int db = Schema::ToIndex(parse->Ctx, table->Schema);
 				parse->BeginWriteOperation(0, db);
 				parse->RefillIndex(index, -1);
 			}

@@ -2,6 +2,7 @@ namespace Core
 {
 	class Btree;
 	struct Savepoint;
+	struct Schema;
 
 #define CTXENCODE(ctx) ((ctx)->DBs[0].Schema->Encode)
 

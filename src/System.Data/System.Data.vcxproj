@@ -55,6 +55,7 @@
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\Btree.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Btree\Btree+Mutex.cu" />
     <ClCompile Include="..\System.Data.net\Core+Pager\Pager.cu" />
     <ClCompile Include="..\System.Data.net\Core+Pager\PCache.cu" />
     <ClCompile Include="..\System.Data.net\Core+Pager\PCache1.cu" />
@@ -249,6 +250,7 @@
     <None Include="..\System.Data.net\Core+Btree\BContext.cu" />
     <None Include="..\System.Data.net\Core+Btree\BContext+Notify.cu" />
     <None Include="..\System.Data.net\Core+Btree\Btree.cu" />
+    <None Include="..\System.Data.net\Core+Btree\Btree+Mutex.cu" />
     <None Include="..\System.Data.net\Core+Pager\Pager.cu" />
     <None Include="..\System.Data.net\Core+Pager\PCache.cu" />
     <None Include="..\System.Data.net\Core+Pager\PCache1.cu" />

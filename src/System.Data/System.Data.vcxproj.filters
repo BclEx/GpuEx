@@ -345,6 +345,10 @@
     <None Include="..\System.Data.net\Core+Vdbe\Command\Update.cu">
       <Filter>Core+Vdbe\Command</Filter>
     </None>
+    <None Include="..\System.Data.net\Core+Vdbe\Callback.cu" />
+    <None Include="..\System.Data.net\Core+Btree\Btree+Mutex.cu">
+      <Filter>Core+Btree</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="System.Data.cu" />
@@ -355,8 +359,5 @@
     <CudaCompile Include="System.Data+Vdbe+Parse.cu" />
     <CudaCompile Include="System.Data+Vdbe+Vdbe.cu" />
     <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="..\System.Data.net\Core+Vdbe\Callback.cu">
-      <Filter>Core+Vdbe</Filter>
-    </CudaCompile>
   </ItemGroup>
 </Project>

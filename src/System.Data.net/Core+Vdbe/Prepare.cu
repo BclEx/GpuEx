@@ -374,24 +374,25 @@ error_out:
 		}
 	}
 
-	__device__ int Prepare::SchemaToIndex(Context *ctx, Schema *schema)
-	{
-		// If pSchema is NULL, then return -1000000. This happens when code in expr.c is trying to resolve a reference to a transient table (i.e. one
-		// created by a sub-select). In this case the return value of this function should never be used.
-		//
-		// We return -1000000 instead of the more usual -1 simply because using -1000000 as the incorrect index into ctx->aDb[] is much 
-		// more likely to cause a segfault than -1 (of course there are assert() statements too, but it never hurts to play the odds).
-		_assert(_mutex_held(ctx->Mutex));
-		int i = -1000000;
-		if (schema)
-		{
-			for (i = 0; _ALWAYS(i < ctx->DBs.length); i++)
-				if (ctx->DBs[i].Schema == schema)
-					break;
-			_assert(i >= 0 && i < ctx->DBs.length);
-		}
-		return i;
-	}
+	// MOVED TO SCHEMA
+	//__device__ int Schema::ToIndex(Context *ctx, Schema *schema)
+	//{
+	//	// If pSchema is NULL, then return -1000000. This happens when code in expr.c is trying to resolve a reference to a transient table (i.e. one
+	//	// created by a sub-select). In this case the return value of this function should never be used.
+	//	//
+	//	// We return -1000000 instead of the more usual -1 simply because using -1000000 as the incorrect index into ctx->aDb[] is much 
+	//	// more likely to cause a segfault than -1 (of course there are assert() statements too, but it never hurts to play the odds).
+	//	_assert(_mutex_held(ctx->Mutex));
+	//	int i = -1000000;
+	//	if (schema)
+	//	{
+	//		for (i = 0; _ALWAYS(i < ctx->DBs.length); i++)
+	//			if (ctx->DBs[i].Schema == schema)
+	//				break;
+	//		_assert(i >= 0 && i < ctx->DBs.length);
+	//	}
+	//	return i;
+	//}
 
 #ifndef OMIT_EXPLAIN
 	__constant__ static const char * const _colName[] = {

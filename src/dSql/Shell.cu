@@ -2902,6 +2902,7 @@ int main(int argc, char **argv)
 #ifdef SIGINT
 	signal(SIGINT, InterruptHandler);
 #endif
+	_data.DbFilename = "\\T_\\test.db";
 
 	// Do an initial pass through the command-line argument to locate the name of the database file, the name of the initialization file,
 	// the size of the alternative malloc heap, and the first command to execute.

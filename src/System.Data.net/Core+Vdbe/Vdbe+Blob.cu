@@ -194,7 +194,7 @@ namespace Core {
 			if (blob->Stmt)
 			{
 				Vdbe *v = blob->Stmt;
-				int db = Prepare::SchemaToIndex(ctx, table->Schema);
+				int db = Schema::ToIndex(ctx, table->Schema);
 				v->AddOpList(_lengthof(_openBlob), _openBlob);
 				// Configure the OP_Transaction
 				v->ChangeP1(0, db);

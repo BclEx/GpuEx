@@ -43,7 +43,7 @@ namespace Core
 	{
 		Context *ctx = parse->Ctx;
 		if (!ctx->Auth) return;
-		int db = Prepare::SchemaToIndex(ctx, schema); // The index of the database the expression refers to
+		int db = Schema::ToIndex(ctx, schema); // The index of the database the expression refers to
 		if (db < 0)
 			return; // An attempt to read a column out of a subquery or other temporary table.
 

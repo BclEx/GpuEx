@@ -157,7 +157,7 @@ namespace Core
 
 #ifndef OMIT_AUTHORIZATION
 		{
-			int tabDb = Prepare::SchemaToIndex(ctx, table->Schema); // Index of the database holding pTab
+			int tabDb = Schema::ToIndex(ctx, table->Schema); // Index of the database holding pTab
 			AUTH code = AUTH_CREATE_TRIGGER;
 			const char *dbName = ctx->DBs[tabDb].Name;
 			const char *dbTrigName = (isTemp ? ctx->DBs[1].Name : dbName);
@@ -206,7 +206,7 @@ trigger_cleanup:
 		parse->NewTrigger = nullptr;
 		if (_NEVER(parse->Errs) || !trig) goto triggerfinish_cleanup;
 		char *name = trig->Name; // Name of trigger
-		int db = Prepare::SchemaToIndex(ctx, trig->Schema); // Database containing the trigger
+		int db = Schema::ToIndex(ctx, trig->Schema); // Database containing the trigger
 		trig->StepList = stepList;
 		while (stepList)
 		{
@@ -395,7 +395,7 @@ drop_trigger_cleanup:
 	__device__ void Trigger::DropTriggerPtr(Parse *parse, Trigger *trigger)
 	{
 		Context *ctx = parse->Ctx;
-		int db = Prepare::SchemaToIndex(ctx, trigger->Schema);
+		int db = Schema::ToIndex(ctx, trigger->Schema);
 		_assert(db >= 0 && db < ctx->DBs.length);
 		Core::Table *table = TableOfTrigger(trigger);
 		_assert(table);
@@ -478,7 +478,7 @@ drop_trigger_cleanup:
 		{
 			_assert(src->Srcs > 0);
 			_assert(src->Ids != 0);
-			int db = Prepare::SchemaToIndex(ctx, step->Trig->Schema); // Index of the database to use
+			int db = Schema::ToIndex(ctx, step->Trig->Schema); // Index of the database to use
 			if (db == 0 || db >= 2)
 			{
 				_assert(db < ctx->DBs.length);

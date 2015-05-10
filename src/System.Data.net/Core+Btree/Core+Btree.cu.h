@@ -2,6 +2,9 @@
 #define __CORE_BTREE_CU_H__
 
 #include "../Core+Pager/Core+Pager.cu.h"
+#include "BContext.cu.h"
+#include "Btree.cu.h"
+
 namespace Core
 {
 #pragma region CollSeq
@@ -47,16 +50,12 @@ namespace Core
 		TEXTENCODE Encode;		// Text encoding used by this database
 		SCHEMA Flags;			// Flags associated with this schema
 		int CacheSize;			// Number of pages to use in the cache
+
+		__device__ static int ToIndex(BContext *ctx, Schema *schema);
 	};
 
 #pragma endregion
-}
 
-#include "BContext.cu.h"
-#include "Btree.cu.h"
-
-namespace Core
-{
 #pragma region IVdbe
 
 	__device__ UnpackedRecord *Vdbe_AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **free);

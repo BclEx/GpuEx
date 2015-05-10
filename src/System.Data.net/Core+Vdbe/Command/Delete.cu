@@ -45,7 +45,7 @@ namespace Core { namespace Command
 	__device__ void Delete::MaterializeView(Parse *parse, Table *view, Expr *where_, int curId)
 	{
 		Context *ctx = parse->Ctx;
-		int db = Prepare::SchemaToIndex(ctx, view->Schema);
+		int db = Schema::ToIndex(ctx, view->Schema);
 
 		where_ = Expr::Dup(ctx, where_, 0);
 		SrcList *from = Parse::SrcListAppend(ctx, nullptr, nullptr, nullptr);
@@ -164,7 +164,7 @@ limit_where_cleanup_2:
 		// If table is really a view, make sure it has been initialized.
 		if (parse->ViewGetColumnNames(table) || IsReadOnly(parse, table, (trigger != nullptr)))
 			goto delete_from_cleanup;
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // Database number
+		int db = Schema::ToIndex(ctx, table->Schema); // Database number
 		_assert(db < ctx->DBs.length);
 		const char *dbName = ctx->DBs[db].Name; // Name of database holding pTab
 		ARC rcauth = Auth::Check(parse, AUTH_DELETE, table->Name, 0, dbName); // Value returned by authorization callback

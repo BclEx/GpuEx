@@ -530,6 +530,7 @@ namespace Core
 		OSTRACE("CLOSE %d %s\n", H, rc ? "ok" : "failed");
 		if (rc)
 			H = NULL;
+		Opened = false;
 		return (rc ? RC_OK : gpuLogError(RC_IOERR_CLOSE, osGetLastError(), "gpuClose", Path));
 	}
 

@@ -41,7 +41,7 @@ namespace Core { namespace Command
 		// Locate the table which we want to update. 
 		Table *table = Delete::SrcListLookup(parse, tabList); // The table to be updated
 		if (!table) goto update_cleanup;
-		int db = Prepare::SchemaToIndex(ctx, table->Schema); // Database containing the table being updated
+		int db = Schema::ToIndex(ctx, table->Schema); // Database containing the table being updated
 
 		// Figure out if we have any triggers and if the table being updated is a view.
 #ifndef OMIT_TRIGGER

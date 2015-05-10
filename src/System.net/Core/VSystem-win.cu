@@ -10,7 +10,7 @@ namespace Core
 #pragma region Preamble
 
 #if defined(TEST) || defined(_DEBUG)
-	bool OsTrace = true;
+	bool OsTrace = false;
 #define OSTRACE(X, ...) if (OsTrace) { _dprintf("OS: "X, __VA_ARGS__); }
 #else
 #define OSTRACE(X, ...)
@@ -324,7 +324,7 @@ namespace Core
 		{"DeleteFileA", (SYSCALL)nullptr, nullptr},
 #endif
 #define osDeleteFileA ((BOOL(WINAPI *)(LPCSTR))Syscalls[9].Current)
-#if defined(SQLITE_WIN32_HAS_WIDE)
+#if defined(WIN32_HAS_WIDE)
 		{"DeleteFileW", (SYSCALL)DeleteFileW, nullptr},
 #else
 		{"DeleteFileW", (SYSCALL)nullptr, nullptr},
@@ -1575,6 +1575,7 @@ namespace Core
 		if (rc)
 			H = NULL;
 		OpenCounter(-1);
+		Opened = false;
 		return (rc ? RC_OK : winLogError(RC_IOERR_CLOSE, osGetLastError(), "winClose", Path));
 	}
 

@@ -10,6 +10,7 @@ namespace Core
 	struct Mem;
 	struct BtCursor;
 	struct BtShared;
+	struct CollSeq;
 
 	enum SO : uint8
 	{
@@ -207,28 +208,34 @@ namespace Core
 		__device__ RC Checkpoint(int mode, int *logs, int *checkpoints);
 #endif
 
+		// If we are not using shared cache, then there is no need to use mutexes to access the BtShared structures.  So make the Enter and Leave procedures no-ops.
 #ifndef OMIT_SHARED_CACHE
+		__device__ void Enter();
+		__device__ static void EnterAll(BContext *ctx);
+#else
 		__device__ inline void Enter() { }
 		__device__ static void EnterAll(BContext *ctx) { }
+#endif
+
+#if !defined(OMIT_SHARED_CACHE) && THREADSAFE > 0
+		__device__ bool Sharable();
+		__device__ void Leave();
+		__device__ static void LeaveAll(BContext *ctx);
+#ifndef NDEBUG
+		// These routines are used inside assert() statements only.
+		__device__ bool HoldsMutex();
+		__device__ static bool HoldsAllMutexes(BContext *ctx);
+		__device__ static bool SchemaMutexHeld(BContext *ctx, int db, Core::Schema *schema);
+#endif
+#else
 		__device__ inline bool Sharable() { return Sharable_; }
 		__device__ inline void Leave() { }
 		__device__ static void LeaveAll(BContext *ctx) { }
-		//#ifndef _DEBUG
+#ifndef NDEBUG
 		// These routines are used inside assert() statements only.
 		__device__ inline bool HoldsMutex() { return true; }
 		__device__ inline static bool HoldsAllMutexes(BContext *ctx) { return true; }
 		__device__ inline static bool SchemaMutexHeld(BContext *ctx, int db, Core::Schema *schema) { return true; }
-		//#endif
-#else
-		//#define EnterAll(X)
-#define Sharable(X) 0
-#define Leave(X)
-#define LeaveAll(X)
-#ifndef _DEBUG
-		// These routines are used inside assert() statements only.
-#define HoldsMutex(X) 1
-#define HoldsAllMutexes(X) 1
-#define SchemaMutexHeld(X,Y,Z) 1
 #endif
 #endif
 
