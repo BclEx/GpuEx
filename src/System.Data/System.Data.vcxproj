@@ -383,7 +383,6 @@
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_LIB;_TEST;ENABLE_IOTRACE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.Tclite;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -402,7 +401,6 @@
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
-      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Test.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" "$(IntDir)System.Data+Vdbe+Parse.cu.obj" "$(IntDir)System.Data+Vdbe+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>-->
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -416,7 +414,6 @@
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.Tclite;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -435,7 +432,6 @@
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
-      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Btree.cu.obj" "$(IntDir)System.Data+Pager.cu.obj" "$(IntDir)System.Data+Test.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" "$(IntDir)System.Data+Vdbe+Parse.cu.obj" "$(IntDir)System.Data+Vdbe+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>-->
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
