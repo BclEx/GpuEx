@@ -510,7 +510,7 @@ namespace Core { namespace Command
 		return (*string == 0);
 	}
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ static int _likeCount = 0;
 #endif
 	__device__ static void LikeFunc(FuncContext *fctx,  int argc,  Mem **argv)
@@ -547,7 +547,7 @@ namespace Core { namespace Command
 		if (zA && zB)
 		{
 			CompareInfo *info = (CompareInfo *)Vdbe::User_Data(fctx);
-#ifdef TEST
+#ifdef _TEST
 			_likeCount++;
 #endif
 			Vdbe::Result_Int(fctx, PatternCompare(zB, zA, info, escape));

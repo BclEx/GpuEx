@@ -7,6 +7,9 @@
 #pragma region NATIVE
 
 #include <stdio.h>
+#if !defined(_DEBUG) && !defined(NDEBUG)
+#define NDEBUG
+#endif
 #if __CUDACC__
 #define __forceinline __forceinline__
 #if __CUDA_ARCH__
@@ -17,6 +20,7 @@
 #include "Runtime.cu.h"
 #else
 #define __host_constant__
+
 #include <string.h>
 #include <malloc.h>
 #include "Runtime.cpu.h"
@@ -47,7 +51,9 @@
 
 #pragma endregion
 
-#pragma region Limits
+//////////////////////
+// LIMITS
+#pragma region LIMITS
 
 // The maximum length of a TEXT or BLOB in bytes.   This also limits the size of a row in a table or index.
 #ifndef CORE_MAX_LENGTH
@@ -109,7 +115,7 @@ __device__ int _utf8to8(unsigned char *z);
 #endif
 #ifndef OMIT_UTF16
 __device__ int _utf16bytelength(const void *z, int chars);
-#ifdef TEST
+#ifdef _TEST
 __device__ void _runtime_utfselftest();
 #endif
 #endif
@@ -297,11 +303,16 @@ __device__ extern bool _status(STATUS op, int *current, int *highwater, bool res
 // TAGBASE
 #pragma region TAGBASE
 
+class TextBuilder;
 class TagBase
 {
 public:
 	struct RuntimeStatics
 	{
+		bool CoreMutex;			// True to enable core mutexing
+		bool FullMutex;			// True to enable full mutexing
+		void (*AppendFormat[2])(TextBuilder *b, va_list &args); // Formatter
+		//
 		bool Memstat;						// True to enable memory status
 		bool RuntimeMutex;					// True to enable core mutexing
 		size_t LookasideSize;				// Default lookaside buffer size
@@ -743,8 +754,6 @@ public:
 	}
 #endif
 };
-
-extern __device__ void (*_textBuilder_AppendFormat[2])(TextBuilder *b, va_list &args);
 
 #pragma endregion
 

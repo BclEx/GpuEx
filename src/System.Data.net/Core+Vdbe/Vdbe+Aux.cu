@@ -3,7 +3,7 @@
 #pragma region Preamble
 namespace Core {
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ extern int g_search_count;
 #endif
 
@@ -1835,7 +1835,7 @@ __device__ RC Vdbe::CursorMoveto(VdbeCursor *p)
 		p->LastRowid = p->MovetoTarget;
 		if (res != 0) return SysEx_CORRUPT_BKPT;
 		p->RowidIsValid = true;
-#ifdef TEST
+#ifdef _TEST
 		g_search_count++;
 #endif
 		p->DeferredMoveto = false;
@@ -1948,7 +1948,7 @@ __device__ uint32 Vdbe::SerialPut(uint8 *buf, int bufLength, Mem *mem, int fileF
 		if (mem->Flags & MEM_Zero)
 		{
 			len += mem->u.Zeros;
-			assert(bufLength >= 0);
+			_assert(bufLength >= 0);
 			if (len > (uint32)bufLength)
 				len = (uint32)bufLength;
 			_memset(&buf[mem->N], 0, len - mem->N);

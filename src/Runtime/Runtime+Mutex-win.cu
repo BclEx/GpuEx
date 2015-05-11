@@ -1,6 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
-#include "Runtime.h"
 #include <Windows.h>
+#include "Runtime.h"
 
 #ifdef MUTEX_WIN
 #pragma region MUTEX_WIN
@@ -67,6 +67,8 @@ void _mutex_shutdown()
 
 MutexEx _mutex_alloc(MUTEX id)
 {
+	if (!g_RuntimeStatics.CoreMutex)
+		return nullptr;
 	_mutex_obj *p;
 	switch (id)
 	{
@@ -138,8 +140,10 @@ bool _mutex_tryenter(MutexEx p)
 	// first doing some #defines that prevent SQLite from building on Win98. For that reason, we will omit this optimization for now.  See ticket #2685.
 	if (TryEnterCriticalSection(&p->Mutex))
 	{
+#ifdef _DEBUG
 		p->Owner = tid;
 		p->Refs++;
+#endif
 		rc = true;
 	}
 #ifdef _DEBUG

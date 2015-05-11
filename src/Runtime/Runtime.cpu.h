@@ -5,21 +5,8 @@
 #ifndef __RUNTIME_CPU_H__
 #define __RUNTIME_CPU_H__
 
-#include <stdarg.h> // Needed for the definition of va_list
-#include <stdio.h>
-#include <process.h>
-
-//#ifndef __device__
-//#define __device__
-//#endif
-//#ifndef __constant__
-//#define __constant__ const
-//#endif
-//#ifndef __shared__
-//#define __shared__
-//#endif
-
-#include <assert.h>
+//#include <stdio.h>
+//#include <process.h>
 //#include <string.h>
 #ifdef HAVE_ISNAN
 #include <math.h>
@@ -30,7 +17,7 @@
 //////////////////////
 // ASSERT
 #pragma region ASSERT
-
+#include <assert.h>
 #undef _assert
 #ifndef NDEBUG
 #define _assert(X) assert(X)
@@ -65,12 +52,7 @@ extern "C" const unsigned char __curtCtypeMap[256];
 //////////////////////
 // STDARG
 #pragma region STDARG
-
-//included in stdargs.h
-//#define va_start _crt_va_start
-//#define va_arg _crt_va_arg
-//#define va_end _crt_va_end
-
+#include <stdarg.h>
 #pragma endregion
 
 //////////////////////

@@ -282,7 +282,7 @@ __device__ static SqlFunc *FindSqlFunc(TestCtx *tctx, const char *name)
 // Free a single SqlPreparedStmt object.
 __device__ static void DbFreeStmt(SqlPreparedStmt *stmt)
 {
-#ifdef TEST
+#ifdef _TEST
 	if (!Vdbe::Sql(stmt->Stmt))
 		_free((char *)stmt->Sql);
 #endif
@@ -443,7 +443,7 @@ __device__ static int DbWalHandler(void *clientData,  Context *ctx, const char *
 	return rc;
 }
 
-#if defined(TEST) && defined(ENABLE_UNLOCK_NOTIFY)
+#if defined(_TEST) && defined(ENABLE_UNLOCK_NOTIFY)
 __device__ static void SetTestUnlockNotifyVars(Tcl_Interp *interp, int argId, int argsLength)
 {
 	char b[64];
@@ -733,7 +733,7 @@ __device__ static int DbTransPostCmd(ClientData data[], Tcl_Interp *interp, int 
 
 __device__ static RC DbPrepare(TestCtx *tctx, const char *sql, Vdbe **stmt, const char **out)
 {
-#ifdef TEST
+#ifdef _TEST
 	if (tctx->LegacyPrepare)
 		return Prepare::Prepare_(tctx->Ctx, sql, -1, stmt, out);
 #endif
@@ -806,7 +806,7 @@ __device__ static RC DbPrepareAndBind(TestCtx *tctx, char const *sql, char const
 		p->SqlLength = (int)(*out - sql);
 		p->Sql = Vdbe::Sql(stmt);
 		p->Parms.data = (Tcl_Obj **)&p[1];
-#ifdef TEST
+#ifdef _TEST
 		if (!p->Sql)
 		{
 			char *copy = (char *)_alloc(p->SqlLength + 1);
@@ -1053,7 +1053,7 @@ __device__ static RC DbEvalStep(DbEvalContext *p)
 			{
 				// If a run-time error occurs, report the error and stop reading the SQL.
 				DbReleaseStmt(tctx, preStmt, true);
-#if TEST
+#if _TEST
 				if (p->Ctx->LegacyPrepare && rc == RC_SCHEMA && prevSql)
 				{
 					// If the runtime error was an SQLITE_SCHEMA, and the database handle is configured to use the legacy sqlite3_prepare() 

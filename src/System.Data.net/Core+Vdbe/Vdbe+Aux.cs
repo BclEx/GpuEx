@@ -2031,7 +2031,7 @@ namespace Core
                 if (res != 0)
                     return SysEx.CORRUPT_BKPT();
                 p.RowidIsValid = true;
-#if  TEST
+#if  _TEST
                 _search_count++;
 #endif
                 p.DeferredMoveto = false;

@@ -126,7 +126,7 @@ bitvec_set_end:
 	}
 
 #pragma	region Tests
-#ifdef TEST
+#ifdef _TEST
 
 #define SETBIT(V,I) V[(I) >> 3] |= (1 << ((I) & 7))
 #define CLEARBIT(V,I) V[(I) >> 3] &= ~(1 << ((I) & 7))

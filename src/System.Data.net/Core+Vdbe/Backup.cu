@@ -227,7 +227,7 @@ namespace Core
 
 			// Now that there is a read-lock on the source database, query the source pager for the number of pages in the database.
 			srcPage = (int)Src->LastPage();
-			_assert(srcPage >= 0);
+			//_assert(srcPage >= 0);
 			for (int ii = 0; (pages < 0 || ii < pages) && NextId <= (Pid)srcPage && !rc; ii++)
 			{
 				const Pid srcPg = NextId; // Source page number

@@ -38,6 +38,8 @@ void _mutex_shutdown() { }
 
 MutexEx _mutex_alloc(MUTEX id)
 {
+	if (!g_RuntimeStatics.CoreMutex)
+		return nullptr;
 	_mutex_obj *p;
 	switch (id)
 	{

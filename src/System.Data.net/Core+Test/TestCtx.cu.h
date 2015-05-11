@@ -67,7 +67,7 @@ struct TestCtx
 	IncrblobChannel *Incrblobs;	// Linked list of open incrblob channels
 	int Steps, Sorts, Indexs;	// Statistics for most recent operation
 	int Transactions;			// Number of nested [transaction] methods
-#ifdef TEST
+#ifdef _TEST
 	bool LegacyPrepare;			// True to use sqlite3_prepare()
 #endif
 

@@ -431,7 +431,7 @@ namespace Core
 #pragma endregion
 
 #pragma region Test
-#if TEST
+#if _TEST
 #endif
 #pragma endregion
 

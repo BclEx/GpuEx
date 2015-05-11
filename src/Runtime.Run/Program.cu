@@ -1,9 +1,11 @@
 #include <RuntimeHost.h>
 #include <FallocHost.h>
+#include <string.h>
+//http://thelegendofrandom.com/blog/archives/2231
 
 void __testFalloc(cudaDeviceFalloc &f);
 void __testRuntime(cudaDeviceHeap &r);
-void __testRegex1(cudaDeviceHeap &r);
+//void __testRegex1(cudaDeviceHeap &r);
 
 #if __CUDACC__
 void GMain(cudaDeviceHeap &r) {
@@ -12,7 +14,7 @@ void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
 //__testFalloc(f);
 __testRuntime(r);
-__testRegex1(r);
+//__testRegex1(r);
 }
 
 #if __CUDACC__

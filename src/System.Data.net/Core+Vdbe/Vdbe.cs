@@ -26,7 +26,7 @@ namespace Core
         //        static void MemAboutToChange_(Vdbe P, Mem M) {}
         //#endif
 
-#if TEST
+#if _TEST
         static int g_search_count = 0;
         static int g_interrupt_count = 0;
         static int g_sort_count = 0;
@@ -355,7 +355,7 @@ namespace Core
                 }
 #endif
 
-#if TEST
+#if _TEST
                 // Check to see if we need to simulate an interrupt.  This only happens if we have a special test build.
                 if (g_interrupt_count > 0)
                 {
@@ -2841,7 +2841,7 @@ namespace Core
                                 }
                                 cur.DeferredMoveto = false;
                                 cur.CacheStatus = CACHE_STALE;
-#if TEST
+#if _TEST
                                 f_search_count++;
 #endif
                                 if (oc >= OP.SeekGe)
@@ -2919,7 +2919,7 @@ namespace Core
                             //
                             // See also: Found, NotExists, IsUnique
                             int res = 0;
-#if TEST
+#if _TEST
                             g_found_count++;
 #endif
                             bool alreadyExists = false;
@@ -3563,7 +3563,7 @@ namespace Core
                             // Sorting is accomplished by writing records into a sorting index, then rewinding that index and playing it back from beginning to
                             // end.  We use the OP_Sort opcode instead of OP_Rewind to do the rewinding so that the global variable will be incremented and
                             // regression tests can determine whether or not the optimizer is correctly optimizing out sorts.
-#if TEST
+#if _TEST
                             g_sort_count++;
                             g_search_count--;
 #endif
@@ -3655,7 +3655,7 @@ namespace Core
                             {
                                 pc = op.P2 - 1;
                                 if (op.P5) Counters[op.P5 - 1]++;
-#if TEST
+#if _TEST
                                 g_search_count++;
 #endif
                             }

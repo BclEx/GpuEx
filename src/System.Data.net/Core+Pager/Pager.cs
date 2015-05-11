@@ -68,7 +68,7 @@ namespace Core
             WRITE = 2,
         }
 
-#if TEST
+#if _TEST
         static int _readdb_count = 0;    // Number of full pages read from DB
         static int _writedb_count = 0;   // Number of full pages written to DB
         static int _writej_count = 0;    // Number of pages written to journal
@@ -1619,14 +1619,14 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
         }
 #endif
 
-#if TEST
+#if _TEST
         // The following global variable is incremented whenever the library attempts to open a temporary file.  This information is used for testing and analysis only.  
         int _opentemp_count = 0;
 #endif
 
         private RC pagerOpentemp(ref VFile file, VSystem.OPEN vfsFlags)
         {
-#if TEST
+#if _TEST
             _opentemp_count++; // Used for testing and analysis only
 #endif
             vfsFlags |= VSystem.OPEN.READWRITE | VSystem.OPEN.CREATE | VSystem.OPEN.EXCLUSIVE | VSystem.OPEN.DELETEONCLOSE;
@@ -1707,7 +1707,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
             return MaxPid;
         }
 
-#if TEST
+#if _TEST
         static int _io_error_pending;
         static int _io_error_hit;
         static int saved_cnt;
@@ -1854,7 +1854,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
             return RC.OK;
         }
 
-#if !DEBUG || TEST
+#if !DEBUG || _TEST
         // was:sqlite3PagerPagenumber
         public static Pid get_PageID(IPage pg)
         {
@@ -3001,7 +3001,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
         }
 
 #if DEBUG
-        public static bool Iswriteable(IPage pg)
+        public static bool IsWriteable(IPage pg)
         {
             return ((pg.Flags & PgHdr.PGHDR.DIRTY) != 0);
         }
@@ -3337,7 +3337,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
             return PCache.get_PageRefs(page);
         }
 
-#if TEST
+#if _TEST
         int[] sqlite3PagerStats()
         {
             var a = new int[11];

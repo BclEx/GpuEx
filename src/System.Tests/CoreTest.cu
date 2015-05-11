@@ -3,7 +3,7 @@
 #pragma region Preamble
 
 #if __CUDACC__
-#define TEST(id) \
+#define _TEST(id) \
 	__global__ void coreTest##id(void *r); \
 	void coreTest##id##_host(cudaDeviceHeap &r) { coreTest##id<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r); } \
 	__global__ void coreTest##id(void *r) \
@@ -11,7 +11,7 @@
 	_runtimeSetHeap(r); \
 	SysEx::Initialize();
 #else
-#define TEST(id) \
+#define _TEST(id) \
 	__global__ void coreTest##id(void *r); \
 	void coreTest##id##_host(cudaDeviceHeap &r) { coreTest##id(r.heap); cudaDeviceHeapSynchronize(r); } \
 	__global__ void coreTest##id(void *r) \
@@ -30,7 +30,7 @@ namespace Core
 //////////////////////////////////////////////////
 
 // bitvec
-TEST(0) {
+_TEST(0) {
 	// Test that sqlite3BitvecBuiltinTest correctly reports errors that are deliberately introduced.
 	int op0[] = {5, 1, 1, 1, 0}; _assert(Bitvec_BuiltinTest(400, op0) == 1);
 	int op1[] = {5, 1, 234, 1, 0}; _assert(Bitvec_BuiltinTest(400, op1) == 234);
@@ -91,7 +91,7 @@ TEST(0) {
 }}
 
 // bitvec failures
-TEST(1) {
+_TEST(1) {
 	/*
 	// This procedure runs sqlite3BitvecBuiltinTest with argments "n" and "program".  But it also causes a malloc error to occur after the
 	// "failcnt"-th malloc.  The result should be "0" if no malloc failure occurs or "-1" if there is a malloc failure.

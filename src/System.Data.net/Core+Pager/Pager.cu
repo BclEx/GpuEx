@@ -58,7 +58,7 @@ namespace Core
 		STAT_WRITE = 2,
 	};
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ int _readdb_count = 0;    // Number of full pages read from DB
 	__device__ int _writedb_count = 0;   // Number of full pages written to DB
 	__device__ int _writej_count = 0;    // Number of pages written to journal
@@ -1656,14 +1656,14 @@ end_playback:
 	}
 #endif
 
-#ifdef TEST
+#ifdef _TEST
 	// The following global variable is incremented whenever the library attempts to open a temporary file.  This information is used for testing and analysis only.  
 	__device__ int g_opentemp_count = 0;
 #endif
 
 	__device__ static RC pagerOpentemp(Pager *pager, VFile *file, VSystem::OPEN vfsFlags)
 	{
-#ifdef TEST
+#ifdef _TEST
 		g_opentemp_count++; // Used for testing and analysis only
 #endif
 		vfsFlags |= (VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE | VSystem::OPEN_EXCLUSIVE | VSystem::OPEN_DELETEONCLOSE);
@@ -1744,7 +1744,7 @@ end_playback:
 		return MaxPid;
 	}
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ int _io_error_pending;
 	__device__ int _io_error_hit;
 	__device__ static int saved_cnt;
@@ -1891,7 +1891,7 @@ end_playback:
 		return RC_OK;
 	}
 
-#if !defined(_DEBUG) || defined(TEST)
+#if !defined(_DEBUG) || defined(_TEST)
 	__device__ Pid Pager::get_PageID(IPage *pg)
 	{
 		return ((PgHdr *)pg)->ID;
@@ -3076,8 +3076,8 @@ pager_acquire_err:
 		return rc;
 	}
 
-#ifndef DEBUG
-	__device__ bool Pager::Iswriteable(IPage *pg)
+#if !defined(_DEBUG) || defined(_TEST)
+	__device__ bool Pager::IsWriteable(IPage *pg)
 	{
 		return ((pg->Flags & PgHdr::PGHDR_DIRTY) != 0);
 	}
@@ -3412,7 +3412,7 @@ commit_phase_one_exit:
 		return PCache::get_PageRefs(page);
 	}
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ int *Pager::get_Stats()
 	{
 		__shared__ static int a[11];

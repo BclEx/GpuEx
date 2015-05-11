@@ -221,7 +221,7 @@ namespace Core
             return Encoding.UTF32.GetBytes(z2).Length;
         }
 
-        //#if defined(TEST)
+        //#if defined(_TEST)
         //	__device__ void _runtime_utfselftest()
         //	{
         //		unsigned int i, t;

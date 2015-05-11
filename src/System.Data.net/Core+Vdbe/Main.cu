@@ -144,8 +144,8 @@ namespace Core
 
 	__device__ RC Main::Initialize()
 	{
-		_textBuilder_AppendFormat[0] = TextBuilder_AppendFormat_T;
-		_textBuilder_AppendFormat[1] = TextBuilder_AppendFormat_S;
+		TagBase_RuntimeStatics.AppendFormat[0] = TextBuilder_AppendFormat_T;
+		TagBase_RuntimeStatics.AppendFormat[1] = TextBuilder_AppendFormat_S;
 		if (SysEx_GlobalStatics.IsInit) return RC_OK;
 
 		MutexEx masterMutex;
@@ -1269,10 +1269,10 @@ _out:
 		if (((1<<(flags&7)) & 0x46) == 0) return SysEx_MISUSE_BKPT;
 
 		bool isThreadsafe; // True for threadsafe connections
-		if (!SysEx_GlobalStatics.CoreMutex) isThreadsafe = false;
+		if (!TagBase_RuntimeStatics.CoreMutex) isThreadsafe = false;
 		else if (flags & VSystem::OPEN_NOMUTEX) isThreadsafe = false;
 		else if (flags & VSystem::OPEN_FULLMUTEX) isThreadsafe = true;
-		else isThreadsafe = SysEx_GlobalStatics.FullMutex;
+		else isThreadsafe = TagBase_RuntimeStatics.FullMutex;
 		if (flags & VSystem::OPEN_PRIVATECACHE) flags &= ~VSystem::OPEN_SHAREDCACHE;
 		else if (SysEx_GlobalStatics.SharedCacheEnabled) flags |= VSystem::OPEN_SHAREDCACHE;
 
@@ -1447,7 +1447,7 @@ opendb_out:
 		_free(open);
 		if (ctx)
 		{
-			_assert(ctx->Mutex || !isThreadsafe || !SysEx_GlobalStatics.FullMutex);
+			_assert(ctx->Mutex || !isThreadsafe || !TagBase_RuntimeStatics.FullMutex);
 			_mutex_leave(ctx->Mutex);
 		}
 		rc = Main::ErrCode(ctx);
@@ -1724,8 +1724,8 @@ error_out:
 		return rc;   
 	}
 
-#pragma region TEST
-#ifdef TEST
+#pragma region _TEST
+#ifdef _TEST
 	extern __device__ void Random_PrngSaveState();
 	extern __device__ void Random_PrngRestoreState();
 	extern __device__ void Random_PrngResetState();

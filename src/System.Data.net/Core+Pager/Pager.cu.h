@@ -124,7 +124,7 @@ namespace Core
 		int (*BusyHandler)(void*);	// Function to call when busy
 		void *BusyHandlerArg;		// BContext argument for xBusyHandler
 		int Stats[3];               // Total cache hits, misses and writes
-#ifdef TEST
+#ifdef _TEST
 		int Reads;                  // Database pages read
 #endif
 		void (*Reiniter)(IPage *);	// Call this routine when reloading pages
@@ -223,16 +223,16 @@ namespace Core
 		__device__ void *get_Codec(IPage *pg);
 #endif
 		// Functions to support testing and debugging.
-#if !defined(_DEBUG) || defined(TEST)
+#if !defined(_DEBUG) || defined(_TEST)
 		__device__ static Pid get_PageID(IPage *pg);
-		__device__ static bool Iswriteable(IPage *pg);
+		__device__ static bool IsWriteable(IPage *pg);
 #endif
-#ifdef TEST
+#ifdef _TEST
 		__device__ int *get_Stats();
 #endif
 	};
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ void disable_simulated_io_errors();
 	__device__ void enable_simulated_io_errors();
 #else

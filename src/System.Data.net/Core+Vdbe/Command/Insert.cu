@@ -1001,7 +1001,7 @@ insert_cleanup:
 		return i-1;
 	}
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ int _xferopt_count;
 #endif
 
@@ -1098,7 +1098,7 @@ insert_cleanup:
 
 		// If we get this far, it means that the xfer optimization is at least a possibility, though it might only work if the destination
 		// table (tab1) is initially empty.
-#ifdef TEST
+#ifdef _TEST
 		_xferopt_count++;
 #endif
 		int dbSrcId = Schema::ToIndex(parse->Ctx, src->Schema); // The database of pSrc

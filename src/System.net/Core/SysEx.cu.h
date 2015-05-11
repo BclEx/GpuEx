@@ -29,19 +29,19 @@ namespace Core
 #pragma region Initialize/Shutdown/Config
 		struct GlobalStatics
 		{
-			bool CoreMutex;						// True to enable core mutexing
-			bool FullMutex;						// True to enable full mutexing
+			//TAG::CoreMutex					// True to enable core mutexing
+			//TAG::FullMutex					// True to enable full mutexing
 			bool OpenUri;						// True to interpret filenames as URIs
-			//Main::bool UseCis;						// Use covering indices for full-scans
+			//Main::UseCis						// Use covering indices for full-scans
 			int MaxStrlen;						// Maximum string length
 			//mutex_methods mutex;				// Low-level mutex interface
-			//Main::sqlite3_pcache_methods2 pcache2;	// Low-level page-cache interface
+			//Main::pcache2						// Low-level page-cache interface
 			//array_t<void> Heap;				// Heap storage space
 			//int MinReq, MaxReq;				// Min and max heap requests sizes
-			//Main::void *Page;					// Page cache memory
-			//Main::int PageSize;				// Size of each page in pPage[]
-			//Main::int Pages;					// Number of pages in pPage[]
-			//Main::int MaxParserStack;			// maximum depth of the parser stack
+			//Main::Page						// Page cache memory
+			//Main::PageSize					// Size of each page in pPage[]
+			//Main::Pages						// Number of pages in pPage[]
+			//Main::MaxParserStack				// maximum depth of the parser stack
 			bool SharedCacheEnabled;			// true if shared-cache mode enabled
 			// The above might be initialized to non-zero.  The following need to always initially be zero, however.
 			bool IsInit;						// True after initialization has finished

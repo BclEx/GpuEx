@@ -97,7 +97,7 @@ namespace Core
 #ifdef ENABLE_MEMORY_MANAGEMENT
 		__device__ static int ReleaseMemory(int required);
 #endif
-#ifdef TEST
+#ifdef _TEST
 		__device__ void PCache1_testStats(uint *current, uint *max, uint *min, uint *recyclables);
 #endif
 		// from pcache1

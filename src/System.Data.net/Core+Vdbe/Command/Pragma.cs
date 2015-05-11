@@ -1432,7 +1432,7 @@ namespace Core.Command
                 ReturnSingleInt(parse, "timeout", ctx->BusyTimeout);
             }
 
-#if DEBUG || TEST
+#if DEBUG || _TEST
             // Report the current state of file logs for all databases
             else if (string.Equals(left, "lock_status", StringComparison.OrdinalIgnoreCase))
             {

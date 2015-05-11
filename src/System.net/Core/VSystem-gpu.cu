@@ -9,14 +9,14 @@ namespace Core
 
 #pragma region Preamble
 
-#if defined(TEST) || defined(_DEBUG)
+#if defined(_TEST) || defined(_DEBUG)
 	__device__ bool OsTrace = true;
 #define OSTRACE(X, ...) if (OsTrace) { _dprintf(X, __VA_ARGS__); }
 #else
 #define OSTRACE(X, ...)
 #endif
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ int g_io_error_hit = 0;            // Total number of I/O Errors
 	__device__ int g_io_error_hardhit = 0;        // Number of non-benign errors
 	__device__ int g_io_error_pending = 0;        // Count down to first I/O error
@@ -39,7 +39,7 @@ namespace Core
 #endif
 
 	// When testing, keep a count of the number of open files.
-#ifdef TEST
+#ifdef _TEST
 	__device__ int g_open_file_count = 0;
 #define OpenCounter(X) g_open_file_count += (X)
 #else
@@ -637,7 +637,7 @@ namespace Core
 		return rc;
 	}
 
-#ifdef TEST
+#ifdef _TEST
 	// Count the number of fullsyncs and normal syncs.  This is used to test that syncs and fullsyncs are occuring at the right times.
 	__device__ int g_sync_count = 0;
 	__device__ int g_fullsync_count = 0;
@@ -649,7 +649,7 @@ namespace Core
 		OSTRACE("SYNC %d lock=%d\n", H, Lock_);
 		// Unix cannot, but some systems may return SQLITE_FULL from here. This line is to test that doing so does not cause any problems.
 		SimulateDiskfullError(return RC_FULL);
-#ifdef TEST
+#ifdef _TEST
 		if ((flags&0x0F) == SYNC_FULL)
 			g_fullsync_count++;
 		g_sync_count++;
@@ -816,7 +816,7 @@ namespace Core
 		if (Lock_ >= LOCK_RESERVED)
 		{
 			rc = 1;
-			OSTRACE("TEST WR-LOCK %d %d (local)\n", H, rc);
+			OSTRACE("_TEST WR-LOCK %d %d (local)\n", H, rc);
 		}
 		else
 		{
@@ -824,7 +824,7 @@ namespace Core
 			if (rc)
 				gpuUnlockFile(&H, RESERVED_BYTE, 0, 1, 0);
 			rc = !rc;
-			OSTRACE("TEST WR-LOCK %d %d (remote)\n", H, rc);
+			OSTRACE("_TEST WR-LOCK %d %d (remote)\n", H, rc);
 		}
 		lock = rc;
 		return RC_OK;
@@ -1246,7 +1246,7 @@ namespace Core
 	__device__ int GpuVSystem::Randomness(int bufLength, char *buf)
 	{
 		int n = 0;
-#if TEST
+#if _TEST
 		n = bufLength;
 		_memset(buf, 0, bufLength);
 #else

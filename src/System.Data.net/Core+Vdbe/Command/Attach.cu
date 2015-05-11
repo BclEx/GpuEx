@@ -161,7 +161,7 @@ namespace Core { namespace Command
 		if (rc)
 		{
 			int db = ctx->DBs.length - 1;
-			assert(db >= 2);
+			_assert(db >= 2);
 			if (ctx->DBs[db].Bt)
 			{
 				ctx->DBs[db].Bt->Close();

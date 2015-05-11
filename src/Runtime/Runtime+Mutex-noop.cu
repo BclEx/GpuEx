@@ -5,7 +5,7 @@
 
 #if !_DEBUG
 __device__ int _mutex_init() { return 0; }
-__device__ int _mutex_shutdown() { }
+__device__ void _mutex_shutdown() { }
 
 __device__ _mutex_obj *_mutex_alloc(int id)  {  return (_mutex_obj *)1;  }
 __device__ void _mutex_free(_mutex_obj *p) { }
@@ -30,6 +30,8 @@ __device__ void _mutex_shutdown() { }
 
 __device__ _mutex_obj *_mutex_alloc(MUTEX id)
 {
+	if (!g_RuntimeStatics.CoreMutex)
+		return nullptr;
 	_mutex_obj *p;
 	switch (id)
 	{

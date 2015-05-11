@@ -2,7 +2,7 @@
 #include <Falloc.cu.h>
 
 __device__ static fallocHeap *_heap;
-#define TEST(id) \
+#define _TEST(id) \
 	__global__ void fallocTest##id(void *r, fallocHeap *f); \
 	void fallocTest##id##_host(cudaDeviceHeap &r, void *f) { cudaDeviceHeapSelect(r); fallocTest##id<<<1, 1>>>(r.heap, (fallocHeap *)f); cudaDeviceHeapSynchronize(r); } \
 	__global__ void fallocTest##id(void *r, fallocHeap *f) \
@@ -13,20 +13,20 @@ __device__ static fallocHeap *_heap;
 //////////////////////////////////////////////////
 
 // launches cuda kernel
-TEST(A) {
+_TEST(A) {
 	int gtid = blockIdx.x*blockDim.x + threadIdx.x;
 	_assert(gtid < 1);
 }}
 
 // alloc with get block
-TEST(0) {
+_TEST(0) {
 	void* obj = fallocGetBlock(_heap);
 	_assert(obj != nullptr);
 	fallocFreeBlock(_heap, obj);
 }}
 
 // alloc with getblocks
-TEST(1) {
+_TEST(1) {
 	//void* obj = fallocGetBlocks(_heap, 144 * 2);
 	//__assert(obj != nullptr);
 	//fallocFreeBlocks(_heap, obj);
@@ -37,7 +37,7 @@ TEST(1) {
 }}
 
 // alloc with context
-TEST(2) {
+_TEST(2) {
 	fallocCtx *ctx = fallocCreateCtx(_heap);
 	_assert(ctx != nullptr);
 	char *testString = (char*)falloc(ctx, 10);
@@ -48,7 +48,7 @@ TEST(2) {
 }}
 
 // alloc with context as stack
-TEST(3) {
+_TEST(3) {
 	fallocCtx *ctx = fallocCreateCtx(_heap);
 	_assert(ctx != nullptr);
 	fallocPush<int>(ctx, 1);

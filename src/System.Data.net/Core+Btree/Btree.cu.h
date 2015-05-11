@@ -61,7 +61,7 @@ namespace Core
 	class Btree
 	{
 	public:
-		enum AUTOVACUUM : uint8
+		enum AUTOVACUUM : int8
 		{
 			AUTOVACUUM_NONE = 0,	// Do not do auto-vacuum
 			AUTOVACUUM_FULL = 1,    // Do full auto-vacuum
@@ -199,7 +199,7 @@ namespace Core
 		__device__ static RC Count(BtCursor *cur, int64 *entrysOut);
 #endif
 
-#ifdef TEST
+#ifdef _TEST
 		//__device__ int CursorInfo(BtCursor*, int*, int);
 		//__device__ void CursorList(Btree*);
 #endif

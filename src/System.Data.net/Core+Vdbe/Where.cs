@@ -3504,7 +3504,7 @@ namespace Core
             }
         }
 
-#if TEST
+#if _TEST
         static StringBuilder _queryPlan; // Text of the join
         static int _queryPlanIdx = 0; // Next free slow in _query_plan[]
 #endif
@@ -3906,7 +3906,7 @@ namespace Core
                 winfo.ContinueId = level.AddrCont;
             }
             // For testing and debugging use only
-#if TEST
+#if _TEST
             // Record in the query plan information about the current table and the index used to access it (if any).  If the table itself
             // is not used, its name is just '{}'.  If no index is used the index is listed as "{}".  If the primary key is used the index name is '*'.
             for (ii = 0; ii < tabListLength; ii++)

@@ -9,14 +9,14 @@ namespace Core
 {
 #pragma region Preamble
 
-#if defined(TEST) || defined(_DEBUG)
+#if defined(_TEST) || defined(_DEBUG)
 	bool OsTrace = false;
 #define OSTRACE(X, ...) if (OsTrace) { _dprintf("OS: "X, __VA_ARGS__); }
 #else
 #define OSTRACE(X, ...)
 #endif
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ int g_io_error_hit = 0;            // Total number of I/O Errors
 	__device__ int g_io_error_hardhit = 0;        // Number of non-benign errors
 	__device__ int g_io_error_pending = 0;        // Count down to first I/O error
@@ -39,7 +39,7 @@ namespace Core
 #endif
 
 	// When testing, keep a count of the number of open files.
-#ifdef TEST
+#ifdef _TEST
 	int g_open_file_count = 0;
 #define OpenCounter(X) g_open_file_count += (X)
 #else
@@ -665,7 +665,7 @@ namespace Core
 	// 1:   Operating system is Win9x.
 	// 2:   Operating system is WinNT.
 	// In order to facilitate testing on a WinNT system, the test fixture can manually set this value to 1 to emulate Win98 behavior.
-#ifdef TEST
+#ifdef _TEST
 	int os_type = 0;
 #else
 	static int os_type = 0;
@@ -1702,7 +1702,7 @@ namespace Core
 		return rc;
 	}
 
-#ifdef TEST
+#ifdef _TEST
 	// Count the number of fullsyncs and normal syncs.  This is used to test that syncs and fullsyncs are occuring at the right times.
 	int g_sync_count = 0;
 	int g_fullsync_count = 0;
@@ -1714,7 +1714,7 @@ namespace Core
 		OSTRACE("SYNC %d lock=%d\n", H, Lock_);
 		// Unix cannot, but some systems may return SQLITE_FULL from here. This line is to test that doing so does not cause any problems.
 		SimulateDiskfullError(return RC_FULL);
-#ifdef TEST
+#ifdef _TEST
 		if ((flags&0x0F) == SYNC_FULL)
 			g_fullsync_count++;
 		g_sync_count++;
@@ -1913,7 +1913,7 @@ namespace Core
 		if (Lock_ >= LOCK_RESERVED)
 		{
 			rc = 1;
-			OSTRACE("TEST WR-LOCK %d %d (local)\n", H, rc);
+			OSTRACE("_TEST WR-LOCK %d %d (local)\n", H, rc);
 		}
 		else
 		{
@@ -1921,7 +1921,7 @@ namespace Core
 			if (rc)
 				winUnlockFile(&H, RESERVED_BYTE, 0, 1, 0);
 			rc = !rc;
-			OSTRACE("TEST WR-LOCK %d %d (remote)\n", H, rc);
+			OSTRACE("_TEST WR-LOCK %d %d (remote)\n", H, rc);
 		}
 		lock = rc;
 		return RC_OK;
@@ -3060,7 +3060,7 @@ shmpage_out:
 	int WinVSystem::Randomness(int bufLength, char *buf)
 	{
 		int n = 0;
-#if TEST
+#if _TEST
 		n = bufLength;
 		memset(buf, 0, bufLength);
 #else
@@ -3109,7 +3109,7 @@ shmpage_out:
 		return ((microseconds+999)/1000)*1000;
 	}
 
-#ifdef TEST
+#ifdef _TEST
 	int current_time = 0; // Fake system time in seconds since 1970.
 #endif
 	RC WinVSystem::CurrentTimeInt64(int64 *now)
@@ -3117,7 +3117,7 @@ shmpage_out:
 		// FILETIME structure is a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
 		FILETIME ft;
 		static const int64 winFiletimeEpoch = 23058135*(int64)8640000;
-#ifdef TEST
+#ifdef _TEST
 		static const int64 unixEpoch = 24405875*(int64)8640000;
 #endif
 		// 2^32 - to avoid use of LL and warnings in gcc
@@ -3132,7 +3132,7 @@ shmpage_out:
 		osGetSystemTimeAsFileTime(&ft);
 #endif
 		*now = winFiletimeEpoch + ((((int64)ft.dwHighDateTime)*max32BitValue) + (int64)ft.dwLowDateTime)/(int64)10000;
-#ifdef TEST
+#ifdef _TEST
 		if (current_time)
 			*now = 1000*(int64)current_time + unixEpoch;
 #endif

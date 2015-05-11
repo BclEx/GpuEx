@@ -530,7 +530,7 @@ namespace Core.Command
         }
 
 
-#if TEST
+#if _TEST
         static int _likeCount = 0;
 #endif
 
@@ -568,7 +568,7 @@ namespace Core.Command
             if (zA != null && zB != null)
             {
                 CompareInfo info = (CompareInfo)Vdbe.User_Data(fctx);
-#if TEST
+#if _TEST
                 _likeCount++;
 #endif
                 Vdbe.Result_Int(fctx, PatternCompare(zB, zA, info, escape) ? 1 : 0);

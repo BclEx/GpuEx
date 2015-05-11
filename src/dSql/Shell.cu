@@ -2255,6 +2255,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		_free(results);
 #endif
 	}
+#ifdef _TEST
 	else if (c == 't' && n >= 8 && !strncmp(args[0], "testctrl", n) && argsLength >= 2)
 	{
 #ifndef __CUDACC__
@@ -2351,7 +2352,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				else
 					_fprintf(stderr,"Error: testctrl %s takes a single int option\n", args[1]);
 				break;
-#ifdef SQLITE_N_KEYWORD
+#ifdef N_KEYWORD
 			case Main::TESTCTRL_ISKEYWORD:
 				// Main::TestControl(int, char *)
 				if (argsLength == 3)
@@ -2375,6 +2376,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 #endif
 	}
+#endif
 	else if (c == 't' && n > 4 && !strncmp(args[0], "timeout", n) && argsLength == 2)
 	{
 #ifndef __CUDACC__
@@ -2902,7 +2904,7 @@ int main(int argc, char **argv)
 #ifdef SIGINT
 	signal(SIGINT, InterruptHandler);
 #endif
-	_data.DbFilename = "\\T_\\test.db";
+	_data.DbFilename = "\\T_\\t.db";
 
 	// Do an initial pass through the command-line argument to locate the name of the database file, the name of the initialization file,
 	// the size of the alternative malloc heap, and the first command to execute.

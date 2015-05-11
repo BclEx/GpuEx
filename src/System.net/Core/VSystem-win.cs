@@ -18,14 +18,14 @@ namespace Core
     {
         #region Preamble
 
-#if TEST || DEBUG
+#if _TEST || DEBUG
         static bool OsTrace = false;
         protected static void OSTRACE(string x, params object[] args) { if (OsTrace) Console.WriteLine("b:" + string.Format(x, args)); }
 #else
         protected static void OSTRACE(string x, params object[] args) { }
 #endif
 
-#if TEST
+#if _TEST
         static int io_error_hit = 0;            // Total number of I/O Errors
         static int io_error_hardhit = 0;        // Number of non-benign errors
         static int io_error_pending = 0;        // Count down to first I/O error
@@ -44,7 +44,7 @@ namespace Core
 #endif
 
         // When testing, keep a count of the number of open files.
-#if TEST
+#if _TEST
         static int open_file_count = 0;
         protected static void OpenCounter(int X) { open_file_count += X; }
 #else
@@ -405,7 +405,7 @@ namespace Core
                 return rc;
             }
 
-#if TEST
+#if _TEST
             // Count the number of fullsyncs and normal syncs.  This is used to test that syncs and fullsyncs are occuring at the right times.
 #if !TCLSH
             static int sync_count = 0;
@@ -424,7 +424,7 @@ namespace Core
                 // Unix cannot, but some systems may return SQLITE_FULL from here. This line is to test that doing so does not cause any problems.
                 if (SimulateDiskfullError())
                     return RC.FULL;
-#if TEST
+#if _TEST
                 if (((int)flags & 0x0F) == (int)SYNC.FULL)
 #if !TCLSH
                     fullsync_count++;
@@ -643,14 +643,14 @@ namespace Core
                 if (Lock_ >= LOCK.RESERVED)
                 {
                     rc = 1;
-                    OSTRACE("TEST WR-LOCK %d %d (local)\n", H.Name, rc);
+                    OSTRACE("_TEST WR-LOCK %d %d (local)\n", H.Name, rc);
                 }
                 else
                 {
                     try { _lockingStrategy.LockFile(this, RESERVED_BYTE, 1); _lockingStrategy.UnlockFile(this, RESERVED_BYTE, 1); rc = 1; }
                     catch (IOException) { rc = 0; }
                     rc = 1 - rc;
-                    OSTRACE("TEST WR-LOCK %d %d (remote)\n", H.GetHashCode(), rc);
+                    OSTRACE("_TEST WR-LOCK %d %d (remote)\n", H.GetHashCode(), rc);
                 }
                 resOut = rc;
                 return RC.OK;
@@ -1235,7 +1235,7 @@ namespace Core
         public override int Randomness(int bufLength, byte[] buf)
         {
             int n = 0;
-#if TEST
+#if _TEST
             n = bufLength;
             Array.Clear(buf, 0, n);
 #else
@@ -1285,7 +1285,7 @@ namespace Core
             return ((microsec + 999) / 1000) * 1000;
         }
 
-#if TEST
+#if _TEST
 #if !TCLSH
         static int current_time = 0;  // Fake system time in seconds since 1970.
 #else
@@ -1301,7 +1301,7 @@ namespace Core
 #else
             const long winFiletimeEpoch = 23058135 * (long)8640000;
 #endif
-#if TEST
+#if _TEST
             const long unixEpoch = 24405875 * (long)8640000;
 #endif
 #if WINRT
@@ -1309,7 +1309,7 @@ namespace Core
 #else
             now = winFiletimeEpoch + DateTime.UtcNow.ToFileTimeUtc() / (long)10000;
 #endif
-#if TEST
+#if _TEST
 #if !TCLSH
             if (current_time != 0)
                 now = 1000 * (long)current_time + unixEpoch;

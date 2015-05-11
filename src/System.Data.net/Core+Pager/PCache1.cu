@@ -369,7 +369,7 @@ namespace Core
 	{
 		_assert(!_pcache1.IsInit);
 		_memset(&_pcache1, 0, sizeof(_pcache1));
-		if (SysEx_GlobalStatics.CoreMutex)
+		if (TagBase_RuntimeStatics.CoreMutex)
 		{
 			_pcache1.Group.Mutex = _mutex_alloc(MUTEX_STATIC_LRU);
 			_pcache1.Mutex = _mutex_alloc(MUTEX_STATIC_PMEM);
@@ -667,7 +667,7 @@ fetch_out:
 #pragma endregion
 
 #pragma	region Tests
-#ifdef TEST
+#ifdef _TEST
 
 	__device__ void PCache1_testStats(uint *current, uint *max, uint *min, uint *recyclables)
 	{

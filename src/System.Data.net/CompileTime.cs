@@ -318,8 +318,8 @@ namespace Core
 //#if TEMP_STORE
 "TEMP_STORE=1",//CTIMEOPT_VAL(TEMP_STORE),
 //#endif
-#if TEST
-"TEST",
+#if _TEST
+"_TEST",
 #endif
 #if THREADSAFE
 "THREADSAFE=2", // For C#, hardcode to = 2 CTIMEOPT_VAL(THREADSAFE),

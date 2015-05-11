@@ -352,12 +352,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="System.Data.cu" />
-    <CudaCompile Include="System.Data+Btree.cu" />
-    <CudaCompile Include="System.Data+Pager.cu" />
-    <CudaCompile Include="System.Data+Test.cu" />
     <CudaCompile Include="System.Data+Vdbe.cu" />
-    <CudaCompile Include="System.Data+Vdbe+Parse.cu" />
-    <CudaCompile Include="System.Data+Vdbe+Vdbe.cu" />
     <CudaCompile Include="Program.cu" />
   </ItemGroup>
 </Project>

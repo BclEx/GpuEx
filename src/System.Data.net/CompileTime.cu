@@ -328,8 +328,8 @@ namespace Core
 #ifdef TEMP_STORE
 		"TEMP_STORE=" CTIMEOPT_VAL(TEMP_STORE),
 #endif
-#ifdef TEST
-		"TEST",
+#ifdef _TEST
+		"_TEST",
 #endif
 #ifdef THREADSAFE
 		"THREADSAFE=" CTIMEOPT_VAL(THREADSAFE),

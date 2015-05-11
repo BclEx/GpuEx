@@ -3,5 +3,6 @@
   <ItemGroup>
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="TestSystem.IO.cu" />
+    <CudaCompile Include="TestSystem.cu" />
   </ItemGroup>
 </Project>

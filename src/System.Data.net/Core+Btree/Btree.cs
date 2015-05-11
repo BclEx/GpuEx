@@ -723,7 +723,7 @@ namespace Core
 
         static RC defragmentPage(MemPage page)
         {
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             Debug.Assert(page.Bt != null);
             Debug.Assert(page.Bt.UsableSize <= Pager.MAX_PAGE_SIZE);
             Debug.Assert(page.Overflows == 0);
@@ -771,7 +771,7 @@ namespace Core
             data[hdr + 7] = 0;
             addr = cellOffset + 2 * cells;
             Array.Clear(data, addr, (int)(cbrk - addr));
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             if (cbrk - cellFirst != page.Frees)
                 return SysEx.CORRUPT_BKPT();
             return RC.OK;
@@ -779,7 +779,7 @@ namespace Core
 
         static RC allocateSpace(MemPage page, int bytes, ref uint idx)
         {
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             Debug.Assert(page.Bt != null);
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
             Debug.Assert(bytes >= 0);  // Minimum cell size is 4
@@ -857,7 +857,7 @@ namespace Core
         static RC freeSpace(MemPage page, int start, int size)
         {
             Debug.Assert(page.Bt != null);
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             Debug.Assert(start >= page.HdrOffset + 6 + page.ChildPtrSize);
             Debug.Assert((start + size) <= (int)page.Bt.UsableSize);
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
@@ -921,7 +921,7 @@ namespace Core
                 int top = ConvertEx.Get2(data, hdr + 5) + ConvertEx.Get2(data, pbegin + 2);
                 ConvertEx.Put2(data, hdr + 5, top);
             }
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             return RC.OK;
         }
 
@@ -1038,7 +1038,7 @@ namespace Core
             Debug.Assert(Pager.get_PageID(page.DBPage) == page.ID);
             Debug.Assert(Pager.GetExtra<MemPage>(page.DBPage) == page);
             Debug.Assert(Pager.GetData(page.DBPage) == data);
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             Debug.Assert(MutexEx.Held(bt.Mutex));
             var hdr = page.HdrOffset;
             if ((bt.BtsFlags & BTS.SECURE_DELETE) != 0)
@@ -1972,7 +1972,7 @@ namespace Core
         static RC modifyPagePointer(MemPage page, Pid from, Pid to, PTRMAP type)
         {
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             if (type == PTRMAP.OVERFLOW2)
             {
                 // The pointer is always the first 4 bytes of the page in this case.
@@ -3580,7 +3580,7 @@ namespace Core
                             releasePage(newTrunk);
                             if (prevTrunk == null)
                             {
-                                Debug.Assert(Pager.Iswriteable(page1.DBPage));
+                                Debug.Assert(Pager.IsWriteable(page1.DBPage));
                                 ConvertEx.Put4(page1.Data, (uint)32, newTrunkID);
                             }
                             else
@@ -3730,7 +3730,7 @@ namespace Core
             }
             else
                 page = null;
-            Debug.Assert(rc != RC.OK || Pager.Iswriteable((page).DBPage));
+            Debug.Assert(rc != RC.OK || Pager.IsWriteable((page).DBPage));
             return rc;
         }
 
@@ -3899,7 +3899,7 @@ namespace Core
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
 
             // pPage is not necessarily writeable since pCell might be auxiliary buffer space that is separate from the pPage buffer area
-            //Skipped//Debug.Assert(cell < page->Data || cell >= &page.Data[bt.PageSize] || Pager.Iswriteable(page.DBPage));
+            //Skipped//Debug.Assert(cell < page->Data || cell >= &page.Data[bt.PageSize] || Pager.IsWriteable(page.DBPage));
 
             // Fill in the header.
             uint header = 0U;
@@ -3981,10 +3981,10 @@ namespace Core
                     }
 
                     // If pToRelease is not zero than pPrior points into the data area of pToRelease.  Make sure pToRelease is still writeable.
-                    Debug.Assert(toRelease == null || Pager.Iswriteable(toRelease.DBPage));
+                    Debug.Assert(toRelease == null || Pager.IsWriteable(toRelease.DBPage));
 
                     // If pPrior is part of the data area of pPage, then make sure pPage is still writeable
-                    //skipped//Debug.Assert(prior < page->Data || prior >= page->Data[bt.PageSize] || Pager.Iswriteable(page.DBPage));
+                    //skipped//Debug.Assert(prior < page->Data || prior >= page->Data[bt.PageSize] || Pager.IsWriteable(page.DBPage));
 
                     ConvertEx.Put4(prior, prior_, idOvfl);
                     releasePage(toRelease);
@@ -3998,10 +3998,10 @@ namespace Core
                 if (n > spaceLeft) n = spaceLeft;
 
                 // If pToRelease is not zero than pPrior points into the data area of pToRelease.  Make sure pToRelease is still writeable.
-                Debug.Assert(toRelease == null || Pager.Iswriteable(toRelease.DBPage));
+                Debug.Assert(toRelease == null || Pager.IsWriteable(toRelease.DBPage));
 
                 // If pPrior is part of the data area of pPage, then make sure pPage is still writeable
-                //skipped//Debug.Assert(prior < page.Data || prior >= &page.Data[bt.PageSize] || Pager.Iswriteable(pageDBPage));
+                //skipped//Debug.Assert(prior < page.Data || prior >= &page.Data[bt.PageSize] || Pager.IsWriteable(pageDBPage));
 
                 if (srcLength > 0)
                 {
@@ -4036,7 +4036,7 @@ namespace Core
 
             Debug.Assert(idx < page.Cells);
             Debug.Assert(size == cellSize(page, idx));
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
             var data = page.Data;
             var ptr = page.CellOffset + 2 * idx; // Used to move bytes around within data[]
@@ -4107,7 +4107,7 @@ namespace Core
                     rcRef = rc;
                     return;
                 }
-                Debug.Assert(Pager.Iswriteable(page.DBPage));
+                Debug.Assert(Pager.IsWriteable(page.DBPage));
                 var data = page.Data; // The content of the whole page
                 uint cellOffset = page.CellOffset; // Address of first cell pointer in data[]
                 uint end = cellOffset + 2U * page.Cells; // First byte past the last cell pointer in data[]
@@ -4155,7 +4155,7 @@ namespace Core
             Debug.Assert(page.Overflows == 0);
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
             Debug.Assert(cells >= 0 && cells <= (int)MX_CELL(page.Bt) && (int)MX_CELL(page.Bt) <= 10921);
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
 
             // Check that the page has just been zeroed by zeroPage()
             byte[] data = page.Data; // Pointer to data for pPage
@@ -4183,7 +4183,7 @@ namespace Core
             Debug.Assert(page.Overflows == 0);
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
             Debug.Assert(cells >= 0 && cells <= MX_CELL(page.Bt) && MX_CELL(page.Bt) <= 5460);
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
 
             // Check that the page has just been zeroed by zeroPage()
             byte[] data = page.Data; // Pointer to data for pPage
@@ -4211,7 +4211,7 @@ namespace Core
             Debug.Assert(page.Overflows == 0);
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
             Debug.Assert(cells >= 0 && cells <= MX_CELL(page.Bt) && MX_CELL(page.Bt) <= 5460);
-            Debug.Assert(Pager.Iswriteable(page.DBPage));
+            Debug.Assert(Pager.IsWriteable(page.DBPage));
 
             // Check that the page has just been zeroed by zeroPage()
             byte[] data = page.Data; // Pointer to data for pPage
@@ -4248,7 +4248,7 @@ namespace Core
             BtShared bt = page.Bt; // B-Tree Database
 
             Debug.Assert(MutexEx.Held(page.Bt.Mutex));
-            Debug.Assert(Pager.Iswriteable(parent.DBPage));
+            Debug.Assert(Pager.IsWriteable(parent.DBPage));
             Debug.Assert(page.Overflows == 1);
 
             // This error condition is now caught prior to reaching this function
@@ -4269,7 +4269,7 @@ namespace Core
                 ushort[] sizeCell = new ushort[1];
                 sizeCell[0] = cellSizePtr(page, cell);
 
-                Debug.Assert(Pager.Iswriteable(newPage.DBPage));
+                Debug.Assert(Pager.IsWriteable(newPage.DBPage));
                 Debug.Assert(page.Data[0] == (PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF));
                 zeroPage(newPage, PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF);
                 assemblePage(newPage, 1, cell, sizeCell);
@@ -4397,7 +4397,7 @@ namespace Core
         {
             BtShared bt = parent.Bt; // The whole database
             Debug.Assert(MutexEx.Held(bt.Mutex));
-            Debug.Assert(Pager.Iswriteable(parent.DBPage));
+            Debug.Assert(Pager.IsWriteable(parent.DBPage));
 
 #if false
             TRACE("BALANCE: begin page %d child of %d\n", page.ID, parent.ID);
@@ -4759,7 +4759,7 @@ namespace Core
                 newPagesUsed >= 4 ? newPages[3].ID : 0, newPagesUsed >= 4 ? sizeNew[3] : 0,
                 newPagesUsed >= 5 ? newPages[4].ID : 0, newPagesUsed >= 5 ? sizeNew[4] : 0);
 
-            Debug.Assert(Pager.Iswriteable(parent.DBPage));
+            Debug.Assert(Pager.IsWriteable(parent.DBPage));
             ConvertEx.Put4(parent.Data, right_, newPages[newPagesUsed - 1].ID);
 
             // Evenly distribute the data in apCell[] across the new pages. Insert divider cells into pParent as necessary.
@@ -4819,7 +4819,7 @@ namespace Core
                     insertCell(parent, nxDiv, pCell, (ushort)size, pTemp, newPage.ID, ref rc);
                     if (rc != RC.OK)
                         goto balance_cleanup;
-                    Debug.Assert(Pager.Iswriteable(parent.DBPage));
+                    Debug.Assert(Pager.IsWriteable(parent.DBPage));
 
                     j++;
                     nxDiv++;
@@ -4988,8 +4988,8 @@ namespace Core
                 releasePage(child);
                 return rc;
             }
-            Debug.Assert(Pager.Iswriteable(child.DBPage));
-            Debug.Assert(Pager.Iswriteable(root.DBPage));
+            Debug.Assert(Pager.IsWriteable(child.DBPage));
+            Debug.Assert(Pager.IsWriteable(root.DBPage));
             Debug.Assert(child.Cells == root.Cells);
 
             TRACE("BALANCE: copy root %d into %d\n", root.ID, child.ID);
@@ -5404,7 +5404,7 @@ namespace Core
 
                 // When the new root page was allocated, page 1 was made writable in order either to increase the database filesize, or to decrement the
                 // freelist count.  Hence, the sqlite3BtreeUpdateMeta() call cannot fail.
-                Debug.Assert(Pager.Iswriteable(bt.Page1.DBPage));
+                Debug.Assert(Pager.IsWriteable(bt.Page1.DBPage));
                 rc = p.UpdateMeta(META.LARGEST_ROOT_PAGE, rootID);
                 if (C._NEVER(rc != RC.OK))
                 {
@@ -5418,7 +5418,7 @@ namespace Core
                 if (rc != RC.OK) return rc;
             }
 #endif
-            Debug.Assert(Pager.Iswriteable(root.DBPage));
+            Debug.Assert(Pager.IsWriteable(root.DBPage));
             int ptfFlags; // Page-type flage for the root page of new table
             if ((createTabFlags & BTREE_INTKEY) != 0)
                 ptfFlags = PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF;

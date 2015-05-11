@@ -1859,7 +1859,7 @@ namespace Core {
 		__device__ static int Sleep(int ms);
 		__device__ static RC ExtendedResultCodes(Context *ctx, bool onoff);
 		__device__ static RC FileControl(Context *ctx, const char *dbName, VFile::FCNTL op, void *arg);
-#ifdef TEST
+#ifdef _TEST
 		enum TESTCTRL
 		{
 			TESTCTRL_FIRST                   = 5,

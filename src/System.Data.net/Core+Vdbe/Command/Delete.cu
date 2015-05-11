@@ -168,7 +168,7 @@ limit_where_cleanup_2:
 		_assert(db < ctx->DBs.length);
 		const char *dbName = ctx->DBs[db].Name; // Name of database holding pTab
 		ARC rcauth = Auth::Check(parse, AUTH_DELETE, table->Name, 0, dbName); // Value returned by authorization callback
-		assert(rcauth == ARC_OK || rcauth == ARC_DENY || rcauth == ARC_IGNORE );
+		_assert(rcauth == ARC_OK || rcauth == ARC_DENY || rcauth == ARC_IGNORE);
 		if (rcauth == ARC_DENY)
 			goto delete_from_cleanup;
 		_assert(!isView || trigger);

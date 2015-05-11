@@ -46,7 +46,7 @@ namespace Core
                 return bytes;
         }
 
-#if TEST && DEBUG
+#if _TEST && DEBUG
         public static int Utf8To8(byte[] z)
         {
             try
@@ -69,7 +69,7 @@ namespace Core
             return Encoding.UTF32.GetBytes(z2).Length;
         }
 
-        //#if defined(TEST)
+        //#if defined(_TEST)
         //	__device__ void SysEx::UtfSelfTest()
         //	{
         //		unsigned int i, t;

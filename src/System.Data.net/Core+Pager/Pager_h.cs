@@ -119,7 +119,7 @@ namespace Core
         Func<object, int> BusyHandler;  // Function to call when busy 
         object BusyHandlerArg;       // BContext argument for xBusyHandler 
         int[] Stats = new int[3];    // Total cache hits, misses and writes
-#if TEST
+#if _TEST
         int Reads;                   // Database pages read
 #endif
         Action<IPage> Reiniter;	    // Call this routine when reloading pages

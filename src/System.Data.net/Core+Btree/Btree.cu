@@ -728,7 +728,7 @@ ptrmap_exit:
 
 	__device__ static RC DefragmentPage(MemPage *page)
 	{
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		_assert(page->Bt != nullptr);
 		_assert(page->Bt->UsableSize <= MAX_PAGE_SIZE);
 		_assert(!page->Overflows);
@@ -778,7 +778,7 @@ ptrmap_exit:
 		data[hdr + 2] = 0;
 		data[hdr + 7] = 0;
 		_memset(&data[cellFirst], 0, cbrk - cellFirst);
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		if (cbrk - cellFirst != page->Frees)
 			return SysEx_CORRUPT_BKPT;
 		return RC_OK;
@@ -786,7 +786,7 @@ ptrmap_exit:
 
 	__device__ static RC AllocateSpace(MemPage *page, int bytes, uint *idx)
 	{
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		_assert(page->Bt != nullptr);
 		_assert(_mutex_held(page->Bt->Mutex));
 		_assert(bytes >= 0);  // Minimum cell size is 4
@@ -868,7 +868,7 @@ ptrmap_exit:
 	__device__ static RC FreeSpace(MemPage *page, int start, int size)
 	{
 		_assert(page->Bt != nullptr);
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		_assert(start >= page->HdrOffset + 6 + page->ChildPtrSize);
 		_assert((start + size) <= (int)page->Bt->UsableSize);
 		_assert(_mutex_held(page->Bt->Mutex));
@@ -932,7 +932,7 @@ ptrmap_exit:
 			int top = _convert_get2(&data[hdr + 5]) + _convert_get2(&data[pbegin + 2]);
 			_convert_put2(&data[hdr + 5], top);
 		}
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		return RC_OK;
 	}
 
@@ -1054,7 +1054,7 @@ ptrmap_exit:
 		_assert(Pager::get_PageID(page->DBPage) == page->ID);
 		_assert(Pager::GetExtra(page->DBPage) == (void *)page);
 		_assert(Pager::GetData(page->DBPage) == data);
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		_assert(_mutex_held(bt->Mutex));
 		uint8 hdr = page->HdrOffset;
 		if (bt->BtsFlags & BTS_SECURE_DELETE)
@@ -1364,7 +1364,7 @@ ptrmap_exit:
 #if THREADSAFE
 				mutexShared = _mutex_alloc(MUTEX_STATIC_MASTER);
 #endif
-				if (THREADSAFE > 0 && SysEx_GlobalStatics.CoreMutex)
+				if (THREADSAFE > 0 && TagBase_RuntimeStatics.CoreMutex)
 				{
 					bt->Mutex = _mutex_alloc(MUTEX_FAST);
 					if (!bt->Mutex)
@@ -1374,7 +1374,6 @@ ptrmap_exit:
 						goto btree_open_out;
 					}
 				}
-
 
 				_mutex_enter(mutexShared);
 				bt->Next = _sharedCacheList;
@@ -2030,7 +2029,7 @@ set_child_ptrmaps_out:
 	__device__ static RC ModifyPagePointer(MemPage *page, Pid from, Pid to, PTRMAP type)
 	{
 		_assert(_mutex_held(page->Bt->Mutex));
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		if (type == PTRMAP_OVERFLOW2)
 		{
 			// The pointer is always the first 4 bytes of the page in this case.
@@ -3637,7 +3636,7 @@ moveto_finish:
 						ReleasePage(newTrunk);
 						if (!prevTrunk)
 						{
-							_assert(Pager::Iswriteable(page1->DBPage));
+							_assert(Pager::IsWriteable(page1->DBPage));
 							_convert_put4(&page1->Data[32], newTrunkID);
 						}
 						else
@@ -3787,7 +3786,7 @@ end_allocate_page:
 		}
 		else
 			*page = nullptr;
-		_assert(rc != RC_OK || Pager::Iswriteable((*page)->DBPage));
+		_assert(rc != RC_OK || Pager::IsWriteable((*page)->DBPage));
 		return rc;
 	}
 
@@ -3958,7 +3957,7 @@ freepage_out:
 		_assert(_mutex_held(bt->Mutex));
 
 		// pPage is not necessarily writeable since pCell might be auxiliary buffer space that is separate from the pPage buffer area
-		_assert(cell < page->Data || cell >= &page->Data[bt->PageSize] || Pager::Iswriteable(page->DBPage));
+		_assert(cell < page->Data || cell >= &page->Data[bt->PageSize] || Pager::IsWriteable(page->DBPage));
 
 		// Fill in the header.
 		uint header = 0U;
@@ -4039,10 +4038,10 @@ freepage_out:
 				}
 
 				// If pToRelease is not zero than pPrior points into the data area of pToRelease.  Make sure pToRelease is still writeable.
-				_assert(!toRelease || Pager::Iswriteable(toRelease->DBPage));
+				_assert(!toRelease || Pager::IsWriteable(toRelease->DBPage));
 
 				// If pPrior is part of the data area of pPage, then make sure pPage is still writeable
-				_assert(prior < page->Data || prior >= &page->Data[bt->PageSize] || Pager::Iswriteable(page->DBPage));
+				_assert(prior < page->Data || prior >= &page->Data[bt->PageSize] || Pager::IsWriteable(page->DBPage));
 
 				_convert_put4(prior, idOvfl);
 				ReleasePage(toRelease);
@@ -4056,10 +4055,10 @@ freepage_out:
 			if (n > spaceLeft) n = spaceLeft;
 
 			// If pToRelease is not zero than pPayload points into the data area of pToRelease.  Make sure pToRelease is still writeable.
-			_assert(!toRelease || Pager::Iswriteable(toRelease->DBPage));
+			_assert(!toRelease || Pager::IsWriteable(toRelease->DBPage));
 
 			// If pPayload is part of the data area of pPage, then make sure pPage is still writeable
-			_assert(payload < page->Data || payload >= &page->Data[bt->PageSize] || Pager::Iswriteable(page->DBPage));
+			_assert(payload < page->Data || payload >= &page->Data[bt->PageSize] || Pager::IsWriteable(page->DBPage));
 
 			if (srcLength > 0)
 			{
@@ -4090,7 +4089,7 @@ freepage_out:
 
 		_assert(idx < page->Cells);
 		_assert(size == CellSize(page, idx));
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 		_assert(_mutex_held(page->Bt->Mutex));
 		uint8 *data = page->Data;
 		uint8 *ptr = &page->CellIdx[2 * idx]; // Used to move bytes around within data[]
@@ -4157,7 +4156,7 @@ freepage_out:
 				*rcRef = rc;
 				return;
 			}
-			_assert(Pager::Iswriteable(page->DBPage));
+			_assert(Pager::IsWriteable(page->DBPage));
 			uint8 *data = page->Data;  // The content of the whole page
 			uint cellOffset = page->CellOffset; // Address of first cell pointer in data[]
 			uint end = cellOffset + 2 * page->Cells; // First byte past the last cell pointer in data[]
@@ -4198,7 +4197,7 @@ freepage_out:
 		_assert(!page->Overflows);
 		_assert(_mutex_held(page->Bt->Mutex));
 		_assert(cells >= 0 && cells <= (int)MX_CELL(page->Bt) && (int)MX_CELL(page->Bt) <= 10921);
-		_assert(Pager::Iswriteable(page->DBPage));
+		_assert(Pager::IsWriteable(page->DBPage));
 
 		// Check that the page has just been zeroed by ZeroPage()
 		uint8 *const data = page->Data; // Pointer to data for pPage
@@ -4235,7 +4234,7 @@ freepage_out:
 		BtShared *const bt = page->Bt; // B-Tree Database
 
 		_assert(_mutex_held(page->Bt->Mutex));
-		_assert(Pager::Iswriteable(parent->DBPage));
+		_assert(Pager::IsWriteable(parent->DBPage));
 		_assert(page->Overflows == 1);
 
 		// This error condition is now caught prior to reaching this function
@@ -4253,7 +4252,7 @@ freepage_out:
 			uint8 *cell = page->Ovfls[0];
 			uint16 sizeCell = CellSizePtr(page, cell);
 
-			_assert(Pager::Iswriteable(newPage->DBPage));
+			_assert(Pager::IsWriteable(newPage->DBPage));
 			_assert(page->Data[0] == (PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF));
 			ZeroPage(newPage, PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF);
 			AssemblePage(newPage, 1, &cell, &sizeCell);
@@ -4382,7 +4381,7 @@ freepage_out:
 	{
 		BtShared *bt = parent->Bt; // The whole database
 		_assert(_mutex_held(bt->Mutex));
-		_assert(Pager::Iswriteable(parent->DBPage));
+		_assert(Pager::IsWriteable(parent->DBPage));
 
 #if 0
 		TRACE("BALANCE: begin page %d child of %d\n", page->ID, parent->ID);
@@ -4743,7 +4742,7 @@ freepage_out:
 			newPagesUsed >= 4 ? newPages[3]->ID : 0, newPagesUsed >= 4 ? sizeNew[3] : 0,
 			newPagesUsed >= 5 ? newPages[4]->ID : 0, newPagesUsed >= 5 ? sizeNew[4] : 0);
 
-		_assert(Pager::Iswriteable(parent->DBPage));
+		_assert(Pager::IsWriteable(parent->DBPage));
 		_convert_put4(right, newPages[newPagesUsed - 1]->ID);
 
 		// Evenly distribute the data in apCell[] across the new pages. Insert divider cells into pParent as necessary.
@@ -4802,7 +4801,7 @@ freepage_out:
 				_assert(ovflSpaceID <= (int)bt->PageSize);
 				InsertCell(parent, nxDiv, pCell, sz, pTemp, newPage->ID, &rc);
 				if (rc != RC_OK) goto balance_cleanup;
-				_assert(Pager::Iswriteable(parent->DBPage));
+				_assert(Pager::IsWriteable(parent->DBPage));
 
 				j++;
 				nxDiv++;
@@ -4976,8 +4975,8 @@ balance_cleanup:
 			ReleasePage(child);
 			return rc;
 		}
-		_assert(Pager::Iswriteable(child->DBPage));
-		_assert(Pager::Iswriteable(root->DBPage));
+		_assert(Pager::IsWriteable(child->DBPage));
+		_assert(Pager::IsWriteable(root->DBPage));
 		_assert(child->Cells == root->Cells);
 
 		TRACE("BALANCE: copy root %d into %d\n", root->ID, child->ID);
@@ -5382,7 +5381,7 @@ end_insert:
 
 			// When the new root page was allocated, page 1 was made writable in order either to increase the database filesize, or to decrement the
 			// freelist count.  Hence, the sqlite3BtreeUpdateMeta() call cannot fail.
-			_assert(Pager::Iswriteable(bt->Page1->DBPage));
+			_assert(Pager::IsWriteable(bt->Page1->DBPage));
 			rc = p->UpdateMeta(Btree::META_LARGEST_ROOT_PAGE, rootID);
 			if (_NEVER(rc))
 			{
@@ -5396,7 +5395,7 @@ end_insert:
 			if (rc) return rc;
 		}
 #endif
-		_assert(Pager::Iswriteable(root->DBPage));
+		_assert(Pager::IsWriteable(root->DBPage));
 		int ptfFlags; // Page-type flage for the root page of new table
 		if (createTabFlags & BTREE_INTKEY)
 			ptfFlags = PTF_INTKEY | PTF_LEAFDATA | PTF_LEAF;

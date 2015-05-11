@@ -3455,7 +3455,7 @@ cancel:
 		}
 	}
 
-#if defined(TEST)
+#if defined(_TEST)
 	__device__ char _queryPlan[BMS*2*40]; // Text of the join
 	__device__ static int _queryPlanIdx = 0; // Next free slow in _query_plan[]
 #endif
@@ -3845,7 +3845,7 @@ cancel:
 		}
 
 		// For testing and debugging use only
-#ifdef TEST
+#ifdef _TEST
 		// Record in the query plan information about the current table and the index used to access it (if any).  If the table itself
 		// is not used, its name is just '{}'.  If no index is used the index is listed as "{}".  If the primary key is used the index name is '*'.
 		for (ii = 0; ii < tabListLength; ii++)

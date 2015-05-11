@@ -682,7 +682,7 @@ namespace Core
         #endregion
 
         #region Tests
-#if TEST
+#if _TEST
 
         void PCache1_testStats(out uint current, out uint max, out uint min, out uint recyclables)
         {

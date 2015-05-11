@@ -4,8 +4,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // RUNTIME
-//__device__ static cudaRuntime __curt = { -2 };
-//__device__ static int (*cudaRuntimeInitialize)(cudaRuntime *curt) = nullptr;
 __device__ unsigned char __one;
 
 //////////////////////
@@ -19,6 +17,10 @@ __device__ unsigned char __one;
 // The following singleton contains the global configuration for the SQLite library.
 __device__ _WSD TagBase::RuntimeStatics g_RuntimeStatics =
 {
+	false,						// CoreMutex
+	THREADSAFE == 1,			// FullMutex
+	{ nullptr, nullptr },		// AppendFormat
+	//
 	RUNTIME_DEFAULT_MEMSTATUS,	// Memstat
 	true,						// RuntimeMutex
 	128,						// LookasideSize
@@ -190,7 +192,7 @@ __device__ int _utf16bytelength(const void *z, int chars)
 	return (int)(z2 - (unsigned char const *)z);
 }
 
-#ifdef TEST
+#ifdef _TEST
 __device__ void _runtime_utfselftest()
 {
 	unsigned int i, t;
@@ -351,8 +353,6 @@ __device__ static const Info _info[] = {
 	{ 'S',  0, (FLAG)2, TYPE_SRCLIST,    0,  0 },
 	{ 'r', 10, (FLAG)3, TYPE_ORDINAL,    0,  0 },
 };
-
-__device__ void (*_textBuilder_AppendFormat[2])(TextBuilder *b, va_list &args);
 
 #ifndef OMIT_FLOATING_POINT
 __device__ static char GetDigit(double64 *val, int *cnt)
@@ -806,11 +806,11 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			// if (precision>=0 && precision<length) length = precision;
 			break; }
 		case TYPE_TOKEN: {
-			_textBuilder_AppendFormat[0](this, args);
+			TagBase_RuntimeStatics.AppendFormat[0](this, args);
 			length = width = 0;
 			break; }
 		case TYPE_SRCLIST: {
-			_textBuilder_AppendFormat[1](this, args);
+			TagBase_RuntimeStatics.AppendFormat[1](this, args);
 			length = width = 0;
 			break; }
 		default: {

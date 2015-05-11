@@ -5,26 +5,6 @@
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
-    <ClCompile Include="Falloc.cu" />
-    <ClCompile Include="Runtime.cu" />
-    <ClCompile Include="Runtime+Alloc.cu" />
-    <ClCompile Include="Runtime+BenignAlloc.cu" />
-    <ClCompile Include="Runtime+Mem0.cu" />
-    <ClCompile Include="Runtime+Mem1.cu" />
-    <ClCompile Include="Runtime+Mutex-gpu.cu" />
-    <ClCompile Include="Runtime+Mutex-noop.cu" />
-    <ClCompile Include="Runtime+Mutex-win.cu" />
-    <ClCompile Include="Runtime+Status.cu" />
-    <ClCompile Include="Runtime+Mutex-unix.cu" />
-    <ClCompile Include="RuntimeOS+DirSystem-win.cu" />
-    <ClCompile Include="Regex.1\Regex.1.cu">
-      <Filter>Regex.1</Filter>
-    </ClCompile>
-    <ClCompile Include="Regex.cu" />
-    <ClCompile Include="Runtime+Convert.cu" />
-    <ClCompile Include="Regex.2\Regex.2.cu">
-      <Filter>Regex.2</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RuntimeGL.h" />
@@ -44,12 +24,33 @@
       <Filter>Regex.2</Filter>
     </ClInclude>
     <ClInclude Include="Regex.h" />
+    <ClInclude Include="Hash.cu.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RuntimeOS.cu" />
-    <None Include="RT.cu" />
     <None Include="RuntimeOS+DirSystem-gpu.cu" />
     <None Include="RuntimeOS+FileSystem-gpu.cu" />
+    <None Include="Falloc.cu" />
+    <None Include="Regex.cu" />
+    <None Include="Hash.cu" />
+    <None Include="Runtime.cu" />
+    <None Include="Runtime+Alloc.cu" />
+    <None Include="Runtime+BenignAlloc.cu" />
+    <None Include="Runtime+Convert.cu" />
+    <None Include="Runtime+Mem0.cu" />
+    <None Include="Runtime+Mem1.cu" />
+    <None Include="Runtime+Mutex-gpu.cu" />
+    <None Include="Runtime+Mutex-noop.cu" />
+    <None Include="Runtime+Mutex-unix.cu" />
+    <None Include="Runtime+Mutex-win.cu" />
+    <None Include="Runtime+Status.cu" />
+    <None Include="RuntimeOS+DirSystem-win.cu" />
+    <None Include="Regex.1\Regex.1.cu">
+      <Filter>Regex.1</Filter>
+    </None>
+    <None Include="Regex.2\Regex.2.cu">
+      <Filter>Regex.2</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Regex.1">
@@ -58,5 +59,8 @@
     <Filter Include="Regex.2">
       <UniqueIdentifier>{7901ad92-e5d7-45d0-b0df-2622c3a86cbf}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="RT.cu" />
   </ItemGroup>
 </Project>

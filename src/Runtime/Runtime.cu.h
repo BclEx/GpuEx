@@ -8,10 +8,6 @@
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ == 100
 #error Atomics only used with > sm_10 architecture
 #endif
-#ifdef HAVE_ISNAN
-#include <math.h>
-#endif
-#include <assert.h>
 #include "RuntimeHost.h"
 
 //////////////////////

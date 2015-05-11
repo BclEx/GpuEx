@@ -116,14 +116,14 @@ if {[permutation]=="inmemory_journal"} {
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
-# NOTES ON TEST IMPLEMENTATION
+# NOTES ON _TEST IMPLEMENTATION
 #
 # The tests in this file are implemented differently from those in other
 # files. Instead, tests are specified using three primitives: SQL, PREP and
-# TEST. Each primitive has a single argument. Primitives are processed in
+# _TEST. Each primitive has a single argument. Primitives are processed in
 # the order they are specified in the file.
 #
-# A TEST primitive specifies a TCL script as its argument. When a TEST
+# A _TEST primitive specifies a TCL script as its argument. When a _TEST
 # directive is encountered the Tcl script is evaluated. Usually, this Tcl
 # script contains one or more calls to [do_test].
 #
@@ -142,13 +142,13 @@ if {[permutation]=="inmemory_journal"} {
 #
 # Each time an SQL statement fails, the driver program (see proc [run_test]
 # below) figures out if a transaction has been automatically rolled back.
-# If not, it executes any TEST block immediately proceeding the SQL
+# If not, it executes any _TEST block immediately proceeding the SQL
 # statement, then reexecutes the SQL statement with the next value of N.
 #
 # If a transaction has been automatically rolled back, then the driver
 # program executes all the SQL specified as part of SQL or PREP primitives
 # between the current SQL statement and the most recent "BEGIN". Any 
-# TEST block immediately proceeding the SQL statement is evaluated, and
+# _TEST block immediately proceeding the SQL statement is evaluated, and
 # then the SQL statement reexecuted with the incremented N value.
 #
 # That make any sense? If not, read the code in [run_test] and it might.
@@ -167,7 +167,7 @@ if {[permutation]=="inmemory_journal"} {
 #
 set ::run_test_sql_id 0
 set ::run_test_script [list]
-proc TEST {id t} {lappend ::run_test_script -test [list $id $t]}
+proc _TEST {id t} {lappend ::run_test_script -test [list $id $t]}
 proc PREP {p} {lappend ::run_test_script -prep [string trim $p]}
 proc DEBUG {s} {lappend ::run_test_script -debug $s}
 
@@ -199,7 +199,7 @@ proc SQL  {a1 {a2 ""}} {
 #     argument is either 1 or 0, the expected value of the auto-commit flag.
 #
 proc TEST_AUTOCOMMIT {id a} {
-    TEST $id "do_test \$testid { sqlite3_get_autocommit \$::DB } {$a}"
+    _TEST $id "do_test \$testid { sqlite3_get_autocommit \$::DB } {$a}"
 }
 
 #--------------------------------------------------------------------------
@@ -211,7 +211,7 @@ proc TEST_AUTOCOMMIT {id a} {
 # in a single-statement transaction on an empty database. Not too much can go
 # wrong here.
 #
-TEST 1 {
+_TEST 1 {
   do_test $testid {
     execsql {SELECT tbl_name FROM sqlite_master;}
   } {}
@@ -219,7 +219,7 @@ TEST 1 {
 SQL { 
   CREATE TABLE IF NOT EXISTS abc(a, b, c); 
 }
-TEST 2 {
+_TEST 2 {
   do_test $testid.1 {
     execsql {SELECT tbl_name FROM sqlite_master;}
   } {abc}
@@ -230,7 +230,7 @@ TEST 2 {
 # (and hence after each failure of the first insert), and that it has been
 # populated correctly after the final insert succeeds.
 #
-TEST 3 {
+_TEST 3 {
   do_test $testid.2 {
     execsql {SELECT * FROM abc}
   } {}
@@ -238,7 +238,7 @@ TEST 3 {
 SQL {INSERT INTO abc VALUES(1, 2, 3);}
 SQL {INSERT INTO abc VALUES(4, 5, 6);}
 SQL {INSERT INTO abc VALUES(7, 8, 9);}
-TEST 4 {
+_TEST 4 {
   do_test $testid {
     execsql {SELECT * FROM abc}
   } {1 2 3 4 5 6 7 8 9}
@@ -250,7 +250,7 @@ TEST 4 {
 # perhaps.
 #
 SQL {CREATE INDEX abc_i ON abc(a, b, c);}
-TEST 4 {
+_TEST 4 {
   do_test $testid {
     execsql {
       SELECT * FROM abc ORDER BY a DESC;
@@ -266,7 +266,7 @@ TEST 4 {
 SQL {DELETE FROM abc WHERE a > 2;}
 SQL {CREATE TRIGGER abc_t AFTER INSERT ON abc BEGIN SELECT 'trigger!'; END;}
 SQL {CREATE VIEW abc_v AS SELECT * FROM abc;}
-TEST 5 {
+_TEST 5 {
   do_test $testid {
     execsql {
       SELECT name, tbl_name FROM sqlite_master ORDER BY name;
@@ -290,7 +290,7 @@ PREP $sql
 SQL {
   DELETE FROM abc WHERE oid IN (SELECT oid FROM abc ORDER BY random() LIMIT 5);
 }
-TEST 6 {
+_TEST 6 {
   do_test $testid.1 {
     execsql {SELECT count(*) FROM abc}
   } {94}
@@ -305,7 +305,7 @@ TEST 6 {
 SQL {
   DELETE FROM abc WHERE oid IN (SELECT oid FROM abc ORDER BY random() LIMIT 5);
 }
-TEST 7 {
+_TEST 7 {
   do_test $testid {
     execsql {SELECT count(*) FROM abc}
   } {89}
@@ -320,7 +320,7 @@ TEST 7 {
 SQL {
   DELETE FROM abc WHERE oid IN (SELECT oid FROM abc ORDER BY random() LIMIT 5);
 }
-TEST 9 {
+_TEST 9 {
   do_test $testid {
     execsql {SELECT count(*) FROM abc}
   } {84}
@@ -342,7 +342,7 @@ PREP [subst {
   INSERT INTO abc VALUES(6, '$padding', 8, 8);
 }]
 
-TEST 10 {
+_TEST 10 {
   do_test $testid {
     execsql {SELECT a, b, c FROM abc}
   } {0 2 2 3 5 5 6 8 8}
@@ -357,7 +357,7 @@ SQL {DELETE FROM abc WHERE a = 10;}
 TEST_AUTOCOMMIT 13 0
 SQL {COMMIT;}
 
-TEST 14 {
+_TEST 14 {
   do_test $testid.1 {
     sqlite3_get_autocommit $::DB
   } {1}
@@ -375,37 +375,37 @@ PREP [subst {
   CREATE INDEX abc_i ON abc(a, padding, b, c);
 }]
 
-TEST 15 {
+_TEST 15 {
   db eval {PRAGMA cache_size = 10}
 }
 
 SQL {BEGIN;}
 SQL -norllbck {INSERT INTO abc (oid, a, padding, b, c) SELECT NULL, * FROM abc}
-TEST 16 {
+_TEST 16 {
   do_test $testid {
     execsql {SELECT a, count(*) FROM abc GROUP BY a;}
   } {1 2 4 2 7 2}
 }
 SQL -norllbck {INSERT INTO abc (oid, a, padding, b, c) SELECT NULL, * FROM abc}
-TEST 17 {
+_TEST 17 {
   do_test $testid {
     execsql {SELECT a, count(*) FROM abc GROUP BY a;}
   } {1 4 4 4 7 4}
 }
 SQL -norllbck {INSERT INTO abc (oid, a, padding, b, c) SELECT NULL, * FROM abc}
-TEST 18 {
+_TEST 18 {
   do_test $testid {
     execsql {SELECT a, count(*) FROM abc GROUP BY a;}
   } {1 8 4 8 7 8}
 }
 SQL -norllbck {INSERT INTO abc (oid, a, padding, b, c) SELECT NULL, * FROM abc}
-TEST 19 {
+_TEST 19 {
   do_test $testid {
     execsql {SELECT a, count(*) FROM abc GROUP BY a;}
   } {1 16 4 16 7 16}
 }
 SQL {COMMIT;}
-TEST 21 {
+_TEST 21 {
   do_test $testid {
     execsql {SELECT a, count(*) FROM abc GROUP BY a;}
   } {1 16 4 16 7 16}
@@ -413,19 +413,19 @@ TEST 21 {
 
 SQL {BEGIN;}
 SQL {DELETE FROM abc WHERE oid %2}
-TEST 22 {
+_TEST 22 {
   do_test $testid {
     execsql {SELECT a, count(*) FROM abc GROUP BY a;}
   } {1 8 4 8 7 8}
 }
 SQL {DELETE FROM abc}
-TEST 23 {
+_TEST 23 {
   do_test $testid {
     execsql {SELECT * FROM abc}
   } {}
 }
 SQL {ROLLBACK;}
-TEST 24 {
+_TEST 24 {
   do_test $testid {
     execsql {SELECT a, count(*) FROM abc GROUP BY a;}
   } {1 16 4 16 7 16}
@@ -436,7 +436,7 @@ TEST 24 {
 # more code.
 #
 PREP {DROP VIEW abc_v;}
-TEST 25 {
+_TEST 25 {
   do_test $testid {
     execsql {
       SELECT name, tbl_name FROM sqlite_master;
@@ -446,7 +446,7 @@ TEST 25 {
 SQL {BEGIN;}
 SQL {CREATE TABLE def(d, e, f);}
 SQL {CREATE TABLE ghi(g, h, i);}
-TEST 26 {
+_TEST 26 {
   do_test $testid {
     execsql {
       SELECT name, tbl_name FROM sqlite_master;
@@ -455,7 +455,7 @@ TEST 26 {
 }
 SQL {CREATE VIEW v1 AS SELECT * FROM def, ghi}
 SQL {CREATE UNIQUE INDEX ghi_i1 ON ghi(g);}
-TEST 27 {
+_TEST 27 {
   do_test $testid {
     execsql {
       SELECT name, tbl_name FROM sqlite_master;
@@ -465,7 +465,7 @@ TEST 27 {
 SQL {INSERT INTO def VALUES('a', 'b', 'c')}
 SQL {INSERT INTO def VALUES(1, 2, 3)}
 SQL -norollback {INSERT INTO ghi SELECT * FROM def}
-TEST 28 {
+_TEST 28 {
   do_test $testid {
     execsql {
       SELECT * FROM def, ghi WHERE d = g;
@@ -473,7 +473,7 @@ TEST 28 {
   } {a b c a b c 1 2 3 1 2 3}
 }
 SQL {COMMIT}
-TEST 29 {
+_TEST 29 {
   do_test $testid {
     execsql {
       SELECT * FROM v1 WHERE d = g;
@@ -490,7 +490,7 @@ ifcapable attach {
   SQL {CREATE TABLE aux.tbl2(x, y, z)}
   SQL {INSERT INTO tbl2 VALUES(1, 2, 3)}
   SQL {INSERT INTO def VALUES(4, 5, 6)}
-  TEST 30 {
+  _TEST 30 {
     do_test $testid {
       execsql {
         SELECT * FROM tbl2, def WHERE d = x;
@@ -498,7 +498,7 @@ ifcapable attach {
     } {1 2 3 1 2 3}
   }
   SQL {COMMIT}
-  TEST 31 {
+  _TEST 31 {
     do_test $testid {
       execsql {
         SELECT * FROM tbl2, def WHERE d = x;
@@ -509,7 +509,7 @@ ifcapable attach {
 
 # Test what happens when a malloc() fails while there are other active
 # statements. This changes the way sqlite3VdbeHalt() works.
-TEST 32 {
+_TEST 32 {
   if {![info exists ::STMT32]} {
     set sql "SELECT name FROM sqlite_master"
     set ::STMT32 [sqlite3_prepare $::DB $sql -1 DUMMY]
@@ -519,7 +519,7 @@ TEST 32 {
   }
 }
 SQL BEGIN
-TEST 33 { 
+_TEST 33 { 
   do_test $testid {
     execsql {SELECT * FROM ghi}
   } {a b c 1 2 3}
@@ -529,7 +529,7 @@ SQL -norollback {
   -- an automatic ROLLBACK. Hence the "-norollback" switch.
   INSERT INTO ghi SELECT '2'||g, h, i FROM ghi;
 }
-TEST 34 {
+_TEST 34 {
   if {[info exists ::STMT32]} {
     do_test $testid {
       sqlite3_finalize $::STMT32
@@ -545,7 +545,7 @@ SQL COMMIT
 
 proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
   if {[llength $arglist] %2} {
-    error "Uneven number of arguments to TEST"
+    error "Uneven number of arguments to _TEST"
   }
 
   for {set i 0} {$i < $pcstart} {incr i} {

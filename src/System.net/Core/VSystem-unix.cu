@@ -193,7 +193,7 @@ namespace Core
 		unsigned char dbUpdate;        // True if any part of database file changed
 		unsigned char inNormalWrite;   // True if in a normal write operation
 #endif
-#ifdef TEST
+#ifdef _TEST
 		// In test mode, increase the size of this structure a bit so that it is larger than the struct CrashFile defined in test6.c.
 		char aPadding[32];
 #endif
@@ -399,7 +399,7 @@ static void unixLeaveMutex() { _mutex_leave(_mutex_alloc(MUTEX_STATIC_MASTER)); 
 static int unixMutexHeld() { return _mutex_held(_mutex_alloc(MUTEX_STATIC_MASTER)); }
 #endif
 
-#if defined(TEST) && defined(_DEBUG)
+#if defined(_TEST) && defined(_DEBUG)
 // Helper function for printing out trace information from debugging binaries. This returns the string represetation of the supplied integer lock-type.
 static const char *FileLockNames(int fileLock)
 {
@@ -863,7 +863,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 #endif
 
 	unixLeaveMutex();
-	OSTRACE(("TEST WR-LOCK %d %d %d (unix)\n", pFile->h, rc, reserved));
+	OSTRACE(("_TEST WR-LOCK %d %d %d (unix)\n", pFile->h, rc, reserved));
 
 	*pResOut = reserved;
 	return rc;
@@ -1385,7 +1385,7 @@ static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut)
 		const char *zLockFile = (const char*)pFile->lockingContext;
 		reserved = osAccess(zLockFile, 0)==0;
 	}
-	OSTRACE(("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved));
+	OSTRACE(("_TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved));
 	*pResOut = reserved;
 	return rc;
 }
@@ -1541,7 +1541,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
 			}
 		}
 	}
-	OSTRACE(("TEST WR-LOCK %d %d %d (flock)\n", pFile->h, rc, reserved));
+	OSTRACE(("_TEST WR-LOCK %d %d %d (flock)\n", pFile->h, rc, reserved));
 
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
 	if( (rc & SQLITE_IOERR) == SQLITE_IOERR ){
@@ -1669,7 +1669,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
 			sem_post(pSem);
 		}
 	}
-	OSTRACE(("TEST WR-LOCK %d %d %d (sem)\n", pFile->h, rc, reserved));
+	OSTRACE(("_TEST WR-LOCK %d %d %d (sem)\n", pFile->h, rc, reserved));
 
 	*pResOut = reserved;
 	return rc;
@@ -1852,7 +1852,7 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
 	}
 
 	unixLeaveMutex();
-	OSTRACE(("TEST WR-LOCK %d %d %d (afp)\n", pFile->h, rc, reserved));
+	OSTRACE(("_TEST WR-LOCK %d %d %d (afp)\n", pFile->h, rc, reserved));
 
 	*pResOut = reserved;
 	return rc;

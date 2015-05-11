@@ -120,7 +120,7 @@ namespace Core
 		return r;
 	}
 
-#if defined(TEST) && defined(_DEBUG)
+#if defined(_TEST) && defined(_DEBUG)
 	__device__ int SysEx::Utf8To8(unsigned char *z)
 	{
 		unsigned char *zOut = z;
@@ -162,7 +162,7 @@ namespace Core
 		return (int)(z2 - (unsigned char const *)z);
 	}
 
-#if defined(TEST)
+#if defined(_TEST)
 	__device__ void SysEx::UtfSelfTest()
 	{
 		unsigned int i, t;

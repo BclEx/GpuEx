@@ -14,8 +14,8 @@ namespace Core
 	// The following singleton contains the global configuration for the SQLite library.
 	__device__ _WSD SysEx::GlobalStatics g_GlobalStatics =
 	{
-		false,						// CoreMutex
-		THREADSAFE == 1,			// FullMutex
+		// TAG::CoreMutex
+		// TAG::FullMutex
 		CORE_USE_URI,				// OpenUri
 		// Main::UseCis
 		0x7ffffffe,					// MaxStrlen
@@ -99,7 +99,7 @@ namespace Core
 			if (!SysEx_GlobalStatics.InitMutex)
 			{
 				SysEx_GlobalStatics.InitMutex = _mutex_alloc(MUTEX_RECURSIVE);
-				if (SysEx_GlobalStatics.CoreMutex && !SysEx_GlobalStatics.InitMutex)
+				if (TagBase_RuntimeStatics.CoreMutex && !SysEx_GlobalStatics.InitMutex)
 					rc = RC_NOMEM;
 			}
 		}
@@ -178,16 +178,16 @@ namespace Core
 #ifdef THREADSAFE
 			// Mutex configuration options are only available in a threadsafe compile. 
 		case CONFIG_SINGLETHREAD: { // Disable all mutexing
-			SysEx_GlobalStatics.CoreMutex = false;
-			SysEx_GlobalStatics.FullMutex = false;
+			TagBase_RuntimeStatics.CoreMutex = false;
+			TagBase_RuntimeStatics.FullMutex = false;
 			break; }
 		case CONFIG_MULTITHREAD: { // Disable mutexing of database connections, Enable mutexing of core data structures
-			SysEx_GlobalStatics.CoreMutex = true;
-			SysEx_GlobalStatics.FullMutex = false;
+			TagBase_RuntimeStatics.CoreMutex = true;
+			TagBase_RuntimeStatics.FullMutex = false;
 			break; }
 		case CONFIG_SERIALIZED: { // Enable all mutexing
-			SysEx_GlobalStatics.CoreMutex = true;
-			SysEx_GlobalStatics.FullMutex = true;
+			TagBase_RuntimeStatics.CoreMutex = true;
+			TagBase_RuntimeStatics.FullMutex = true;
 			break; }
 		//case CONFIG_MUTEX: { // Specify an alternative mutex implementation
 		//	SysEx_GlobalStatics.Mutex = *va_arg(args, void *);

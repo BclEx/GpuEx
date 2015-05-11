@@ -230,7 +230,7 @@ namespace Core
 
 #pragma region Lock
 
-#if defined(TEST) && defined(_DEBUG)
+#if defined(_TEST) && defined(_DEBUG)
 	__device__ static const char *walLockName(int lockIdx)
 	{
 		if (lockIdx == WAL_WRITE_LOCK)
@@ -1567,7 +1567,7 @@ walcheckpoint_out:
 		// If this frame set completes a transaction, then nTruncate>0.  If nTruncate==0 then this frame set does not complete the transaction.
 		_assert((isCommit != 0) == (truncate != 0));
 
-#if defined(TEST) && defined(_DEBUG)
+#if defined(_TEST) && defined(_DEBUG)
 		{ 
 			int count;
 			for (count = 0, p = list; p; p = p->Dirty, count++) { }

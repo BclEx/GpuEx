@@ -1,6 +1,7 @@
 //#define VISUAL
 #include <RuntimeHost.h>
 #include <FallocHost.h>
+#include <string.h>
 
 void __testSystemDataBtree(cudaDeviceHeap &r);
 void __testSystemDataPager(cudaDeviceHeap &r);

@@ -412,7 +412,7 @@ __device__ char *reg_replace(const char *regex, const char *buf, const char *sub
 	{
 		s_len = (s == nullptr ? 0 : _strlen(s));
 		if ((n = reg_match(regex, buf, len, &cap, 1, 0)) > 0)
-			n1 = cap.ptr - buf, n2 = _strlen(sub), n3 = &buf[n] - &cap.ptr[cap.len];
+			n1 = (int)(cap.ptr - buf), n2 = _strlen(sub), n3 = (int)(&buf[n] - &cap.ptr[cap.len]);
 		else
 			n1 = len, n2 = 0, n3 = 0;
 		s = (char *)_realloc(s, s_len + n1 + n2 + n3 + 1);

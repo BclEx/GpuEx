@@ -1028,7 +1028,7 @@ namespace Core.Command
             return i - 1;
         }
 
-#if TEST
+#if _TEST
         static int _xferopt_count = 0;
 #endif
 #if !OMIT_XFER_OPT
@@ -1124,7 +1124,7 @@ namespace Core.Command
 
             // If we get this far, it means that the xfer optimization is at least a possibility, though it might only work if the destination
             // table (tab1) is initially empty.
-#if TEST
+#if _TEST
             _xferopt_count++;
 #endif
             int dbSrcId = Prepare.SchemaToIndex(parse.Ctx, src.Schema); // The database of pSrc

@@ -1,5 +1,6 @@
 #include <RuntimeHost.h>
 #include <FallocHost.h>
+#include <string.h>
 
 void __testSystem(cudaDeviceHeap &r);
 void __testSystemIO(cudaDeviceHeap &r);

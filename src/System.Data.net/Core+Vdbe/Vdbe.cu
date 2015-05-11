@@ -11,7 +11,7 @@ namespace Core
 #define MemAboutToChange(P, M)
 #endif
 
-#ifdef TEST
+#ifdef _TEST
 	__device__ int g_search_count = 0;
 	__device__ int g_interrupt_count = 0;
 	__device__ int g_sort_count = 0;
@@ -362,7 +362,7 @@ namespace Core
 			}
 #endif
 
-#ifdef TEST
+#ifdef _TEST
 			// Check to see if we need to simulate an interrupt.  This only happens if we have a special test build.
 			if (g_interrupt_count > 0)
 			{
@@ -2686,7 +2686,7 @@ op_column_out:
 					}
 					cur->DeferredMoveto = false;
 					cur->CacheStatus = CACHE_STALE;
-#ifdef TEST
+#ifdef _TEST
 					g_search_count++;
 #endif
 					if (oc >= OP_SeekGe)
@@ -2760,7 +2760,7 @@ op_column_out:
 				//
 				// See also: Found, NotExists, IsUnique
 				int res;
-#ifdef TEST
+#ifdef _TEST
 				g_found_count++;
 #endif
 				bool alreadyExists = false;
@@ -2781,7 +2781,7 @@ op_column_out:
 						r.Fields = (uint16)op->P4.I;
 						r.Mems = in3;
 #ifdef _DEBUG
-						for (int i = 0; i < r.Fields; i++) assert(MemIsValid(&r.Mems[i]));
+						for (int i = 0; i < r.Fields; i++) _assert(MemIsValid(&r.Mems[i]));
 #endif
 						r.Flags = UNPACKED_PREFIX_MATCH;
 						idxKey = &r;
@@ -3139,7 +3139,7 @@ op_column_out:
 					const char *dbName = ctx->DBs[cur->Db].Name; // database name - used by the update hook
 					const char *tableName = op->P4.Z; // Table name - used by the opdate hook
 					int op2 = ((op->P5 & OPFLAG_ISUPDATE) ? AUTH_UPDATE : AUTH_INSERT); // Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT
-					assert(cur->IsTable);
+					_assert(cur->IsTable);
 					ctx->UpdateCallback(ctx->UpdateArg, op2, dbName, tableName, keyId);
 					_assert(cur->Db >= 0);
 				}
@@ -3374,7 +3374,7 @@ op_column_out:
 				// Sorting is accomplished by writing records into a sorting index, then rewinding that index and playing it back from beginning to
 				// end.  We use the OP_Sort opcode instead of OP_Rewind to do the rewinding so that the global variable will be incremented and
 				// regression tests can determine whether or not the optimizer is correctly optimizing out sorts.
-#ifdef TEST
+#ifdef _TEST
 				g_sort_count++;
 				g_search_count--;
 #endif
@@ -3464,7 +3464,7 @@ op_column_out:
 				{
 					pc = op->P2 - 1;
 					if (op->P5) Counters[op->P5-1]++;
-#ifdef TEST
+#ifdef _TEST
 					g_search_count++;
 #endif
 				}
