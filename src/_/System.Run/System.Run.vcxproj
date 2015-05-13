@@ -4,9 +4,6 @@
     <LD></LD>
     <LC>35</LC>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">
-    <GenerateManifest>false</GenerateManifest>
-  </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug.cpu|x64">
       <Configuration>Debug.cpu</Configuration>

@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <LD>V</LD>
+    <LD>
+    </LD>
     <LC>35</LC>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
@@ -21,6 +22,31 @@
       <Configuration>Release.cu</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
+    <ClCompile Include="Program.cu" />
+    <ClCompile Include="Program.2.cu" />
+    <ClCompile Include="TestSystem.cu" />
+    <ClCompile Include="TestSystem.IO.cu" />
+    <ClCompile Include="Tests/CoreTestH.cpp" />
+    <ClCompile Include="Tests/IOTestH.cpp" />
+    <ClCompile Include="Tests/CoreTest.cu" />
+    <ClCompile Include="Tests/IOTest.cu" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <CudaCompile Include="Program.cu" />
+    <CudaCompile Include="Program.2.cu" />
+    <CudaCompile Include="TestSystem.cu" />
+    <CudaCompile Include="TestSystem.IO.cu" />
+    <ClCompile Include="Tests/CoreTestH.cpp" />
+    <ClCompile Include="Tests/IOTestH.cpp" />
+    <CudaCompile Include="Tests/CoreTest.cu" />
+    <CudaCompile Include="Tests/IOTest.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="xunit">
+      <HintPath>..\..\packages\xunit.1.9.1\lib\net20\xunit.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3A992207-4EA5-4750-9401-AAD09DFDE7E5}</ProjectGuid>
@@ -64,10 +90,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions Condition="'$(LD)'!='V'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'!='V'">WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">WIN32;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\SystemL.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -81,6 +106,9 @@
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLink Condition="'$(LC)'=='11'">false</PerformDeviceLink>
+    </CudaLink>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <ClCompile>
@@ -89,8 +117,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions Condition="'$(LD)'!='V'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'!='V'">WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">WIN32;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\SystemL.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -106,25 +134,10 @@
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
     </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLink Condition="'$(LC)'=='11'">false</PerformDeviceLink>
+    </CudaLink>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="CoreTestH.cpp" />
-    <ClCompile Include="IOTestH.cpp" />
-    <ClCompile Include="Program.cpp" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
-    <ClCompile Include="CoreTest.cu" />
-    <ClCompile Include="IOTest.cu" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
-    <CudaCompile Include="CoreTest.cu" />
-    <CudaCompile Include="IOTest.cu" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="xunit">
-      <HintPath>..\..\packages\xunit.1.9.1\lib\net20\xunit.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.0.targets" />

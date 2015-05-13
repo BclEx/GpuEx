@@ -1,11 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="FallocITest.cpp" />
-    <ClCompile Include="RuntimeITest.cpp" />
+    <None Include="TestFalloc.cu" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="FallocITest.cu" />
-    <CudaCompile Include="RuntimeITest.cu" />
+    <Filter Include="Tests">
+      <UniqueIdentifier>{db3f3d12-3745-4e9a-8417-3cecc23a6db6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Program.cu" />
+    <ClCompile Include="TestRuntime.cu" />
+    <ClCompile Include="TestRegex.1.cu" />
+    <ClCompile Include="TestRegex.2.cu" />
+    <ClCompile Include="Tests/FallocTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests/FallocTest.cu">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests/RuntimeTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests/RuntimeTest.cu">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
