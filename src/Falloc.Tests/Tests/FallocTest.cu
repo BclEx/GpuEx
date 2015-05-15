@@ -1,4 +1,3 @@
-#include <Runtime.cu.h>
 #include <Falloc.cu.h>
 
 __device__ static fallocHeap *_heap;

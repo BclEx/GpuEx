@@ -163,7 +163,6 @@
     <None Include="Core+Vdbe\Auth.cu" />
     <Compile Include="Shell.cs" />
     <None Include="Core+Vdbe\Main.cu" />
-    <None Include="Shell.cu" />
     <Compile Include="Program.cs" />
     <Compile Include="Core+Vdbe\Parse_h.cs" />
   </ItemGroup>

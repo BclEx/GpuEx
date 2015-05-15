@@ -3674,10 +3674,10 @@ moveto_finish:
 						}
 						else
 						{
-							int dist = MathEx::Abs(_convert_get4(&data[8]) - nearby);
+							int dist = _math_abs(_convert_get4(&data[8]) - nearby);
 							for (uint32 i = 1U; i < k; i++)
 							{
-								int d2 = MathEx::Abs(_convert_get4(&data[8 + i * 4]) - nearby);
+								int d2 = _math_abs(_convert_get4(&data[8 + i * 4]) - nearby);
 								if (d2 < dist)
 								{
 									closest = i;

@@ -29,7 +29,7 @@ namespace Tests
 			//checkCudaErrors(cudaDeviceReset(), throw gcnew Exception("cudaDeviceReset failed!"));
 		}
 
-		[Fact]
-		void printf_outputs() { runtimeTest0_host(_deviceHeap); }
+		//[Fact]
+		//void printf_outputs() { runtimeTest0_host(_deviceHeap); }
 	};
 }

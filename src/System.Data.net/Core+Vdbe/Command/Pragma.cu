@@ -393,7 +393,7 @@ namespace Core { namespace Command
 			}
 			else
 			{
-				int size = MathEx::Abs(_atoi(right));
+				int size = _math_abs(_atoi(right));
 				parse->BeginWriteOperation(0, db);
 				v->AddOp2(OP_Integer, size, 1);
 				v->AddOp3(OP_SetCookie, db, Btree::META_DEFAULT_CACHE_SIZE, 1);
@@ -465,7 +465,7 @@ namespace Core { namespace Command
 			if (_tolower(left[0]) == 'p')
 				v->AddOp2(OP_Pagecount, db, regId);
 			else
-				v->AddOp3(OP_MaxPgcnt, db, regId, MathEx::Abs(_atoi(right)));
+				v->AddOp3(OP_MaxPgcnt, db, regId, _math_abs(_atoi(right)));
 			v->AddOp2(OP_ResultRow, regId, 1);
 			v->SetNumCols(1);
 			v->SetColName(0, COLNAME_NAME, left, DESTRUCTOR_TRANSIENT);

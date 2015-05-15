@@ -5,6 +5,17 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
 
+#if __CUDACC__
+#define __forceinline __forceinline__
+#if __CUDA_ARCH__
+#define __host_constant__ __constant__
+#else
+#define __host_constant__
+#endif
+#else
+#define __host_constant__
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 // HOST SIDE
 // External function definitions for host-side code

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <LD>V</LD>
+    <LD></LD>
     <LC>35</LC>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
@@ -31,12 +31,12 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.Data.Tests.net\_Tester.cu" />
-    <ClCompile Include="..\system.data.tests.net\core+vdbe\command\select2.cu" />
+    <ClCompile Include="..\System.Data.Tests.net\Core+Vdbe\Command\select2.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="..\System.Data.Tests.net\_Tester.cu" />
-    <CudaCompile Include="..\system.data.tests.net\core+vdbe\command\select2.cu" />
+    <CudaCompile Include="..\System.Data.Tests.net\Core+Vdbe\Command\select2.cu" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="xunit">

@@ -1,5 +1,4 @@
 #include <RuntimeHost.h>
-#include <FallocHost.h>
 #include <string.h>
 
 void __testSystem(cudaDeviceHeap &r);
@@ -33,7 +32,6 @@ int main(int argc, char **argv)
 
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
 	//IVisualRender *render = new RuntimeVisualRender(deviceHeap);
-	//IVisualRender *render = new FallocVisualRender(fallocHost);
 	//if (!Visual::InitGL(render, &argc, argv)) return 0;
 	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
@@ -43,7 +41,6 @@ int main(int argc, char **argv)
 	//Visual::Dispose();
 
 	cudaDeviceHeapDestroy(deviceHeap);
-	//cudaDeviceFallocDestroy(fallocHost);
 
 	cudaDeviceReset();
 	printf("\nEnd"); char c; scanf("%c", &c);

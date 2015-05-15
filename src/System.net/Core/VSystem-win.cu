@@ -845,7 +845,7 @@ namespace Core
 #endif
 #define winMemGetHeap() winMemData_.Heap
 
-	class WinVAlloc : public VAlloc
+	class WinVAlloc : public VSystem::VAlloc
 	{
 	public:
 		__device__ virtual void *Alloc(int bytes);
@@ -3110,7 +3110,7 @@ shmpage_out:
 	}
 
 #ifdef _TEST
-	int current_time = 0; // Fake system time in seconds since 1970.
+	int _current_time = 0; // Fake system time in seconds since 1970.
 #endif
 	RC WinVSystem::CurrentTimeInt64(int64 *now)
 	{
@@ -3133,8 +3133,8 @@ shmpage_out:
 #endif
 		*now = winFiletimeEpoch + ((((int64)ft.dwHighDateTime)*max32BitValue) + (int64)ft.dwLowDateTime)/(int64)10000;
 #ifdef _TEST
-		if (current_time)
-			*now = 1000*(int64)current_time + unixEpoch;
+		if (_current_time)
+			*now = 1000*(int64)_current_time + unixEpoch;
 #endif
 		return RC_OK;
 	}

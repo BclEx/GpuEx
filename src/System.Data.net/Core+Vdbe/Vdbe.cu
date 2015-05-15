@@ -889,9 +889,9 @@ namespace Core
 					intint = true;
 					switch (op->Opcode)
 					{
-					case OP_Add:      if (MathEx::Add(&iB, iA)) goto fp_math; break;
-					case OP_Subtract: if (MathEx::Sub(&iB, iA)) goto fp_math; break;
-					case OP_Multiply: if (MathEx::Mul(&iB, iA)) goto fp_math; break;
+					case OP_Add:      if (_math_add(&iB, iA)) goto fp_math; break;
+					case OP_Subtract: if (_math_sub(&iB, iA)) goto fp_math; break;
+					case OP_Multiply: if (_math_mul(&iB, iA)) goto fp_math; break;
 					case OP_Divide: {
 						if (iA == 0) goto arithmetic_result_is_null;
 						if (iA == -1 && iB == SMALLEST_INT64) goto fp_math;

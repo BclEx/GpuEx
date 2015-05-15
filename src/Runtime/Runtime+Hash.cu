@@ -1,6 +1,5 @@
 ﻿//hash.c
 #include "Runtime.h"
-#include "Hash.cu.h"
 
 __device__ Hash::Hash()
 {

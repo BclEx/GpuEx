@@ -2,6 +2,22 @@
 #define __RUNTIMEOS_H__
 
 //////////////////////
+// SENTINEL
+#pragma region SENTINEL
+
+typedef struct __align__(8)
+{
+	unsigned short Magic; // magic number says we're valid
+	unsigned char Version;
+	unsigned char Flags;
+	void *D_;
+} Sentinel;
+
+__device__ void osFindSentinel();
+
+#pragma endregion
+
+//////////////////////
 // OPERATING SYSTEM
 #pragma region OPERATING SYSTEM
 

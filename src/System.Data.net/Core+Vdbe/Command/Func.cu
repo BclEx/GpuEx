@@ -987,7 +987,7 @@ namespace Core { namespace Command
 			{
 				int64 v = Vdbe::Value_Int64(argv[0]);
 				p->RSum += v;
-				if (!(p->Approx | p->Overflow) && MathEx::Add(&p->ISum, v))
+				if (!(p->Approx | p->Overflow) && _math_add(&p->ISum, v))
 					p->Overflow = true;
 			}
 			else

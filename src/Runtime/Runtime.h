@@ -20,7 +20,6 @@
 #include "Runtime.cu.h"
 #else
 #define __host_constant__
-
 #include <string.h>
 #include <malloc.h>
 #include "Runtime.cpu.h"
@@ -200,6 +199,61 @@ __device__ inline void _convert_put4(unsigned char *p, uint32 v)
 __device__ uint8 __atolevel(const char *z, int omitFull, uint8 dflt);
 __device__ bool __atob(const char *z, uint8 dflt);
 #pragma endregion
+
+#pragma endregion
+
+//////////////////////
+// HASH
+#pragma region HASH
+
+//#define HASH_FIRST(H) ((H)->First)
+//#define HASH_NEXT(E) ((E)->Next)
+//#define HASH_DATA(E) ((E)->Data)
+//#define HASH_Key(E)    ((E)->Key) // NOT USED
+//#define HASH_Keysize(E) ((E)->KeyLength)  // NOT USED
+//#define HASH_Count(H)  ((H)->Count) // NOT USED
+
+struct HashElem
+{
+	HashElem *Next, *Prev;       // Next and previous elements in the table
+	void *Data;                  // Data associated with this element
+	const char *Key; int KeyLength;  // Key associated with this element
+};
+
+struct Hash
+{
+	unsigned int TableSize;     // Number of buckets in the hash table
+	unsigned int Count;			// Number of entries in this table
+	HashElem *First;			// The first element of the array
+	struct HTable
+	{              
+		int Count;              // Number of entries with this hash
+		HashElem *Chain;        // Pointer to first entry with this hash
+	} *Table; // the hash table
+
+	__device__ Hash();
+	__device__ void Init();
+	__device__ void *Insert(const char *key, int keyLength, void *data);
+	__device__ void *Find(const char *key, int keyLength);
+	__device__ void Clear();
+};
+
+#pragma endregion
+
+//////////////////////
+// MATH
+#pragma region MATH
+
+__device__ bool _math_add(int64 *aRef, int64 b);
+__device__ bool _math_sub(int64 *aRef, int64 b);
+__device__ bool _math_mul(int64 *aRef, int64 b);
+//__device__ int _math_abs(int x);
+__device__ inline int _math_abs(int x)
+{
+	if (x >= 0) return x;
+	if (x == (int)0x8000000) return 0x7fffffff;
+	return -x;
+}
 
 #pragma endregion
 
