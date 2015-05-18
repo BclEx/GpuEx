@@ -2,16 +2,59 @@
 
 //#define VISUAL
 #include "..\System.net\Core\Core.cu.h"
+#include "..\System.net\Core\Sentinel.cu.h"
 #include <string.h>
 
-//void __testSystem(cudaDeviceHeap &r);
+#pragma region TestSystem0
 
+__device__ static void TestVFS()
+{
+	auto vfs = VSystem::FindVfs(nullptr);
+	auto file = (VFile *)_allocZero(vfs->SizeOsFile);
+	auto rc = vfs->Open("C:\\T_\\Test.db", file, (VSystem::OPEN)(VSystem::OPEN_CREATE|VSystem::OPEN_READWRITE|VSystem::OPEN_MAIN_DB), nullptr);
+	file->Write4(0, 123145);
+	file->Close();
+}
+
+// NATIVE: assert
+__global__ static void testSystem0(void *r)
+{
+	_runtimeSetHeap(r);
+	MutexEx masterMutex;
+	RC rc = SysEx::Initialize(masterMutex);
+	//
+	TestVFS();
+	//
+	SysEx::Shutdown();
+	printf("System: 0\n");
+}
+
+#if __CUDACC__
+void __testSystem(cudaDeviceHeap &r)
+{
+	testSystem0<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+}
+#else
+void __testSystem(cudaDeviceHeap &r)
+{
+	testSystem0(r.heap);
+}
+#endif
+
+#pragma endregion
+
+#pragma region Main
+
+//void __testSystem(cudaDeviceHeap &r);
 #if __CUDACC__
 void GMain(cudaDeviceHeap &r) {
 #else
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
+Sentinel::Initialize();
 __testSystem(r);
+getchar();
+Sentinel::Shutdown();
 }
 
 #if __CUDACC__
@@ -24,7 +67,7 @@ void __main(cudaDeviceHeap &r)
 int main(int argc, char **argv)
 {
 	//cudaThreadSetLimit(cudaLimitStackSize, 1024*6);
-	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost));
+	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost));
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
 
@@ -35,10 +78,12 @@ int main(int argc, char **argv)
 	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
+	Sentinel::Initialize();
 	__main(deviceHeap);
 	//Visual::Main();
 	//Visual::Dispose();
 
+	Sentinel::Shutdown();
 	cudaDeviceHeapDestroy(deviceHeap);
 
 	cudaDeviceReset();
@@ -46,5 +91,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 #endif
+
+#pragma endregion
 
 #endif

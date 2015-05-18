@@ -3,6 +3,7 @@
 
 #include "RuntimeHost.h"
 #include "RuntimeOS.h"
+#include "RuntimeSentinel.h"
 #include <stdio.h>
 
 //void __testRuntime(cudaDeviceHeap &r);
@@ -13,7 +14,8 @@ int main(int argc, char **argv)
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
 
-	osFindSentinel();
+	InitializeSentinel();
+	//osFindSentinel();
 
 	//cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
 
@@ -31,6 +33,8 @@ int main(int argc, char **argv)
 
 	//cudaDeviceHeapSelect(deviceHeap);
 	//__testRuntime(deviceHeap);
+
+	ShutdownSentinel();
 
 	//cudaDeviceHeapDestroy(deviceHeap);
 	return 0;

@@ -3,7 +3,7 @@
 #include <RuntimeOS.h>
 #include <new.h>
 
-#if OS_GPU
+#if OS_GPUx
 namespace Core
 {
 

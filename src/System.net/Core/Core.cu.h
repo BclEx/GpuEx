@@ -1,5 +1,6 @@
 ﻿#ifndef __CORE_CU_H__
 #define __CORE_CU_H__
+#define OS_MAP 1
 
 #include <Runtime.h>
 #include <RuntimeTypes.h>

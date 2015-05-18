@@ -31,7 +31,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -69,7 +69,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;_TEST;ENABLE_ATOMIC_WRITE;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_xLIB;_TEST;ENABLE_ATOMIC_WRITE;OMIT_AUTOINIT;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -100,7 +100,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;ENABLE_ATOMIC_WRITE;OMIT_AUTOINIT;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -126,6 +126,7 @@
   <ItemGroup>
     <ClInclude Include="..\System.net\Core\Bitvec.cu.h" />
     <ClInclude Include="..\System.net\Core\RC.cu.h" />
+    <ClInclude Include="..\System.net\Core\Sentinel.cu.h" />
     <ClInclude Include="..\System.net\Core\SysEx.cu.h" />
     <ClInclude Include="..\System.net\Core\VSystem.cu.h" />
     <ClInclude Include="..\System.net\Core\Core.cu.h" />
@@ -136,12 +137,14 @@
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.net\Core\SysEx.cu" />
     <ClCompile Include="..\System.net\Core\Bitvec.cu" />
+    <ClCompile Include="..\System.net\Core\Sentinel.cu" />
     <ClCompile Include="..\System.net\Core\SysEx+Random.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu" />
     <ClCompile Include="..\System.net\Core\VSystem.cu" />
     <None Include="..\System.net\Core\VSystem-gpu.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-map.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
@@ -150,13 +153,14 @@
     <CudaCompile Include="Program.cu" />
     <None Include="..\System.net\Core\SysEx.cu" />
     <None Include="..\System.net\Core\Bitvec.cu" />
-    <None Include="..\System.net\Core\MathEx.cu" />
+    <None Include="..\System.net\Core\Sentinel.cu" />
     <None Include="..\System.net\Core\SysEx+Random.cu" />
     <None Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
     <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
     <None Include="..\System.net\Core\IO\IO.VFile.cu" />
     <None Include="..\System.net\Core\VSystem.cu" />
     <None Include="..\System.net\Core\VSystem-gpu.cu" />
+    <None Include="..\System.net\Core\VSystem-map.cu" />
     <None Include="..\System.net\Core\VSystem-unix.cu" />
     <None Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>

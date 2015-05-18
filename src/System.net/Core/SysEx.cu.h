@@ -63,6 +63,13 @@ namespace Core
 		__device__ inline static RC AutoInitialize() { return RC_OK; }
 		__device__ static RC PreInitialize(MutexEx &masterMutex);
 		__device__ static void PostInitialize(MutexEx masterMutex);
+		__device__ inline static RC Initialize(MutexEx &masterMutex)
+		{
+			RC rc = PreInitialize(masterMutex);
+			if (!rc)
+				PostInitialize(masterMutex);
+			return rc;
+		}
 		__device__ static RC Shutdown();
 
 		enum CONFIG
