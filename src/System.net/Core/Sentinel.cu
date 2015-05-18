@@ -6,37 +6,85 @@
 
 namespace Core
 {
-	unsigned int __stdcall SentinelThread(void *data) 
-	{
-		VSystem *vfs = (VSystem *)data;
-		while (true)
-		{
-			//printf("Thread inside %d \n", GetCurrentThreadId());
-			_sleep(1000);
-		}
-		return 0;
-	}
-
 	HANDLE _thread;
 	SentinelMap _map;
 	VSystem *_vfs;
 
-	extern RC MapVSystem_Initialize();
-	void Sentinel::Initialize()
+	__device__ void Sentinel_Send(void *data, int length)
 	{
-		memset(&_map, 0, sizeof(_map));
-		MutexEx masterMutex;
-		SysEx::Initialize(masterMutex);
-		VSystem *vfs = _vfs = VSystem::FindVfs(nullptr);
-		VSystem::UnregisterVfs(vfs);
-		MapVSystem_Initialize();
-		_thread = (HANDLE)_beginthreadex(0, 0, SentinelThread, vfs, 0, 0);
-	}
-
-	void Sentinel::Shutdown()
-	{
-		SysEx::Shutdown();
-		CloseHandle(_thread);
+		int id = InterlockedAdd((LONG *)&_map.AddId, 1);
+		SentinelCommand *cmd = &_map.Commands[id % _lengthof(_map.Commands)];
+		while (InterlockedCompareExchange((LONG *)&cmd->Status, 1, 0) != 0);
+		cmd->Length = length;
+		switch (((char *)data)[0])
+		{
+#pragma region File
+		case 10: {
+			Messages::File_Close *msg = (Messages::File_Close *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 11: {
+			Messages::File_Read *msg = (Messages::File_Read *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 12: {
+			Messages::File_Write *msg = (Messages::File_Write *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 13: {
+			Messages::File_Truncate *msg = (Messages::File_Truncate *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 14: {
+			Messages::File_Sync *msg = (Messages::File_Sync *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 15: {
+			Messages::File_get_FileSize *msg = (Messages::File_get_FileSize *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 16: {
+			Messages::File_Lock *msg = (Messages::File_Lock *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 17: {
+			Messages::File_CheckReservedLock *msg = (Messages::File_CheckReservedLock *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 18: {
+			Messages::File_Unlock *msg = (Messages::File_Unlock *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+#pragma endregion
+#pragma region System
+		case 1: {
+			Messages::System_Open *msg = (Messages::System_Open *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 2: {
+			Messages::System_Delete *msg = (Messages::System_Delete *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 3: {
+			Messages::System_Access *msg = (Messages::System_Access *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 4: {
+			Messages::System_FullPathname *msg = (Messages::System_FullPathname *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+		case 5: {
+			Messages::System_GetLastError *msg = (Messages::System_GetLastError *)data;
+			msg->Prepare(cmd->Data, sizeof(cmd->Data));
+			break; }
+#pragma endregion
+		}
+		memcpy(cmd->Data, data, length);
+		cmd->Status = 2;
+		//OneCommand(_vfs, cmd->Data, cmd->Length);
+		while (InterlockedCompareExchange((LONG *)&cmd->Status, 5, 4) != 4);
+		memcpy(data, cmd->Data, length);
+		cmd->Status = 0;
 	}
 
 	void OneCommand(VSystem *vfs, char *data, int length)
@@ -108,76 +156,40 @@ namespace Core
 		}
 	}
 
-	void Sentinel_Send(void *data, int length)
+	unsigned int __stdcall SentinelThread(void *data) 
 	{
-		long id = InterlockedAdd(&_map.Id, 1);
-		SentinelCommand *cmd = &_map.Commands[id % _lengthof(_map.Commands)];
-		cmd->Length = length;
-		switch (((char *)data)[0])
+		VSystem *vfs = (VSystem *)data;
+		while (true)
 		{
-#pragma region File
-		case 10: {
-			Messages::File_Close *msg = (Messages::File_Close *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 11: {
-			Messages::File_Read *msg = (Messages::File_Read *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 12: {
-			Messages::File_Write *msg = (Messages::File_Write *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 13: {
-			Messages::File_Truncate *msg = (Messages::File_Truncate *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 14: {
-			Messages::File_Sync *msg = (Messages::File_Sync *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 15: {
-			Messages::File_get_FileSize *msg = (Messages::File_get_FileSize *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 16: {
-			Messages::File_Lock *msg = (Messages::File_Lock *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 17: {
-			Messages::File_CheckReservedLock *msg = (Messages::File_CheckReservedLock *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 18: {
-			Messages::File_Unlock *msg = (Messages::File_Unlock *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-#pragma endregion
-#pragma region System
-		case 1: {
-			Messages::System_Open *msg = (Messages::System_Open *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 2: {
-			Messages::System_Delete *msg = (Messages::System_Delete *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 3: {
-			Messages::System_Access *msg = (Messages::System_Access *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 4: {
-			Messages::System_FullPathname *msg = (Messages::System_FullPathname *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-		case 5: {
-			Messages::System_GetLastError *msg = (Messages::System_GetLastError *)data;
-			msg->Prepare(cmd->Data, sizeof(cmd->Data));
-			break; }
-#pragma endregion
+			int id = InterlockedAdd((LONG *)&_map.RunId, 1);
+			SentinelCommand *cmd = &_map.Commands[id % _lengthof(_map.Commands)];
+			while (InterlockedCompareExchange((LONG *)&cmd->Status, 3, 2) != 2)
+			{
+				printf(".");
+				_sleep(10);
+			}
+			OneCommand(vfs, cmd->Data, cmd->Length);
+			cmd->Status = 4;
 		}
-		memcpy(cmd->Data, data, length);
-		OneCommand(_vfs, cmd->Data, cmd->Length);
-		memcpy(data, cmd->Data, length);
+		return 0;
+	}
+
+
+	extern RC MapVSystem_Initialize();
+	void Sentinel::Initialize()
+	{
+		memset(&_map, 0, sizeof(_map));
+		MutexEx masterMutex;
+		SysEx::Initialize(masterMutex);
+		VSystem *vfs = _vfs = VSystem::FindVfs(nullptr);
+		VSystem::UnregisterVfs(vfs);
+		MapVSystem_Initialize();
+		_thread = (HANDLE)_beginthreadex(0, 0, SentinelThread, vfs, 0, 0);
+	}
+
+	void Sentinel::Shutdown()
+	{
+		SysEx::Shutdown();
+		CloseHandle(_thread);
 	}
 }

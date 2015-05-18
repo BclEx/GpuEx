@@ -14,10 +14,6 @@ namespace Core
 
 #pragma endregion
 
-#if __CUDACC__
-#define OMIT_AUTOINIT
-#endif
-
 #define CORE_VERSION        "--VERS--"
 #define CORE_VERSION_NUMBER 3007016
 #define CORE_SOURCE_ID      "--SOURCE-ID--"

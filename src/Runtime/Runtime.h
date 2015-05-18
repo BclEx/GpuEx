@@ -277,7 +277,9 @@ __device__ inline int _math_abs(int x)
 #if THREADSAFE == 0
 #define MUTEX_OMIT
 #else
-#if OS_UNIX
+#if OS_GPU
+#define MUTEX_NOOP
+#elif OS_UNIX
 #define MUTEX_PTHREADS
 #elif OS_WIN
 #define MUTEX_WIN

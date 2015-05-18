@@ -86,7 +86,7 @@ namespace Core
 	{
 		Messages::File_Read msg(F, amount, offset);
 		Sentinel_Send(&msg, sizeof(msg));
-		memcpy(buffer, msg.Buffer, amount);
+		_memcpy(buffer, msg.Buffer, amount);
 		return msg.RC;
 	}
 
@@ -159,7 +159,7 @@ namespace Core
 
 #pragma region MapVSystem
 
-	VFile *MapVSystem::_AttachFile(void *buffer)
+	__device__ VFile *MapVSystem::_AttachFile(void *buffer)
 	{
 		return new (buffer) MapVFile();
 	}
@@ -170,14 +170,13 @@ namespace Core
 		// SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before reaching the VFS.
 		flags = (OPEN)((uint)flags & 0x87f7f);
 
-		RC rc = RC_OK;
 		OPEN type = (OPEN)(flags & 0xFFFFFF00);  // Type of file to open
 		bool isExclusive = ((flags & OPEN_EXCLUSIVE) != 0);
 		bool isDelete = ((flags & OPEN_DELETEONCLOSE) != 0);
 		bool isCreate = ((flags & OPEN_CREATE) != 0);
 		bool isReadonly = ((flags & OPEN_READONLY) != 0);
 		bool isReadWrite = ((flags & OPEN_READWRITE) != 0);
-		bool isOpenJournal = (isCreate && (type == OPEN_MASTER_JOURNAL || type == OPEN_MAIN_JOURNAL || type == OPEN_WAL));
+		//bool isOpenJournal = (isCreate && (type == OPEN_MASTER_JOURNAL || type == OPEN_MAIN_JOURNAL || type == OPEN_WAL));
 
 		// Check the following statements are true: 
 		//
@@ -288,7 +287,7 @@ namespace Core
 		return n;
 	}
 
-	__device__ int MapVSystem::Sleep(int microseconds)
+	__device__ int MapVSystem::Sleep(int milliseconds)
 	{
 #if __CUDACC__
 		clock_t start = clock();
@@ -299,7 +298,7 @@ namespace Core
 			clock_t cycles = (now > start ? now - start : now + (0xffffffff - start));
 			if (cycles >= end) break;
 		}
-		return ((microseconds+999)/1000)*1000;
+		return ((milliseconds+999)/1000)*1000;
 #else
 		return 0;
 #endif

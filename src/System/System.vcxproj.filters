@@ -62,17 +62,17 @@
     <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu">
       <Filter>Core\IO</Filter>
     </None>
-    <None Include="..\System.net\Core\Sentinel.cu">
-      <Filter>Core</Filter>
-    </None>
     <None Include="..\System.net\Core\VSystem-map.cu">
       <Filter>Core</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="System.cu">
+    <CudaCompile Include="System.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\System.net\Core\Sentinel.cu">
       <Filter>Core</Filter>
-    </CudaCompile>
+    </ClCompile>
   </ItemGroup>
 </Project>

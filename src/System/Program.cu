@@ -53,7 +53,7 @@ void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
 Sentinel::Initialize();
 __testSystem(r);
-getchar();
+//getchar();
 Sentinel::Shutdown();
 }
 

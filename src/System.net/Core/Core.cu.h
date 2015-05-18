@@ -2,6 +2,10 @@
 #define __CORE_CU_H__
 #define OS_MAP 1
 
+//#if __CUDACC__
+//#define OMIT_AUTOINIT
+//#endif
+
 #include <Runtime.h>
 #include <RuntimeTypes.h>
 

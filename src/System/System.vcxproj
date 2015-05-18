@@ -153,7 +153,7 @@
     <CudaCompile Include="Program.cu" />
     <None Include="..\System.net\Core\SysEx.cu" />
     <None Include="..\System.net\Core\Bitvec.cu" />
-    <None Include="..\System.net\Core\Sentinel.cu" />
+    <ClCompile Include="..\System.net\Core\Sentinel.cu" />
     <None Include="..\System.net\Core\SysEx+Random.cu" />
     <None Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
     <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
