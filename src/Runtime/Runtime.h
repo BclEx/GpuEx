@@ -2,6 +2,8 @@
 #define __RUNTIME_H__
 #include "RuntimeTypes.h"
 
+//#define _CPU
+
 //////////////////////
 // NATIVE
 #pragma region NATIVE

@@ -12,6 +12,4 @@
 #include "Runtime+Mutex-gpu.cu"
 #include "Runtime+Mutex-noop.cu"
 #include "Runtime+Status.cu"
-#include "RuntimeOS.cu"
-#include "RuntimeOS+DirSystem-gpu.cu"
-#include "RuntimeOS+FileSystem-gpu.cu"
+#include "RuntimeSentinel-gpu.cu"

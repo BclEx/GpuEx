@@ -126,9 +126,9 @@
   <ItemGroup>
     <ClInclude Include="..\System.net\Core\Bitvec.cu.h" />
     <ClInclude Include="..\System.net\Core\RC.cu.h" />
-    <ClInclude Include="..\System.net\Core\Sentinel.cu.h" />
     <ClInclude Include="..\System.net\Core\SysEx.cu.h" />
     <ClInclude Include="..\System.net\Core\VSystem.cu.h" />
+    <ClInclude Include="..\System.net\Core\VSystemSentinel.cu.h" />
     <ClInclude Include="..\System.net\Core\Core.cu.h" />
     <ClInclude Include="..\System.net\Core\IO\IO.VFile.cu.h" />
   </ItemGroup>
@@ -137,7 +137,6 @@
     <ClCompile Include="Program.cu" />
     <ClCompile Include="..\System.net\Core\SysEx.cu" />
     <ClCompile Include="..\System.net\Core\Bitvec.cu" />
-    <ClCompile Include="..\System.net\Core\Sentinel.cu" />
     <ClCompile Include="..\System.net\Core\SysEx+Random.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
@@ -147,13 +146,13 @@
     <ClCompile Include="..\System.net\Core\VSystem-map.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
+    <ClCompile Include="..\System.net\Core\VSystemSentinel.cpp" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="System.cu" />
     <CudaCompile Include="Program.cu" />
     <None Include="..\System.net\Core\SysEx.cu" />
     <None Include="..\System.net\Core\Bitvec.cu" />
-    <ClCompile Include="..\System.net\Core\Sentinel.cu" />
     <None Include="..\System.net\Core\SysEx+Random.cu" />
     <None Include="..\System.net\Core\IO\IO.JournalVFile.cu" />
     <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
@@ -163,6 +162,7 @@
     <None Include="..\System.net\Core\VSystem-map.cu" />
     <None Include="..\System.net\Core\VSystem-unix.cu" />
     <None Include="..\System.net\Core\VSystem-win.cu" />
+    <CudaCompile Include="..\System.net\Core\VSystemSentinel.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,7 +2,7 @@
 
 //#define VISUAL
 #include "..\System.net\Core\Core.cu.h"
-#include "..\System.net\Core\Sentinel.cu.h"
+#include "..\System.net\Core\VSystemSentinel.cu.h"
 #include <string.h>
 
 #pragma region TestSystem0
@@ -51,10 +51,9 @@ void GMain(cudaDeviceHeap &r) {
 #else
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
-Sentinel::Initialize();
+VSystemSentinel::Initialize();
 __testSystem(r);
-//getchar();
-Sentinel::Shutdown();
+VSystemSentinel::Shutdown();
 }
 
 #if __CUDACC__
@@ -78,12 +77,12 @@ int main(int argc, char **argv)
 	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
-	Sentinel::Initialize();
+	VSystemSentinel::Initialize();
 	__main(deviceHeap);
 	//Visual::Main();
 	//Visual::Dispose();
 
-	Sentinel::Shutdown();
+	VSystemSentinel::Shutdown();
 	cudaDeviceHeapDestroy(deviceHeap);
 
 	cudaDeviceReset();
