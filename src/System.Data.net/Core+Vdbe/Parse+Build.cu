@@ -718,7 +718,7 @@ begin_table_error:
 		if (data)
 			while (data[0])
 			{
-				h = (h << 8) + _tolower((*data) & 0xff);
+				h = (h << 8) + __tolower((*data) & 0xff);
 				data++;
 				if (h == (('c'<<24)+('h'<<16)+('a'<<8)+'r')) aff = AFF_TEXT; // CHAR
 				else if (h == (('c'<<24)+('l'<<16)+('o'<<8)+'b')) aff = AFF_TEXT; // CLOB

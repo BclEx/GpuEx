@@ -1,7 +1,10 @@
 #include <windows.h>
 #include <process.h>
 #include <assert.h>
-#include "RuntimeSentinel.h"
+#include "Runtime.h"
+
+#if OS_SENTINEL
+#pragma region OS_SENTINEL
 
 static RuntimeSentinelContext _ctx;
 
@@ -11,27 +14,27 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 	{
 	case 1: {
 		Messages::Stdio_fprintf *msg = (Messages::Stdio_fprintf *)data;
-		fprintf(msg->File, msg->Format);
+		msg->RC = fprintf(msg->File, msg->Format);
 		return true; }
 	case 2: {
 		Messages::Stdio_fopen *msg = (Messages::Stdio_fopen *)data;
-		fopen(msg->Filename, msg->Mode);
+		msg->RC = fopen(msg->Filename, msg->Mode);
 		return true; }
 	case 3: {
 		Messages::Stdio_fflush *msg = (Messages::Stdio_fflush *)data;
-		fflush(msg->File);
+		msg->RC = fflush(msg->File);
 		return true; }
 	case 4: {
 		Messages::Stdio_fclose *msg = (Messages::Stdio_fclose *)data;
-		fclose(msg->File);
+		msg->RC = fclose(msg->File);
 		return true; }
 	case 5: {
 		Messages::Stdio_fputc *msg = (Messages::Stdio_fputc *)data;
-		fputc(msg->Ch, msg->File);
+		msg->RC = fputc(msg->Ch, msg->File);
 		return true; }
 	case 6: {
 		Messages::Stdio_fputs *msg = (Messages::Stdio_fputs *)data;
-		fputs(msg->Str, msg->File);
+		msg->RC = fputs(msg->Str, msg->File);
 		return true; }
 	}
 	return false;
@@ -53,10 +56,11 @@ static unsigned int __stdcall SentinelThread(void *data)
 
 static HANDLE _thread;
 static RuntimeSentinelExecutor _baseExecutor;
+RuntimeSentinelMap *RuntimeSentinel::_map;
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 {
-#if _CPU
-	_ctx.Map = (RuntimeSentinelMap *)malloc(sizeof(*_ctx.Map));
+#ifndef _GPU
+	_ctx.Map = _map = (RuntimeSentinelMap *)malloc(sizeof(*_ctx.Map));
 #else
 	cudaErrorCheck(cudaHostAlloc(&_ctx.Map, sizeof(*_ctx.Map), cudaHostAllocPortable));
 #endif
@@ -73,14 +77,12 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 void RuntimeSentinel::Shutdown()
 {
 	CloseHandle(_thread);
-#if _CPU
+#ifndef _GPU
 	free(_ctx.Map);
 #else
 	cudaFreeHost(_ctx.Map);
 #endif
 }
-
-RuntimeSentinelMap *RuntimeSentinel::GetMap() { return _ctx.Map; }
 
 RuntimeSentinelExecutor *RuntimeSentinel::FindExecutor(const char *name)
 {
@@ -124,3 +126,6 @@ void RuntimeSentinel::UnregisterExecutor(RuntimeSentinelExecutor *exec)
 {
 	UnlinkExecutor(exec);
 }
+
+#pragma endregion
+#endif

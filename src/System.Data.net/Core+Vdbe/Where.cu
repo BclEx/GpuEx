@@ -889,7 +889,7 @@ findTerm_success:
 					// alphabetic range where case conversions will mess up the inequality.  To avoid this, make sure to also run the full
 					// LIKE on all candidate expressions by clearing the isComplete flag
 					if (c == 'A'-1) isComplete = false; // EV: R-64339-08207
-					c = _tolower(c);
+					c = __tolower(c);
 				}
 				*cRef = c + 1;
 			}

@@ -1053,7 +1053,7 @@ firstLast:
 			Tcl_SetResult(interp, argv[2], TCL_VOLATILE);
 			for (p = interp->result; *p != 0; p++) {
 				if (_isupper(*p)) {
-					*p = _tolower(*p);
+					*p = __tolower(*p);
 				}
 			}
 			return TCL_OK;
@@ -1069,7 +1069,7 @@ firstLast:
 			Tcl_SetResult(interp, argv[2], TCL_VOLATILE);
 			for (p = interp->result; *p != 0; p++) {
 				if (_islower(*p)) {
-					*p = _toupper(*p);
+					*p = __toupper(*p);
 				}
 			}
 			return TCL_OK;

@@ -142,7 +142,7 @@ namespace Core
 	__device__ void Callback::FuncDefInsert(FuncDefHash *hash, FuncDef *def)
 	{
 		int nameLength = _strlen(def->Name);
-		int h = (_tolower(def->Name[0]) + nameLength) % _lengthof(hash->data); // Hash value
+		int h = (__tolower(def->Name[0]) + nameLength) % _lengthof(hash->data); // Hash value
 		FuncDef *other = FunctionSearch(hash, h, def->Name, nameLength);
 		if (other)
 		{
@@ -163,7 +163,7 @@ namespace Core
 		_assert(args >= -2);
 		_assert(args >= -1 || !createFlag);
 		_assert(encode == TEXTENCODE_UTF8 || encode == TEXTENCODE_UTF16LE || encode == TEXTENCODE_UTF16BE);
-		int h = (_tolower(name[0]) + nameLength) % _lengthof(ctx->Funcs.data); // Hash value
+		int h = (__tolower(name[0]) + nameLength) % _lengthof(ctx->Funcs.data); // Hash value
 
 		// First search for a match amongst the application-defined functions.
 		FuncDef *best = nullptr; // Best match found so far

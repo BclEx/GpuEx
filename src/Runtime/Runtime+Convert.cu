@@ -448,7 +448,7 @@ __device__ static int Compare2pow63(const char *z, int incr)
 	return c;
 }
 
-__device__ int _atoi64(const char *z, int64 *out, int length, TEXTENCODE encode)
+__device__ int __atoi64(const char *z, int64 *out, int length, TEXTENCODE encode)
 {
 	_assert(encode == TEXTENCODE_UTF8 || encode == TEXTENCODE_UTF16LE || encode == TEXTENCODE_UTF16BE);
 	//	*out = 0.0; // Default return value, in case of an error

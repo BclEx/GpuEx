@@ -82,7 +82,7 @@ __device__ static int toi(int x)
 
 __device__ static int hextoi(const unsigned char *s)
 {
-	return (toi(_tolower(s[0])) << 4) | toi(_tolower(s[1]));
+	return (toi(__tolower(s[0])) << 4) | toi(__tolower(s[1]));
 }
 
 __device__ static int match_op(const unsigned char *re, const unsigned char *s, struct regex_info *info) {
@@ -123,7 +123,7 @@ __device__ static int match_op(const unsigned char *re, const unsigned char *s, 
 
 	default:
 		if (info->flags & REG_IGNORE_CASE)
-			FAILIF(_tolower(*re) != _tolower(*s), REG_NOMATCH);
+			FAILIF(__tolower(*re) != __tolower(*s), REG_NOMATCH);
 		else
 			FAILIF(*re != *s, REG_NOMATCH);
 		result++;
@@ -143,7 +143,7 @@ __device__ static int match_set(const char *re, int re_len, const char *s, struc
 		// Support character range
 		if (re[len] != '-' && re[len + 1] == '-' && re[len + 2] != ']' && re[len + 2] != '\0')
 		{
-			result = (info->flags && REG_IGNORE_CASE ? *s >= re[len] && *s <= re[len + 2] : _tolower(*s) >= _tolower(re[len]) && _tolower(*s) <= _tolower(re[len + 2]));
+			result = (info->flags && REG_IGNORE_CASE ? *s >= re[len] && *s <= re[len + 2] : __tolower(*s) >= __tolower(re[len]) && __tolower(*s) <= __tolower(re[len + 2]));
 			len += 3;
 		} 
 		else

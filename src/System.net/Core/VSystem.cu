@@ -307,7 +307,7 @@ parse_uri_out:
 	{
 		const char *z = UriParameter(filename, param);
 		int64 v;
-		return (z && _atoi64(z, &v, _strlen(z), TEXTENCODE_UTF8) == RC_OK ? v : dflt);
+		return (z && __atoi64(z, &v, _strlen(z), TEXTENCODE_UTF8) == RC_OK ? v : dflt);
 	}
 
 #pragma endregion

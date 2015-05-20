@@ -33,7 +33,6 @@
     <ClInclude Include="Runtime.h" />
     <ClInclude Include="RuntimeGL.h" />
     <ClInclude Include="RuntimeHost.h" />
-    <ClInclude Include="RuntimeSentinel.h" />
     <ClInclude Include="RuntimeTypes.h" />
     <ClInclude Include="VisualHost.h" />
   </ItemGroup>
@@ -59,9 +58,9 @@
     <ClCompile Include="Runtime+Mutex-unix.cu" />
     <ClCompile Include="Runtime+Mutex-win.cu" />
     <ClCompile Include="Runtime+Status.cu" />
-    <ClCompile Include="RuntimeSentinel.cu" />
-    <ClCompile Include="RuntimeSentinel-win.cu" />
-    <ClCompile Include="RuntimeSentinel-gpu.cu" />
+    <ClCompile Include="Runtime+Sentinel.cu" />
+    <ClCompile Include="Runtime+Sentinel-win.cu" />
+    <ClCompile Include="Runtime+Sentinel-gpu.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
@@ -81,9 +80,9 @@
     <None Include="Runtime+Mutex-unix.cu" />
     <None Include="Runtime+Mutex-win.cu" />
     <None Include="Runtime+Status.cu" />
-    <None Include="RuntimeSentinel.cu" />
-    <None Include="RuntimeSentinel-win.cu" />
-    <None Include="RuntimeSentinel-gpu.cu" />
+    <None Include="Runtime+Sentinel.cu" />
+    <None Include="Runtime+Sentinel-win.cu" />
+    <None Include="Runtime+Sentinel-gpu.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.cpp" />
@@ -96,7 +95,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -134,7 +133,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_xLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -152,7 +151,7 @@
       <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
     <PostBuildEvent>
-      <!--<Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)FallocHost.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>-->
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -164,8 +163,8 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_LC$(LC);_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LC$(LC);_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -186,7 +185,7 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)FallocHost.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

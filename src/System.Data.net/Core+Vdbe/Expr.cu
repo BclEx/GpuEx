@@ -418,7 +418,7 @@ namespace Core
 			{
 				// Wildcard of the form "?nnn".  Convert "nnn" to an integer and use it as the variable number
 				int64 i;
-				bool ok = !_atoi64(&z[1], &i, length-1, TEXTENCODE_UTF8);
+				bool ok = !__atoi64(&z[1], &i, length-1, TEXTENCODE_UTF8);
 				expr->ColumnId = x = (yVars)i;
 				ASSERTCOVERAGE(i == 0);
 				ASSERTCOVERAGE(i == 1);
@@ -1382,7 +1382,7 @@ no_mem:
 			const char *z = expr->u.Token;
 			_assert(z);
 			int64 value;
-			int c = _atoi64(z, &value, _strlen(z), TEXTENCODE_UTF8);
+			int c = __atoi64(z, &value, _strlen(z), TEXTENCODE_UTF8);
 			if (c == 0 || (c == 2 && negateFlag))
 			{
 				if (negateFlag) { value = (c == 2 ? SMALLEST_INT64 : -value); }

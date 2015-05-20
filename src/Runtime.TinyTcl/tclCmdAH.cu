@@ -745,7 +745,7 @@ __device__ int Tcl_FormatCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 			} else {
 				valSize = sizeof(int);
 			}
-			newPtr[-1] = _tolower(*format);
+			newPtr[-1] = __tolower(*format);
 			newPtr[-2] = 'l';
 			*newPtr = 0;
 		case 'd':
@@ -774,7 +774,7 @@ __device__ int Tcl_FormatCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 				valSize = sizeof(int);
 			break;
 		case 'F':
-			newPtr[-1] = _tolower(newPtr[-1]);
+			newPtr[-1] = __tolower(newPtr[-1]);
 		case 'e':
 		case 'E':
 		case 'f':

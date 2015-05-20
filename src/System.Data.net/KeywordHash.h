@@ -139,8 +139,8 @@ __device__ static int KeywordCode(const char *z, int n)
 {
 	int h, i;
 	if( n<2 ) return TK_ID;
-	h = ((_tolower(z[0])*4) ^
-		(_tolower(z[n-1])*3) ^
+	h = ((__tolower(z[0])*4) ^
+		(__tolower(z[n-1])*3) ^
 		n) % 127;
 	for(i=((int)aHash[h])-1; i>=0; i=((int)aNext[i])-1){
 		if( aLen[i]==n && _strncmp(&zText[aOffset[i]],z,n)==0 ){

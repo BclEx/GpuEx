@@ -1,7 +1,6 @@
 #ifndef __RUNTIME_H__
 #define __RUNTIME_H__
 #include "RuntimeTypes.h"
-
 //#define _CPU
 
 //////////////////////
@@ -36,18 +35,22 @@
 #define OS_WIN 0
 #define OS_UNIX 0
 #define OS_GPU 1
+#define OS_SENTINEL 1
 #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #define OS_WIN 1
 #define OS_UNIX 0
 #define OS_GPU 0
+#define OS_SENTINEL 1
 #else
 #define OS_WIN 0
 #define OS_UNIX 1
 #define OS_GPU 0
+#define OS_SENTINEL 1
 #endif
 #else
 #define OS_UNIX 0
 #define OS_GPU 0
+#define OS_SENTINEL 1
 #endif
 
 #pragma endregion
@@ -109,15 +112,15 @@ void *__wsdfind(void *k, int l);
 //{
 //	if (*(z++) >= 0xc0) while ((*z & 0xc0) == 0x80) { z++; }
 //}
-__device__ unsigned int _utf8read(const unsigned char **z);
-__device__ int _utf8charlength(const char *z, int bytes);
+extern "C" __device__ unsigned int _utf8read(const unsigned char **z);
+extern "C" __device__ int _utf8charlength(const char *z, int bytes);
 #if _DEBUG
-__device__ int _utf8to8(unsigned char *z);
+extern "C" __device__ int _utf8to8(unsigned char *z);
 #endif
 #ifndef OMIT_UTF16
-__device__ int _utf16bytelength(const void *z, int chars);
+extern "C" __device__ int _utf16bytelength(const void *z, int chars);
 #ifdef _TEST
-__device__ void _runtime_utfselftest();
+extern "C" __device__ void _runtime_utfselftest();
 #endif
 #endif
 
@@ -163,33 +166,28 @@ __device__ __forceinline void operator&=(TEXTENCODE &a, int b) { a = (TEXTENCODE
 	_convert_putvarint32_((A),(B)))
 
 #pragma region Varint
-__device__ int _convert_putvarint(unsigned char *p, uint64 v);
-__device__ int _convert_putvarint32_(unsigned char *p, uint32 v);
-__device__ uint8 _convert_getvarint(const unsigned char *p, uint64 *v);
-__device__ uint8 _convert_getvarint32_(const unsigned char *p, uint32 *v);
-__device__ int _convert_getvarintLength(uint64 v);
+extern "C" __device__ int _convert_putvarint(unsigned char *p, uint64 v);
+extern "C" __device__ int _convert_putvarint32_(unsigned char *p, uint32 v);
+extern "C" __device__ uint8 _convert_getvarint(const unsigned char *p, uint64 *v);
+extern "C" __device__ uint8 _convert_getvarint32_(const unsigned char *p, uint32 *v);
+extern "C" __device__ int _convert_getvarintLength(uint64 v);
 #pragma endregion
 #pragma region AtoX
-__device__ bool _atof(const char *z, double *out, int length, TEXTENCODE encode);
-__device__ int _atoi64(const char *z, int64 *out, int length, TEXTENCODE encode);
-__device__ bool _atoi(const char *z, int *out);
-__device__ inline int _atoi(const char *z)
-{
-	int out = 0;
-	if (z) _atoi(z, &out);
-	return out;
-}
+extern "C" __device__ bool _atof(const char *z, double *out, int length, TEXTENCODE encode);
+extern "C" __device__ int __atoi64(const char *z, int64 *out, int length, TEXTENCODE encode);
+extern "C" __device__ bool _atoi(const char *z, int *out);
+__device__ __forceinline int _atoi(const char *z) { int out = 0; if (z) _atoi(z, &out); return out; }
 #pragma endregion
 
-__device__ inline uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }
-__device__ inline uint16 _convert_get2(const uint8 *p) { return (p[0]<<8) | p[1]; }
-__device__ inline void _convert_put2(unsigned char *p, uint32 v)
+extern "C" __device__ inline uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }
+extern "C" __device__ inline uint16 _convert_get2(const uint8 *p) { return (p[0]<<8) | p[1]; }
+extern "C" __device__ inline void _convert_put2(unsigned char *p, uint32 v)
 {
 	p[0] = (uint8)(v>>8);
 	p[1] = (uint8)v;
 }
-__device__ inline uint32 _convert_get4(const uint8 *p) { return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3]; }
-__device__ inline void _convert_put4(unsigned char *p, uint32 v)
+extern "C" __device__ inline uint32 _convert_get4(const uint8 *p) { return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3]; }
+extern "C" __device__ inline void _convert_put4(unsigned char *p, uint32 v)
 {
 	p[0] = (uint8)(v>>24);
 	p[1] = (uint8)(v>>16);
@@ -198,8 +196,8 @@ __device__ inline void _convert_put4(unsigned char *p, uint32 v)
 }
 
 #pragma region From: Pragma_c
-__device__ uint8 __atolevel(const char *z, int omitFull, uint8 dflt);
-__device__ bool __atob(const char *z, uint8 dflt);
+extern "C" __device__ uint8 __atolevel(const char *z, int omitFull, uint8 dflt);
+extern "C" __device__ bool __atob(const char *z, uint8 dflt);
 #pragma endregion
 
 #pragma endregion
@@ -207,13 +205,6 @@ __device__ bool __atob(const char *z, uint8 dflt);
 //////////////////////
 // HASH
 #pragma region HASH
-
-//#define HASH_FIRST(H) ((H)->First)
-//#define HASH_NEXT(E) ((E)->Next)
-//#define HASH_DATA(E) ((E)->Data)
-//#define HASH_Key(E)    ((E)->Key) // NOT USED
-//#define HASH_Keysize(E) ((E)->KeyLength)  // NOT USED
-//#define HASH_Count(H)  ((H)->Count) // NOT USED
 
 struct HashElem
 {
@@ -246,11 +237,11 @@ struct Hash
 // MATH
 #pragma region MATH
 
-__device__ bool _math_add(int64 *aRef, int64 b);
-__device__ bool _math_sub(int64 *aRef, int64 b);
-__device__ bool _math_mul(int64 *aRef, int64 b);
+extern "C" __device__ bool _math_add(int64 *aRef, int64 b);
+extern "C" __device__ bool _math_sub(int64 *aRef, int64 b);
+extern "C" __device__ bool _math_mul(int64 *aRef, int64 b);
 //__device__ int _math_abs(int x);
-__device__ inline int _math_abs(int x)
+extern "C" __device__ inline int _math_abs(int x)
 {
 	if (x >= 0) return x;
 	if (x == (int)0x8000000) return 0x7fffffff;
@@ -317,16 +308,16 @@ typedef _mutex_obj *MutexEx;
 #define MUTEX_LOGIC(X)
 #else
 #ifdef _DEBUG
-__device__ extern bool _mutex_held(MutexEx p);
-__device__ extern bool _mutex_notheld(MutexEx p);
+extern "C" __device__ bool _mutex_held(MutexEx p);
+extern "C" __device__ bool _mutex_notheld(MutexEx p);
 #endif
-__device__ extern int _mutex_init();
-__device__ extern void _mutex_shutdown();
-__device__ extern MutexEx _mutex_alloc(MUTEX id);
-__device__ extern void _mutex_free(MutexEx p);
-__device__ extern void _mutex_enter(MutexEx p);
-__device__ extern bool _mutex_tryenter(MutexEx p);
-__device__ extern void _mutex_leave(MutexEx p);
+extern "C" __device__ int _mutex_init();
+extern "C" __device__ void _mutex_shutdown();
+extern "C" __device__ MutexEx _mutex_alloc(MUTEX id);
+extern "C" __device__ void _mutex_free(MutexEx p);
+extern "C" __device__ void _mutex_enter(MutexEx p);
+extern "C" __device__ bool _mutex_tryenter(MutexEx p);
+extern "C" __device__ void _mutex_leave(MutexEx p);
 #define MUTEX_LOGIC(X) X
 #endif
 
@@ -350,10 +341,10 @@ enum STATUS : unsigned char
 	STATUS_MALLOC_COUNT = 9,
 };
 
-__device__ extern int _status_value(STATUS op);
-__device__ extern void _status_add(STATUS op, int n);
-__device__ extern void _status_set(STATUS op, int x);
-__device__ extern bool _status(STATUS op, int *current, int *highwater, bool resetFlag);
+extern "C" __device__ int _status_value(STATUS op);
+extern "C" __device__ void _status_add(STATUS op, int n);
+extern "C" __device__ void _status_set(STATUS op, int x);
+extern "C" __device__ bool _status(STATUS op, int *current, int *highwater, bool resetFlag);
 
 #pragma endregion
 
@@ -419,9 +410,7 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 // FUNC
 #pragma region FUNC
 
-#undef _toupper
-#undef _tolower
-#define _toupper(x) ((x)&~(__curtCtypeMap[(unsigned char)(x)]&0x20))
+#define __toupper(x) ((x)&~(__curtCtypeMap[(unsigned char)(x)]&0x20))
 #define _isupper(x) (((x)&~(__curtCtypeMap[(unsigned char)(x)]&0x20))==x)
 #define _isspace(x) ((__curtCtypeMap[(unsigned char)(x)]&0x01)!=0)
 #define _isalnum(x) ((__curtCtypeMap[(unsigned char)(x)]&0x06)!=0)
@@ -429,7 +418,7 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #define _isdigit(x) ((__curtCtypeMap[(unsigned char)(x)]&0x04)!=0)
 #define _isxdigit(x) ((__curtCtypeMap[(unsigned char)(x)]&0x08)!=0)
 #define _isidchar(x) ((__curtCtypeMap[(unsigned char)(x)]&0x46)!=0)
-#define _tolower(x) (__curtUpperToLower[(unsigned char)(x)])
+#define __tolower(x) (__curtUpperToLower[(unsigned char)(x)])
 #define _islower(x) (__curtUpperToLower[(unsigned char)(x)]==x)
 #define _ispoweroftwo(x) (((x)&((x)-1))==0)
 __device__ inline static bool _isalpha2(unsigned char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
@@ -444,7 +433,7 @@ template <typename TLength, typename T, size_t size> struct array_t3 { TLength l
 #define _lengthof(symbol) (sizeof(symbol) / sizeof(symbol[0]))
 
 // strcpy
-template <typename T> __device__ __forceinline void _strcpy(const T *dest, const T *src)
+template <typename T> __device__ __forceinline void _strcpy(const T *__restrict__ dest, const T *__restrict__ src)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)dest;
@@ -453,7 +442,7 @@ template <typename T> __device__ __forceinline void _strcpy(const T *dest, const
 }
 
 // strncpy
-template <typename T> __device__ __forceinline void _strncpy(T *dest, const T *src, size_t length)
+template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, const T *__restrict__ src, size_t length)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)dest;
@@ -464,7 +453,7 @@ template <typename T> __device__ __forceinline void _strncpy(T *dest, const T *s
 	for (; i < length; ++i, ++a, ++b)
 		*a = 0;
 }
-template <typename T> __device__ __forceinline void _strncpy(T *dest, T *src, size_t length)
+template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)dest;
@@ -487,7 +476,7 @@ template <typename T> __device__ __forceinline const T *_strchr(const T *src, ch
 }
 
 // strstr
-template <typename T> __device__ __forceinline const T *_strstr(const T *src, const T *str)
+template <typename T> __device__ __forceinline const T *_strstr(const T *__restrict__ src, const T *__restrict__ str)
 {
 	return nullptr;
 	//http://articles.leetcode.com/2010/10/implement-strstr-to-find-substring-in.html
@@ -499,7 +488,7 @@ template <typename T> __device__ __forceinline const T *_strstr(const T *src, co
 }
 
 // strcmp
-template <typename T> __device__ __forceinline int _strcmp(const T *left, const T *right)
+template <typename T> __device__ __forceinline int _strcmp(const T *__restrict__ left, const T *__restrict__ right)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)left;
@@ -510,7 +499,7 @@ template <typename T> __device__ __forceinline int _strcmp(const T *left, const 
 
 // strncmp
 #undef _fstrncmp
-template <typename T> __device__ __forceinline int _strncmp(const T *left, const T *right, int n)
+template <typename T> __device__ __forceinline int _strncmp(const T *__restrict__ left, const T *__restrict__ right, int n)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)left;
@@ -518,7 +507,7 @@ template <typename T> __device__ __forceinline int _strncmp(const T *left, const
 	while (n-- > 0 && *a != 0 && __curtUpperToLower[*a] == __curtUpperToLower[*b]) { a++; b++; }
 	return (n < 0 ? 0 : __curtUpperToLower[*a] - __curtUpperToLower[*b]);
 }
-#define _fstrncmp(x, y) (_tolower(*(unsigned char *)(x))==_tolower(*(unsigned char *)(y))&&!_strcmp((x)+1,(y)+1))
+#define _fstrncmp(x, y) (__tolower(*(unsigned char *)(x))==__tolower(*(unsigned char *)(y))&&!_strcmp((x)+1,(y)+1))
 
 // memcpy
 #if __CUDACC__
@@ -527,7 +516,7 @@ template <typename T> __device__ __forceinline int _strncmp(const T *left, const
 #define _memcpy(dest, src, length) memcpy(dest, src, length)
 #endif
 #if 0
-template <typename T> __device__ __forceinline void _memcpy(T *dest, const T *src, size_t length)
+template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest, const T *__restrict__ src, size_t length)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)dest;
@@ -535,7 +524,7 @@ template <typename T> __device__ __forceinline void _memcpy(T *dest, const T *sr
 	for (size_t i = 0; i < length; ++i, ++a, ++b)
 		*a = *b;
 }
-template <typename T> __device__ __forceinline void _memcpy(T *dest, T *src, size_t length)
+template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)dest;
@@ -572,7 +561,7 @@ template <typename T> __device__ __forceinline const T *_memchr(const T *src, ch
 }
 
 // memcmp
-template <typename T, typename Y> __device__ __forceinline int _memcmp(T *left, Y *right, size_t length)
+template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__restrict__ left, Y *__restrict__ right, size_t length)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)left;
@@ -582,7 +571,7 @@ template <typename T, typename Y> __device__ __forceinline int _memcmp(T *left, 
 }
 
 // memmove
-template <typename T, typename Y> __device__ __forceinline void _memmove(T *left, Y *right, size_t length)
+template <typename T, typename Y> __device__ __forceinline void _memmove(T *__restrict__ left, Y *__restrict__ right, size_t length)
 {
 	register unsigned char *a, *b;
 	a = (unsigned char *)left;
@@ -670,9 +659,9 @@ enum MEMTYPE : unsigned char
 };
 
 #if MEMDEBUG
-__device__ inline static void _memdbg_settype(void *p, MEMTYPE memType) { }
-__device__ inline static bool _memdbg_hastype(void *p, MEMTYPE memType) { return true; }
-__device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return true; }
+extern "C" __device__ inline static void _memdbg_settype(void *p, MEMTYPE memType) { }
+extern "C" __device__ inline static bool _memdbg_hastype(void *p, MEMTYPE memType) { return true; }
+extern "C" __device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return true; }
 #else
 #define _memdbg_settype(X,Y) // no-op
 #define _memdbg_hastype(X,Y) true
@@ -681,44 +670,44 @@ __device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return
 
 // BenignMallocHooks
 #ifndef OMIT_BUILTIN_TEST
-__device__ void _benignalloc_hook(void (*benignBegin)(), void (*benignEnd)());
-__device__ void _benignalloc_begin();
-__device__ void _benignalloc_end();
+extern "C" __device__ void _benignalloc_hook(void (*benignBegin)(), void (*benignEnd)());
+extern "C" __device__ void _benignalloc_begin();
+extern "C" __device__ void _benignalloc_end();
 #else
 #define _benignalloc_begin()
 #define _benignalloc_end()
 #endif
 //
-__device__ void *__allocsystem_alloc(size_t size);
-__device__ void __allocsystem_free(void *prior);
-__device__ void *__allocsystem_realloc(void *prior, size_t size);
-__device__ size_t __allocsystem_size(void *prior);
-__device__ size_t __allocsystem_roundup(size_t size);
-__device__ int __allocsystem_init(void *p);
-__device__ void __allocsystem_shutdown(void *p);
+extern "C" __device__ void *__allocsystem_alloc(size_t size);
+extern "C" __device__ void __allocsystem_free(void *prior);
+extern "C" __device__ void *__allocsystem_realloc(void *prior, size_t size);
+extern "C" __device__ size_t __allocsystem_size(void *prior);
+extern "C" __device__ size_t __allocsystem_roundup(size_t size);
+extern "C" __device__ int __allocsystem_init(void *p);
+extern "C" __device__ void __allocsystem_shutdown(void *p);
 //
 //__device__ void __alloc_setmemoryalarm(int (*callback)(void*,long long,int), void *arg, long long threshold);
 //__device__ long long __alloc_softheaplimit64(long long n);
 //__device__ void __alloc_softheaplimit(int n);
-__device__ int _alloc_init();
-__device__ bool _alloc_heapnearlyfull();
-__device__ void _alloc_shutdown();
+extern "C" __device__ int _alloc_init();
+extern "C" __device__ bool _alloc_heapnearlyfull();
+extern "C" __device__ void _alloc_shutdown();
 //__device__ long long __alloc_memoryused();
 //__device__ long long __alloc_memoryhighwater(bool resetFlag);
-__device__ void *_alloc(size_t size);
-__device__ void *_scratchalloc(size_t size);
-__device__ void _scratchfree(void *p);
-__device__ size_t _allocsize(void *p);
-__device__ size_t _tagallocsize(TagBase *tag, void *p);
-__device__ void _free(void *p);
-__device__ void _tagfree(TagBase *tag, void *p);
-__device__ void *_realloc(void *old, size_t newSize);
-__device__ void *_allocZero(size_t size);
-__device__ void *_tagallocZero(TagBase *tag, size_t size);
-__device__ void *_tagalloc(TagBase *tag, size_t size);
-__device__ void *_tagrealloc(TagBase *tag, void *old, size_t size);
+extern "C" __device__ void *_alloc(size_t size);
+extern "C" __device__ void *_scratchalloc(size_t size);
+extern "C" __device__ void _scratchfree(void *p);
+extern "C" __device__ size_t _allocsize(void *p);
+extern "C" __device__ size_t _tagallocsize(TagBase *tag, void *p);
+extern "C" __device__ void _free(void *p);
+extern "C" __device__ void _tagfree(TagBase *tag, void *p);
+extern "C" __device__ void *_realloc(void *old, size_t newSize);
+extern "C" __device__ void *_allocZero(size_t size);
+extern "C" __device__ void *_tagallocZero(TagBase *tag, size_t size);
+extern "C" __device__ void *_tagalloc(TagBase *tag, size_t size);
+extern "C" __device__ void *_tagrealloc(TagBase *tag, void *old, size_t size);
 //__device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize);
-__device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
+extern "C" __device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
 {
 	void *p = _tagrealloc(tag, old, newSize);
 	if (!p) _tagfree(tag, old);
@@ -726,7 +715,7 @@ __device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size
 }
 
 //__device__ char *_tagstrdup(TagBase *tag, const char *z);
-__device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
+extern "C" __device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
 {
 	if (z == nullptr) return nullptr;
 	size_t n = _strlen(z) + 1;
@@ -736,7 +725,7 @@ __device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
 	return newZ;
 }
 //__device__ char *_tagstrndup(TagBase *tag, const char *z, int n);
-__device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n)
+extern "C" __device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n)
 {
 	if (z == nullptr) return nullptr;
 	_assert((n & 0x7fffffff) == n);
@@ -764,6 +753,150 @@ typedef void (*Destructor_t)(void *);
 #define DESTRUCTOR_TRANSIENT ((Destructor_t)-1)
 #define DESTRUCTOR_DYNAMIC ((Destructor_t)_allocsize)
 
+#pragma endregion
+
+//////////////////////
+// SENTINEL
+#pragma region SENTINEL
+#if OS_SENTINEL
+
+struct RuntimeSentinelMessage
+{
+	char OP;
+	void (*Prepare)(void*,char*,int);
+	__device__ RuntimeSentinelMessage(char op, void (*prepare)(void*,char*,int))
+		: OP(op), Prepare(prepare) { }
+public:
+};
+#define RUNTIMESENTINELPREPARE(P) ((void (*)(void*,char*,int))&P)
+
+typedef struct
+{
+	volatile int Status;
+	int Length;
+	char Data[1024];
+} RuntimeSentinelCommand;
+
+typedef struct
+{
+	volatile unsigned int AddId;
+	volatile unsigned int RunId;
+	RuntimeSentinelCommand Commands[1];
+} RuntimeSentinelMap;
+
+typedef struct RuntimeSentinelExecutor
+{
+	RuntimeSentinelExecutor *Next;
+	const char *Name;
+	bool (*Executor)(void*,RuntimeSentinelMessage*,int);
+	void *Tag;
+} RuntimeSentinelExecutor;
+#define RUNTIMESENTINELEXECUTOR(E) ((bool (*)(void*,RuntimeSentinelMessage*,int))&E)
+
+typedef struct RuntimeSentinelContext
+{
+	RuntimeSentinelMap *Map;
+	RuntimeSentinelExecutor *List;
+} RuntimeSentinelContext;
+
+struct RuntimeSentinel
+{
+public:
+	__device__ static RuntimeSentinelMap *_map;
+public:
+	static void Initialize(RuntimeSentinelExecutor *executor = nullptr);
+	static void Shutdown();
+	__device__ static void SetDeviceMap(RuntimeSentinelMap *map);
+	__device__ static RuntimeSentinelMap *GetDeviceMap();
+	//
+	static RuntimeSentinelExecutor *FindExecutor(const char *name);
+	static void RegisterExecutor(RuntimeSentinelExecutor *exec, bool _default = false);
+	static void UnregisterExecutor(RuntimeSentinelExecutor *exec);
+	//
+	__device__ static void Send(void *msg, int msgLength);
+};
+
+namespace Messages
+{
+	struct Stdio_fprintf
+	{
+		__device__ inline static void Prepare(Stdio_fprintf *t, char *data, int length)
+		{
+			int formatLength = (t->Format ? _strlen(t->Format) + 1 : 0);
+			char *format = (char *)(data += _ROUND8(sizeof(*t)));
+			_memcpy(format, t->Format, formatLength);
+			t->Format = format;
+		}
+		RuntimeSentinelMessage Base;
+		FILE *File; const char *Format;
+		__device__ Stdio_fprintf(FILE *file, const char *format)
+			: Base(1, RUNTIMESENTINELPREPARE(Prepare)), File(file), Format(format) { RuntimeSentinel::Send(this, sizeof(Stdio_fprintf)); }
+		int RC; 
+	};
+
+	struct Stdio_fopen
+	{
+		__device__ inline static void Prepare(Stdio_fopen *t, char *data, int length)
+		{
+			int filenameLength = (t->Filename ? _strlen(t->Filename) + 1 : 0);
+			char *filename = (char *)(data += _ROUND8(sizeof(*t)));
+			_memcpy(filename, t->Filename, filenameLength);
+			t->Filename = filename;
+		}
+		RuntimeSentinelMessage Base;
+		const char *Filename; const char *Mode;
+		__device__ Stdio_fopen(const char *filename, const char *mode)
+			: Base(2, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Mode(mode) { 
+				RuntimeSentinel::Send(this, sizeof(Stdio_fopen));
+		}
+		FILE *RC; 
+	};
+
+	struct Stdio_fflush
+	{
+		RuntimeSentinelMessage Base;
+		FILE *File;
+		__device__ Stdio_fflush(FILE *file)
+			: Base(3, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fflush)); }
+		int RC; 
+	};
+
+	struct Stdio_fclose
+	{
+		RuntimeSentinelMessage Base;
+		FILE *File;
+		__device__ Stdio_fclose(FILE *file)
+			: Base(4, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fclose)); }
+		int RC; 
+	};
+
+	struct Stdio_fputc
+	{
+		RuntimeSentinelMessage Base;
+		int Ch; FILE *File;
+		__device__ Stdio_fputc(int ch, FILE *file)
+			: Base(5, nullptr), Ch(ch), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputc)); }
+		int RC; 
+	};
+
+	struct Stdio_fputs
+	{
+		__device__ inline static void Prepare(Stdio_fputs *t, char *data, int length)
+		{
+			int strLength = (t->Str ? _strlen(t->Str) + 1 : 0);
+			char *str = (char *)(data += _ROUND8(sizeof(*t)));
+			_memcpy(str, t->Str, strLength);
+			t->Str = str;
+		}
+		RuntimeSentinelMessage Base;
+		const char *Str; FILE *File;
+		__device__ Stdio_fputs(const char *str, FILE *file)
+			: Base(6, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputs)); }
+		int RC; 
+	};
+}
+
+#endif
 #pragma endregion
 
 //////////////////////
@@ -819,7 +952,7 @@ public:
 // SNPRINTF
 #pragma region SNPRINTF
 
-__device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, va_list *args);
+extern "C" __device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, va_list *args);
 #if __CUDACC__
 __device__ __forceinline static char *__snprintf(const char *buf, size_t bufLen, const char *fmt) { va_list args; va_start(args); char *z = __vsnprintf(buf, bufLen, fmt, &args); va_end(args); return z; }
 template <typename T1> __device__ __forceinline static char *__snprintf(const char *buf, size_t bufLen, const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); char *z = __vsnprintf(buf, bufLen, fmt, &args); va_end(args); return z; }
@@ -839,7 +972,7 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE> __device__ __forceinline static char *__snprintf(const char *buf, size_t bufLen, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE) { va_listE<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA, argB, argC, argD, argE); char *z = __vsnprintf(buf, bufLen, fmt, &args); va_end(args); return z; }
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE, typename TF> __device__ __forceinline static char *__snprintf(const char *buf, size_t bufLen, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE, TF argF) { va_listF<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE,TF> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA, argB, argC, argD, argE, argF); char *z = __vsnprintf(buf, bufLen, fmt, &args); va_end(args); return z; }
 #else
-__device__ inline static char *__snprintf(const char *buf, size_t bufLen, const char *fmt, ...)
+extern "C" __device__ inline static char *__snprintf(const char *buf, size_t bufLen, const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -868,14 +1001,14 @@ extern __constant__ FILE _stderr_file;
 #define stderr &_stderr_file
 #endif
 
-#if 0
-#define _fprintf(f, ...) printf(__VA_ARGS__)
-_device_ inline void _fprintf_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(f, v); RuntimeSentinel::Send(&msg, sizeof(msg)); }
-_device_ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fprintf msg(f, v); RuntimeSentinel::Send(&msg, sizeof(msg)); }
-_device_ inline void _fflush(FILE *f) fflush(f) { Messages::Stdio_fflush msg(f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
-_device_ inline void _fclose(FILE *f) fclose(f) { Messages::Stdio_fclose msg(f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
-_device_ inline void _fputc(int c, FILE *f) fputc(c, f) { Messages::Stdio_fputc msg(c, f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
-_device_ inline void _fputs(const char *s, FILE *f) fputs(s, f) { Messages::Stdio_fputs msg(s, f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
+#if 1 && OS_SENTINEL
+#define _fprintf(f, ...) _fprintf_(f, _mprintf("%s", __VA_ARGS__))
+extern "C" __device__ inline int _fprintf_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(f, v); return msg.RC; }
+extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }
+extern "C" __device__ inline int _fflush(FILE *f) { Messages::Stdio_fflush msg(f); return msg.RC; }
+extern "C" __device__ inline int _fclose(FILE *f) { Messages::Stdio_fclose msg(f); return msg.RC; }
+extern "C" __device__ inline int _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(c, f); return msg.RC; }
+extern "C" __device__ inline int _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(s, f); return msg.RC; }
 #else
 #if __CUDACC__
 #define _fprintf(f, ...) printf(__VA_ARGS__)
@@ -900,8 +1033,8 @@ _device_ inline void _fputs(const char *s, FILE *f) fputs(s, f) { Messages::Stdi
 // MPRINTF
 #pragma region MPRINTF
 
-__device__ char *_vmprintf(const char *fmt, va_list *args);
-__device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args);
+extern "C" __device__ char *_vmprintf(const char *fmt, va_list *args);
+extern "C" __device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args);
 #if __CUDACC__
 __device__ __forceinline char *_mprintf(const char *fmt) { va_list args; va_start(args); char *z = _vmprintf(fmt, &args); va_end(args); return z; }
 template <typename T1> __device__ __forceinline char *_mprintf(const char *fmt, T1 arg1) { va_list1<T1> args; va_start(args, arg1); char *z = _vmprintf(fmt, &args); va_end(args); return z; }
@@ -951,7 +1084,7 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline static void _mtagassignf(char **src, TagBase *tag, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); char *z = _vmtagprintf(tag, fmt, &args); va_end(args); _tagfree(tag, *src); *src = z; }
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline static void _mtagassignf(char **src, TagBase *tag, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); char *z = _vmtagprintf(tag, fmt, &args); va_end(args); _tagfree(tag, *src); *src = z; }
 #else
-__device__ inline static char *_mprintf(const char *fmt, ...)
+extern "C" __device__ inline static char *_mprintf(const char *fmt, ...)
 {
 	//if (!RuntimeInitialize()) return nullptr;
 	va_list args;
@@ -961,7 +1094,7 @@ __device__ inline static char *_mprintf(const char *fmt, ...)
 	return z;
 }
 //
-__device__ inline static char *_mtagprintf(TagBase *tag, const char *fmt, ...)
+extern "C" __device__ inline static char *_mtagprintf(TagBase *tag, const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -970,7 +1103,7 @@ __device__ inline static char *_mtagprintf(TagBase *tag, const char *fmt, ...)
 	return z;
 }
 //
-__device__ inline static char *_mtagappendf(TagBase *tag, char *src, const char *fmt, ...)
+extern "C" __device__ inline static char *_mtagappendf(TagBase *tag, char *src, const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -979,7 +1112,7 @@ __device__ inline static char *_mtagappendf(TagBase *tag, char *src, const char 
 	_tagfree(tag, src);
 	return z;
 }
-__device__ inline static void _mtagassignf(char **src, TagBase *tag, const char *fmt, ...)
+extern "C" __device__ inline static void _mtagassignf(char **src, TagBase *tag, const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);

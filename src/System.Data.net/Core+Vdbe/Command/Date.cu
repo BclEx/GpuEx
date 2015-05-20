@@ -378,7 +378,7 @@ zulu_time:
 		char *z, buf[30];
 		z = buf;
 		for (n = 0; n < _lengthof(buf)-1 && mod[n]; n++)
-			z[n] = (char)_tolower((uint8)mod[n]);
+			z[n] = (char)__tolower((uint8)mod[n]);
 		z[n] = 0;
 		switch (z[0])
 		{

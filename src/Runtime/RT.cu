@@ -1,8 +1,6 @@
-#define __EMBED__ 1
-#include "RuntimeSentinel.cu"
-//#include "Regex.1\Regex.1.cu"
-#include "Regex.cu"
 #include "Runtime.cu"
+#include "Runtime+Sentinel.cu"
+#include "Regex.cu"
 #include "Runtime+Alloc.cu"
 #include "Runtime+Convert.cu"
 #include "Runtime+Hash.cu"
@@ -13,4 +11,4 @@
 #include "Runtime+Mutex-gpu.cu"
 #include "Runtime+Mutex-noop.cu"
 #include "Runtime+Status.cu"
-#include "RuntimeSentinel-gpu.cu"
+#include "Runtime+Sentinel-gpu.cu"

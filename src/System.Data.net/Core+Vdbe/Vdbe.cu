@@ -93,7 +93,7 @@ namespace Core
 			TEXTENCODE encode = rec->Encode;
 			if ((rec->Flags & MEM_Str) == 0) return;
 			if (!_atof(rec->Z, &r, rec->N, encode)) return;
-			if (!_atoi64(rec->Z, &i, rec->N, encode))
+			if (!__atoi64(rec->Z, &i, rec->N, encode))
 			{
 				rec->u.I = i;
 				rec->Flags |= MEM_Int;

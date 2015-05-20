@@ -2,7 +2,6 @@
 #ifndef _LIB
 
 #include "RuntimeHost.h"
-#include "RuntimeSentinel.h"
 #include <stdio.h>
 
 #include "..\Runtime.Tests\TestRuntime.cu"

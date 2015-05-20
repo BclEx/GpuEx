@@ -96,14 +96,14 @@ __global__ static void runtime6(void *r)
 __global__ static void runtime7(void *r)
 {
 	_runtimeSetHeap(r);
-	char a0 = _toupper('a'); char a0n = _toupper('A'); _assert(a0 == 'A' || a0n == 'A');
+	char a0 = __toupper('a'); char a0n = __toupper('A'); _assert(a0 == 'A' || a0n == 'A');
 	bool b0 = _isupper('a'); bool b0n = _isupper('A'); _assert(!b0 && b0n);
 	bool a1 = _isspace('a'); bool a1n = _isspace(' '); _assert(!a1 && a1n);
 	bool a2 = _isalnum('a'); bool a2n = _isalnum('1'); _assert(a2 && a2n);
 	bool a3 = _isalpha('a'); bool a3n = _isalpha('A'); _assert(a3 && a3n);
 	bool a4 = _isdigit('a'); bool a4n = _isdigit('1'); _assert(!a4 && a4n);
 	bool a5 = _isxdigit('a'); bool a5n = _isxdigit('A'); _assert(a5 && a5n);
-	char a6 = _tolower('a'); char a6n = _tolower('A'); _assert(a6 == 'a' && a6n == 'a');
+	char a6 = __tolower('a'); char a6n = __tolower('A'); _assert(a6 == 'a' && a6n == 'a');
 	bool b6 = _islower('a'); bool b6n = _islower('A'); _assert(b6 && !b6n);
 	bool a7 = _ispoweroftwo(2); bool a7n = _ispoweroftwo(3); _assert(a7 && !a7n);
 	bool a8 = _isalpha2('a'); bool a8n = _isalpha2('A'); _assert(a8 && a8n);

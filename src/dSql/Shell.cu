@@ -66,7 +66,7 @@ extern int isatty(int); // Make sure isatty() has a prototype.
 // ctype macros that work with signed characters
 #define IsSpace(X)  _isspace((unsigned char)X)
 #define IsDigit(X)  _isdigit((unsigned char)X)
-#define ToLower(X)  (char)_tolower((unsigned char)X)
+#define ToLower(X)  (char)__tolower((unsigned char)X)
 #pragma endregion
 
 #pragma region TIMER

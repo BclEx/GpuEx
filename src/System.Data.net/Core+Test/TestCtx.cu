@@ -261,7 +261,7 @@ __device__ static SqlFunc *FindSqlFunc(TestCtx *tctx, const char *name)
 	SqlFunc *newFunc = (SqlFunc *)_alloc(sizeof(*newFunc) + _strlen(name) + 1);
 	newFunc->Name = (char *)&newFunc[1];
 	int i;
-	for (i = 0; name[i]; i++) { newFunc->Name[i] = _tolower(name[i]); }
+	for (i = 0; name[i]; i++) { newFunc->Name[i] = __tolower(name[i]); }
 	newFunc->Name[i] = 0;
 	for (SqlFunc *p = tctx->Funcs; p; p = p->Next)
 	{ 

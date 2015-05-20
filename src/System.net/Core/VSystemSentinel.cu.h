@@ -1,5 +1,4 @@
-﻿#include <RuntimeSentinel.h>
-#include "Core.cu.h"
+﻿#include "Core.cu.h"
 
 namespace Core
 {
@@ -20,7 +19,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F;
 		__device__ File_Close(VFile *f)
-			: Base(10, nullptr), F(f) { }
+			: Base(10, nullptr), F(f) { RuntimeSentinel::Send(this, sizeof(File_Close)); }
 		RC RC;
 	};
 
@@ -33,7 +32,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F; int Amount; int64 Offset;
 		__device__ File_Read(VFile *f, int amount, int64 offset)
-			: Base(11, RUNTIMESENTINELPREPARE(Prepare)), F(f), Amount(amount), Offset(offset) { }
+			: Base(11, RUNTIMESENTINELPREPARE(Prepare)), F(f), Amount(amount), Offset(offset) { RuntimeSentinel::Send(this, sizeof(File_Read)); }
 		RC RC;
 		char *Buffer;
 	};
@@ -49,7 +48,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F; const void *Buffer; int Amount; int64 Offset;
 		__device__ File_Write(VFile *f, const void *buffer, int amount, int64 offset)
-			: Base(12, RUNTIMESENTINELPREPARE(Prepare)), F(f), Buffer(buffer), Amount(amount), Offset(offset) { }
+			: Base(12, RUNTIMESENTINELPREPARE(Prepare)), F(f), Buffer(buffer), Amount(amount), Offset(offset) { RuntimeSentinel::Send(this, sizeof(File_Write)); }
 		RC RC;
 	};
 
@@ -58,7 +57,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F; int64 Size;
 		__device__ File_Truncate(VFile *f, int64 size)
-			: Base(13, nullptr), F(f), Size(size) { }
+			: Base(13, nullptr), F(f), Size(size) { RuntimeSentinel::Send(this, sizeof(File_Truncate)); }
 		RC RC;
 	};
 
@@ -67,7 +66,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F; VFile::SYNC Flags;
 		__device__ File_Sync(VFile *f, VFile::SYNC flags)
-			: Base(14, nullptr), F(f), Flags(flags) { }
+			: Base(14, nullptr), F(f), Flags(flags) { RuntimeSentinel::Send(this, sizeof(File_Sync)); }
 		RC RC;
 	};
 
@@ -76,7 +75,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F;
 		__device__ File_get_FileSize(VFile *f)
-			: Base(15, nullptr), F(f) { }
+			: Base(15, nullptr), F(f) { RuntimeSentinel::Send(this, sizeof(File_get_FileSize)); }
 		int64 Size;
 		RC RC;
 	};
@@ -86,7 +85,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F; VFile::LOCK Lock;
 		__device__ File_Lock(VFile *f, VFile::LOCK lock)
-			: Base(16, nullptr), F(f), Lock(lock) { }
+			: Base(16, nullptr), F(f), Lock(lock) { RuntimeSentinel::Send(this, sizeof(File_Lock)); }
 		RC RC;
 	};
 
@@ -95,7 +94,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F;
 		__device__ File_CheckReservedLock(VFile *f)
-			: Base(17, nullptr), F(f) { }
+			: Base(17, nullptr), F(f) { RuntimeSentinel::Send(this, sizeof(File_CheckReservedLock)); }
 		int Lock;
 		RC RC;
 	};
@@ -105,7 +104,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		VFile *F; VFile::LOCK Lock;
 		__device__ File_Unlock(VFile *f, VFile::LOCK lock)
-			: Base(18, nullptr), F(f), Lock(lock) { }
+			: Base(18, nullptr), F(f), Lock(lock) { RuntimeSentinel::Send(this, sizeof(File_Unlock)); }
 		RC RC;
 	};
 
@@ -125,7 +124,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		const char *Name; VSystem::OPEN Flags;
 		__device__ System_Open(const char *name, VSystem::OPEN flags)
-			: Base(21, RUNTIMESENTINELPREPARE(Prepare)), Name(name), Flags(flags) { }
+			: Base(21, RUNTIMESENTINELPREPARE(Prepare)), Name(name), Flags(flags) { RuntimeSentinel::Send(this, sizeof(System_Open)); }
 		VFile *F;
 		VSystem::OPEN OutFlags;
 		RC RC;
@@ -143,7 +142,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		const char *Filename; bool SyncDir;
 		__device__ System_Delete(const char *filename, bool syncDir)
-			: Base(22, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), SyncDir(syncDir) { }
+			: Base(22, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), SyncDir(syncDir) { RuntimeSentinel::Send(this, sizeof(System_Delete)); }
 		RC RC;
 	};
 
@@ -159,7 +158,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		const char *Filename; VSystem::ACCESS Flags;
 		__device__ System_Access(const char *filename, VSystem::ACCESS flags)
-			: Base(23, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Flags(flags) { }
+			: Base(23, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Flags(flags) { RuntimeSentinel::Send(this, sizeof(System_Access)); }
 		int ResOut;
 		RC RC;
 	};
@@ -178,7 +177,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		const char *Relative; int FullLength;
 		__device__ System_FullPathname(const char *relative, int fullLength)
-			: Base(24, RUNTIMESENTINELPREPARE(Prepare)), Relative(relative), FullLength(fullLength) { }
+			: Base(24, RUNTIMESENTINELPREPARE(Prepare)), Relative(relative), FullLength(fullLength) { RuntimeSentinel::Send(this, sizeof(System_FullPathname)); }
 		char *Full;
 		RC RC;
 	};
@@ -192,7 +191,7 @@ namespace Core { namespace Messages
 		RuntimeSentinelMessage Base;
 		int BufLength;
 		__device__ System_GetLastError(int bufLength)
-			: Base(25, RUNTIMESENTINELPREPARE(Prepare)), BufLength(bufLength) { }
+			: Base(25, RUNTIMESENTINELPREPARE(Prepare)), BufLength(bufLength) { RuntimeSentinel::Send(this, sizeof(System_GetLastError)); }
 		char *Buf;
 		RC RC;
 	};

@@ -223,7 +223,7 @@ namespace Core {
 			_assert(mem->Z || mem->Z == 0);
 			ASSERTCOVERAGE(mem->Z == 0);
 			int64 value = 0;
-			_atoi64(mem->Z, &value, mem->N, mem->Encode);
+			__atoi64(mem->Z, &value, mem->N, mem->Encode);
 			return value;
 		}
 		return 0;
@@ -288,7 +288,7 @@ namespace Core {
 		{
 			_assert((mem->Flags & (MEM_Blob | MEM_Str)) != 0);
 			_assert(!mem->Ctx || _mutex_held(mem->Ctx->Mutex));
-			if (_atoi64(mem->Z, &mem->u.I, mem->N, mem->Encode) == 0)
+			if (__atoi64(mem->Z, &mem->u.I, mem->N, mem->Encode) == 0)
 				MemSetTypeFlag(mem, MEM_Int);
 			else
 			{

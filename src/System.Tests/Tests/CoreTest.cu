@@ -9,7 +9,8 @@
 	__global__ void coreTest##id(void *r) \
 { \
 	_runtimeSetHeap(r); \
-	SysEx::Initialize();
+	MutexEx masterMutex; \
+	SysEx::Initialize(masterMutex);
 #else
 #define _TEST(id) \
 	__global__ void coreTest##id(void *r); \
@@ -17,7 +18,8 @@
 	__global__ void coreTest##id(void *r) \
 { \
 	_runtimeSetHeap(r); \
-	SysEx::Initialize();
+	MutexEx masterMutex; \
+	SysEx::Initialize(masterMutex);
 #endif
 
 #pragma endregion

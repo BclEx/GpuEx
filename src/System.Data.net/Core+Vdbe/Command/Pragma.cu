@@ -33,8 +33,8 @@ namespace Core { namespace Command
 		if (!_strcmp(z, "none")) return Btree::AUTOVACUUM_NONE;
 		if (!_strcmp(z, "full")) return Btree::AUTOVACUUM_FULL;
 		if (!_strcmp(z, "incremental")) return Btree::AUTOVACUUM_INCR;
-		int i = _atoi(z);
-		return (Btree::AUTOVACUUM)(i>=0 && i<=2 ? i : 0);
+		int i = _atoi(z, &i);
+		return (Btree::AUTOVACUUM)(i >= 0 && i <= 2 ? i : 0);
 	}
 #endif
 
@@ -462,7 +462,7 @@ namespace Core { namespace Command
 			if (Prepare::ReadSchema(parse)) goto pragma_out;
 			parse->CodeVerifySchema(db);
 			int regId = ++parse->Mems;
-			if (_tolower(left[0]) == 'p')
+			if (__tolower(left[0]) == 'p')
 				v->AddOp2(OP_Pagecount, db, regId);
 			else
 				v->AddOp3(OP_MaxPgcnt, db, regId, _math_abs(_atoi(right)));
@@ -558,7 +558,7 @@ namespace Core { namespace Command
 			int64 limit = -2;
 			if (right)
 			{
-				_atoi64(right, &limit, 1000000, TEXTENCODE_UTF8);
+				__atoi64(right, &limit, 1000000, TEXTENCODE_UTF8);
 				if (limit < -1) limit = -1;
 			}
 			limit = pager->SetJournalSizeLimit(limit);
@@ -1141,7 +1141,7 @@ namespace Core { namespace Command
 		// without most of the overhead of a full integrity-check.
 		else if (!_strcmp(left, "integrity_check") || !_strcmp(left, "quick_check"))
 		{
-			bool isQuick = (_tolower(left[0]) == 'q');
+			bool isQuick = (__tolower(left[0]) == 'q');
 
 			// If the PRAGMA command was of the form "PRAGMA <ctx>.integrity_check", then db is set to the index of the database identified by <ctx>.
 			// In this case, the integrity of database db only is verified by the VDBE created below.

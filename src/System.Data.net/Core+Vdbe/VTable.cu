@@ -686,7 +686,7 @@ namespace Core
 		if (lowerName)
 		{
 			for (unsigned char *z = (unsigned char*)lowerName; *z; z++)
-				*z = _tolower(*z);
+				*z = __tolower(*z);
 			rc = imodule->FindFunction(ivtable, argsLength, lowerName, &func, &args);
 			_tagfree(ctx, lowerName);
 		}

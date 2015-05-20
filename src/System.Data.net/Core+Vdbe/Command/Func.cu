@@ -307,7 +307,7 @@ namespace Core { namespace Command
 			if (z1)
 			{
 				for (int i = 0; i < n; i++)
-					z1[i] = _toupper(z2[i]);
+					z1[i] = __toupper(z2[i]);
 				Vdbe::Result_Text(fctx, z1, n, _free);
 			}
 		}
@@ -324,7 +324,7 @@ namespace Core { namespace Command
 			if (z1)
 			{
 				for (int i = 0; i < n; i++)
-					z1[i] = _tolower(z2[i]);
+					z1[i] = __tolower(z2[i]);
 				Vdbe::Result_Text(fctx, z1, n, _free);
 			}
 		}
@@ -431,12 +431,12 @@ namespace Core { namespace Command
 				{
 					if (noCase)
 					{
-						c2 = _tolower(c2);
-						c = _tolower(c);
+						c2 = __tolower(c2);
+						c = __tolower(c);
 						while (c2 != 0 && c2 != c)
 						{
 							c2 = _utf8read(&string);
-							c2 = _tolower(c2);
+							c2 = __tolower(c2);
 						}
 					}
 					else
@@ -499,8 +499,8 @@ namespace Core { namespace Command
 				c2 = _utf8read(&string);
 				if (noCase)
 				{
-					c = _tolower(c);
-					c2 = _tolower(c2);
+					c = __tolower(c);
+					c2 = __tolower(c2);
 				}
 				if (c != c2)
 					return false;
@@ -925,7 +925,7 @@ namespace Core { namespace Command
 		if (z[i])
 		{
 			uint8 prevcode = _soundexCode[z[i]&0x7f];
-			r[0] = _toupper(z[i]);
+			r[0] = __toupper(z[i]);
 			int j;
 			for (j = 1; j < 4 && z[i]; i++)
 			{

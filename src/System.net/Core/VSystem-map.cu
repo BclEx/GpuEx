@@ -76,7 +76,6 @@ namespace Core
 	__device__ RC MapVFile::Close_()
 	{
 		Messages::File_Close msg(F);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		Opened = false;
 		return msg.RC;
 	}
@@ -84,7 +83,6 @@ namespace Core
 	__device__ RC MapVFile::Read(void *buffer, int amount, int64 offset)
 	{
 		Messages::File_Read msg(F, amount, offset);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		_memcpy(buffer, msg.Buffer, amount);
 		return msg.RC;
 	}
@@ -92,28 +90,24 @@ namespace Core
 	__device__ RC MapVFile::Write(const void *buffer, int amount, int64 offset)
 	{
 		Messages::File_Write msg(F, buffer, amount, offset);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Truncate(int64 size)
 	{
 		Messages::File_Truncate msg(F, size);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Sync(SYNC flags)
 	{
 		Messages::File_Sync msg(F, flags);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::get_FileSize(int64 &size)
 	{
 		Messages::File_get_FileSize msg(F);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		size = msg.Size;
 		return msg.RC;
 	}
@@ -121,14 +115,12 @@ namespace Core
 	__device__ RC MapVFile::Lock(LOCK lock)
 	{
 		Messages::File_Lock msg(F, lock);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::CheckReservedLock(int &lock)
 	{
 		Messages::File_CheckReservedLock msg(F);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		lock = msg.Lock;
 		return msg.RC;
 	}
@@ -136,7 +128,6 @@ namespace Core
 	__device__ RC MapVFile::Unlock(LOCK lock)
 	{
 		Messages::File_Unlock msg(F, lock);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		return msg.RC;
 	}
 
@@ -207,7 +198,6 @@ namespace Core
 		file = new (file) MapVFile();
 		//
 		Messages::System_Open msg(name, flags);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		if (outFlags)
 			*outFlags = msg.OutFlags;
 		file->Opened = true;
@@ -219,14 +209,12 @@ namespace Core
 	__device__ RC MapVSystem::Delete(const char *filename, bool syncDir)
 	{
 		Messages::System_Delete msg(filename, syncDir);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		return msg.RC;
 	}
 
 	__device__ RC MapVSystem::Access(const char *filename, ACCESS flags, int *resOut)
 	{
 		Messages::System_Access msg(filename, flags);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		*resOut = msg.ResOut;
 		return msg.RC;
 	}
@@ -234,7 +222,6 @@ namespace Core
 	__device__ RC MapVSystem::FullPathname(const char *relative, int fullLength, char *full)
 	{
 		Messages::System_FullPathname msg(relative, fullLength);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		full = _mprintf("%s", msg.Full);
 		return msg.RC;
 	}
@@ -328,7 +315,6 @@ namespace Core
 	__device__ RC MapVSystem::GetLastError(int bufLength, char *buf)
 	{
 		Messages::System_GetLastError msg(bufLength);
-		RuntimeSentinel::Send(&msg, sizeof(msg));
 		buf = _mprintf("%", msg.Buf);
 		return msg.RC;
 	}
@@ -348,7 +334,7 @@ namespace Core
 
 	__device__ static unsigned char _mapVfsBuf[sizeof(MapVSystem)];
 	__device__ static MapVSystem *_mapVfs;
-#ifdef _CPU
+#ifdef OS_SENTINEL
 	__device__ RC MapVSystem_Initialize()
 	{
 		_mapVfs = new (_mapVfsBuf) MapVSystem();

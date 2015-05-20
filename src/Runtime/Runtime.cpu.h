@@ -41,11 +41,15 @@ __device__ inline void Coverage(int line) { }
 #define CURT_UNRESTRICTED -1
 
 extern "C" __device__ inline static void _runtimeSetHeap(void *heap) { }
-extern "C" inline cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return cudaSuccess; }
+extern "C" cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host);
 extern "C" __device__ inline static void runtimeRestrict(int threadid, int blockid) { }
 // embed
 extern "C" const unsigned char __curtUpperToLower[256];
 extern "C" const unsigned char __curtCtypeMap[256];
+
+#ifdef __EMBED__
+cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return cudaSuccess; }
+#endif
 
 #pragma endregion
 

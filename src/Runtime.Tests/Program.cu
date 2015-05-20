@@ -21,6 +21,7 @@ void __main(cudaDeviceHeap &r)
 	GMain(r); cudaDeviceHeapSynchronize(r);
 }
 
+cudaDeviceHeap _deviceHeap;
 int main(int argc, char **argv)
 {
 	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost));
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
 	cudaErrorCheck(cudaSetDevice(deviceId));
 	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*4));
 
-	cudaDeviceHeap deviceHeap = cudaDeviceHeapCreate(256, 4096);
+	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
 
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
 	//IVisualRender *render = new RuntimeVisualRender(deviceHeap);
@@ -36,11 +37,11 @@ int main(int argc, char **argv)
 	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
-	__main(deviceHeap);
+	__main(_deviceHeap);
 	//Visual::Main();
 	//Visual::Dispose();
 
-	cudaDeviceHeapDestroy(deviceHeap);
+	cudaDeviceHeapDestroy(_deviceHeap);
 
 	cudaDeviceReset();
 	printf("\nEnd"); char c; scanf("%c", &c);

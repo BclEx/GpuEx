@@ -33,7 +33,7 @@ __device__ static unsigned int GetHashCode(const char *key, int keyLength)
 {
 	_assert(keyLength >= 0);
 	int h = 0;
-	while (keyLength > 0) { h = (h<<3) ^ h ^ _tolower(*key++); keyLength--; }
+	while (keyLength > 0) { h = (h<<3) ^ h ^ __tolower(*key++); keyLength--; }
 	return (unsigned int)h;
 }
 
