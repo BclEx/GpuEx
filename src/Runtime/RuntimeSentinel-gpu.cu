@@ -5,7 +5,7 @@
 
 __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 {
-	RuntimeSentinelMap *map = 0;
+	RuntimeSentinelMap *map = 0; //GetMap();
 	int id = atomicAdd((unsigned int *)&map->AddId, 1);
 	RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
 	while (atomicCAS((unsigned int *)&cmd->Status, 1, 0) != 0);

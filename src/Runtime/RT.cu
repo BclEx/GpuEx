@@ -1,4 +1,5 @@
 #define __EMBED__ 1
+#include "RuntimeSentinel.cu"
 //#include "Regex.1\Regex.1.cu"
 #include "Regex.cu"
 #include "Runtime.cu"

@@ -201,10 +201,10 @@ __global__ static void runtime12(void *r)
 __global__ static void runtime13(void *r)
 {
 	_runtimeSetHeap(r);
-	//_fprintf
-	//_fopen
-	//_fflush
-	//_fclose
+	FILE *f = _fopen("C:\\T_\\fopen.txt", "w");
+	_fprintf(f, "test");
+	_fflush(f);
+	_fclose(f);
 	printf("Example: 13\n");
 }
 

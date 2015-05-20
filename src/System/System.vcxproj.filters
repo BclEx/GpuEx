@@ -19,9 +19,7 @@
     <ClInclude Include="..\System.net\Core\IO\IO.VFile.cu.h">
       <Filter>Core\IO</Filter>
     </ClInclude>
-    <ClInclude Include="..\System.net\Core\Sentinel.cu.h">
-      <Filter>Core</Filter>
-    </ClInclude>
+    <ClInclude Include="..\System.net\Core\VSystemSentinel.cu.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -69,10 +67,6 @@
   <ItemGroup>
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="System.cu" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\System.net\Core\Sentinel.cu">
-      <Filter>Core</Filter>
-    </ClCompile>
+    <CudaCompile Include="..\System.net\Core\VSystemSentinel.cpp" />
   </ItemGroup>
 </Project>

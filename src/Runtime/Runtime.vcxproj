@@ -81,7 +81,7 @@
     <None Include="Runtime+Mutex-unix.cu" />
     <None Include="Runtime+Mutex-win.cu" />
     <None Include="Runtime+Status.cu" />
-    <CudaCompile Include="RuntimeSentinel.cu" />
+    <None Include="RuntimeSentinel.cu" />
     <None Include="RuntimeSentinel-win.cu" />
     <None Include="RuntimeSentinel-gpu.cu" />
   </ItemGroup>
@@ -96,7 +96,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -134,8 +134,8 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_LC$(LC);_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LC$(LC);_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_xLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

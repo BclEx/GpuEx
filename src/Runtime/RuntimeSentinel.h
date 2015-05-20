@@ -1,4 +1,10 @@
+#ifndef __RUNTIMESENTINEL_H__
+#define __RUNTIMESENTINEL_H__
 #include "Runtime.h"
+
+//////////////////////
+// SENTINEL
+#pragma region SENTINEL
 
 struct RuntimeSentinelMessage
 {
@@ -44,14 +50,19 @@ public:
 	static void Initialize(RuntimeSentinelExecutor *executor = nullptr);
 	static void Shutdown();
 	static RuntimeSentinelMap *GetMap();
-
+	//
 	static RuntimeSentinelExecutor *FindExecutor(const char *name);
 	static void RegisterExecutor(RuntimeSentinelExecutor *exec, bool _default = false);
 	static void UnregisterExecutor(RuntimeSentinelExecutor *exec);
-
+	//
 	__device__ static void Send(void *msg, int msgLength);
 };
 
+#pragma endregion
+
+//////////////////////
+// MESSAGES
+#pragma region MESSAGES
 namespace Messages
 {
 	struct Stdio_fprintf
@@ -122,8 +133,7 @@ namespace Messages
 		__device__ Stdio_fputs(const char *str, FILE *file)
 			: Base(6, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { }
 	};
-
-
+}
 #pragma endregion
 
-}
+#endif // __RUNTIMESENTINEL_H__

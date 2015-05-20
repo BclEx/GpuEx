@@ -868,20 +868,30 @@ extern __constant__ FILE _stderr_file;
 #define stderr &_stderr_file
 #endif
 
+#if 0
+#define _fprintf(f, ...) printf(__VA_ARGS__)
+_device_ inline void _fprintf_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(f, v); RuntimeSentinel::Send(&msg, sizeof(msg)); }
+_device_ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fprintf msg(f, v); RuntimeSentinel::Send(&msg, sizeof(msg)); }
+_device_ inline void _fflush(FILE *f) fflush(f) { Messages::Stdio_fflush msg(f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
+_device_ inline void _fclose(FILE *f) fclose(f) { Messages::Stdio_fclose msg(f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
+_device_ inline void _fputc(int c, FILE *f) fputc(c, f) { Messages::Stdio_fputc msg(c, f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
+_device_ inline void _fputs(const char *s, FILE *f) fputs(s, f) { Messages::Stdio_fputs msg(s, f); RuntimeSentinel::Send(&msg, sizeof(msg)); }
+#else
 #if __CUDACC__
 #define _fprintf(f, ...) printf(__VA_ARGS__)
-#define _fopen(f, b) 0
+#define _fopen(f, m) 0
 #define _fflush(f)
 #define _fclose(f)
 #define _fputc(c, f) printf("%c", c)
 #define _fputs(s, f) printf("%s\n", c)
 #else
 #define _fprintf(f, ...) fprintf(f, __VA_ARGS__)
-#define _fopen(f, b) fopen(f, b)
+#define _fopen(f, m) fopen(f, m)
 #define _fflush(f) fflush(f)
 #define _fclose(f) fclose(f)
 #define _fputc(c, f) fputc(c, f)
 #define _fputs(s, f) fputs(s, f)
+#endif
 #endif
 
 #pragma endregion

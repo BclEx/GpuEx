@@ -51,9 +51,9 @@ void GMain(cudaDeviceHeap &r) {
 #else
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
-VSystemSentinel::Initialize();
+//VSystemSentinel::Initialize();
 __testSystem(r);
-VSystemSentinel::Shutdown();
+//VSystemSentinel::Shutdown();
 }
 
 #if __CUDACC__
@@ -77,12 +77,10 @@ int main(int argc, char **argv)
 	//cudaErrorCheck(cudaGLSetGLDevice(deviceId));
 
 	// run
-	VSystemSentinel::Initialize();
 	__main(deviceHeap);
 	//Visual::Main();
 	//Visual::Dispose();
 
-	VSystemSentinel::Shutdown();
 	cudaDeviceHeapDestroy(deviceHeap);
 
 	cudaDeviceReset();

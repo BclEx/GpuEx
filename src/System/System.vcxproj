@@ -162,7 +162,9 @@
     <None Include="..\System.net\Core\VSystem-map.cu" />
     <None Include="..\System.net\Core\VSystem-unix.cu" />
     <None Include="..\System.net\Core\VSystem-win.cu" />
-    <CudaCompile Include="..\System.net\Core\VSystemSentinel.cpp" />
+    <CudaCompile Include="..\System.net\Core\VSystemSentinel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

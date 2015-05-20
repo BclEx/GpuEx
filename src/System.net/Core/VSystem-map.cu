@@ -121,6 +121,7 @@ namespace Core
 	__device__ RC MapVFile::Lock(LOCK lock)
 	{
 		Messages::File_Lock msg(F, lock);
+		RuntimeSentinel::Send(&msg, sizeof(msg));
 		return msg.RC;
 	}
 
