@@ -781,7 +781,7 @@ typedef struct
 {
 	volatile unsigned int AddId;
 	volatile unsigned int RunId;
-	RuntimeSentinelCommand Commands[1];
+	RuntimeSentinelCommand Commands[3];
 } RuntimeSentinelMap;
 
 typedef struct RuntimeSentinelExecutor
@@ -799,10 +799,9 @@ typedef struct RuntimeSentinelContext
 	RuntimeSentinelExecutor *List;
 } RuntimeSentinelContext;
 
+extern __constant__ RuntimeSentinelMap *_runtimeSentinelMap;
 struct RuntimeSentinel
 {
-public:
-	__device__ static RuntimeSentinelMap *_map;
 public:
 	static void Initialize(RuntimeSentinelExecutor *executor = nullptr);
 	static void Shutdown();
@@ -839,16 +838,18 @@ namespace Messages
 		__device__ inline static void Prepare(Stdio_fopen *t, char *data, int length)
 		{
 			int filenameLength = (t->Filename ? _strlen(t->Filename) + 1 : 0);
+			int modeLength = (t->Mode ? _strlen(t->Mode) + 1 : 0);
 			char *filename = (char *)(data += _ROUND8(sizeof(*t)));
+			char *mode = (char *)(data += filenameLength);
 			_memcpy(filename, t->Filename, filenameLength);
+			_memcpy(mode, t->Mode, modeLength);
 			t->Filename = filename;
+			t->Mode = mode;
 		}
 		RuntimeSentinelMessage Base;
 		const char *Filename; const char *Mode;
 		__device__ Stdio_fopen(const char *filename, const char *mode)
-			: Base(2, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Mode(mode) { 
-				RuntimeSentinel::Send(this, sizeof(Stdio_fopen));
-		}
+			: Base(2, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Mode(mode) { RuntimeSentinel::Send(this, sizeof(Stdio_fopen)); }
 		FILE *RC; 
 	};
 

@@ -202,7 +202,7 @@ __global__ static void runtime13(void *r)
 {
 	_runtimeSetHeap(r);
 	FILE *f = _fopen("C:\\T_\\fopen.txt", "w");
-	_fprintf(f, "test");
+	//_fprintf(f, "The quick brown fox jumps over the lazy dog");
 	_fflush(f);
 	_fclose(f);
 	printf("Example: 13\n");
@@ -268,6 +268,7 @@ __global__ static void runtime14(void *r)
 #if __CUDACC__
 void __testRuntime(cudaDeviceHeap &r)
 {
+	RuntimeSentinel::Initialize();
 	runtime0<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime1<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime2<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
@@ -283,10 +284,12 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime12<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime13<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime14<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+	RuntimeSentinel::Shutdown();
 }
 #else
 void __testRuntime(cudaDeviceHeap &r)
 {
+	RuntimeSentinel::Initialize();
 	runtime0(r.heap);
 	runtime1(r.heap);
 	runtime2(r.heap);
@@ -302,5 +305,6 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime12(r.heap);
 	runtime13(r.heap);
 	runtime14(r.heap);
+	RuntimeSentinel::Shutdown();
 }
 #endif

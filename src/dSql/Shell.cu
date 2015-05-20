@@ -195,7 +195,7 @@ static void iotracePrintf(const char *fmt, ...)
 	va_start(args, fmt);
 	char *z = _vmprintf(fmt, ap);
 	va_end(ap);
-	_fprintf(iotrace, "%s", z);
+	fprintf(iotrace, "%s", z);
 	_free(z);
 }
 #endif
@@ -239,7 +239,7 @@ static char *LocalGetLine(char *prompt, FILE *in, int csvFlag)
 	if (prompt && *prompt)
 	{
 		printf("%s", prompt);
-		_fflush(stdout);
+		fflush(stdout);
 	}
 	int lineLength = 100;
 	char *line = (char *)malloc(lineLength);
@@ -801,7 +801,7 @@ static void SetTableName(struct CallbackData *p, const char *name)
 	char *z = p->DestTable = (char *)malloc(n+1);
 	if (!z)
 	{
-		_fprintf(stderr, "Error: out_ of memory\n");
+		fprintf(stderr, "Error: out_ of memory\n");
 		exit(1);
 	}
 	n = 0;
@@ -1381,7 +1381,7 @@ static bool BooleanValue(char *arg)
 	if (i > 0 && arg[i] == 0) return (atoi(arg) != 0);
 	if (!strcmp(arg, "on") || !strcmp(arg, "yes")) return true;
 	if (!strcmp(arg, "off") || !strcmp(arg, "no")) return false;
-	_fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n", arg);
+	fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n", arg);
 	return false;
 }
 
@@ -1402,7 +1402,7 @@ static FILE *OutputFileOpen(const char *file)
 	{
 		f = fopen(file, "wb");
 		if (!f)
-			_fprintf(stderr, "Error: cannot open \"%s\"\n", file);
+			fprintf(stderr, "Error: cannot open \"%s\"\n", file);
 	}
 	return f;
 }
@@ -1411,7 +1411,7 @@ static FILE *OutputFileOpen(const char *file)
 static void SqlTraceCallback(void *arg, const char *z)
 {
 	FILE *f = (FILE *)arg;
-	if (f) _fprintf(f, "%s\n", z);
+	if (f) fprintf(f, "%s\n", z);
 }
 
 // A no-op routine that runs with the ".breakpoint" doc-command.  This is a useful spot to set a debugger breakpoint.
@@ -1500,7 +1500,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 					key = args[++j];
 				else
 				{
-					_fprintf(stderr, "unknown option: %s\n", args[j]);
+					fprintf(stderr, "unknown option: %s\n", args[j]);
 					return 1;
 				}
 			}
@@ -1513,20 +1513,20 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			}
 			else
 			{
-				_fprintf(stderr, "too many arguments to .backup\n");
+				fprintf(stderr, "too many arguments to .backup\n");
 				return 1;
 			}
 		}
 		if (!destFile)
 		{
-			_fprintf(stderr, "missing FILENAME argument on .backup\n");
+			fprintf(stderr, "missing FILENAME argument on .backup\n");
 			return 1;
 		}
 		if (!dbName) dbName = "main";
 		rc = Main::Open(destFile, &dest);
 		if (rc != RC_OK)
 		{
-			_fprintf(stderr, "Error: cannot open \"%s\"\n", destFile);
+			fprintf(stderr, "Error: cannot open \"%s\"\n", destFile);
 			Main::Close(dest);
 			return 1;
 		}
@@ -1537,7 +1537,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		backup = Backup::Init(dest, "main", p->Ctx, dbName);
 		if (!backup)
 		{
-			_fprintf(stderr, "Error: %s\n", Main::ErrMsg(dest));
+			fprintf(stderr, "Error: %s\n", Main::ErrMsg(dest));
 			Main::Close(dest);
 			return 1;
 		}
@@ -1547,7 +1547,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			rc = 0;
 		else
 		{
-			_fprintf(stderr, "Error: %s\n", Main::ErrMsg(dest));
+			fprintf(stderr, "Error: %s\n", Main::ErrMsg(dest));
 			rc = 1;
 		}
 		Main::Close(dest);
@@ -1581,8 +1581,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
 		if (errMsg)
 		{
-			_fprintf(stderr,"Error: %s\n", errMsg);
-			_free(errMsg);
+			fprintf(stderr,"Error: %s\n", errMsg);
+			free(errMsg);
 			rc = 1;
 		}
 #endif
@@ -1593,8 +1593,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		_OpenCtx(p);
 		// When playing back a "dump", the content might appear in an order which causes immediate foreign key constraints to be violated.
 		// So disable foreign-key constraint enforcement to prevent problems.
-		_fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
-		_fprintf(p->Out, "BEGIN TRANSACTION;\n");
+		fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
+		fprintf(p->Out, "BEGIN TRANSACTION;\n");
 		p->WritableSchema = 0;
 		Main::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
 		p->Errs = 0;
@@ -1629,12 +1629,12 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		if (p->WritableSchema)
 		{
-			_fprintf(p->Out, "PRAGMA writable_schema=OFF;\n");
+			fprintf(p->Out, "PRAGMA writable_schema=OFF;\n");
 			p->WritableSchema = 0;
 		}
 		Main::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
 		Main::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
-		_fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
+		fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
 #endif
 	}
 	else if (c == 'e' && !strncmp(args[0], "echo", n) && argsLength > 1 && argsLength < 3)
@@ -1687,9 +1687,9 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 'h' && !strncmp(args[0], "help", n))
 	{
-		_fprintf(stderr, "%s", _help);
+		fprintf(stderr, "%s", _help);
 		if (HAS_TIMER)
-			_fprintf(stderr, "%s", _timerHelp);
+			fprintf(stderr, "%s", _timerHelp);
 	}
 	else if (c == 'i' && !strncmp(args[0], "import", n) && argsLength == 3)
 	{
@@ -1702,13 +1702,13 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		int sepLength = _strlen(p->Separator); // Number of bytes in p->separator[]
 		if (sepLength == 0)
 		{
-			_fprintf(stderr, "Error: non-null separator required for import\n");
+			fprintf(stderr, "Error: non-null separator required for import\n");
 			return 1;
 		}
 		char *sql = _mprintf("SELECT * FROM %s", tableName); // An SQL statement
 		if (!sql)
 		{
-			_fprintf(stderr, "Error: out_ of memory\n");
+			fprintf(stderr, "Error: out_ of memory\n");
 			return 1;
 		}
 		int bytes = _strlen(sql); // Number of bytes in an SQL string
@@ -1717,7 +1717,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		if (rc)
 		{
 			if (stmt) Vdbe::Finalize(stmt);
-			_fprintf(stderr,"Error: %s\n", Main::ErrMsg(_ctx));
+			fprintf(stderr,"Error: %s\n", Main::ErrMsg(_ctx));
 			return 1;
 		}
 		int colsLength = Vdbe::Column_Count(stmt); // Number of columns in the table
@@ -1727,7 +1727,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		sql = (char *)malloc(bytes + 20 + colsLength*2);
 		if (!sql)
 		{
-			_fprintf(stderr, "Error: out_ of memory\n");
+			fprintf(stderr, "Error: out_ of memory\n");
 			return 1;
 		}
 		_snprintf(sql, bytes+20, "INSERT INTO %s VALUES(?", tableName);
@@ -1743,14 +1743,14 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		free(sql);
 		if (rc)
 		{
-			_fprintf(stderr, "Error: %s\n", Main::ErrMsg(_ctx));
+			fprintf(stderr, "Error: %s\n", Main::ErrMsg(_ctx));
 			if (stmt) Vdbe::Finalize(stmt);
 			return 1;
 		}
 		FILE *in = fopen(file, "rb"); // The input file;
 		if (!in)
 		{
-			_fprintf(stderr, "Error: cannot open \"%s\"\n", file);
+			fprintf(stderr, "Error: cannot open \"%s\"\n", file);
 			Vdbe::Finalize(stmt);
 			return 1;
 		}
@@ -1758,7 +1758,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		cols = (char **)malloc(sizeof(cols[0])*(colsLength+1));
 		if (!cols)
 		{
-			_fprintf(stderr, "Error: out_ of memory\n");
+			fprintf(stderr, "Error: out_ of memory\n");
 			fclose(in);
 			Vdbe::Finalize(stmt);
 			return 1;
@@ -1791,7 +1791,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			*z = 0;
 			if (i+1 != colsLength)
 			{
-				_fprintf(stderr, "Error: %s line %d: expected %d columns of data but found %d\n", file, lineno, colsLength, i+1);
+				fprintf(stderr, "Error: %s line %d: expected %d columns of data but found %d\n", file, lineno, colsLength, i+1);
 				commit = "ROLLBACK";
 				free(line);
 				rc = 1;
@@ -1815,7 +1815,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			free(line);
 			if (rc != RC_OK)
 			{
-				_fprintf(stderr,"Error: %s\n", Main::ErrMsg(_ctx));
+				fprintf(stderr,"Error: %s\n", Main::ErrMsg(_ctx));
 				commit = "ROLLBACK";
 				rc = 1;
 				break; // from while
@@ -1860,13 +1860,13 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		if (errMsg)
 		{
-			_fprintf(stderr,"Error: %s\n", errMsg);
-			_free(errMsg);
+			fprintf(stderr,"Error: %s\n", errMsg);
+			free(errMsg);
 			rc = 1;
 		}
 		else if( rc != RC_OK)
 		{
-			_fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
+			fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
 			rc = 1;
 		}
 #endif
@@ -1889,7 +1889,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			iotrace = fopen(args[1], "w");
 			if (iotrace == 0)
 			{
-				_fprintf(stderr, "Error: cannot open \"%s\"\n", args[1]);
+				fprintf(stderr, "Error: cannot open \"%s\"\n", args[1]);
 				sqlite3IoTrace = 0;
 				rc = 1;
 			}
@@ -1908,7 +1908,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		rc = sqlite3_load_extension(p->Ctx, file, proc, &errMsg);
 		if (rc != RC_OK)
 		{
-			_fprintf(stderr, "Error: %s\n", errMsg);
+			fprintf(stderr, "Error: %s\n", errMsg);
 			_free(errMsg);
 			rc = 1;
 		}
@@ -1933,7 +1933,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		else if (n2 == 6 && !strncmp(args[1],"insert",n2)) { p->Mode = MODE_Insert; SetTableName(p, "table"); }
 		else
 		{
-			_fprintf(stderr,"Error: mode should be one of: column csv html insert line list tabs tcl\n");
+			fprintf(stderr,"Error: mode should be one of: column csv html insert line list tabs tcl\n");
 			rc = 1;
 		}
 	}
@@ -1943,7 +1943,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		if (n2 == 6 && !strncmp(args[1],"insert",n2)) { p->Mode = MODE_Insert; SetTableName(p, args[2]); }
 		else
 		{
-			_fprintf(stderr, "Error: invalid arguments:  \"%s\". Enter \".help\" for help\n", args[2]);
+			fprintf(stderr, "Error: invalid arguments:  \"%s\". Enter \".help\" for help\n", args[2]);
 			rc = 1;
 		}
 	}
@@ -1961,7 +1961,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			p->Out = popen(&args[1][1], "w");
 			if (!p->Out)
 			{
-				_fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &args[1][1]);
+				fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &args[1][1]);
 				p->Out = stdout;
 				rc = 1;
 			}
@@ -1974,7 +1974,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			if (!p->Out)
 			{
 				if (strcmp(args[1], "off"))
-					_fprintf(stderr, "Error: cannot write to \"%s\"\n", args[1]);
+					fprintf(stderr, "Error: cannot write to \"%s\"\n", args[1]);
 				p->Out = stdout;
 				rc = 1;
 			}
@@ -1986,10 +1986,10 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	{
 		for (int i = 1; i < argsLength; i++)
 		{
-			if (i > 1) _fprintf(p->Out, " ");
-			_fprintf(p->Out, "%s", args[i]);
+			if (i > 1) fprintf(p->Out, " ");
+			fprintf(p->Out, "%s", args[i]);
 		}
-		_fprintf(p->Out, "\n");
+		fprintf(p->Out, "\n");
 	}
 	else if (c == 'p' && !strncmp(args[0], "prompt", n) && (argsLength == 2 || argsLength == 3))
 	{
@@ -2007,7 +2007,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		FILE *alt = fopen(args[1], "rb");
 		if (!alt)
 		{
-			_fprintf(stderr, "Error: cannot open \"%s\"\n", args[1]);
+			fprintf(stderr, "Error: cannot open \"%s\"\n", args[1]);
 			rc = 1;
 		}
 		else
@@ -2035,7 +2035,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		rc = Main::Open(srcFile, &src);
 		if (rc != RC_OK)
 		{
-			_fprintf(stderr, "Error: cannot open \"%s\"\n", srcFile);
+			fprintf(stderr, "Error: cannot open \"%s\"\n", srcFile);
 			Main::Close(src);
 			return 1;
 		}
@@ -2043,7 +2043,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Backup *backup = Backup::Init(p->Ctx, dbName, src, "main");
 		if (!backup)
 		{
-			_fprintf(stderr, "Error: %s\n", Main::ErrMsg(p->Ctx));
+			fprintf(stderr, "Error: %s\n", Main::ErrMsg(p->Ctx));
 			Main::Close(src);
 			return 1;
 		}
@@ -2058,8 +2058,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		Backup::Finish(backup);
 		if (rc == RC_DONE) rc = 0;
-		else if (rc == RC_BUSY || rc == RC_LOCKED) { _fprintf(stderr, "Error: source database is busy\n"); rc = 1; }
-		else { _fprintf(stderr, "Error: %s\n", Main::ErrMsg(p->Ctx)); rc = 1; }
+		else if (rc == RC_BUSY || rc == RC_LOCKED) { fprintf(stderr, "Error: source database is busy\n"); rc = 1; }
+		else { fprintf(stderr, "Error: %s\n", Main::ErrMsg(p->Ctx)); rc = 1; }
 		Main::Close(src);
 #endif
 	}
@@ -2136,8 +2136,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				" CASE type WHEN 'view' THEN rowid ELSE name END",
 				::Callback, &data, &errMsg);
 		}
-		if (errMsg) { _fprintf(stderr,"Error: %s\n", errMsg); _free(errMsg); rc = 1; }
-		else if (rc != RC_OK) { _fprintf(stderr,"Error: querying schema information\n"); rc = 1; }
+		if (errMsg) { fprintf(stderr,"Error: %s\n", errMsg); _free(errMsg); rc = 1; }
+		else if (rc != RC_OK) { fprintf(stderr,"Error: querying schema information\n"); rc = 1; }
 		else rc = 0;
 #endif	
 	}
@@ -2147,22 +2147,22 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else if (c == 's' && !strncmp(args[0], "show", n) && argsLength == 1)
 	{
-		_fprintf(p->Out,"%9.9s: %s\n","echo", p->EchoOn ? "on" : "off");
-		_fprintf(p->Out,"%9.9s: %s\n","explain", p->ExplainPrev.Valid ? "on" :"off");
-		_fprintf(p->Out,"%9.9s: %s\n","headers", p->ShowHeader ? "on" : "off");
-		_fprintf(p->Out,"%9.9s: %s\n","mode", _modeDescr[p->Mode]);
-		_fprintf(p->Out,"%9.9s: ", "nullvalue");
+		fprintf(p->Out,"%9.9s: %s\n","echo", p->EchoOn ? "on" : "off");
+		fprintf(p->Out,"%9.9s: %s\n","explain", p->ExplainPrev.Valid ? "on" :"off");
+		fprintf(p->Out,"%9.9s: %s\n","headers", p->ShowHeader ? "on" : "off");
+		fprintf(p->Out,"%9.9s: %s\n","mode", _modeDescr[p->Mode]);
+		fprintf(p->Out,"%9.9s: ", "nullvalue");
 		OutputCString(p->Out, p->NullValue);
-		_fprintf(p->Out, "\n");
-		_fprintf(p->Out,"%9.9s: %s\n","output", strlen(p->Outfile) ? p->Outfile : "stdout");
-		_fprintf(p->Out,"%9.9s: ", "separator");
+		fprintf(p->Out, "\n");
+		fprintf(p->Out,"%9.9s: %s\n","output", strlen(p->Outfile) ? p->Outfile : "stdout");
+		fprintf(p->Out,"%9.9s: ", "separator");
 		OutputCString(p->Out, p->Separator);
-		_fprintf(p->Out, "\n");
-		_fprintf(p->Out,"%9.9s: %s\n","stats", p->StatsOn ? "on" : "off");
-		_fprintf(p->Out,"%9.9s: ","width");
+		fprintf(p->Out, "\n");
+		fprintf(p->Out,"%9.9s: %s\n","stats", p->StatsOn ? "on" : "off");
+		fprintf(p->Out,"%9.9s: ","width");
 		for (int i = 0; i < (int)_lengthof(p->ColWidth) && p->ColWidth[i] != 0; i++)
-			_fprintf(p->Out, "%d ", p->ColWidth[i]);
-		_fprintf(p->Out,"\n");
+			fprintf(p->Out, "%d ", p->ColWidth[i]);
+		fprintf(p->Out,"\n");
 	}
 	else if (c == 's' && !strncmp(args[0], "stats", n) && argsLength > 1 && argsLength < 3)
 	{
@@ -2219,7 +2219,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				char **newResults = (char **)_realloc(results, sizeof(results[0])*n);
 				if (!newResults)
 				{
-					_fprintf(stderr, "Error: out_ of memory\n");
+					fprintf(stderr, "Error: out_ of memory\n");
 					break;
 				}
 				allocs = n;
@@ -2292,7 +2292,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 					testctrl = _ctrls[i].CtrlCode;
 				else
 				{
-					_fprintf(stderr, "ambiguous option name: \"%s\"\n", args[1]);
+					fprintf(stderr, "ambiguous option name: \"%s\"\n", args[1]);
 					testctrl = (Main::TESTCTRL)-1;
 					break;
 				}
@@ -2300,7 +2300,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		if (testctrl < 0) testctrl = (Main::TESTCTRL)atoi(args[1]);
 		if ((testctrl < Main::TESTCTRL_FIRST) || (testctrl > Main::TESTCTRL_LAST))
-			_fprintf(stderr, "Error: invalid testctrl option: %s\n", args[1]);
+			fprintf(stderr, "Error: invalid testctrl option: %s\n", args[1]);
 		else
 		{
 			switch (testctrl)
@@ -2315,7 +2315,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 					printf("%d (0x%08x)\n", rc, rc);
 				}
 				else
-					_fprintf(stderr,"Error: testctrl %s takes a single int option\n", args[1]);
+					fprintf(stderr,"Error: testctrl %s takes a single int option\n", args[1]);
 				break;
 			case Main::TESTCTRL_PRNG_SAVE:
 			case Main::TESTCTRL_PRNG_RESTORE:
@@ -2327,7 +2327,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 					printf("%d (0x%08x)\n", rc, rc);
 				}
 				else
-					_fprintf(stderr,"Error: testctrl %s takes no options\n", args[1]);
+					fprintf(stderr,"Error: testctrl %s takes no options\n", args[1]);
 				break;
 			case Main::TESTCTRL_PENDING_BYTE:
 				// Main::TestControl(int, uint)
@@ -2338,7 +2338,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 					printf("%d (0x%08x)\n", rc, rc);
 				}
 				else
-					_fprintf(stderr,"Error: testctrl %s takes a single unsigned int option\n", args[1]);
+					fprintf(stderr,"Error: testctrl %s takes a single unsigned int option\n", args[1]);
 				break;
 			case Main::TESTCTRL_ASSERT:
 			case Main::TESTCTRL_ALWAYS:
@@ -2350,7 +2350,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 					printf("%d (0x%08x)\n", rc, rc);
 				}
 				else
-					_fprintf(stderr,"Error: testctrl %s takes a single int option\n", args[1]);
+					fprintf(stderr,"Error: testctrl %s takes a single int option\n", args[1]);
 				break;
 #ifdef N_KEYWORD
 			case Main::TESTCTRL_ISKEYWORD:
@@ -2362,7 +2362,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 					printf("%d (0x%08x)\n", rc, rc);
 				}
 				else
-					_fprintf(stderr,"Error: testctrl %s takes a single char * option\n", args[1]);
+					fprintf(stderr,"Error: testctrl %s takes a single char * option\n", args[1]);
 				break;
 #endif
 			case Main::TESTCTRL_BITVEC_TEST:         
@@ -2370,7 +2370,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			case Main::TESTCTRL_BENIGN_MALLOC_HOOKS: 
 			case Main::TESTCTRL_SCRATCHMALLOC:       
 			default:
-				_fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n", args[1]);
+				fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n", args[1]);
 				break;
 			}
 		}
@@ -2437,7 +2437,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	}
 	else
 	{
-		_fprintf(stderr, "Error: unknown command or invalid arguments:  \"%s\". Enter \".help\" for help\n", args[0]);
+		fprintf(stderr, "Error: unknown command or invalid arguments:  \"%s\". Enter \".help\" for help\n", args[0]);
 		rc = 1;
 	}
 	return rc;
@@ -2520,12 +2520,12 @@ __global__ void d_ProcessInput_0(struct CallbackData *p, char *sql, int startlin
 			__snprintf(prefix, sizeof(prefix), "Error:");
 		if (errMsg)
 		{
-			_fprintf(stderr, "%s %s\n", prefix, errMsg);
+			fprintf(stderr, "%s %s\n", prefix, errMsg);
 			_free(errMsg);
 			errMsg = nullptr;
 		}
 		else
-			_fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
+			fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
 		d_return = -1;
 		return;
 	}
@@ -2544,7 +2544,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 	int startline = 0;
 	while (errCnt == 0 || !_bailOnError || (in == 0 && _stdinIsInteractive))
 	{
-		_fflush(p->Out);
+		fflush(p->Out);
 		free(line);
 		line = OneInputLine(sql, in);
 		if (!line) // End of input
@@ -2580,7 +2580,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 				sql = (char *)malloc(sqlLength+3);
 				if (!sql)
 				{
-					_fprintf(stderr, "Error: out_ of memory\n");
+					fprintf(stderr, "Error: out_ of memory\n");
 					exit(1);
 				}
 				memcpy(sql, line, sqlLength+1);
@@ -2593,7 +2593,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 			sql = (char *)realloc(sql, sqlLength + lineLength + 4);
 			if (!sql)
 			{
-				_fprintf(stderr,"Error: out_ of memory\n");
+				fprintf(stderr,"Error: out_ of memory\n");
 				exit(1);
 			}
 			sql[sqlLength++] = '\n';
@@ -2625,12 +2625,12 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 					_snprintf(prefix, sizeof(prefix), "Error:");
 				if (errMsg)
 				{
-					_fprintf(stderr, "%s %s\n", prefix, errMsg);
+					fprintf(stderr, "%s %s\n", prefix, errMsg);
 					_free(errMsg);
 					errMsg = nullptr;
 				}
 				else
-					_fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
+					fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
 				errCnt++;
 			}
 #endif
@@ -2643,7 +2643,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 	if (sql)
 	{
 		if (!_all_whitespace(sql))
-			_fprintf(stderr, "Error: incomplete SQL: %s\n", sql);
+			fprintf(stderr, "Error: incomplete SQL: %s\n", sql);
 		free(sql);
 	}
 	free(line);
@@ -2716,7 +2716,7 @@ static int ProcessSqliteRC(struct CallbackData *p, const char *sqliterc)
 		if (!homeDir)
 		{
 #if !defined(__RTP__) && !defined(_WRS_KERNEL)
-			_fprintf(stderr,"%s: Error: cannot locate your home directory\n", Argv0);
+			fprintf(stderr, "%s: Error: cannot locate your home directory\n", Argv0);
 #endif
 			return 1;
 		}
@@ -2727,7 +2727,7 @@ static int ProcessSqliteRC(struct CallbackData *p, const char *sqliterc)
 	if (in)
 	{
 		if (_stdinIsInteractive)
-			_fprintf(stderr,"-- Loading resources from %s\n", sqliterc);
+			fprintf(stderr, "-- Loading resources from %s\n", sqliterc);
 		rc = ProcessInput(p, in);
 		fclose(in);
 	}
@@ -2770,14 +2770,14 @@ static const char _options[] =
 	;
 static void Usage(bool showDetail)
 {
-	_fprintf(stderr,
+	fprintf(stderr,
 		"Usage: %s [OPTIONS] FILENAME [SQL]\n"  
 		"FILENAME is the name of an SQLite database. A new database is created\n"
 		"if the file does not previously exist.\n", Argv0);
 	if (showDetail)
-		_fprintf(stderr, "OPTIONS include:\n%s", _options);
+		fprintf(stderr, "OPTIONS include:\n%s", _options);
 	else
-		_fprintf(stderr, "Use the -help option for additional information\n");
+		fprintf(stderr, "Use the -help option for additional information\n");
 	exit(1);
 }
 
@@ -2844,7 +2844,7 @@ static char *CmdlineOptionValue(int argc, char **argv, int i)
 {
 	if (i == argc)
 	{
-		_fprintf(stderr, "%s: Error: missing argument to %s\n", argv[0], argv[argc-1]);
+		fprintf(stderr, "%s: Error: missing argument to %s\n", argv[0], argv[argc-1]);
 		exit(1);
 	}
 	return argv[i];
@@ -2893,7 +2893,7 @@ int main(int argc, char **argv)
 
 	//if (strcmp(CORE_SOURCE_ID, SQLITE_SOURCE_ID))
 	//{
-	//	_fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n", CORE_SOURCE_ID, SQLITE_SOURCE_ID);
+	//	fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n", CORE_SOURCE_ID, SQLITE_SOURCE_ID);
 	//	exit(1);
 	//}
 	Argv0 = argv[0];
@@ -2924,8 +2924,8 @@ int main(int argc, char **argv)
 				firstCmd = z;
 				continue;
 			}
-			_fprintf(stderr, "%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
-			_fprintf(stderr, "Use -help for a list of options.\n");
+			fprintf(stderr, "%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
+			fprintf(stderr, "Use -help for a list of options.\n");
 			return 1;
 		}
 		if (z[1] == '-') z++;
@@ -2979,7 +2979,7 @@ int main(int argc, char **argv)
 			cudaMemcpy(d_vfsName, vfsName, vfsNameLength, cudaMemcpyHostToDevice);
 			d_main_Vfs<<<1,1>>>(d_vfsName); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); 
 			cudaFree(d_vfsName);
-			H_RETURN; if (h_return) { _fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]); exit(1); }
+			H_RETURN; if (h_return) { fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]); exit(1); }
 #else
 			Main::Initialize();
 			VSystem *vfs = VSystem::FindVfs(CmdlineOptionValue(argc, argv, ++i));
@@ -2987,7 +2987,7 @@ int main(int argc, char **argv)
 				VSystem::RegisterVfs(vfs, true);
 			else
 			{
-				_fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]);
+				fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]);
 				exit(1);
 			}
 #endif
@@ -2999,7 +2999,7 @@ int main(int argc, char **argv)
 		H_DIRTY(&_data);
 		_data.DbFilename = ":memory:";
 #else
-		_fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
+		fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
 		return 1;
 #endif
 	}
@@ -3075,12 +3075,12 @@ int main(int argc, char **argv)
 				rc = ShellExec(_data.Ctx, z, ShellCallback, &_data, &errMsg);
 				if (errMsg)
 				{
-					_fprintf(stderr, "Error: %s\n", errMsg);
+					fprintf(stderr, "Error: %s\n", errMsg);
 					if (_bailOnError) return (rc ? rc : 1);
 				}
 				else if (rc)
 				{
-					_fprintf(stderr, "Error: unable to process SQL \"%s\"\n", z);
+					fprintf(stderr, "Error: unable to process SQL \"%s\"\n", z);
 					if (_bailOnError) return rc;
 				}
 #endif
@@ -3088,8 +3088,8 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			_fprintf(stderr, "%s: Error: unknown option: %s\n", Argv0, z);
-			_fprintf(stderr, "Use -help for a list of options.\n");
+			fprintf(stderr, "%s: Error: unknown option: %s\n", Argv0, z);
+			fprintf(stderr, "Use -help for a list of options.\n");
 			return 1;
 		}
 	}
@@ -3114,12 +3114,12 @@ int main(int argc, char **argv)
 			rc = ShellExec(_data.Ctx, firstCmd, ShellCallback, &_data, &errMsg);
 			if (errMsg)
 			{
-				_fprintf(stderr, "Error: %s\n", errMsg);
+				fprintf(stderr, "Error: %s\n", errMsg);
 				return (rc ? rc : 1);
 			}
 			else if (rc)
 			{
-				_fprintf(stderr, "Error: unable to process SQL \"%s\"\n", firstCmd);
+				fprintf(stderr, "Error: unable to process SQL \"%s\"\n", firstCmd);
 				return rc;
 			}
 #endif

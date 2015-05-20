@@ -133,8 +133,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -149,6 +150,7 @@
       <Include>$(SolutionDir)lib;%(Include)</Include>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <GPUDebugInfo>true</GPUDebugInfo>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>
@@ -163,8 +165,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions Condition="'$(LD)'!='V'">_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_LIB;VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

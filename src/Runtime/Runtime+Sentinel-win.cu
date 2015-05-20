@@ -8,17 +8,18 @@
 
 __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 {
-	RuntimeSentinelMap *map = _map;
+	RuntimeSentinelMap *map = _runtimeSentinelMap;
 	int id = InterlockedAdd((LONG *)&map->AddId, 1);
 	RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
-	while (InterlockedCompareExchange((LONG *)&cmd->Status, 1, 0) != 0) { }
+	volatile int *status = (volatile int *)&cmd->Status;
+	while (InterlockedCompareExchange((LONG *)status, 1, 0) != 0) { }
 	cmd->Length = msgLength;
 	RuntimeSentinelMessage *msg2 = (RuntimeSentinelMessage *)msg;
 	if (msg2->Prepare)
 		msg2->Prepare(msg, cmd->Data, sizeof(cmd->Data));
 	memcpy(cmd->Data, msg, msgLength);
 	cmd->Status = 2;
-	while (InterlockedCompareExchange((LONG *)&cmd->Status, 5, 4) != 4) { }
+	while (InterlockedCompareExchange((LONG *)status, 5, 4) != 4) { }
 	memcpy(msg, cmd->Data, msgLength);
 	cmd->Status = 0;
 }

@@ -5,19 +5,30 @@
 
 __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 {
-	RuntimeSentinelMap *map = _map;
+	RuntimeSentinelMap *map = _runtimeSentinelMap;
 	int id = atomicAdd((unsigned int *)&map->AddId, 1);
 	RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
-	while (atomicCAS((unsigned int *)&cmd->Status, 1, 0) != 0);
+	volatile int *status = (volatile int *)&cmd->Status;
+	//while (atomicCAS((unsigned int *)status, 1, 0) != 0) { __syncthreads(); }
 	cmd->Length = msgLength;
 	RuntimeSentinelMessage *msg2 = (RuntimeSentinelMessage *)msg;
 	if (msg2->Prepare)
 		msg2->Prepare(msg, cmd->Data, sizeof(cmd->Data));
 	memcpy(cmd->Data, msg, msgLength);
-	cmd->Status = 2;
-	while (atomicCAS((unsigned int *)&cmd->Status, 5, 4) != 4);
+	*status = 2;
+	//asm("st.global.wt.u32 [%0], %1;" : "+l"(status) : "r"(2));
+	// while (atomicCAS((unsigned int *)status, 5, 4)) != 4);
+	unsigned int s_;
+	do
+	{
+		asm("ld.global.cv.u32 %0, [%1];" : "=r"(s_) : "l"(status));
+		printf("%d ", s_);
+		__syncthreads();
+	} while (s_ != 4);
 	memcpy(msg, cmd->Data, msgLength);
-	cmd->Status = 0;
+	*status = 0;
+	//asm("st.global.wt.u32 [%0], %1;" : "+l"(status) : "r"(0));
+	
 }
 
 #pragma endregion

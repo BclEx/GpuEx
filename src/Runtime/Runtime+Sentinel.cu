@@ -44,25 +44,34 @@ static unsigned int __stdcall SentinelThread(void *data)
 {
 	RuntimeSentinelContext *ctx = &_ctx; //(RuntimeSentinelContext *)data;
 	RuntimeSentinelMap *map = ctx->Map;
-	while (true)
+	while (map)
 	{
 		int id = InterlockedAdd((LONG *)&map->RunId, 1);
 		RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
-		while (InterlockedCompareExchange((LONG *)&cmd->Status, 3, 2) != 2) { Sleep(10); }
+		unsigned int s_;
+		while ((s_ = InterlockedCompareExchange((LONG *)&cmd->Status, 3, 2)) != 2) { printf("[%d ]", s_); Sleep(10); }
+		char *b = cmd->Data;
+		int l = cmd->Length;
+		printf("\nSentinel: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'");
 		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && !exec->Executor(exec->Tag, (RuntimeSentinelMessage *)cmd->Data, cmd->Length); exec = exec->Next) { }
+		printf(".");
 		cmd->Status = 4;
 	}
+	return 0;
 }
 
 static HANDLE _thread;
 static RuntimeSentinelExecutor _baseExecutor;
-RuntimeSentinelMap *RuntimeSentinel::_map;
+__constant__ RuntimeSentinelMap *_runtimeSentinelMap = nullptr;
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 {
-#ifndef _GPU
-	_ctx.Map = _map = (RuntimeSentinelMap *)malloc(sizeof(*_ctx.Map));
-#else
+#ifdef _GPU
 	cudaErrorCheck(cudaHostAlloc(&_ctx.Map, sizeof(*_ctx.Map), cudaHostAllocPortable));
+	RuntimeSentinelContext *d_map;
+	cudaErrorCheck(cudaHostGetDevicePointer(&d_map, _ctx.Map, 0));
+	cudaErrorCheck(cudaMemcpyToSymbol(_runtimeSentinelMap, &d_map, sizeof(_ctx.Map)));
+#else
+	_ctx.Map = _runtimeSentinelMap = (RuntimeSentinelMap *)malloc(sizeof(*_ctx.Map));
 #endif
 	memset(_ctx.Map, 0, sizeof(*_ctx.Map));
 	_baseExecutor.Name = "base";
@@ -77,11 +86,12 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 void RuntimeSentinel::Shutdown()
 {
 	CloseHandle(_thread);
-#ifndef _GPU
-	free(_ctx.Map);
+#ifdef _GPU
+	cudaErrorCheck(cudaFreeHost(_ctx.Map));
 #else
-	cudaFreeHost(_ctx.Map);
+	free(_ctx.Map);
 #endif
+	_ctx.Map = nullptr;
 }
 
 RuntimeSentinelExecutor *RuntimeSentinel::FindExecutor(const char *name)
