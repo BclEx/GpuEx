@@ -2520,12 +2520,12 @@ __global__ void d_ProcessInput_0(struct CallbackData *p, char *sql, int startlin
 			__snprintf(prefix, sizeof(prefix), "Error:");
 		if (errMsg)
 		{
-			fprintf(stderr, "%s %s\n", prefix, errMsg);
+			_fprintf(stderr, "%s %s\n", prefix, errMsg);
 			_free(errMsg);
 			errMsg = nullptr;
 		}
 		else
-			fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
+			_fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
 		d_return = -1;
 		return;
 	}
@@ -2809,6 +2809,7 @@ static void MainInit()
 	//
 	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	cudaDeviceHeapSynchronize(_deviceHeap);
+	VSystemSentinel::Initialize();
 #else
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, _data);
@@ -2830,6 +2831,7 @@ static void MainShutdown()
 	D_DATA(&_data); d_MainShutdown_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	D_FREE(&_data);
 	//
+	VSystemSentinel::Shutdown();
 	cudaDeviceHeapDestroy(_deviceHeap);
 	cudaDeviceReset();
 #else
@@ -2904,6 +2906,7 @@ int main(int argc, char **argv)
 #ifdef SIGINT
 	signal(SIGINT, InterruptHandler);
 #endif
+	H_DIRTY(&_data);
 	_data.DbFilename = "\\T_\\t.db";
 
 	// Do an initial pass through the command-line argument to locate the name of the database file, the name of the initialization file,
@@ -2916,6 +2919,7 @@ int main(int argc, char **argv)
 		{
 			if (!_data.DbFilename)
 			{
+				H_DIRTY(&_data);
 				_data.DbFilename = z;
 				continue;
 			}
@@ -2979,7 +2983,7 @@ int main(int argc, char **argv)
 			cudaMemcpy(d_vfsName, vfsName, vfsNameLength, cudaMemcpyHostToDevice);
 			d_main_Vfs<<<1,1>>>(d_vfsName); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); 
 			cudaFree(d_vfsName);
-			H_RETURN; if (h_return) { fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]); exit(1); }
+			H_RETURN(); if (h_return) { fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]); exit(1); }
 #else
 			Main::Initialize();
 			VSystem *vfs = VSystem::FindVfs(CmdlineOptionValue(argc, argv, ++i));

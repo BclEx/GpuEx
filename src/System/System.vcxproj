@@ -69,7 +69,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;_TEST;ENABLE_ATOMIC_WRITE;OMIT_AUTOINIT;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;_TEST;ENABLE_ATOMIC_WRITE;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -100,7 +102,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;ENABLE_ATOMIC_WRITE;OMIT_AUTOINIT;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -120,7 +124,7 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" -o "$(OutDir)System.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" "$(IntDir)System2.cu.obj" -o "$(OutDir)System2.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -128,7 +132,7 @@
     <ClInclude Include="..\System.net\Core\RC.cu.h" />
     <ClInclude Include="..\System.net\Core\SysEx.cu.h" />
     <ClInclude Include="..\System.net\Core\VSystem.cu.h" />
-    <ClInclude Include="..\System.net\Core\VSystemSentinel.cu.h" />
+    <ClInclude Include="..\System.net\Core\VSystem+Sentinel.cu.h" />
     <ClInclude Include="..\System.net\Core\Core.cu.h" />
     <ClInclude Include="..\System.net\Core\IO\IO.VFile.cu.h" />
   </ItemGroup>
@@ -142,11 +146,10 @@
     <ClCompile Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
     <ClCompile Include="..\System.net\Core\IO\IO.VFile.cu" />
     <ClCompile Include="..\System.net\Core\VSystem.cu" />
-    <None Include="..\System.net\Core\VSystem-gpu.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-map.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
-    <ClCompile Include="..\System.net\Core\VSystemSentinel.cpp" />
+    <ClCompile Include="..\System.net\Core\VSystem+Sentinel.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="System.cu" />
@@ -158,13 +161,10 @@
     <None Include="..\System.net\Core\IO\IO.MemoryVFile.cu" />
     <None Include="..\System.net\Core\IO\IO.VFile.cu" />
     <None Include="..\System.net\Core\VSystem.cu" />
-    <None Include="..\System.net\Core\VSystem-gpu.cu" />
     <None Include="..\System.net\Core\VSystem-map.cu" />
     <None Include="..\System.net\Core\VSystem-unix.cu" />
     <None Include="..\System.net\Core\VSystem-win.cu" />
-    <CudaCompile Include="..\System.net\Core\VSystemSentinel.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</ExcludedFromBuild>
-    </CudaCompile>
+    <None Include="..\System.net\Core\VSystem+Sentinel.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,20 +1,9 @@
-﻿#include "VSystemSentinel.cu.h"
+﻿#include "Core.cu.h"
 #include <new.h>
 
-#if OS_MAP
+#if OS_MAP && !defined(_SENTINEL)
 namespace Core
 {
-
-#pragma region Preamble
-
-	//#if defined(_TEST) || defined(_DEBUG)
-	//	__device__ bool OsTrace = true;
-	//#define OSTRACE(X, ...) if (OsTrace) { _dprintf(X, __VA_ARGS__); }
-	//#else
-	//#define OSTRACE(X, ...)
-	//#endif
-
-#pragma endregion
 
 #pragma region MapVFile
 
@@ -68,6 +57,45 @@ namespace Core
 		__device__ virtual syscall_ptr GetSystemCall(const char *name);
 		__device__ virtual const char *NextSystemCall(const char *name);
 	};
+
+#pragma endregion
+
+#pragma region Gpu
+
+#ifndef MAP_DATA_DIRECTORY_TYPE // The value used with sqlite3_win32_set_directory() to specify that the data directory should be changed.
+#define MAP_DATA_DIRECTORY_TYPE (1)
+#endif
+#ifndef MAP_TEMP_DIRECTORY_TYPE // The value used with sqlite3_win32_set_directory() to specify that the temporary directory should be changed.
+#define MAP_TEMP_DIRECTORY_TYPE (2) 
+#endif
+
+#pragma endregion
+
+#pragma region Map
+
+	__device__ char *g_data_directory;
+	__device__ char *g_temp_directory;
+	__device__ RC map_SetDirectory(int type, void *value)
+	{
+#ifndef OMIT_AUTOINIT
+		RC rc = SysEx::AutoInitialize();
+		if (rc) return rc;
+#endif
+		char **directory = nullptr;
+		if (type == MAP_DATA_DIRECTORY_TYPE)
+			directory = &g_data_directory;
+		else if (type == MAP_TEMP_DIRECTORY_TYPE)
+			directory = &g_temp_directory;
+		_assert(!directory || type == MAP_DATA_DIRECTORY_TYPE || type == MAP_TEMP_DIRECTORY_TYPE);
+		_assert(!directory || _memdbg_hastype(*directory, MEMTYPE_HEAP));
+		if (directory)
+		{
+			_free(*directory);
+			*directory = (char *)value;
+			return RC_OK;
+		}
+		return RC_ERROR;
+	}
 
 #pragma endregion
 
@@ -334,17 +362,7 @@ namespace Core
 
 	__device__ static unsigned char _mapVfsBuf[sizeof(MapVSystem)];
 	__device__ static MapVSystem *_mapVfs;
-#ifdef OS_SENTINEL
-	__device__ RC MapVSystem_Initialize()
-	{
-		_mapVfs = new (_mapVfsBuf) MapVSystem();
-		_mapVfs->SizeOsFile = sizeof(MapVFile);
-		_mapVfs->MaxPathname = 260;
-		_mapVfs->Name = "map";
-		VSystem::RegisterVfs(_mapVfs, true);
-		return RC_OK; 
-	}
-#else
+#if _GPU
 	__device__ RC VSystem::Initialize()
 	{
 		_mapVfs = new (_mapVfsBuf) MapVSystem();
@@ -357,6 +375,16 @@ namespace Core
 
 	__device__ void VSystem::Shutdown()
 	{
+	}
+#else
+	__device__ RC MapVSystem_Initialize()
+	{
+		_mapVfs = new (_mapVfsBuf) MapVSystem();
+		_mapVfs->SizeOsFile = sizeof(MapVFile);
+		_mapVfs->MaxPathname = 260;
+		_mapVfs->Name = "map";
+		VSystem::RegisterVfs(_mapVfs, true);
+		return RC_OK; 
 	}
 #endif
 

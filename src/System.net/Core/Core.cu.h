@@ -1,10 +1,5 @@
 ﻿#ifndef __CORE_CU_H__
 #define __CORE_CU_H__
-#define OS_MAP 1
-
-//#if __CUDACC__
-//#define OMIT_AUTOINIT
-//#endif
 
 #include <Runtime.h>
 #include <RuntimeTypes.h>
@@ -25,5 +20,8 @@
 #include "IO\IO.VFile.cu.h"
 using namespace Core;
 using namespace Core::IO;
+#if OS_MAP
+#include "VSystem+Sentinel.cu.h"
+#endif
 
 #endif // __CORE_CU_H__

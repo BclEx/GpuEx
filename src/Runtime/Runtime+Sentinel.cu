@@ -3,8 +3,8 @@
 #include <assert.h>
 #include "Runtime.h"
 
-#if OS_SENTINEL
-#pragma region OS_SENTINEL
+#if OS_MAP
+#pragma region OS_MAP
 
 static RuntimeSentinelContext _ctx;
 
@@ -48,8 +48,7 @@ static unsigned int __stdcall SentinelThread(void *data)
 	{
 		int id = InterlockedAdd((LONG *)&map->RunId, 1);
 		RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
-		unsigned int s_;
-		while ((s_ = InterlockedCompareExchange((LONG *)&cmd->Status, 3, 2)) != 2) { printf("[%d ]", s_); Sleep(10); }
+		while (InterlockedCompareExchange((LONG *)&cmd->Status, 3, 2) != 2) { Sleep(10); } // printf("[%d ]", s_); 
 		char *b = cmd->Data;
 		int l = cmd->Length;
 		printf("\nSentinel: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'");

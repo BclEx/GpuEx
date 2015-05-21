@@ -2,7 +2,6 @@
 
 //#define VISUAL
 #include "..\System.net\Core\Core.cu.h"
-#include "..\System.net\Core\VSystemSentinel.cu.h"
 #include <string.h>
 
 #pragma region TestSystem0

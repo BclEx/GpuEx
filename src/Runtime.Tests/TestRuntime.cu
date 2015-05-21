@@ -202,7 +202,7 @@ __global__ static void runtime13(void *r)
 {
 	_runtimeSetHeap(r);
 	FILE *f = _fopen("C:\\T_\\fopen.txt", "w");
-	//_fprintf(f, "The quick brown fox jumps over the lazy dog");
+	_fprintf(f, "The quick brown fox jumps over the lazy dog");
 	_fflush(f);
 	_fclose(f);
 	printf("Example: 13\n");
@@ -289,7 +289,7 @@ void __testRuntime(cudaDeviceHeap &r)
 #else
 void __testRuntime(cudaDeviceHeap &r)
 {
-	RuntimeSentinel::Initialize();
+	//RuntimeSentinel::Initialize();
 	runtime0(r.heap);
 	runtime1(r.heap);
 	runtime2(r.heap);
@@ -305,6 +305,6 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime12(r.heap);
 	runtime13(r.heap);
 	runtime14(r.heap);
-	RuntimeSentinel::Shutdown();
+	//RuntimeSentinel::Shutdown();
 }
 #endif

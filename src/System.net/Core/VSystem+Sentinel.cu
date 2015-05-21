@@ -1,4 +1,6 @@
-#include "VSystemSentinel.cu.h"
+#include "Core.cu.h"
+
+#if OS_MAP
 
 namespace Core
 {
@@ -72,8 +74,8 @@ namespace Core
 		return false;
 	}
 
-#ifdef _CPU
-	extern RC MapVSystem_Initialize();
+#ifndef _GPU
+	//extern RC MapVSystem_Initialize();
 #endif
 	static RuntimeSentinelExecutor _sysExecutor;
 	void VSystemSentinel::Initialize()
@@ -81,9 +83,9 @@ namespace Core
 		MutexEx masterMutex;
 		SysEx::Initialize(masterMutex);
 		VSystem *vfs = VSystem::FindVfs(nullptr);
-#ifdef _CPU
-		VSystem::UnregisterVfs(vfs);
-		MapVSystem_Initialize();
+#ifndef _GPU
+		//VSystem::UnregisterVfs(vfs);
+		//MapVSystem_Initialize();
 #endif
 		_sysExecutor.Name = "sys";
 		_sysExecutor.Executor = RUNTIMESENTINELEXECUTOR(Executor);
@@ -97,3 +99,5 @@ namespace Core
 		SysEx::Shutdown();
 	}
 }
+
+#endif

@@ -1,7 +1,6 @@
 #ifndef __RUNTIME_H__
 #define __RUNTIME_H__
 #include "RuntimeTypes.h"
-//#define _CPU
 
 //////////////////////
 // NATIVE
@@ -30,27 +29,25 @@
 #define _API extern
 #endif
 
-#ifndef OS_WIN
+#if defined(_GPU) || defined(_SENTINEL)
+#define OS_MAP 1
+#define OMIT_AUTOINIT
+#else
+#define OS_MAP 0
+#endif
+
 #if __CUDACC__
 #define OS_WIN 0
 #define OS_UNIX 0
 #define OS_GPU 1
-#define OS_SENTINEL 1
 #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #define OS_WIN 1
 #define OS_UNIX 0
 #define OS_GPU 0
-#define OS_SENTINEL 1
 #else
 #define OS_WIN 0
 #define OS_UNIX 1
 #define OS_GPU 0
-#define OS_SENTINEL 1
-#endif
-#else
-#define OS_UNIX 0
-#define OS_GPU 0
-#define OS_SENTINEL 1
 #endif
 
 #pragma endregion
@@ -258,7 +255,7 @@ extern "C" __device__ inline int _math_abs(int x)
 #if defined(__THREADSAFE__)
 #define THREADSAFE __THREADSAFE__
 #else
-#define THREADSAFE 1 // IMP: R-07272-22309
+#define THREADSAFE 0 // IMP: R-07272-22309
 #endif
 #endif
 
@@ -293,9 +290,8 @@ enum MUTEX : unsigned char
 	MUTEX_STATIC_PMEM = 7, // sqlite3PageMalloc()
 };
 
-struct _mutex_obj;
-typedef _mutex_obj *MutexEx;
 #ifdef MUTEX_OMIT
+typedef void *MutexEx;
 #define _mutex_held(X) ((void)(X), 1)
 #define _mutex_notheld(X) ((void)(X), 1)
 #define _mutex_init() 0
@@ -307,6 +303,8 @@ typedef _mutex_obj *MutexEx;
 #define _mutex_free(X)
 #define MUTEX_LOGIC(X)
 #else
+struct _mutex_obj;
+typedef _mutex_obj *MutexEx;
 #ifdef _DEBUG
 extern "C" __device__ bool _mutex_held(MutexEx p);
 extern "C" __device__ bool _mutex_notheld(MutexEx p);
@@ -758,7 +756,7 @@ typedef void (*Destructor_t)(void *);
 //////////////////////
 // SENTINEL
 #pragma region SENTINEL
-#if OS_SENTINEL
+#if OS_MAP
 
 struct RuntimeSentinelMessage
 {
@@ -781,7 +779,7 @@ typedef struct
 {
 	volatile unsigned int AddId;
 	volatile unsigned int RunId;
-	RuntimeSentinelCommand Commands[3];
+	RuntimeSentinelCommand Commands[1];
 } RuntimeSentinelMap;
 
 typedef struct RuntimeSentinelExecutor
@@ -1002,7 +1000,7 @@ extern __constant__ FILE _stderr_file;
 #define stderr &_stderr_file
 #endif
 
-#if 1 && OS_SENTINEL
+#if 0 && OS_MAP
 #define _fprintf(f, ...) _fprintf_(f, _mprintf("%s", __VA_ARGS__))
 extern "C" __device__ inline int _fprintf_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(f, v); return msg.RC; }
 extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }

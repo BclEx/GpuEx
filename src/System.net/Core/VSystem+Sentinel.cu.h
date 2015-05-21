@@ -1,4 +1,4 @@
-﻿#include "Core.cu.h"
+﻿#if OS_MAP
 
 namespace Core
 {
@@ -198,3 +198,5 @@ namespace Core { namespace Messages
 
 #pragma endregion
 } }
+
+#endif

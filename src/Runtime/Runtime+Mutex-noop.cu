@@ -4,10 +4,11 @@
 #pragma region MUTEX_NOOP
 
 #if !_DEBUG
+struct _mutex_obj { };
 __device__ int _mutex_init() { return 0; }
 __device__ void _mutex_shutdown() { }
 
-__device__ _mutex_obj *_mutex_alloc(int id)  {  return (_mutex_obj *)1;  }
+__device__ _mutex_obj *_mutex_alloc(int id) { return (_mutex_obj *)1;  }
 __device__ void _mutex_free(_mutex_obj *p) { }
 __device__ void _mutex_enter(_mutex_obj *p) { }
 __device__ bool _mutex_tryenter(_mutex_obj *p) { return true; }

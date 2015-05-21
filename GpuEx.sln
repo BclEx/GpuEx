@@ -58,6 +58,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Falloc", "src\Falloc\Falloc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Falloc.Tests", "src\Falloc.Tests\Falloc.Tests.vcxproj", "{2A992207-4EA5-4750-9401-AAD09DFDE7E6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "System+Sentinel", "src\System+Sentinel\System+Sentinel.vcxproj", "{0B457F89-686B-4914-ACD4-42A1858294BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug.cpu|Any CPU = Debug.cpu|Any CPU
@@ -98,6 +100,7 @@ Global
 		{ACDAB731-E71B-406B-B023-6A3FD7957591}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
 		{ACDAB731-E71B-406B-B023-6A3FD7957591}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
 		{ACDAB731-E71B-406B-B023-6A3FD7957591}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
+		{ACDAB731-E71B-406B-B023-6A3FD7957591}.Debug.cu|x64.Build.0 = Debug.cu|x64
 		{ACDAB731-E71B-406B-B023-6A3FD7957591}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{ACDAB731-E71B-406B-B023-6A3FD7957591}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
 		{ACDAB731-E71B-406B-B023-6A3FD7957591}.Release.cpu|x64.Build.0 = Release.cpu|x64
@@ -144,6 +147,7 @@ Global
 		{AADAB731-E71B-406B-B023-6A3FD7957591}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
 		{AADAB731-E71B-406B-B023-6A3FD7957591}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
 		{AADAB731-E71B-406B-B023-6A3FD7957591}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
+		{AADAB731-E71B-406B-B023-6A3FD7957591}.Debug.cu|x64.Build.0 = Debug.cu|x64
 		{AADAB731-E71B-406B-B023-6A3FD7957591}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{AADAB731-E71B-406B-B023-6A3FD7957591}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
 		{AADAB731-E71B-406B-B023-6A3FD7957591}.Release.cpu|x64.Build.0 = Release.cpu|x64
@@ -152,7 +156,6 @@ Global
 		{AADAB731-E71B-406B-B023-6A3FD7957591}.Release.cu|x64.Build.0 = Release.cu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cpu|Any CPU.ActiveCfg = Debug.cpu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cpu|x64.ActiveCfg = Debug.cpu|x64
-		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
@@ -210,6 +213,7 @@ Global
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
+		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cu|x64.Build.0 = Debug.cu|x64
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Release.cpu|x64.Build.0 = Release.cpu|x64
@@ -236,6 +240,18 @@ Global
 		{2A992207-4EA5-4750-9401-AAD09DFDE7E6}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
 		{2A992207-4EA5-4750-9401-AAD09DFDE7E6}.Release.cu|x64.ActiveCfg = Release.cu|x64
 		{2A992207-4EA5-4750-9401-AAD09DFDE7E6}.Release.cu|x64.Build.0 = Release.cu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Debug.cpu|Any CPU.ActiveCfg = Debug.cpu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Debug.cpu|x64.ActiveCfg = Debug.cpu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Debug.cu|x64.Build.0 = Debug.cu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Release.cpu|x64.Build.0 = Release.cpu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Release.cu|x64.ActiveCfg = Release.cu|x64
+		{0B457F89-686B-4914-ACD4-42A1858294BD}.Release.cu|x64.Build.0 = Release.cu|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -249,6 +265,7 @@ Global
 		{ACDAB731-E71B-406B-B023-6A3FD7957591} = {88E97B5A-B2C4-44F9-B808-EA467C4886EC}
 		{30180E7B-AABE-4F33-9C2C-F8A447024674} = {88E97B5A-B2C4-44F9-B808-EA467C4886EC}
 		{3A992207-4EA5-4750-9401-AAD09DFDE7E5} = {88E97B5A-B2C4-44F9-B808-EA467C4886EC}
+		{0B457F89-686B-4914-ACD4-42A1858294BD} = {88E97B5A-B2C4-44F9-B808-EA467C4886EC}
 		{AADAB731-E71B-406B-B023-6A3FD7957591} = {13E1E01A-69CF-4BD0-ADC3-8F8291399885}
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5} = {13E1E01A-69CF-4BD0-ADC3-8F8291399885}
 		{31180E7B-AABE-4F33-9C2C-F8A447024674} = {13E1E01A-69CF-4BD0-ADC3-8F8291399885}

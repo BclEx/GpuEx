@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "Runtime.h"
 
-#if OS_SENTINEL && OS_WIN
+#if OS_MAP && OS_WIN
 #pragma region OS_WIN
 
 __device__ void RuntimeSentinel::Send(void *msg, int msgLength)

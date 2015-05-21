@@ -1,6 +1,6 @@
 #include "Runtime.h"
 
-#if OS_SENTINEL && OS_GPU
+#if OS_MAP && OS_GPU
 #pragma region OS_GPU
 
 __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
@@ -22,13 +22,12 @@ __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 	do
 	{
 		asm("ld.global.cv.u32 %0, [%1];" : "=r"(s_) : "l"(status));
-		printf("%d ", s_);
+		//printf("%d ", s_);
 		__syncthreads();
 	} while (s_ != 4);
 	memcpy(msg, cmd->Data, msgLength);
 	*status = 0;
-	//asm("st.global.wt.u32 [%0], %1;" : "+l"(status) : "r"(0));
-	
+	//asm("st.global.wt.u32 [%0], %1;" : "+l"(status) : "r"(0));	
 }
 
 #pragma endregion

@@ -493,7 +493,7 @@ namespace Core
 		// then pcache1EnterMutex() is a no-op, so we have to initialize the local variable here.  Delaying the initialization of pGroup is an
 		// optimization:  The common case is to exit the module before reaching this point.
 #ifdef MUTEX_OMIT
-		group = cache->Group;
+		group = Group;
 #endif
 
 		// Step 3: Abort if createFlag is 1 but the cache is nearly full

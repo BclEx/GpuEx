@@ -189,12 +189,12 @@ namespace Core
 			TagBase_RuntimeStatics.CoreMutex = true;
 			TagBase_RuntimeStatics.FullMutex = true;
 			break; }
-		//case CONFIG_MUTEX: { // Specify an alternative mutex implementation
-		//	SysEx_GlobalStatics.Mutex = *va_arg(args, void *);
-		//	break; }
-		//case CONFIG_GETMUTEX: { // Retrieve the current mutex implementation
-		//	*va_arg(args, void *) = SysEx_GlobalStatics.Mutex;
-		//	break; }
+								//case CONFIG_MUTEX: { // Specify an alternative mutex implementation
+								//	SysEx_GlobalStatics.Mutex = *va_arg(args, void *);
+								//	break; }
+								//case CONFIG_GETMUTEX: { // Retrieve the current mutex implementation
+								//	*va_arg(args, void *) = SysEx_GlobalStatics.Mutex;
+								//	break; }
 #endif
 		case CONFIG_MALLOC: { // Specify an alternative malloc implementation
 			//SysEx_GlobalStatics.m = *va_arg(args, sqlite3_mem_methods*);

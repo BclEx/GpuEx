@@ -19,7 +19,9 @@
     <ClInclude Include="..\System.net\Core\IO\IO.VFile.cu.h">
       <Filter>Core\IO</Filter>
     </ClInclude>
-    <ClInclude Include="..\System.net\Core\VSystemSentinel.cu.h" />
+    <ClInclude Include="..\System.net\Core\VSystem+Sentinel.cu.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -30,9 +32,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\System.net\Core\VSystem-gpu.cu">
-      <Filter>Core</Filter>
-    </None>
     <None Include="..\System.net\Core\VSystem-unix.cu">
       <Filter>Core</Filter>
     </None>
@@ -63,10 +62,12 @@
     <None Include="..\System.net\Core\VSystem-map.cu">
       <Filter>Core</Filter>
     </None>
+    <None Include="..\System.net\Core\VSystem+Sentinel.cu">
+      <Filter>Core</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="System.cu" />
-    <CudaCompile Include="..\System.net\Core\VSystemSentinel.cpp" />
   </ItemGroup>
 </Project>
