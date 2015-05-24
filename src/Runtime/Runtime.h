@@ -12,6 +12,7 @@
 #endif
 #if __CUDACC__
 #define __forceinline __forceinline__
+#define __host_device__ __host__ __device__
 #if __CUDA_ARCH__
 #define __host_constant__ __constant__
 #else
@@ -19,6 +20,7 @@
 #endif
 #include "Runtime.cu.h"
 #else
+#define __host_device__
 #define __host_constant__
 #include <string.h>
 #include <malloc.h>

@@ -728,7 +728,7 @@ namespace CORE_NAME
 		int i = -1;
 		if (name)
 			for (i = 0; i < _lengthof(Syscalls)-1; i++)
-				if (!strcmp(name, Syscalls[i].Name)) break;
+				if (!_strcmp(name, Syscalls[i].Name)) break;
 		for (i++; i < _lengthof(Syscalls); i++)
 			if (Syscalls[i].Current) return Syscalls[i].Name;
 		return 0;
