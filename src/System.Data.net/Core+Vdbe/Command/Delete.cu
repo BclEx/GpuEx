@@ -1,7 +1,7 @@
 // delete.c
 #include "..\Core+Vdbe.cu.h"
 
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 	__device__ Table *Delete::SrcListLookup(Parse *parse, SrcList *src)
 	{

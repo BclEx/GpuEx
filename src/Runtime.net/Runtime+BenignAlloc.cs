@@ -1,6 +1,6 @@
 using System;
 
-namespace Core
+namespace CORE_NAME
 {
     public static partial class C
     {

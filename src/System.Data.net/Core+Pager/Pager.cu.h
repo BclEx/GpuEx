@@ -1,5 +1,5 @@
 ﻿// pager.h
-namespace Core
+namespace CORE_NAME
 {
 	typedef class Pager Pager;
 	typedef struct Wal Wal;

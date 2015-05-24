@@ -1,5 +1,5 @@
 ﻿// os.h
-namespace Core
+namespace CORE_NAME
 {
 #pragma region Log & Trace
 
@@ -13,10 +13,6 @@ namespace Core
 #endif
 
 #pragma endregion
-
-#define CORE_VERSION        "--VERS--"
-#define CORE_VERSION_NUMBER 3007016
-#define CORE_SOURCE_ID      "--SOURCE-ID--"
 
 	class SysEx
 	{

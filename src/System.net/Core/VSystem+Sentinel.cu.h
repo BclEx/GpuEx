@@ -1,6 +1,6 @@
 ﻿#if OS_MAP
 
-namespace Core
+namespace CoreS
 {
 	struct VSystemSentinel
 	{
@@ -10,7 +10,7 @@ namespace Core
 	};
 }
 
-namespace Core { namespace Messages
+namespace CORE_NAME { namespace Messages
 {
 #pragma region File
 

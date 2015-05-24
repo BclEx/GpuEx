@@ -3,7 +3,7 @@
 #include "BtreeInt.cu.h"
 #include <stddef.h>
 
-namespace Core
+namespace CORE_NAME
 {
 #if _DEBUG
 	__device__ bool BtreeTrace = false;

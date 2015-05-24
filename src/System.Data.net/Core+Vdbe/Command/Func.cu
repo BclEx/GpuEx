@@ -2,14 +2,14 @@
 #include "..\VdbeInt.cu.h"
 #include <stdlib.h>
 
-namespace Core {
+namespace CORE_NAME {
 #ifndef OMIT_COMPILEOPTION_DIAGS
 	__device__ extern bool CompileTimeOptionUsed(const char *optName);
 	__device__ extern const char *CompileTimeGet(int id);
 #endif
 }
 
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 	__device__ CollSeq *Func::GetFuncCollSeq(FuncContext *fctx)
 	{

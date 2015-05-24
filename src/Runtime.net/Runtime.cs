@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 
-namespace Core
+namespace CORE_NAME
 {
     public struct array_t<T>
     {

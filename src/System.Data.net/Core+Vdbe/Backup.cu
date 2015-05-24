@@ -5,7 +5,7 @@
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ static Btree *FindBtree(Context *errorCtx, Context *ctx, const char *dbName)
 	{

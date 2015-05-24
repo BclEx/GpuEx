@@ -4,6 +4,13 @@
 #include <Runtime.h>
 #include <RuntimeTypes.h>
 
+#ifndef CORE_NAME
+#define CORE_NAME			Core
+#endif
+#define CORE_VERSION		"--VERS--"
+#define CORE_VERSION_NUMBER	3007016
+#define CORE_SOURCE_ID		"--SOURCE-ID--"
+
 #if defined(__GNUC__) && 0
 #define likely(X) __builtin_expect((X),1)
 #define unlikely(X) __builtin_expect((X),0)
@@ -17,7 +24,7 @@
 #include "SysEx.cu.h"
 #include "VSystem.cu.h"
 #include "VFile.cu.h"
-using namespace Core;
+using namespace CORE_NAME;
 #if OS_MAP
 #include "VSystem+Sentinel.cu.h"
 #endif

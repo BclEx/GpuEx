@@ -1,6 +1,6 @@
 ﻿// os.c
 #include "Core.cu.h"
-namespace Core
+namespace CORE_NAME
 {
 	__device__ static VSystem *_WSD g_vfsList = nullptr;
 #define _vfsList _GLOBAL(VSystem *, g_vfsList)

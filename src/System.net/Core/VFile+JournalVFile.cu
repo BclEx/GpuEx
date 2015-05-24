@@ -3,7 +3,7 @@
 #include <new.h>
 #ifdef ENABLE_ATOMIC_WRITE
 
-namespace Core
+namespace CORE_NAME
 {
 	class JournalVFile : public VFile
 	{

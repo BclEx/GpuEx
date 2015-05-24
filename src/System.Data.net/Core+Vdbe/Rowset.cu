@@ -1,6 +1,6 @@
 #include "Core+Vdbe.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	struct RowSetEntry
 	{            

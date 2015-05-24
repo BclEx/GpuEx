@@ -1,8 +1,16 @@
-#include "Core.cu.h"
+#include <Runtime.h>
 
 #if OS_MAP
 
-namespace Core
+#define CORE_NAME CoreS
+#include "Core.cu.h"
+#include "SysEx.cu"
+#include "SysEx+Random.cu"
+#include "VFile.cu"
+#include "VSystem.cu"
+#include "VSystem-win.cu"
+
+namespace CORE_NAME
 {
 	static bool Executor(VSystem *vfs, RuntimeSentinelMessage *data, int length)
 	{

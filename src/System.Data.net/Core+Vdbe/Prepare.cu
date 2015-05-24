@@ -1,6 +1,6 @@
 #include "VdbeInt.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ static void CorruptSchema(InitData *data, const char *obj, const char *extra)
 	{

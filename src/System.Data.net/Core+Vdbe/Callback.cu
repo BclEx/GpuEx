@@ -1,7 +1,7 @@
 #include "Core+Vdbe.cu.h"
 #include <new.h>
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ static void CallCollNeeded(Context *ctx, TEXTENCODE encode, const char *name)
 	{

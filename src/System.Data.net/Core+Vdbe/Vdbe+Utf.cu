@@ -3,7 +3,7 @@
 #include "VdbeInt.cu.h"
 #define TRANSLATE_TRACE
 
-namespace Core
+namespace CORE_NAME
 {
 
 #pragma region UTF Macros

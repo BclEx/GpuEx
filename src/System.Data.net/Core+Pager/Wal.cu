@@ -3,7 +3,7 @@
 #include <stddef.h> 
 
 #ifndef OMIT_WAL
-namespace Core
+namespace CORE_NAME
 {
 
 #ifdef _DEBUG

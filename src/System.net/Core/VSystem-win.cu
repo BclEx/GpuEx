@@ -5,7 +5,7 @@
 #include "Core.cu.h"
 #if OS_WIN // This file is used for Windows only
 
-namespace Core
+namespace CORE_NAME
 {
 #pragma region Preamble
 

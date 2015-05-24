@@ -1,6 +1,6 @@
 ﻿// sqlite.h
 #pragma once
-namespace Core
+namespace CORE_NAME
 {
 	typedef void (*syscall_ptr)();
 

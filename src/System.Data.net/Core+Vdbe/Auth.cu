@@ -3,7 +3,7 @@
 
 #include "Core+Vdbe.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ RC Auth::SetAuthorizer(Context *ctx, ARC (*auth)(void*,int,const char*,const char*,const char*,const char*), void *arg)
 	{

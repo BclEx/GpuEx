@@ -42,7 +42,7 @@ __device__ static void TestDB()
 //	file->Close();
 //}
 
-//namespace Core { int Bitvec_BuiltinTest(int size, int *ops); }
+//namespace CORE_NAME { int Bitvec_BuiltinTest(int size, int *ops); }
 //void TestBitvec()
 //{
 //	int ops[] = { 5, 1, 1, 1, 0 };

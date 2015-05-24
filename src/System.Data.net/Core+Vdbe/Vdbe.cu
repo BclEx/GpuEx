@@ -1,7 +1,7 @@
 // vdbe.c
 #include "VdbeInt.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 #pragma region Preamble
 

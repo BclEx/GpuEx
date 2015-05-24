@@ -2,7 +2,7 @@
 #ifndef __BTREEINT_CU_H__
 #define __BTREEINT_CU_H__
 
-namespace Core
+namespace CORE_NAME
 {
 
 #define MX_CELL_SIZE(bt)  ((int)(bt->PageSize-8))

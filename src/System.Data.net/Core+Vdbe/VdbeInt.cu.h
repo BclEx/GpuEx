@@ -5,7 +5,7 @@
 #include "Core+Vdbe.cu.h"
 #include "..\Core+Btree\BtreeInt.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	struct VTableCursor;
 	struct VdbeSorter;

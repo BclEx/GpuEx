@@ -2,7 +2,7 @@
 #include "Core.cu.h"
 #include <new.h>
 
-namespace Core
+namespace CORE_NAME
 {
 #define JOURNAL_CHUNKSIZE ((int)(1024 - sizeof(FileChunk *)))
 

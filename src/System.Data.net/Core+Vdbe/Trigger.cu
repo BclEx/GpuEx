@@ -2,7 +2,7 @@
 #ifndef OMIT_TRIGGER
 #include "VdbeInt.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ void Trigger::DeleteTriggerStep(Context *ctx, TriggerStep *triggerStep)
 	{

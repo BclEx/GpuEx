@@ -1,7 +1,7 @@
 // walker.c
 #include "Core+Vdbe.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ WRC Walker::WalkExpr(Expr *expr)
 	{

@@ -1,7 +1,7 @@
 // random.c
 #include "Core.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ static _WSD struct Prng
 	{

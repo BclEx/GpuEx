@@ -1,7 +1,7 @@
 // vdbeblob.cu
 #include "VdbeInt.cu.h"
 
-namespace Core {
+namespace CORE_NAME {
 
 #pragma region Blob
 #ifndef OMIT_INCRBLOB

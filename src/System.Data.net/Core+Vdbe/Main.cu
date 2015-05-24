@@ -9,7 +9,7 @@
 #include "sqliteicu.h"
 #endif
 
-namespace Core
+namespace CORE_NAME
 {
 
 #pragma region From: Util_c

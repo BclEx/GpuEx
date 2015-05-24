@@ -2,7 +2,7 @@
 #include "Core+Vdbe.cu.h"
 #include "../KeywordHash.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ int Parse::GetToken(const unsigned char *z, int *tokenType)
 	{

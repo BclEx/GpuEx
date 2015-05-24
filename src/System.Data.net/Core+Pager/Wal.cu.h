@@ -1,5 +1,5 @@
 ﻿// wal.h
-namespace Core
+namespace CORE_NAME
 {
 	struct Wal
 	{

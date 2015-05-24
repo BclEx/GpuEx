@@ -1,4 +1,4 @@
-namespace Core
+namespace CORE_NAME
 {
 #pragma region Authorization
 

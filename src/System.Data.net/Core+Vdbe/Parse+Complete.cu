@@ -12,7 +12,7 @@
 #define _strncmp_ strncmp
 #endif
 
-namespace Core
+namespace CORE_NAME
 {
 	enum TKC : uint8
 	{

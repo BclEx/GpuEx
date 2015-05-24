@@ -2,7 +2,7 @@
 #include <new.h>
 
 #if OS_MAP && !defined(_SENTINEL)
-namespace Core
+namespace CORE_NAME
 {
 
 #pragma region MapVFile

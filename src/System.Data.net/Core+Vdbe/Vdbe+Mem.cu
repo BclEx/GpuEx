@@ -1,7 +1,7 @@
 // vdbemem.cu
 #include "VdbeInt.cu.h"
 
-namespace Core {
+namespace CORE_NAME {
 
 #pragma region Memory
 

@@ -2,7 +2,7 @@
 #ifndef OMIT_COMPILEOPTION_DIAGS
 #include <Core/Core.cu.h>
 
-namespace Core
+namespace CORE_NAME
 {
 	// These macros are provided to "stringify" the value of the define for those options in which the value is meaningful.
 #define CTIMEOPT_VAL_(opt) #opt

@@ -1,7 +1,7 @@
 ﻿#include <stdarg.h>
 #include "Core.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ bool IOTrace = false;
 

@@ -1,6 +1,6 @@
 // legacy.c
 #include "Core+Vdbe.cu.h"
-namespace Core
+namespace CORE_NAME
 {
 	__device__ RC Main::Exec(Context *ctx, const char *sql, bool (*callback)(void *, int, char **, char **), void *arg, char **errmsg)
 	{

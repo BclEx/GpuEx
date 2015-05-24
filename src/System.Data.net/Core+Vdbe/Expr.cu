@@ -1,6 +1,6 @@
 #include "Core+Vdbe.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__constant__ const Token g_intTokens[] = {
 		{ "0", 1 },

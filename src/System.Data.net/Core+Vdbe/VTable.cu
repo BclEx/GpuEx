@@ -2,7 +2,7 @@
 #ifndef OMIT_VIRTUALTABLE
 #include "VdbeInt.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	struct VTableContext
 	{

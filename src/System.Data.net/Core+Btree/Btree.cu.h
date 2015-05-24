@@ -1,5 +1,5 @@
 // btree.h
-namespace Core
+namespace CORE_NAME
 {
 #define N_BTREE_META 10
 

@@ -1,7 +1,7 @@
 // resolve.c
 #include "Core+Vdbe.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ static WRC IncrAggDepth(Walker *walker, Expr *expr)
 	{

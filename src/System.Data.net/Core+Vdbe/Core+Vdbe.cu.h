@@ -5,7 +5,7 @@
 #include "Parse+Parser.orig.h"
 #include "../Opcodes.h"
 
-namespace Core
+namespace CORE_NAME
 {
 #pragma region Limit Types
 #if MAX_ATTACHED > 30
@@ -1253,7 +1253,7 @@ namespace Core
 #pragma endregion
 }
 #include "Context.cu.h"
-namespace Core {
+namespace CORE_NAME {
 #pragma region Table
 
 	enum COLFLAG : uint16
@@ -1470,7 +1470,7 @@ namespace Core {
 #pragma endregion
 }
 #include "Vdbe.cu.h"
-namespace Core {
+namespace CORE_NAME {
 #pragma region Trigger
 
 	enum TRIGGER : uint8
@@ -1914,6 +1914,6 @@ namespace Core {
 
 #pragma endregion
 }
-using namespace Core::Command;
+using namespace CORE_NAME::Command;
 
 #endif // __CORE_VDBE_CU_H__

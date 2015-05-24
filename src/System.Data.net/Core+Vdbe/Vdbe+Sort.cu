@@ -1,7 +1,7 @@
 // vdbesort.c
 #include "VdbeInt.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	struct VdbeSorterIter;
 	struct SorterRecord;

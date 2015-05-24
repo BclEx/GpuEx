@@ -2809,7 +2809,7 @@ static void MainInit()
 	//
 	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	cudaDeviceHeapSynchronize(_deviceHeap);
-	VSystemSentinel::Initialize();
+	CoreS::VSystemSentinel::Initialize();
 #else
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, _data);
@@ -2831,7 +2831,7 @@ static void MainShutdown()
 	D_DATA(&_data); d_MainShutdown_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	D_FREE(&_data);
 	//
-	VSystemSentinel::Shutdown();
+	CoreS::VSystemSentinel::Shutdown();
 	cudaDeviceHeapDestroy(_deviceHeap);
 	cudaDeviceReset();
 #else

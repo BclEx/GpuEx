@@ -2,7 +2,7 @@
 #include "Core+Pager.cu.h"
 #include <new.h>
 
-namespace Core
+namespace CORE_NAME
 {
 #pragma region Struct
 

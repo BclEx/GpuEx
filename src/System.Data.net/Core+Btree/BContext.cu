@@ -1,6 +1,6 @@
 #include "Core+Btree.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 
 #pragma region Busy Handler

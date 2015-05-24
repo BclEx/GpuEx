@@ -1,7 +1,7 @@
 // pragma.c
 #include "..\VdbeInt.cu.h"
 
-namespace Core {
+namespace CORE_NAME {
 	__device__ extern char *g_temp_directory;
 	__device__ extern char *g_data_directory;
 #ifndef OMIT_COMPILEOPTION_DIAGS
@@ -9,7 +9,7 @@ namespace Core {
 #endif
 }
 
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 	// moved to ConvertEx
 	//__device__ static uint8 GetSafetyLevel(const char *z, int omitFull, uint8 dflt);

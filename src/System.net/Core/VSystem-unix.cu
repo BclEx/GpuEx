@@ -3,7 +3,7 @@
 //#define OS_UNIX 1
 #if OS_UNIX // This file is used on unix only
 
-namespace Core
+namespace CORE_NAME
 {
 
 #pragma region Preamble

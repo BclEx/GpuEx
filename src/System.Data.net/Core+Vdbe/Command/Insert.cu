@@ -1,7 +1,7 @@
 // insert.c
 #include "..\VdbeInt.cu.h"
 
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 	__device__ void Insert::OpenTable(Parse *p, int cur, int db, Table *table, OP opcode)
 	{

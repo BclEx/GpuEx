@@ -5,7 +5,7 @@
 #include "BContext.cu.h"
 #include "Btree.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 #pragma region CollSeq
 

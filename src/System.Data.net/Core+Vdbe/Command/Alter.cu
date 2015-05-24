@@ -4,7 +4,7 @@
 
 #include "..\VdbeInt.cu.h"
 
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 	__device__ static void RenameTableFunc(FuncContext *fctx, int notUsed, Mem **argv)
 	{

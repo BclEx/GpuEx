@@ -3,7 +3,7 @@
 
 #include "..\Core+Vdbe.cu.h"
 
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 	__device__ static RC VacuumFinalize(Context *ctx, Vdbe *stmt, char **errMsg)
 	{

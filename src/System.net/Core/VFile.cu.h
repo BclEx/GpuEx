@@ -1,5 +1,5 @@
 ﻿// sqlite3.h
-namespace Core
+namespace CORE_NAME
 {
 #define PENDING_BYTE 0x40000000
 #define RESERVED_BYTE (PENDING_BYTE+1)

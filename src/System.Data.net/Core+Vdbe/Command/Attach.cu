@@ -3,7 +3,7 @@
 
 #pragma region OMIT_ATTACH
 #ifndef OMIT_ATTACH
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 	__device__ static RC ResolveAttachExpr(NameContext *name, Expr *expr)
 	{
@@ -323,7 +323,7 @@ attach_end:
 #endif
 #pragma endregion
 
-namespace Core {
+namespace CORE_NAME {
 
 	__device__ bool DbFixer::FixInit(Core::Parse *parse, int db, const char *typeName, const Token *name)
 	{

@@ -1,6 +1,6 @@
 #include "Core+Vdbe.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ RC Context::Status(CTXSTATUS op, int *current, int *highwater, bool resetFlag)
 	{

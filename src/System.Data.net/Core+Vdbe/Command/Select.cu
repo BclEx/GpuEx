@@ -1,7 +1,7 @@
 // select.c
 #include "..\VdbeInt.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ static void ClearSelect(Context *ctx, Select *p)
 	{

@@ -13,7 +13,7 @@
 #define HAVE_LOCALTIME_S 1
 #endif
 
-namespace Core { namespace Command
+namespace CORE_NAME { namespace Command
 {
 
 #pragma region OMIT_DATETIME_FUNCS

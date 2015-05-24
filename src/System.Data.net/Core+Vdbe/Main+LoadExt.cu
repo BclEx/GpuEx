@@ -4,7 +4,7 @@
 #include "Core+Ext.cu.h"
 #include <string.h>
 
-namespace Core
+namespace CORE_NAME
 {
 
 #pragma region OMIT_LOAD_EXTENSION

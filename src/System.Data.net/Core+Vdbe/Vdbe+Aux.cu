@@ -1,7 +1,7 @@
 #include "VdbeInt.cu.h"
 
 #pragma region Preamble
-namespace Core {
+namespace CORE_NAME {
 
 #ifdef _TEST
 	__device__ extern int g_search_count;
@@ -2040,7 +2040,7 @@ __device__ uint32 Vdbe::SerialGet(const unsigned char *buf, uint32 serialType, M
 	return 0;
 }
 
-namespace Core
+namespace CORE_NAME
 {
 
 	__device__ UnpackedRecord *Vdbe_AllocUnpackedRecord(KeyInfo *keyInfo, char *space, int spaceLength, char **freeOut)

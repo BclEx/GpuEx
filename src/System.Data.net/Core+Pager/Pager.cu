@@ -3,7 +3,7 @@
 #include <new.h>
 #define PAGER Pager::PAGER
 
-namespace Core
+namespace CORE_NAME
 {
 #if _DEBUG
 	__device__ bool PagerTrace = false;

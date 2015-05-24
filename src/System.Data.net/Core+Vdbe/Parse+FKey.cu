@@ -2,7 +2,7 @@
 #ifndef OMIT_FOREIGN_KEY
 #include "Core+Vdbe.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 #ifndef OMIT_TRIGGER
 

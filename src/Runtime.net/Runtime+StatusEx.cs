@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-namespace Core
+namespace CORE_NAME
 {
     public class StatusEx
     {

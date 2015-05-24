@@ -1,7 +1,7 @@
 ﻿// pcache.c
 #include "Core+Pager.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 #pragma region Linked List
 

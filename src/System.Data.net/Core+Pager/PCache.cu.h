@@ -1,5 +1,5 @@
 ﻿// pcache.h
-namespace Core
+namespace CORE_NAME
 {
 	typedef struct PgHdr PgHdr;
 	typedef struct PCache PCache;

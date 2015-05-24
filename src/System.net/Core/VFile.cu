@@ -1,6 +1,6 @@
 ﻿#include "Core.cu.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ RC VFile::Lock(LOCK lock) { return RC_OK; }
 	__device__ RC VFile::Unlock(LOCK lock) { return RC_OK; }

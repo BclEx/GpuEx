@@ -1,7 +1,7 @@
 #include "VdbeInt.cu.h"
 #include "..\KeywordHash.h"
 
-namespace Core
+namespace CORE_NAME
 {
 	__device__ void Parse::BeginParse(int explainFlag)
 	{
