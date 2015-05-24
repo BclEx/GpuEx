@@ -121,7 +121,7 @@ struct core_api_routines
 	//const void * (*value_text16be)(Mem*);
 	//const void * (*value_text16le)(Mem*);
 	//int (*value_type)(Mem*);
-	//char *(*vmprintf)(const char*,va_list);
+	//char *(*vmprintf)(const char*,_va_list);
 	//// Added ???
 	//int (*overload_function)(Context*, const char *zFuncName, int nArg);
 	//// Added by 3.3.13
@@ -202,7 +202,7 @@ struct core_api_routines
 	//int (*uri_boolean)(const char*,const char*,int);
 	//int64 (*uri_int64)(const char*,const char*,int64);
 	//const char *(*uri_parameter)(const char*,const char*);
-	//char *(*vsnprintf)(int,char*,const char*,va_list);
+	//char *(*vsnprintf)(int,char*,const char*,_va_list);
 	//int (*wal_checkpoint_v2)(Context*,const char*,int,int*,int*);
 };
 

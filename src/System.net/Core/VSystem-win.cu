@@ -349,13 +349,13 @@ namespace Core
 #else
 		{"FormatMessageA", (SYSCALL)nullptr, nullptr},
 #endif
-#define osFormatMessageA ((DWORD(WINAPI *)(DWORD,LPCVOID,DWORD,DWORD,LPSTR,DWORD,va_list*))Syscalls[14].Current)
+#define osFormatMessageA ((DWORD(WINAPI *)(DWORD,LPCVOID,DWORD,DWORD,LPSTR,DWORD,_va_list*))Syscalls[14].Current)
 #if defined(WIN32_HAS_WIDE)
 		{"FormatMessageW", (SYSCALL)FormatMessageW, nullptr},
 #else
 		{"FormatMessageW", (SYSCALL)nullptr, nullptr},
 #endif
-#define osFormatMessageW ((DWORD(WINAPI *)(DWORD,LPCVOID,DWORD,DWORD,LPWSTR,DWORD,va_list*))Syscalls[15].Current)
+#define osFormatMessageW ((DWORD(WINAPI *)(DWORD,LPCVOID,DWORD,DWORD,LPWSTR,DWORD,_va_list*))Syscalls[15].Current)
 #if !defined(OMIT_LOAD_EXTENSION)
 		{"FreeLibrary", (SYSCALL)FreeLibrary, nullptr},
 #else

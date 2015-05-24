@@ -215,10 +215,10 @@ __global__ static void Keypress(struct runtimeHeap_s *heap, unsigned char key)
 	case 'f': _throw("test", 1); break;
 	case 'g': {
 		va_list2<int, const char *> args;
-		va_start(args, 1, "2");
-		int a1 = va_arg(args, int);
-		char *a2 = va_arg(args, char*);
-		va_end(args);
+		_va_start(args, 1, "2");
+		int a1 = _va_arg(args, int);
+		char *a2 = _va_arg(args, char*);
+		_va_end(args);
 		break; }
 	}
 }

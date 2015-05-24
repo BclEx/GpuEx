@@ -1801,12 +1801,12 @@ static void spellfix1DbExec(
   const char *zFormat,   /* Format string for SQL */
   ...                    /* Arguments to the format string */
 ){
-  va_list ap;
+  _va_list ap;
   char *zSql;
   if( *pRc ) return;
-  va_start(ap, zFormat);
+  _va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
-  va_end(ap);
+  _va_end(ap);
   if( zSql==0 ){
     *pRc = SQLITE_NOMEM;
   }else{

@@ -191,10 +191,10 @@ static FILE *iotrace = nullptr;
 static void iotracePrintf(const char *fmt, ...)
 {
 	if (!iotrace) return;
-	va_list args;
-	va_start(args, fmt);
+	_va_list args;
+	_va_start(args, fmt);
 	char *z = _vmprintf(fmt, ap);
-	va_end(ap);
+	_va_end(ap);
 	fprintf(iotrace, "%s", z);
 	_free(z);
 }

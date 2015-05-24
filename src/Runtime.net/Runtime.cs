@@ -1194,32 +1194,32 @@ namespace Core
         //            sqlite3StrAccumFinish(_b));
         //        }
 
-        //        static void sqlite3_log(int iErrCode, string zFormat, params va_list[] ap)
+        //        static void sqlite3_log(int iErrCode, string zFormat, params _va_list[] ap)
         //        {
         //            if (SysEx_GlobalStatics.xLog != null)
         //            {
-        //                //va_list ap;                             /* Vararg list */
+        //                //_va_list ap;                             /* Vararg list */
         //                lock (lock_va_list)
         //                {
-        //                    va_start(ap, zFormat);
+        //                    _va_start(ap, zFormat);
         //                    renderLogMsg(iErrCode, zFormat, ap);
-        //                    va_end(ref ap);
+        //                    _va_end(ref ap);
         //                }
         //            }
         //        }
 
         //#if DEBUG || TRACE
-        //        static void _dprintf(string zFormat, params va_list[] ap)
+        //        static void _dprintf(string zFormat, params _va_list[] ap)
         //        {
-        //            //va_list ap;
+        //            //_va_list ap;
         //            lock (lock_va_list)
         //            {
         //                //StrAccum acc = new StrAccum( SQLITE_PRINT_BUF_SIZE );
         //                sqlite3StrAccumInit(_b, null, SQLITE_PRINT_BUF_SIZE, 0);
         //                //acc.useMalloc = 0;
-        //                va_start(ap, zFormat);
+        //                _va_start(ap, zFormat);
         //                sqlite3VXPrintf(_b, 0, zFormat, ap);
-        //                va_end(ref ap);
+        //                _va_end(ref ap);
         //            }
         //            Console.Write(sqlite3StrAccumFinish(_b));
         //            //fflush(stdout);

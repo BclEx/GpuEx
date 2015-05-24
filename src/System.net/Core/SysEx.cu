@@ -168,7 +168,7 @@ namespace Core
 		return RC_OK;
 	}
 
-	__device__ RC SysEx::Config_(CONFIG op, va_list &args)
+	__device__ RC SysEx::Config_(CONFIG op, _va_list &args)
 	{
 		// sqlite3_config() shall return SQLITE_MISUSE if it is invoked while the SQLite library is in use.
 		if (SysEx_GlobalStatics.IsInit) return SysEx_MISUSE_BKPT;
@@ -190,33 +190,33 @@ namespace Core
 			TagBase_RuntimeStatics.FullMutex = true;
 			break; }
 								//case CONFIG_MUTEX: { // Specify an alternative mutex implementation
-								//	SysEx_GlobalStatics.Mutex = *va_arg(args, void *);
+								//	SysEx_GlobalStatics.Mutex = *_va_arg(args, void *);
 								//	break; }
 								//case CONFIG_GETMUTEX: { // Retrieve the current mutex implementation
-								//	*va_arg(args, void *) = SysEx_GlobalStatics.Mutex;
+								//	*_va_arg(args, void *) = SysEx_GlobalStatics.Mutex;
 								//	break; }
 #endif
 		case CONFIG_MALLOC: { // Specify an alternative malloc implementation
-			//SysEx_GlobalStatics.m = *va_arg(args, sqlite3_mem_methods*);
+			//SysEx_GlobalStatics.m = *_va_arg(args, sqlite3_mem_methods*);
 			break; }
 		case CONFIG_GETMALLOC: { // Retrieve the current malloc() implementation
 			//if (SysEx_GlobalStatics.m.xMalloc==0) sqlite3MemSetDefault();
-			//*va_arg(args, sqlite3_mem_methods*) = SysEx_GlobalStatics.m;
+			//*_va_arg(args, sqlite3_mem_methods*) = SysEx_GlobalStatics.m;
 			break; }
 		case CONFIG_MEMSTATUS: { // Enable or disable the malloc status collection
-			TagBase_RuntimeStatics.Memstat = va_arg(args, bool);
+			TagBase_RuntimeStatics.Memstat = _va_arg(args, bool);
 			break; }
 		case CONFIG_SCRATCH: { // Designate a buffer for scratch memory space
-			TagBase_RuntimeStatics.Scratch = va_arg(args, void*);
-			TagBase_RuntimeStatics.ScratchSize = va_arg(args, int);
-			TagBase_RuntimeStatics.Scratchs = va_arg(args, int);
+			TagBase_RuntimeStatics.Scratch = _va_arg(args, void*);
+			TagBase_RuntimeStatics.ScratchSize = _va_arg(args, int);
+			TagBase_RuntimeStatics.Scratchs = _va_arg(args, int);
 			break; }
 #if defined(ENABLE_MEMSYS3) || defined(ENABLE_MEMSYS5)
 		case CONFIG_HEAP: {
 			// Designate a buffer for heap memory space
-			SysEx_GlobalStatics.Heap.data = va_arg(args, void*);
-			SysEx_GlobalStatics.Heap.length = va_arg(args, int);
-			SysEx_GlobalStatics.MinReq = va_arg(ap, int);
+			SysEx_GlobalStatics.Heap.data = _va_arg(args, void*);
+			SysEx_GlobalStatics.Heap.length = _va_arg(args, int);
+			SysEx_GlobalStatics.MinReq = _va_arg(ap, int);
 			if (SysEx_GlobalStatics.MinReq < 1)
 				SysEx_GlobalStatics.MinReq = 1;
 			else if (SysEx_GlobalStatics.MinReq > (1<<12)) // cap min request size at 2^12
@@ -235,25 +235,25 @@ namespace Core
 			break; }
 #endif
 		case CONFIG_LOOKASIDE: {
-			TagBase_RuntimeStatics.LookasideSize = va_arg(args, int);
-			TagBase_RuntimeStatics.Lookasides = va_arg(args, int);
+			TagBase_RuntimeStatics.LookasideSize = _va_arg(args, int);
+			TagBase_RuntimeStatics.Lookasides = _va_arg(args, int);
 			break; }
 		case CONFIG_LOG: { // Record a pointer to the logger function and its first argument. The default is NULL.  Logging is disabled if the function pointer is NULL.
 			// MSVC is picky about pulling func ptrs from va lists.
 			// http://support.microsoft.com/kb/47961
-			// SysEx_GlobalStatics.xLog = va_arg(ap, void(*)(void*,int,const char*));
+			// SysEx_GlobalStatics.xLog = _va_arg(ap, void(*)(void*,int,const char*));
 			typedef void(*LOGFUNC_t)(void*,int,const char*);
-			SysEx_GlobalStatics.Log = va_arg(args, LOGFUNC_t);
-			SysEx_GlobalStatics.LogArg = va_arg(args, void*);
+			SysEx_GlobalStatics.Log = _va_arg(args, LOGFUNC_t);
+			SysEx_GlobalStatics.LogArg = _va_arg(args, void*);
 			break; }
 		case CONFIG_URI: {
-			SysEx_GlobalStatics.OpenUri = va_arg(args, bool);
+			SysEx_GlobalStatics.OpenUri = _va_arg(args, bool);
 			break; }
 #ifdef ENABLE_SQLLOG
 		case CONFIG_SQLLOG: {
 			typedef void (*SQLLOGFUNC_t)(void*,TagBase*,const char*,int);
-			SysEx_GlobalStatics.Sqllog = va_arg(args, SQLLOGFUNC_t);
-			SysEx_GlobalStatics.SqllogArg = va_arg(args, void*);
+			SysEx_GlobalStatics.Sqllog = _va_arg(args, SQLLOGFUNC_t);
+			SysEx_GlobalStatics.SqllogArg = _va_arg(args, void*);
 			break; }
 #endif
 		default: {

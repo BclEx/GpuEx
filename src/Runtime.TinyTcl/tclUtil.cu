@@ -951,7 +951,7 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 void
 	Tcl_AppendResult(Tcl_Interp *interp, ...)
 {
-	va_list argList;
+	_va_list argList;
 	register Interp *iPtr = (Interp *)interp;
 	char *string;
 	int newSpace;
@@ -961,16 +961,16 @@ void
 	* needed.
 	*/
 
-	va_start(argList, interp);
+	_va_start(argList, interp);
 	newSpace = 0;
 	while (1) {
-		string = va_arg(argList, char *);
+		string = _va_arg(argList, char *);
 		if (string == NULL) {
 			break;
 		}
 		newSpace += _strlen(string);
 	}
-	va_end(argList);
+	_va_end(argList);
 
 	/*
 	* If the append buffer isn't already setup and large enough
@@ -981,23 +981,23 @@ void
 		|| ((newSpace + iPtr->appendUsed) >= iPtr->appendAvl)) {
 			SetupAppendBuffer(iPtr, newSpace);
 	}
-	va_end(argList);
+	_va_end(argList);
 
 	/*
 	* Final step:  go through all the argument strings again, copying
 	* them into the buffer.
 	*/
 
-	va_start(argList, interp);
+	_va_start(argList, interp);
 	while (1) {
-		string = va_arg(argList, char *);
+		string = _va_arg(argList, char *);
 		if (string == NULL) {
 			break;
 		}
 		strcpy(iPtr->appendResult + iPtr->appendUsed, string);
 		iPtr->appendUsed += _strlen(string);
 	}
-	va_end(argList);
+	_va_end(argList);
 }
 
 /*
@@ -1168,7 +1168,7 @@ __device__ void Tcl_ResetResult(Tcl_Interp *interp)
 */
 __device__ void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 {
-	va_list argList;
+	_va_list argList;
 	char *string;
 	int flags;
 	register Interp *iPtr = (Interp *) interp;
@@ -1178,10 +1178,10 @@ __device__ void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 	* $errorCode as list elements.
 	*/
 
-	va_start(argList, interp);
+	_va_start(argList, interp);
 	flags = TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT;
 	while (1) {
-		string = va_arg(argList, char *);
+		string = _va_arg(argList, char *);
 		if (string == NULL) {
 			break;
 		}
@@ -1189,7 +1189,7 @@ __device__ void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 			(char *) NULL, string, flags);
 		flags |= TCL_APPEND_VALUE;
 	}
-	va_end(argList);
+	_va_end(argList);
 	iPtr->flags |= ERROR_CODE_SET;
 }
 

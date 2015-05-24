@@ -104,7 +104,7 @@ __device__ void TextBuilder::AppendSpace(int length)
 }
 
 __constant__ static const char _ord[] = "thstndrd";
-__device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va_list &args) //: was: vxprintf
+__device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, _va_list &args) //: was: vxprintf
 {
 	char buf[BUFSIZE]; // Conversion buffer
 	char *bufpt = nullptr; // Pointer to the conversion buffer
@@ -152,7 +152,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 		width = 0; // Width of the current field
 		if (c == '*')
 		{
-			width = va_arg(args, int);
+			width = _va_arg(args, int);
 			if (width < 0)
 			{
 				flag_leftjustify = true;
@@ -176,7 +176,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			c = *++fmt;
 			if (c == '*')
 			{
-				precision = va_arg(args, int);
+				precision = _va_arg(args, int);
 				if (precision < 0) precision = -precision;
 				c = *++fmt;
 			}
@@ -261,9 +261,9 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			if (info->Flags & FLAG_SIGNED)
 			{
 				long long v;
-				if (flag_longlong) v = va_arg(args, long long);
-				else if (flag_long) v = va_arg(args, long int);
-				else v = va_arg(args, int);
+				if (flag_longlong) v = _va_arg(args, long long);
+				else if (flag_long) v = _va_arg(args, long int);
+				else v = _va_arg(args, int);
 				if (v < 0)
 				{
 					longvalue = (v == SMALLEST_INT64 ? ((unsigned long long)1)<<63 : -v);
@@ -279,9 +279,9 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			}
 			else
 			{
-				if (flag_longlong) longvalue = va_arg(args, unsigned long long);
-				else if (flag_long) longvalue = va_arg(args, unsigned long int);
-				else longvalue = va_arg(args, unsigned int);
+				if (flag_longlong) longvalue = _va_arg(args, unsigned long long);
+				else if (flag_long) longvalue = _va_arg(args, unsigned long int);
+				else longvalue = _va_arg(args, unsigned int);
 				prefix = 0;
 			}
 			if (longvalue == 0) flag_alternateform = false;
@@ -333,7 +333,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 		case TYPE_FLOAT:
 		case TYPE_EXP:
 		case TYPE_GENERIC:
-			realvalue = va_arg(args, double);
+			realvalue = _va_arg(args, double);
 #ifdef OMIT_FLOATING_POINT
 			length = 0;
 #else
@@ -463,7 +463,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 #endif
 			break;
 		case TYPE_SIZE:
-			*(va_arg(args, int*)) = Size;
+			*(_va_arg(args, int*)) = Size;
 			length = width = 0;
 			break;
 		case TYPE_PERCENT:
@@ -472,7 +472,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			length = 1;
 			break;
 		case TYPE_CHARX:
-			c = va_arg(args, int);
+			c = _va_arg(args, int);
 			buf[0] = (char)c;
 			if (precision >= 0)
 			{
@@ -484,7 +484,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 			break;
 		case TYPE_STRING:
 		case TYPE_DYNSTRING:
-			bufpt = va_arg(args, char*);
+			bufpt = _va_arg(args, char*);
 			if (bufpt == 0) bufpt = "";
 			else if (type == TYPE_DYNSTRING) extra = bufpt;
 			if (precision >= 0) for (length = 0; length < precision && bufpt[length]; length++) { }
@@ -494,7 +494,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, va
 		case TYPE_SQLESCAPE2:
 		case TYPE_SQLESCAPE3: {
 			char q = (type == TYPE_SQLESCAPE3 ? '"' : '\''); // Quote character
-			char *escarg = va_arg(args, char*);
+			char *escarg = _va_arg(args, char*);
 			bool isnull = (escarg == 0);
 			if (isnull) escarg = (type == TYPE_SQLESCAPE2 ? "NULL" : "(NULL)");
 			int k = precision;
@@ -660,7 +660,7 @@ __device__ void TextBuilder::Init(TextBuilder *b, char *text, int capacity, int 
 	b->AllocFailed = false;
 }
 
-__device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args)
+__device__ char *_vmtagprintf(TagBase *tag, const char *fmt, _va_list *args)
 {
 	//if (!RuntimeInitialize()) return nullptr;
 	_assert(tag != nullptr);
@@ -674,7 +674,7 @@ __device__ char *_vmtagprintf(TagBase *tag, const char *fmt, va_list *args)
 	return z;
 }
 
-__device__ char *_vmprintf(const char *fmt, va_list *args)
+__device__ char *_vmprintf(const char *fmt, _va_list *args)
 {
 	//if (!RuntimeInitialize()) return nullptr;
 	char base[PRINT_BUF_SIZE];
@@ -685,7 +685,7 @@ __device__ char *_vmprintf(const char *fmt, va_list *args)
 	return b.ToString();
 }
 
-__device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, va_list *args)
+__device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, _va_list *args)
 {
 	if (bufLen <= 0) return (char *)buf;
 	TextBuilder b;

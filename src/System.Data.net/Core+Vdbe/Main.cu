@@ -14,7 +14,7 @@ namespace Core
 
 #pragma region From: Util_c
 
-	__device__ void Parse::ErrorMsg_(const char *fmt, va_list &args)
+	__device__ void Parse::ErrorMsg_(const char *fmt, _va_list &args)
 	{
 		Context *ctx = Ctx;
 		char *msg = _vmtagprintf(ctx, fmt, &args);
@@ -29,7 +29,7 @@ namespace Core
 		}
 	}
 
-	__device__ void Main::Error_(Context *ctx, RC errCode, const char *fmt, va_list &args)
+	__device__ void Main::Error_(Context *ctx, RC errCode, const char *fmt, _va_list &args)
 	{
 		if (ctx && (ctx->Err || (ctx->Err = Vdbe::ValueNew(ctx)) != nullptr))
 		{
@@ -85,16 +85,16 @@ namespace Core
 
 #pragma region From: Printf_c
 
-	__device__ static void TextBuilder_AppendFormat_T(TextBuilder *b, va_list &args)
+	__device__ static void TextBuilder_AppendFormat_T(TextBuilder *b, _va_list &args)
 	{
-		Token *token = va_arg(args, Token*);
+		Token *token = _va_arg(args, Token*);
 		if (token) b->Append((const char *)token->data, token->length);
 	}
 
-	__device__ static void TextBuilder_AppendFormat_S(TextBuilder *b, va_list &args)
+	__device__ static void TextBuilder_AppendFormat_S(TextBuilder *b, _va_list &args)
 	{
-		SrcList *src = va_arg(args, SrcList*);
-		int k = va_arg(args, int);
+		SrcList *src = _va_arg(args, SrcList*);
+		int k = _va_arg(args, int);
 		SrcList::SrcListItem *item = &src->Ids[k];
 		_assert(k >= 0 && k < src->Srcs);
 		if (item->Database)
@@ -205,16 +205,16 @@ namespace Core
 		return RC_OK;
 	}
 
-	__device__ RC Main::Config_(CONFIG op, va_list &args)
+	__device__ RC Main::Config_(CONFIG op, _va_list &args)
 	{
 		if (op < CONFIG_PAGECACHE) return SysEx::Config_((SysEx::CONFIG)op, args);
 		RC rc = RC_OK;
 		switch (op)
 		{
 		case CONFIG_PAGECACHE: { // Designate a buffer for page cache memory space
-			Main_GlobalStatics.Page = va_arg(args, void*);
-			Main_GlobalStatics.PageSize = va_arg(args, int);
-			Main_GlobalStatics.Pages = va_arg(args, int);
+			Main_GlobalStatics.Page = _va_arg(args, void*);
+			Main_GlobalStatics.PageSize = _va_arg(args, int);
+			Main_GlobalStatics.Pages = _va_arg(args, int);
 			break; }
 		case CONFIG_PCACHE: { // no-op
 			break; }
@@ -222,15 +222,15 @@ namespace Core
 			rc = RC_ERROR;
 			break; }
 		case CONFIG_PCACHE2: { // Specify an alternative page cache implementation
-			//Main_GlobalStatics.PCache2 = *va_arg(args, sqlite3_pcache_methods2*);
+			//Main_GlobalStatics.PCache2 = *_va_arg(args, sqlite3_pcache_methods2*);
 			break; }
 		case CONFIG_GETPCACHE2: {
 			//if (Main_GlobalStatics.Pcache2.Init == 0)
 			//	PCacheSetDefault();
-			//*va_arg(args, sqlite3_pcache_methods2*) = SysEx_GlobalStatics.pcache2;
+			//*_va_arg(args, sqlite3_pcache_methods2*) = SysEx_GlobalStatics.pcache2;
 			break; }
 		case CONFIG_COVERING_INDEX_SCAN: {
-			Main_GlobalStatics.UseCis = va_arg(args, bool);
+			Main_GlobalStatics.UseCis = _va_arg(args, bool);
 			break; }
 		default: {
 			rc = RC_ERROR;
@@ -246,15 +246,15 @@ namespace Core
 		{ Main::CTXCONFIG_ENABLE_FKEY,    Context::FLAG_ForeignKeys   },
 		{ Main::CTXCONFIG_ENABLE_TRIGGER, Context::FLAG_EnableTrigger },
 	};
-	__device__ RC Main::CtxConfig_(Context *ctx, CTXCONFIG op, va_list &args)
+	__device__ RC Main::CtxConfig_(Context *ctx, CTXCONFIG op, _va_list &args)
 	{
 		RC rc;
 		switch (op)
 		{
 		case CTXCONFIG_LOOKASIDE: {
-			void *buf = va_arg(args, void*); // IMP: R-26835-10964
-			int size = va_arg(args, int);       // IMP: R-47871-25994
-			int count = va_arg(args, int);      // IMP: R-04460-53386
+			void *buf = _va_arg(args, void*); // IMP: R-26835-10964
+			int size = _va_arg(args, int);       // IMP: R-47871-25994
+			int count = _va_arg(args, int);      // IMP: R-04460-53386
 			rc = (ctx->SetupLookaside(buf, size, count) ? RC_OK : RC_BUSY);
 			break; }
 		default: {
@@ -263,8 +263,8 @@ namespace Core
 			{
 				if (_flagOps[i].OP == op)
 				{
-					bool set = va_arg(args, bool);
-					bool *r = va_arg(args, bool*);
+					bool set = _va_arg(args, bool);
+					bool *r = _va_arg(args, bool*);
 					Context::FLAG oldFlags = ctx->Flags;
 					if (set)
 						ctx->Flags |= _flagOps[i].Mask;
@@ -1730,7 +1730,7 @@ error_out:
 	extern __device__ void Random_PrngRestoreState();
 	extern __device__ void Random_PrngResetState();
 	extern __device__ int Bitvec_BuiltinTest(int size, int *ops);
-	__device__ RC Main::TestControl_(TESTCTRL op, va_list &args)
+	__device__ RC Main::TestControl_(TESTCTRL op, _va_list &args)
 	{
 		int rc = 0;
 #ifndef OMIT_BUILTIN_TEST
@@ -1755,8 +1755,8 @@ error_out:
 			//
 			// Run a test against a Bitvec object of size.  The program argument is an array of integers that defines the test.  Return -1 on a
 			// memory allocation error, 0 on success, or non-zero for an error. See the sqlite3BitvecBuiltinTest() for additional information.
-			int sz = va_arg(args, int);
-			int *progs = va_arg(args, int*);
+			int sz = _va_arg(args, int);
+			int *progs = _va_arg(args, int*);
 			rc = Bitvec_BuiltinTest(sz, progs);
 			break; }
 		case TESTCTRL_BENIGN_MALLOC_HOOKS: {
@@ -1764,8 +1764,8 @@ error_out:
 			//
 			// Register hooks to call to indicate which malloc() failures are benign.
 			typedef void (*action)();
-			action benignBegin = va_arg(args, action);
-			action benignEnd = va_arg(args, action);
+			action benignBegin = _va_arg(args, action);
+			action benignEnd = _va_arg(args, action);
 			_benignalloc_hook(benignBegin, benignEnd);
 			break; }
 		case TESTCTRL_PENDING_BYTE: {
@@ -1779,7 +1779,7 @@ error_out:
 			rc = PENDING_BYTE;
 #ifndef OMIT_WSD
 			{
-				//uint32 newVal = va_arg(args, uint32);
+				//uint32 newVal = _va_arg(args, uint32);
 				//if (newVal) Pager::PendingByte = newVal;
 			}
 #endif
@@ -1792,7 +1792,7 @@ error_out:
 			// false and assert() is enabled, then the assertion fires and the process aborts.  If X is false and assert() is disabled, then the
 			// return value is zero.
 			volatile int x = 0;
-			_assert((x = va_arg(args, int)) != 0);
+			_assert((x = _va_arg(args, int)) != 0);
 			rc = x;
 			break; }
 		case TESTCTRL_ALWAYS: {
@@ -1816,15 +1816,15 @@ error_out:
 			//    }else{
 			//      // ALWAYS(x) is a constant 1.  NEVER(x) is a constant 0.
 			//    }
-			int x = va_arg(args, int);
+			int x = _va_arg(args, int);
 			rc = _ALWAYS(x);
 			break; }
 		case TESTCTRL_RESERVE: {
 			// sqlite3_test_control(SQLITE_TESTCTRL_RESERVE, sqlite3 *ctx, int N)
 			//
 			// Set the nReserve size to N for the main database on the database connection ctx.
-			Context *ctx = va_arg(args, Context*);
-			int x = va_arg(args, int);
+			Context *ctx = _va_arg(args, Context*);
+			int x = _va_arg(args, int);
 			_mutex_enter(ctx->Mutex);
 			ctx->DBs[0].Bt->SetPageSize(0, x, false);
 			_mutex_leave(ctx->Mutex);
@@ -1835,8 +1835,8 @@ error_out:
 			// Enable or disable various optimizations for testing purposes.  The argument N is a bitmask of optimizations to be disabled.  For normal
 			// operation N should be 0.  The idea is that a test program (like the SQL Logic Test or SLT test module) can run the same SQL multiple times
 			// with various optimizations disabled to verify that the same answer is obtained in every case.
-			Context *ctx = va_arg(args, Context*);
-			ctx->OptFlags = (OPTFLAG)(va_arg(args, int) & 0xffff);
+			Context *ctx = _va_arg(args, Context*);
+			ctx->OptFlags = (OPTFLAG)(_va_arg(args, int) & 0xffff);
 			break; }
 #ifdef N_KEYWORD
 		case TESTCTRL_ISKEYWORD: {
@@ -1846,7 +1846,7 @@ error_out:
 			// 
 			// This test feature is only available in the amalgamation since the SQLITE_N_KEYWORD macro is not defined in this file if SQLite
 			// is built using separate source files.
-			const char *word = va_arg(args, const char*);
+			const char *word = _va_arg(args, const char*);
 			int n = _strlen(word);
 			rc = (KeywordCode((uint8 *)word, n) != TK_ID ? N_KEYWORD : 0);
 			break; }
@@ -1855,9 +1855,9 @@ error_out:
 			// sqlite3_test_control(SQLITE_TESTCTRL_SCRATCHMALLOC, sz, &pNew, pFree);
 			//
 			// Pass pFree into sqlite3ScratchFree(). If sz>0 then allocate a scratch buffer into pNew.
-			int size = va_arg(args, int);
-			void **new_ = va_arg(args, void**);
-			void *free = va_arg(args, void*);
+			int size = _va_arg(args, int);
+			void **new_ = _va_arg(args, void**);
+			void *free = _va_arg(args, void*);
 			if (size) *new_ = _scratchalloc(size);
 			_scratchfree(free);
 			break; }
@@ -1866,7 +1866,7 @@ error_out:
 			//
 			// If parameter onoff is non-zero, configure the wrappers so that all subsequent calls to localtime() and variants fail. If onoff is zero,
 			// undo this setting.
-			SysEx_GlobalStatics.LocaltimeFault = va_arg(args, bool);
+			SysEx_GlobalStatics.LocaltimeFault = _va_arg(args, bool);
 			break; }
 #if defined(ENABLE_TREE_EXPLAIN)
 		case TESTCTRL_EXPLAIN_STMT: {
@@ -1874,8 +1874,8 @@ error_out:
 			//
 			// If compiled with SQLITE_ENABLE_TREE_EXPLAIN, each sqlite3_stmt holds a string that describes the optimized parse tree.  This test-control
 			// returns a pointer to that string.
-			Vdbe *stmt = va_arg(args, Vdbe*);
-			const char **r = va_arg(args, const char**);
+			Vdbe *stmt = _va_arg(args, Vdbe*);
+			const char **r = _va_arg(args, const char**);
 			*r = Vdbe::Explanation(stmt);
 			break;
 									}

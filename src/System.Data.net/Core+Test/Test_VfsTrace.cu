@@ -197,11 +197,11 @@ static void vfstrace_printf(
   const char *zFormat,
   ...
 ){
-  va_list ap;
+  _va_list ap;
   char *zMsg;
-  va_start(ap, zFormat);
+  _va_start(ap, zFormat);
   zMsg = sqlite3_vmprintf(zFormat, ap);
-  va_end(ap);
+  _va_end(ap);
   pInfo->xOut(zMsg, pInfo->pOutArg);
   sqlite3_free(zMsg);
 }

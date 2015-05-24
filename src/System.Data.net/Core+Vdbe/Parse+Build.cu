@@ -143,7 +143,7 @@ namespace Core
 		CookieGoto = 0;
 	}
 
-	__device__ void Parse::NestedParse_(const char *fmt, va_list &args)
+	__device__ void Parse::NestedParse_(const char *fmt, _va_list &args)
 	{
 		if (Errs)
 			return;

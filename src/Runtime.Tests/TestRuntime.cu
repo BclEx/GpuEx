@@ -21,10 +21,10 @@ __global__ static void runtime2(void *r)
 	_runtimeSetHeap(r);
 #if __CUDACC__
 	va_list2<const char*, int> args;
-	va_start(args, "Name", 4);
-	char *a0 = va_arg(args, char*); _assert(a0 == "Name");
-	int a1 = va_arg(args, int); _assert(a1 == 4);
-	va_end(args);
+	_va_start(args, "Name", 4);
+	char *a0 = _va_arg(args, char*); _assert(a0 == "Name");
+	int a1 = _va_arg(args, int); _assert(a1 == 4);
+	_va_end(args);
 #endif
 	printf("Example: 2\n");
 }

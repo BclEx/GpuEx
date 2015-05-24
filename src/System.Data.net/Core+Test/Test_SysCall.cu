@@ -280,13 +280,13 @@ static int ts_ftruncate(int fd, off_t n){
 ** A wrapper around fcntl().
 */
 static int ts_fcntl(int fd, int cmd, ... ){
-  va_list ap;
+  _va_list ap;
   void *pArg;
   if( tsIsFailErrno("fcntl") ){
     return -1;
   }
-  va_start(ap, cmd);
-  pArg = va_arg(ap, void *);
+  _va_start(ap, cmd);
+  pArg = _va_arg(ap, void *);
   return orig_fcntl(fd, cmd, pArg);
 }
 

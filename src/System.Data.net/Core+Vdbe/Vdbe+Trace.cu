@@ -140,7 +140,7 @@ namespace Core {
 		return (p && p->Str.Text && p->Str.Size && p->Str.Text[p->Str.Size-1] == '\n');
 	}
 
-	__device__ void Vdbe::ExplainPrintf_(Vdbe *vdbe, const char *format, va_list &args)
+	__device__ void Vdbe::ExplainPrintf_(Vdbe *vdbe, const char *format, _va_list &args)
 	{
 		Explain *p;
 		if (vdbe && (p = vdbe->_explain) != nullptr)

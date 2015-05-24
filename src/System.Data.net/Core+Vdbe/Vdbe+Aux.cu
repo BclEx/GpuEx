@@ -503,7 +503,7 @@ __device__ void Vdbe::ChangeP4(int addr, const char *p4, int n)
 }
 
 #ifndef NDEBUG
-__device__ void Vdbe::Comment_(const char *format, va_list &args)
+__device__ void Vdbe::Comment_(const char *format, _va_list &args)
 {
 	_assert(Ops.length > 0 || !Ops.data);
 	_assert(!Ops.data || !Ops[Ops.length-1].Comment || Ctx->MallocFailed);
@@ -514,7 +514,7 @@ __device__ void Vdbe::Comment_(const char *format, va_list &args)
 		Ops[Ops.length-1].Comment = _vmtagprintf(Ctx, format, &args);
 	}
 }
-__device__ void Vdbe::NoopComment_(const char *format, va_list &args)
+__device__ void Vdbe::NoopComment_(const char *format, _va_list &args)
 {
 	AddOp0(OP_Noop);
 	_assert(Ops.length > 0 || !Ops.data);

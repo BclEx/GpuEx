@@ -973,7 +973,7 @@ __device__ void Tcl_AddErrorInfo(Tcl_Interp *interp, char *message)
 */
 __device__ int Tcl_VarEval(Tcl_Interp *interp, ...)
 {
-	va_list argList;
+	_va_list argList;
 #define FIXED_SIZE 200
 	char fixedSpace[FIXED_SIZE+1];
 	int spaceAvl, spaceUsed, length;
@@ -987,12 +987,12 @@ __device__ int Tcl_VarEval(Tcl_Interp *interp, ...)
 	* space.
 	*/
 
-	va_start(argList, interp);
+	_va_start(argList, interp);
 	spaceAvl = FIXED_SIZE;
 	spaceUsed = 0;
 	cmd = fixedSpace;
 	while (1) {
-		string = va_arg(argList, char *);
+		string = _va_arg(argList, char *);
 		if (string == NULL) {
 			break;
 		}
@@ -1012,7 +1012,7 @@ __device__ int Tcl_VarEval(Tcl_Interp *interp, ...)
 		_strcpy(cmd + spaceUsed, string);
 		spaceUsed += length;
 	}
-	va_end(argList);
+	_va_end(argList);
 	cmd[spaceUsed] = '\0';
 
 	result = Tcl_Eval(interp, cmd, 0, (char **) NULL);

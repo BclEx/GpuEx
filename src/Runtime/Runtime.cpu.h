@@ -17,6 +17,7 @@
 //////////////////////
 // ASSERT
 #pragma region ASSERT
+
 #include <assert.h>
 #undef _assert
 #ifndef NDEBUG
@@ -56,7 +57,13 @@ cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return cudaSuccess; }
 //////////////////////
 // STDARG
 #pragma region STDARG
+
 #include <stdarg.h>
+#define _va_list va_list
+#define _va_start va_start
+#define _va_arg va_arg
+#define _va_end va_end
+
 #pragma endregion
 
 //////////////////////
