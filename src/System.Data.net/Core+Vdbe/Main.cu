@@ -255,7 +255,7 @@ namespace Core
 			void *buf = va_arg(args, void*); // IMP: R-26835-10964
 			int size = va_arg(args, int);       // IMP: R-47871-25994
 			int count = va_arg(args, int);      // IMP: R-04460-53386
-			rc = SysEx::SetupLookaside(ctx, buf, size, count);
+			rc = (ctx->SetupLookaside(buf, size, count) ? RC_OK : RC_BUSY);
 			break; }
 		default: {
 			rc = RC_ERROR; // IMP: R-42790-23372
@@ -1439,7 +1439,7 @@ _out:
 #endif
 
 		// Enable the lookaside-malloc subsystem
-		SysEx::SetupLookaside(ctx, nullptr, (int)TagBase_RuntimeStatics.LookasideSize, TagBase_RuntimeStatics.Lookasides);
+		ctx->SetupLookaside(nullptr, (int)TagBase_RuntimeStatics.LookasideSize, TagBase_RuntimeStatics.Lookasides);
 
 		Main::WalAutocheckpoint(ctx, DEFAULT_WAL_AUTOCHECKPOINT);
 

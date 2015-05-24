@@ -383,7 +383,6 @@ namespace Core
 		_mapVfs->SizeOsFile = sizeof(MapVFile);
 		_mapVfs->MaxPathname = 260;
 		_mapVfs->Name = "map";
-		VSystem::RegisterVfs(_mapVfs, true);
 		return RC_OK; 
 	}
 #endif

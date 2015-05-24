@@ -265,55 +265,86 @@ namespace Core
 
 #pragma endregion
 
-	__device__ RC SysEx::SetupLookaside(TagBase *tag, void *buf, int size, int count)
+#pragma	region Tests
+#ifdef _TEST
+
+#define SETBIT(V,I) V[(I) >> 3] |= (1 << ((I) & 7))
+#define CLEARBIT(V,I) V[(I) >> 3] &= ~(1 << ((I) & 7))
+#define TESTBIT(V,I) ((V[(I) >> 3] & (1 << ((I) & 7))) != 0)
+
+	__device__ int Bitvec_BuiltinTest(int size, int *ops)
 	{
-		if (tag->Lookaside.Outs)
-			return RC_BUSY;
-		// Free any existing lookaside buffer for this handle before allocating a new one so we don't have to have space for both at the same time.
-		if (tag->Lookaside.Malloced)
-			_free(tag->Lookaside.Start);
-		// The size of a lookaside slot after ROUNDDOWN8 needs to be larger than a pointer to be useful.
-		size = _ROUNDDOWN8(size); // IMP: R-33038-09382
-		if (size <= (int)sizeof(TagBase::LookasideSlot *)) size = 0;
-		if (count < 0) count = 0;
-		void *start;
-		if (size == 0 || count == 0)
+		int rc = -1;
+		// Allocate the Bitvec to be tested and a linear array of bits to act as the reference
+		Bitvec *bitvec = Bitvec::New(size);
+		unsigned char *v = (unsigned char *)_allocZero((size + 7) / 8 + 1);
+		void *tmpSpace = _alloc(BITVEC_SZ);
+		int pc = 0;
+		int i, nx, op;
+		if (!bitvec || !v || !tmpSpace)
+			goto bitvec_end;
+
+		// Run the program
+		while ((op = ops[pc]))
 		{
-			size = 0;
-			start = nullptr;
-		}
-		else if (!buf)
-		{
-			_benignalloc_begin();
-			start = _alloc(size * count); // IMP: R-61949-35727
-			_benignalloc_end();
-			if (start) count = (int)_allocsize(start) / size;
-		}
-		else
-			start = buf;
-		tag->Lookaside.Start = start;
-		tag->Lookaside.Free = nullptr;
-		tag->Lookaside.Size = (uint16)size;
-		if (start)
-		{
-			_assert(size > (int)sizeof(TagBase::LookasideSlot *));
-			TagBase::LookasideSlot *p = (TagBase::LookasideSlot *)start;
-			for (int i = count - 1; i >= 0; i--)
+			switch (op)
 			{
-				p->Next = tag->Lookaside.Free;
-				tag->Lookaside.Free = p;
-				p = (TagBase::LookasideSlot *)&((uint8 *)p)[size];
+			case 1:
+			case 2:
+			case 5:
+				{
+					nx = 4;
+					i = ops[pc + 2] - 1;
+					ops[pc + 2] += ops[pc + 3];
+					break;
+				}
+			case 3:
+			case 4: 
+			default:
+				{
+					nx = 2;
+					SysEx::PutRandom(sizeof(i), &i);
+					break;
+				}
 			}
-			tag->Lookaside.End = p;
-			tag->Lookaside.Enabled = true;
-			tag->Lookaside.Malloced = (!buf);
+			if ((--ops[pc + 1]) > 0) nx = 0;
+			pc += nx;
+			i = (i & 0x7fffffff) % size;
+			if (op & 1)
+			{
+				SETBIT(v, i + 1);
+				if (op != 5)
+					if (bitvec->Set(i + 1)) goto bitvec_end;
+			}
+			else
+			{
+				CLEARBIT(v, i + 1);
+				bitvec->Clear(i + 1, tmpSpace);
+			}
 		}
-		else
+
+		// Test to make sure the linear array exactly matches the Bitvec object.  Start with the assumption that they do
+		// match (rc==0).  Change rc to non-zero if a discrepancy is found.
+		rc = bitvec->Get(size + 1)
+			+ bitvec->Get(0)
+			+ (bitvec->get_Length() - size);
+		for (i = 1; i <= size; i++)
 		{
-			tag->Lookaside.End = nullptr;
-			tag->Lookaside.Enabled = false;
-			tag->Lookaside.Malloced = false;
+			if (TESTBIT(v, i) != bitvec->Get(i))
+			{
+				rc = i;
+				break;
+			}
 		}
-		return RC_OK;
+
+		// Free allocated structure
+bitvec_end:
+		_free(tmpSpace);
+		_free(v);
+		Bitvec::Destroy(bitvec);
+		return rc;
 	}
+
+#endif
+#pragma endregion
 }

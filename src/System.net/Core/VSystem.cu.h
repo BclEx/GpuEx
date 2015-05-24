@@ -1,10 +1,10 @@
 ﻿// sqlite.h
 #pragma once
-namespace Core { namespace IO { class VFile; }}
 namespace Core
 {
 	typedef void (*syscall_ptr)();
 
+	class VFile;
 	class VSystem
 	{
 	public:
@@ -65,8 +65,8 @@ namespace Core
 		__device__ static RC RegisterVfs(VSystem *vfs, bool _default);
 		__device__ static RC UnregisterVfs(VSystem *vfs);
 
-		__device__ virtual IO::VFile *_AttachFile(void *buffer) = 0;
-		__device__ virtual RC Open(const char *path, IO::VFile *file, OPEN flags, OPEN *outFlags) = 0;
+		__device__ virtual VFile *_AttachFile(void *buffer) = 0;
+		__device__ virtual RC Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags) = 0;
 		__device__ virtual RC Delete(const char *path, bool syncDirectory) = 0;
 		__device__ virtual RC Access(const char *path, ACCESS flags, int *outRC) = 0;
 		__device__ virtual RC FullPathname(const char *path, int pathOutLength, char *pathOut) = 0;
@@ -86,9 +86,9 @@ namespace Core
 		__device__ virtual syscall_ptr GetSystemCall(const char *name) = 0;
 		__device__ virtual const char *NextSystemCall(const char *name) = 0;
 
-		__device__ inline RC OpenAndAlloc(const char *path, IO::VFile **file, OPEN flags, OPEN *outFlags)
+		__device__ inline RC OpenAndAlloc(const char *path, VFile **file, OPEN flags, OPEN *outFlags)
 		{
-			IO::VFile *file2 = (IO::VFile *)_alloc(SizeOsFile);
+			VFile *file2 = (VFile *)_alloc(SizeOsFile);
 			if (!file2)
 				return RC_NOMEM;
 			RC rc = Open(path, file2, flags, outFlags);

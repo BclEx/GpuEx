@@ -1,6 +1,5 @@
 ﻿// sqlite3.h
-namespace Core { typedef class VSystem VSystem; }
-namespace Core { namespace IO
+namespace Core
 {
 #define PENDING_BYTE 0x40000000
 #define RESERVED_BYTE (PENDING_BYTE+1)
@@ -9,6 +8,7 @@ namespace Core { namespace IO
 
 	// sqliteInt.h
 	typedef class VFile VFile;
+	typedef class VSystem VSystem;
 
 	class VFile
 	{
@@ -151,4 +151,4 @@ namespace Core { namespace IO
 	};
 
 	__device__ __forceinline void operator|=(VFile::SYNC &a, int b) { a = (VFile::SYNC)(a | b); }
-}}
+}

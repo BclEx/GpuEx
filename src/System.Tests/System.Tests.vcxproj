@@ -27,20 +27,14 @@
     <ClCompile Include="Program.cu" />
     <ClCompile Include="Program.2.cu" />
     <ClCompile Include="TestSystem.cu" />
-    <ClCompile Include="TestSystem.IO.cu" />
-    <ClCompile Include="Tests/CoreTestH.cpp" />
     <ClCompile Include="Tests/IOTestH.cpp" />
-    <ClCompile Include="Tests/CoreTest.cu" />
     <ClCompile Include="Tests/IOTest.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="Program.2.cu" />
     <CudaCompile Include="TestSystem.cu" />
-    <CudaCompile Include="TestSystem.IO.cu" />
-    <ClCompile Include="Tests/CoreTestH.cpp" />
     <ClCompile Include="Tests/IOTestH.cpp" />
-    <CudaCompile Include="Tests/CoreTest.cu" />
     <CudaCompile Include="Tests/IOTest.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -93,7 +87,8 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings></DisableSpecificWarnings>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

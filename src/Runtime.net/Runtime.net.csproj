@@ -35,6 +35,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Bitvec.cs" />
+    <Compile Include="ConvertEx.cs" />
+    <Compile Include="Hash.cs" />
+    <Compile Include="MathEx.cs" />
     <Compile Include="Runtime+MutexEx.cs" />
     <Compile Include="Runtime+BenignAlloc.cs" />
     <Compile Include="Runtime.cs" />

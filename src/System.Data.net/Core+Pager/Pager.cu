@@ -621,7 +621,7 @@ namespace Core
 			PagerSavepoint *p = &pager->Savepoints[ii];
 			if (id <= p->Orig)
 			{
-				rc |= p->InSavepoint->Set(id);
+				rc |= (p->InSavepoint->Set(id) ? RC_OK : RC_NOMEM);
 				ASSERTCOVERAGE(rc == RC_NOMEM);
 				_assert(rc == RC_OK || rc == RC_NOMEM);
 			}
@@ -891,8 +891,8 @@ namespace Core
 		}
 
 		// If this page has already been played by before during the current rollback, then don't bother to play it back again.
-		if (done && (rc = done->Set(id)) != RC_OK)
-			return rc;
+		if (done && !done->Set(id))
+			return RC_NOMEM;
 
 		// When playing back page 1, restore the nReserve setting
 		if (id == 1 && pager->ReserveBytes != data[20])
@@ -2719,11 +2719,11 @@ failed:
 				_benignalloc_begin();
 				if (id <= DBOrigSize)
 				{
-					ASSERTONLY(rc =) InJournal->Set(id);
+					ASSERTONLY(rc =) (InJournal->Set(id) ? RC_OK : RC_NOMEM);
 					ASSERTCOVERAGE(rc == RC_NOMEM);
 				}
 				ASSERTONLY(rc =) AddToSavepointBitvecs(this, id);
-				ASSERTCOVERAGE(rc == RC_NOMEM);
+				ASSERTCOVERAGE(rc == false);
 				_benignalloc_end();
 			}
 			_memset(pg->Data, 0, PageSize);
@@ -2961,8 +2961,8 @@ pager_acquire_err:
 					pager->JournalOffset += 8 + pager->PageSize;
 					pager->Records++;
 					_assert(pager->InJournal != nullptr);
-					rc = pager->InJournal->Set(pg->ID);
-					ASSERTCOVERAGE(rc == RC_NOMEM);
+					rc = (pager->InJournal->Set(pg->ID) ? RC_OK : RC_NOMEM);
+					ASSERTCOVERAGE(rc == false);
 					_assert(rc == RC_OK || rc == RC_NOMEM);
 					rc |= AddToSavepointBitvecs(pager, pg->ID);
 					if (rc != RC_OK)

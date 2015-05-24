@@ -48,6 +48,7 @@
     <ClCompile Include="Runtime.cu" />
     <ClCompile Include="Runtime+Alloc.cu" />
     <ClCompile Include="Runtime+BenignAlloc.cu" />
+    <ClCompile Include="Runtime+Bitvec.cu" />
     <ClCompile Include="Runtime+Convert.cu" />
     <ClCompile Include="Runtime+Hash.cu" />
     <ClCompile Include="Runtime+Math.cu" />
@@ -57,10 +58,12 @@
     <ClCompile Include="Runtime+Mutex-noop.cu" />
     <ClCompile Include="Runtime+Mutex-unix.cu" />
     <ClCompile Include="Runtime+Mutex-win.cu" />
-    <ClCompile Include="Runtime+Status.cu" />
+    <ClCompile Include="Runtime+Printf.cu" />
+    <ClCompile Include="Runtime+Utf.cu" />
     <ClCompile Include="Runtime+Sentinel.cu" />
     <ClCompile Include="Runtime+Sentinel-win.cu" />
     <ClCompile Include="Runtime+Sentinel-gpu.cu" />
+    <ClCompile Include="Runtime+Status.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
@@ -70,6 +73,7 @@
     <None Include="Runtime.cu" />
     <None Include="Runtime+Alloc.cu" />
     <None Include="Runtime+BenignAlloc.cu" />
+    <None Include="Runtime+Bitvec.cu" />
     <None Include="Runtime+Convert.cu" />
     <None Include="Runtime+Hash.cu" />
     <None Include="Runtime+Math.cu" />
@@ -79,10 +83,12 @@
     <None Include="Runtime+Mutex-noop.cu" />
     <None Include="Runtime+Mutex-unix.cu" />
     <None Include="Runtime+Mutex-win.cu" />
-    <None Include="Runtime+Status.cu" />
+    <None Include="Runtime+Printf.cu" />
+    <None Include="Runtime+Utf.cu" />
     <None Include="Runtime+Sentinel.cu" />
     <None Include="Runtime+Sentinel-win.cu" />
     <None Include="Runtime+Sentinel-gpu.cu" />
+    <None Include="Runtime+Status.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.cpp" />
@@ -133,7 +139,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

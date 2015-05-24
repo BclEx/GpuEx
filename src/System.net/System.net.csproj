@@ -37,13 +37,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="Core\Bitvec.cs" />
     <Compile Include="Core\SysEx+Random.cs" />
-    <Compile Include="Core\ConvertEx.cs" />
     <Compile Include="Core\SysEx+Utf.cs" />
     <Compile Include="Core\VAlloc.cs" />
-    <Compile Include="Core\MathEx.cs" />
-    <Compile Include="Core\Hash.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Core\SysEx.cs" />
     <Compile Include="Core\RC.cs" />
@@ -51,20 +47,11 @@
     <Compile Include="Core\VSystem.cs" />
     <Compile Include="Core\IO\IO.MemoryVFile.cs" />
     <Compile Include="Core\VSystem-win.cs" />
-    <Content Include="Core\ConvertEx.cu.h" />
-    <Content Include="Core\VAlloc.cu.h" />
     <Content Include="Core\VSystem.cu.h" />
-    <Content Include="Core\Bitvec.cu" />
-    <Content Include="Core\ConvertEx.cu" />
-    <Content Include="Core\Bitvec.cu.h" />
     <Content Include="Core\RC.cu.h" />
-    <None Include="Core\MathEx.cu" />
     <None Include="Core\SysEx+Random.cu" />
     <Content Include="Core\SysEx.cu.h" />
-    <Content Include="Core\MathEx.cu.h" />
-    <Content Include="Core\Hash.cu.h" />
     <Content Include="Core\Core.cu.h" />
-    <Content Include="Core\Hash.cu" />
     <Content Include="Core\VSystem.cu" />
     <Content Include="Core\SysEx.cu" />
     <Compile Include="Core\IO\IO.JournalVFile.cs" />

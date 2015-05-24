@@ -28,6 +28,57 @@ namespace Core
         public RC ErrCode;          // Most recent error code (RC_*)
         public int ErrMask;         // & result codes with this before returning
         public Lookaside_ Lookaside;	// Lookaside malloc configuration
+
+        public RC SetupLookaside(byte[] buf, int size, int count)
+        {
+            if (Lookaside.Outs != 0)
+                return RC.BUSY;
+            // Free any existing lookaside buffer for this handle before allocating a new one so we don't have to have space for both at the same time.
+            if (Lookaside.Malloced)
+                C._free(ref Lookaside.Start);
+            // The size of a lookaside slot after ROUNDDOWN8 needs to be larger than a pointer to be useful.
+            size = C._ROUNDDOWN8(size); // IMP: R-33038-09382
+            if (size <= (int)4) size = 0;
+            if (count < 0) count = 0;
+            byte[] start;
+            if (size == 0 || count == 0)
+            {
+                size = 0;
+                start = null;
+            }
+            else if (buf == null)
+            {
+                C._benignalloc_begin();
+                start = new byte[size * count]; // IMP: R-61949-35727
+                C._benignalloc_end();
+            }
+            else
+                start = buf;
+            Lookaside.Start = start;
+            Lookaside.Free = null;
+            Lookaside.Size = (ushort)size;
+            if (start != null)
+            {
+                Debug.Assert(size > 4);
+                TagBase.LookasideSlot p = (TagBase.LookasideSlot)null; //: start;
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    p.Next = Lookaside.Free;
+                    Lookaside.Free = p;
+                    p = (TagBase.LookasideSlot)null; //: &((uint8 *)p)[size];
+                }
+                Lookaside.End = p;
+                Lookaside.Enabled = true;
+                Lookaside.Malloced = (buf == null);
+            }
+            else
+            {
+                Lookaside.End = null;
+                Lookaside.Enabled = false;
+                Lookaside.Malloced = false;
+            }
+            return RC.OK;
+        }
     }
 
     public partial class SysEx
@@ -499,55 +550,5 @@ namespace Core
 #endif
         #endregion
 
-        public static RC SetupLookaside(TagBase tag, byte[] buf, int size, int count)
-        {
-            if (tag.Lookaside.Outs != 0)
-                return RC.BUSY;
-            // Free any existing lookaside buffer for this handle before allocating a new one so we don't have to have space for both at the same time.
-            if (tag.Lookaside.Malloced)
-                C._free(ref tag.Lookaside.Start);
-            // The size of a lookaside slot after ROUNDDOWN8 needs to be larger than a pointer to be useful.
-            size = C._ROUNDDOWN8(size); // IMP: R-33038-09382
-            if (size <= (int)4) size = 0;
-            if (count < 0) count = 0;
-            byte[] start;
-            if (size == 0 || count == 0)
-            {
-                size = 0;
-                start = null;
-            }
-            else if (buf == null)
-            {
-                C._benignalloc_begin();
-                start = new byte[size * count]; // IMP: R-61949-35727
-                C._benignalloc_end();
-            }
-            else
-                start = buf;
-            tag.Lookaside.Start = start;
-            tag.Lookaside.Free = null;
-            tag.Lookaside.Size = (ushort)size;
-            if (start != null)
-            {
-                Debug.Assert(size > 4);
-                TagBase.LookasideSlot p = (TagBase.LookasideSlot)null; //: start;
-                for (int i = count - 1; i >= 0; i--)
-                {
-                    p.Next = tag.Lookaside.Free;
-                    tag.Lookaside.Free = p;
-                    p = (TagBase.LookasideSlot)null; //: &((uint8 *)p)[size];
-                }
-                tag.Lookaside.End = p;
-                tag.Lookaside.Enabled = true;
-                tag.Lookaside.Malloced = (buf == null);
-            }
-            else
-            {
-                tag.Lookaside.End = null;
-                tag.Lookaside.Enabled = false;
-                tag.Lookaside.Malloced = false;
-            }
-            return RC.OK;
-        }
     }
 }

@@ -1,8 +1,8 @@
 ﻿// memjournal.c
-#include "../Core.cu.h"
+#include "Core.cu.h"
 #include <new.h>
 
-namespace Core { namespace IO
+namespace Core
 {
 #define JOURNAL_CHUNKSIZE ((int)(1024 - sizeof(FileChunk *)))
 
@@ -147,4 +147,4 @@ namespace Core { namespace IO
 	{
 		return sizeof(MemoryVFile);
 	}
-}}
+}

@@ -23,6 +23,7 @@ namespace Core
 	public:
 
 #pragma region Initialize/Shutdown/Config
+
 		struct GlobalStatics
 		{
 			//TAG::CoreMutex					// True to enable core mutexing
@@ -96,12 +97,7 @@ namespace Core
 #else
 		__device__ inline void static Config(CONFIG op, ...) { va_list args; va_start(args, op); Config_(op, args); va_end(args); }
 #endif
-#pragma endregion
 
-#pragma region Func
-		__device__ static RC SetupLookaside(TagBase *tag, void *buf, int size, int count);
-		// random
-		__device__ static void PutRandom(int length, void *buffer);
 #pragma endregion
 
 #pragma region BKPT
@@ -130,6 +126,9 @@ namespace Core
 #define SysEx_CANTOPEN_BKPT RC_CANTOPEN
 #endif
 #pragma endregion
+
+		// randomness
+		__device__ static void PutRandom(int length, void *buffer);
 	};
 
 	__device__ extern _WSD SysEx::GlobalStatics g_GlobalStatics;

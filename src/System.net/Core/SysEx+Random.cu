@@ -71,5 +71,4 @@ namespace Core
 	__device__ void Random_PrngRestoreState() { _memcpy(&_GLOBAL(Prng, g_prng), &_GLOBAL(Prng, g_savedPrng), sizeof(g_prng)); }
 	__device__ void Random_PrngResetState() { _prng.IsInit = false; }
 #endif
-
 }

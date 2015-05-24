@@ -334,7 +334,7 @@ namespace Core
 				rc = RC_NOMEM;
 		}
 		if (rc == RC_OK && id <= bt->HasContent->get_Length())
-			rc = bt->HasContent->Set(id);
+			rc = (bt->HasContent->Set(id) ? RC_OK : RC_NOMEM);
 		return rc;
 	}
 

@@ -15,11 +15,9 @@
 #define _dprintf printf
 #include "RC.cu.h"
 #include "SysEx.cu.h"
-#include "Bitvec.cu.h"
 #include "VSystem.cu.h"
-#include "IO\IO.VFile.cu.h"
+#include "VFile.cu.h"
 using namespace Core;
-using namespace Core::IO;
 #if OS_MAP
 #include "VSystem+Sentinel.cu.h"
 #endif

@@ -1,6 +1,6 @@
-﻿#include "../Core.cu.h"
+﻿#include "Core.cu.h"
 
-namespace Core { namespace IO
+namespace Core
 {
 	__device__ RC VFile::Lock(LOCK lock) { return RC_OK; }
 	__device__ RC VFile::Unlock(LOCK lock) { return RC_OK; }
@@ -14,4 +14,4 @@ namespace Core { namespace IO
 	__device__ void VFile::ShmBarrier() { }
 	__device__ RC VFile::ShmUnmap(bool deleteFlag) { return RC_OK; }
 	__device__ RC VFile::ShmMap(int region, int sizeRegion, bool isWrite, void volatile **pp) { return RC_OK; }
-}}
+}

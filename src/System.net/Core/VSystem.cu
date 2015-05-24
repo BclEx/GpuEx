@@ -1,6 +1,5 @@
 ﻿// os.c
 #include "Core.cu.h"
-using namespace Core::IO;
 namespace Core
 {
 	__device__ static VSystem *_WSD g_vfsList = nullptr;
