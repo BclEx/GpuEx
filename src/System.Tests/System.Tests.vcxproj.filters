@@ -1,11 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Tests/IOTestH.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Tests">
       <UniqueIdentifier>{7d514ca3-4a70-46bc-973b-5e1eeabf28b5}</UniqueIdentifier>
     </Filter>
@@ -15,6 +10,9 @@
     <CudaCompile Include="Program.2.cu" />
     <CudaCompile Include="TestSystem.cu" />
     <CudaCompile Include="Tests/IOTest.cu">
+      <Filter>Tests</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Tests/IOTestH.cpp">
       <Filter>Tests</Filter>
     </CudaCompile>
   </ItemGroup>

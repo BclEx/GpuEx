@@ -152,11 +152,11 @@
     </Link>
     <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <CodeGeneration>compute_$(LC),sm_$(LC);compute_$(LC),sm_52</CodeGeneration>
       <Include>$(SolutionDir)lib;%(Include)</Include>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">true</Keep>
+      <Keep>true</Keep>
     </CudaCompile>
     <PostBuildEvent>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>

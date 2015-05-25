@@ -432,7 +432,7 @@
     </Link>
     <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <CodeGeneration>compute_$(LC),sm_$(LC);compute_$(LC),sm_52</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
       <Keep>true</Keep>

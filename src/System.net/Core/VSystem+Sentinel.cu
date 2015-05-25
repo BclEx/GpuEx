@@ -12,8 +12,9 @@
 
 namespace CORE_NAME
 {
-	static bool Executor(VSystem *vfs, RuntimeSentinelMessage *data, int length)
+	static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 	{
+		VSystem *vfs = (VSystem *)tag;
 		switch (data->OP)
 		{
 #pragma region File
@@ -88,15 +89,16 @@ namespace CORE_NAME
 	static RuntimeSentinelExecutor _sysExecutor;
 	void VSystemSentinel::Initialize()
 	{
-		MutexEx masterMutex;
-		SysEx::Initialize(masterMutex);
+		//MutexEx masterMutex;
+		//SysEx::Initialize(masterMutex);
+		VSystem::Initialize();
 		VSystem *vfs = VSystem::FindVfs(nullptr);
 #ifndef _GPU
 		//VSystem::UnregisterVfs(vfs);
 		//MapVSystem_Initialize();
 #endif
 		_sysExecutor.Name = "sys";
-		_sysExecutor.Executor = RUNTIMESENTINELEXECUTOR(Executor);
+		_sysExecutor.Executor = Executor;
 		_sysExecutor.Tag = vfs;
 		RuntimeSentinel::Initialize(&_sysExecutor);
 	}
@@ -104,7 +106,7 @@ namespace CORE_NAME
 	void VSystemSentinel::Shutdown()
 	{
 		RuntimeSentinel::Shutdown();
-		SysEx::Shutdown();
+		//SysEx::Shutdown();
 	}
 }
 

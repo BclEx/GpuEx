@@ -703,7 +703,7 @@ namespace CORE_NAME
 		// If zName is specified, operate on only the one system call specified.
 		for (int i = 0; i < _lengthof(Syscalls); i++)
 		{
-			if (!_strcmp(name, Syscalls[i].Name))
+			if (!strcmp(name, Syscalls[i].Name))
 			{
 				if (!Syscalls[i].Default)
 					Syscalls[i].Default = Syscalls[i].Current;
@@ -719,7 +719,7 @@ namespace CORE_NAME
 	syscall_ptr WinVSystem::GetSystemCall(const char *name)
 	{
 		for (int i = 0; i < _lengthof(Syscalls); i++)
-			if (!_strcmp(name, Syscalls[i].Name)) return Syscalls[i].Current;
+			if (!strcmp(name, Syscalls[i].Name)) return Syscalls[i].Current;
 		return nullptr;
 	}
 
@@ -728,7 +728,7 @@ namespace CORE_NAME
 		int i = -1;
 		if (name)
 			for (i = 0; i < _lengthof(Syscalls)-1; i++)
-				if (!_strcmp(name, Syscalls[i].Name)) break;
+				if (!strcmp(name, Syscalls[i].Name)) break;
 		for (i++; i < _lengthof(Syscalls); i++)
 			if (Syscalls[i].Current) return Syscalls[i].Name;
 		return 0;

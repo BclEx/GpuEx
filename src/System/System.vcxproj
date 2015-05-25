@@ -82,7 +82,7 @@
     </Link>
     <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <CodeGeneration>compute_$(LC),sm_$(LC);compute_$(LC),sm_52</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
@@ -90,10 +90,7 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">
-        "$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" -o "$(OutDir)System.$(LC)$(LD)D.lib"
-        "$(VCInstallDir)bin\x86_amd64\lib.exe" /Out:"$(OutDir)System+Sentinel.$(LC)$(LD)D.lib" "$(IntDir)VSystem+Sentinel.obj"
-      </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" "$(IntDir)VSystem+Sentinel.obj" -o "$(OutDir)System.$(LC)$(LD)D.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -127,7 +124,10 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" "$(IntDir)System2.cu.obj" -o "$(OutDir)System2.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">
+        "$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" -o "$(OutDir)System.$(LC)$(LD).lib"
+        "$(VCInstallDir)bin\x86_amd64\lib.exe" /Out:"$(OutDir)System+Sentinel.$(LC)$(LD)D.lib" "$(IntDir)VSystem+Sentinel.obj"
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

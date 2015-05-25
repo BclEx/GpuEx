@@ -2,7 +2,6 @@
 #include <string.h>
 
 void __testSystem(cudaDeviceHeap &r);
-void __testSystemIO(cudaDeviceHeap &r);
 
 #if __CUDACC__
 void GMain(cudaDeviceHeap &r) {
@@ -10,7 +9,6 @@ void GMain(cudaDeviceHeap &r) {
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
 //__testSystem(r);
-__testSystemIO(r);
 }
 
 #if __CUDACC__

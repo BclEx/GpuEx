@@ -121,4 +121,3 @@ __device__ void Bitvec::Clear(uint32 index, void *buffer)
 			}
 	}
 }
-

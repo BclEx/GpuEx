@@ -484,7 +484,7 @@ __device__ static void OutputQuotedString(FILE *out_, const char *z)
 	}
 }
 
-__host__ __device__ static void OutputCString(FILE *out_, const char *z)
+__device__ static void OutputCString(FILE *out_, const char *z)
 {
 	unsigned int c;
 	_fputc('"', out_);
@@ -499,6 +499,23 @@ __host__ __device__ static void OutputCString(FILE *out_, const char *z)
 		else _fputc(c, out_);
 	}
 	_fputc('"', out_);
+}
+
+static void fOutputCString(FILE *out_, const char *z)
+{
+	unsigned int c;
+	fputc('"', out_);
+	while ((c = *(z++)) != 0)
+	{
+		if (c == '\\') { fputc(c, out_); fputc(c, out_); }
+		else if (c == '"') { fputc('\\', out_); fputc('"', out_); }
+		else if (c == '\t') { fputc('\\', out_); fputc('t', out_); }
+		else if (c == '\n') { fputc('\\', out_); fputc('n', out_); }
+		else if (c == '\r') { fputc('\\', out_); fputc('r', out_); }
+		else if (!_isprint(c)) fprintf(out_, "\\%03o", c&0xff);
+		else fputc(c, out_);
+	}
+	fputc('"', out_);
 }
 
 __device__ static void OutputHtmlString(FILE *out_, const char *z)
@@ -2152,11 +2169,11 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		fprintf(p->Out,"%9.9s: %s\n","headers", p->ShowHeader ? "on" : "off");
 		fprintf(p->Out,"%9.9s: %s\n","mode", _modeDescr[p->Mode]);
 		fprintf(p->Out,"%9.9s: ", "nullvalue");
-		OutputCString(p->Out, p->NullValue);
+		fOutputCString(p->Out, p->NullValue);
 		fprintf(p->Out, "\n");
 		fprintf(p->Out,"%9.9s: %s\n","output", strlen(p->Outfile) ? p->Outfile : "stdout");
 		fprintf(p->Out,"%9.9s: ", "separator");
-		OutputCString(p->Out, p->Separator);
+		fOutputCString(p->Out, p->Separator);
 		fprintf(p->Out, "\n");
 		fprintf(p->Out,"%9.9s: %s\n","stats", p->StatsOn ? "on" : "off");
 		fprintf(p->Out,"%9.9s: ","width");
@@ -2803,7 +2820,7 @@ static void MainInit()
 	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
-	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*10));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*20));
 	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
 	//

@@ -175,7 +175,6 @@ inline int gpuGetMaxGflopsDeviceId()
 
 #pragma endregion
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // VISUAL
 // Visual render for host-side code

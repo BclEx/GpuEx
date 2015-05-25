@@ -406,7 +406,6 @@ public:
 __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #define TagBase_RuntimeStatics _GLOBAL(TagBase::RuntimeStatics, g_RuntimeStatics)
 
-
 #pragma endregion
 
 //////////////////////
@@ -823,16 +822,29 @@ public:
 
 typedef struct
 {
-	volatile int Status;
+	volatile long Status;
 	int Length;
 	char Data[1024];
+	inline void Dump()
+	{
+		char *b = Data;
+		int l = Length;
+		printf("\nCommand: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'");
+	}
+
 } RuntimeSentinelCommand;
 
 typedef struct
 {
-	volatile unsigned int AddId;
-	volatile unsigned int RunId;
+	volatile long AddId;
+	volatile long RunId;
 	RuntimeSentinelCommand Commands[1];
+	inline void Dump()
+	{
+		char *b2 = (char *)this;
+		int l2 = sizeof(RuntimeSentinelMap);
+		printf("\nMap: 0x%x[%d] '", b2, l2); for (int i = 0; i < l2; i++) printf("%02x", b2[i] & 0xff); printf("'");
+	}
 } RuntimeSentinelMap;
 
 typedef struct RuntimeSentinelExecutor
@@ -842,7 +854,7 @@ typedef struct RuntimeSentinelExecutor
 	bool (*Executor)(void*,RuntimeSentinelMessage*,int);
 	void *Tag;
 } RuntimeSentinelExecutor;
-#define RUNTIMESENTINELEXECUTOR(E) ((bool (*)(void*,RuntimeSentinelMessage*,int))&E)
+//#define RUNTIMESENTINELEXECUTOR(E) ((bool (*)(void*,RuntimeSentinelMessage*,int))&E)
 
 typedef struct RuntimeSentinelContext
 {
@@ -1057,10 +1069,10 @@ extern __constant__ FILE _stderr_file;
 #define _fprintf(f, ...) _fprintf_(f, _mprintf("%s", __VA_ARGS__))
 extern "C" __device__ inline int _fprintf_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(f, v); return msg.RC; }
 extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }
-extern "C" __device__ inline int _fflush(FILE *f) { Messages::Stdio_fflush msg(f); return msg.RC; }
+extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(f); }
 extern "C" __device__ inline int _fclose(FILE *f) { Messages::Stdio_fclose msg(f); return msg.RC; }
-extern "C" __device__ inline int _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(c, f); return msg.RC; }
-extern "C" __device__ inline int _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(s, f); return msg.RC; }
+extern "C" __device__ inline void _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(c, f); }
+extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(s, f); }
 #else
 #if __CUDACC__
 #define _fprintf(f, ...) printf(__VA_ARGS__)

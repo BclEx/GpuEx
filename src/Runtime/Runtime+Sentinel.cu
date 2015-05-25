@@ -46,13 +46,15 @@ static unsigned int __stdcall SentinelThread(void *data)
 	RuntimeSentinelMap *map = ctx->Map;
 	while (map)
 	{
-		int id = InterlockedAdd((LONG *)&map->RunId, 1);
+		long id = InterlockedAdd((long *)&map->RunId, 1);
 		RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
-		while (InterlockedCompareExchange((LONG *)&cmd->Status, 3, 2) != 2) { Sleep(10); } // printf("[%d ]", s_); 
-		char *b = cmd->Data;
-		int l = cmd->Length;
-		printf("\nSentinel: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'");
-		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && !exec->Executor(exec->Tag, (RuntimeSentinelMessage *)cmd->Data, cmd->Length); exec = exec->Next) { }
+		unsigned int s_;
+		while ((s_ = InterlockedCompareExchange((long *)&cmd->Status, 3, 2)) != 2) {/*printf("[%d ]", s_);*/ Sleep(50); } //
+		//map->Dump();
+		cmd->Dump();
+		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, (RuntimeSentinelMessage *)cmd->Data, cmd->Length); exec = exec->Next) { 
+			printf("|");
+		}
 		printf(".");
 		cmd->Status = 4;
 	}
@@ -65,21 +67,21 @@ __constant__ RuntimeSentinelMap *_runtimeSentinelMap = nullptr;
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 {
 #ifdef _GPU
-	cudaErrorCheck(cudaHostAlloc(&_ctx.Map, sizeof(*_ctx.Map), cudaHostAllocPortable));
+	cudaErrorCheck(cudaHostAlloc(&_ctx.Map, sizeof(RuntimeSentinelMap), cudaHostAllocPortable));
 	RuntimeSentinelContext *d_map;
 	cudaErrorCheck(cudaHostGetDevicePointer(&d_map, _ctx.Map, 0));
 	cudaErrorCheck(cudaMemcpyToSymbol(_runtimeSentinelMap, &d_map, sizeof(_ctx.Map)));
 #else
-	_ctx.Map = _runtimeSentinelMap = (RuntimeSentinelMap *)malloc(sizeof(*_ctx.Map));
+	_ctx.Map = _runtimeSentinelMap = (RuntimeSentinelMap *)malloc(sizeof(RuntimeSentinelMap));
 #endif
-	memset(_ctx.Map, 0, sizeof(*_ctx.Map));
+	memset(_ctx.Map, 0, sizeof(RuntimeSentinelMap));
 	_baseExecutor.Name = "base";
-	_baseExecutor.Executor = RUNTIMESENTINELEXECUTOR(Executor);
+	_baseExecutor.Executor = Executor;
 	_baseExecutor.Tag = nullptr;
 	RegisterExecutor(&_baseExecutor, true);
 	if (executor)
 		RegisterExecutor(executor, true);
-	_thread = (HANDLE)_beginthreadex(0, 0, SentinelThread, &_ctx, 0, 0);
+	_thread = (HANDLE)_beginthreadex(0, 0, SentinelThread, nullptr, 0, 0);
 }
 
 void RuntimeSentinel::Shutdown()
