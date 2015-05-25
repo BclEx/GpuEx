@@ -1,4 +1,5 @@
 #include "Runtime.h"
+RUNTIME_NAMEBEGIN
 
 #ifndef OMIT_BUILTIN_TEST
 
@@ -39,3 +40,5 @@
 	}
 
 #endif
+
+RUNTIME_NAMEEND

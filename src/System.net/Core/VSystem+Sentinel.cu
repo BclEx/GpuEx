@@ -1,6 +1,8 @@
+#define RUNTIME_NAME RuntimeS
 #include <Runtime.h>
 
 #if OS_MAP
+#pragma region OS_MAP
 
 #define CORE_NAME CoreS
 #include "Core.cu.h"
@@ -89,9 +91,8 @@ namespace CORE_NAME
 	static RuntimeSentinelExecutor _sysExecutor;
 	void VSystemSentinel::Initialize()
 	{
-		//MutexEx masterMutex;
-		//SysEx::Initialize(masterMutex);
-		VSystem::Initialize();
+		MutexEx masterMutex;
+		SysEx::Initialize(masterMutex);
 		VSystem *vfs = VSystem::FindVfs(nullptr);
 #ifndef _GPU
 		//VSystem::UnregisterVfs(vfs);
@@ -106,8 +107,9 @@ namespace CORE_NAME
 	void VSystemSentinel::Shutdown()
 	{
 		RuntimeSentinel::Shutdown();
-		//SysEx::Shutdown();
+		SysEx::Shutdown();
 	}
 }
 
+#pragma region
 #endif

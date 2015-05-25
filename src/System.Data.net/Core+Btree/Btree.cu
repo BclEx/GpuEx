@@ -7,7 +7,7 @@ namespace CORE_NAME
 {
 #if _DEBUG
 	__device__ bool BtreeTrace = false;
-#define TRACE(X, ...) if (BtreeTrace) { _fprintf(stdout, X, __VA_ARGS__); }
+#define TRACE(X, ...) if (BtreeTrace) { _printf("BT: "X, __VA_ARGS__); }
 #else
 #define TRACE(X, ...)
 #endif

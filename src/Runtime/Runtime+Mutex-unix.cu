@@ -1,4 +1,5 @@
 #include "Runtime.h"
+RUNTIME_NAMEBEGIN
 
 #ifdef MUTEX_PTHREADS
 #pragma region MUTEX_PTHREADS
@@ -202,3 +203,5 @@ void _mutex_leave(MutexEx p)
 
 #pragma endregion
 #endif
+
+RUNTIME_NAMEEND

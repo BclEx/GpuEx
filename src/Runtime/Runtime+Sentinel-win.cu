@@ -6,22 +6,32 @@
 #if OS_MAP && OS_WIN
 #pragma region OS_WIN
 
-__device__ void RuntimeSentinel::Send(void *msg, int msgLength)
+RuntimeSentinelMap *_runtimeSentinelMap = nullptr;
+void RuntimeSentinel::Send(void *msg, int msgLength)
 {
 	RuntimeSentinelMap *map = _runtimeSentinelMap;
-	int id = InterlockedAdd((LONG *)&map->AddId, 1);
-	RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
-	volatile int *status = (volatile int *)&cmd->Status;
-	while (InterlockedCompareExchange((LONG *)status, 1, 0) != 0) { }
-	cmd->Length = msgLength;
 	RuntimeSentinelMessage *msg2 = (RuntimeSentinelMessage *)msg;
-	if (msg2->Prepare)
-		msg2->Prepare(msg, cmd->Data, sizeof(cmd->Data));
+	int length = msgLength + msg2->Size;
+	long id = (InterlockedAdd((long *)&map->SetId, SENTINEL_SIZE) - SENTINEL_SIZE);
+	RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
+	volatile long *status = (volatile long *)&cmd->Status;
+	while (InterlockedCompareExchange((long *)status, 1, 0) != 0) { }
+	cmd->Data = (char *)cmd + _ROUND8(sizeof(RuntimeSentinelCommand));
+	cmd->Magic = SENTINEL_MAGIC;
+	cmd->Length = msgLength;
+	if (msg2->Prepare && !msg2->Prepare(msg, &cmd->Data[0], &cmd->Data[length]))
+	{
+		printf("msg too long");
+		exit(0);
+	}
 	memcpy(cmd->Data, msg, msgLength);
-	cmd->Status = 2;
-	while (InterlockedCompareExchange((LONG *)status, 5, 4) != 4) { }
-	memcpy(msg, cmd->Data, msgLength);
-	cmd->Status = 0;
+	*status = 2;
+	if (!msg2->Async)
+	{
+		while (InterlockedCompareExchange((long *)status, 5, 4) != 4) { }
+		memcpy(msg, cmd->Data, msgLength);
+		*status = 0;
+	}
 }
 
 #pragma endregion

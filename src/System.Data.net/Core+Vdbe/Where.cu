@@ -4,7 +4,7 @@ namespace CORE_NAME
 {
 #if _DEBUG
 	__device__ bool WhereTrace = false;
-#define WHERETRACE(X, ...) if (WhereTrace) { _fprintf(nullptr, X, __VA_ARGS__); }
+#define WHERETRACE(X, ...) if (WhereTrace) { _printf("WT: "X, __VA_ARGS__); }
 #else
 #define WHERETRACE(X, ...)
 #endif

@@ -60,10 +60,11 @@
     <ClCompile Include="Runtime+Mutex-win.cu" />
     <ClCompile Include="Runtime+Printf.cu" />
     <ClCompile Include="Runtime+Utf.cu" />
-    <ClCompile Include="Runtime+Sentinel.cu" />
     <ClCompile Include="Runtime+Sentinel-win.cu" />
     <ClCompile Include="Runtime+Sentinel-gpu.cu" />
     <ClCompile Include="Runtime+Status.cu" />
+    <ClCompile Include="Runtime+TagBase.cu" />
+    <ClCompile Include="Runtime+Sentinel.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
@@ -85,10 +86,11 @@
     <None Include="Runtime+Mutex-win.cu" />
     <None Include="Runtime+Printf.cu" />
     <None Include="Runtime+Utf.cu" />
-    <None Include="Runtime+Sentinel.cu" />
     <None Include="Runtime+Sentinel-win.cu" />
     <None Include="Runtime+Sentinel-gpu.cu" />
     <None Include="Runtime+Status.cu" />
+    <None Include="Runtime+TagBase.cu" />
+    <CudaCompile Include="Runtime+Sentinel.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.cpp" />
@@ -159,7 +161,7 @@
       <Keep>true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)Runtime+Sentinel.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -194,7 +196,7 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)Runtime+Sentinel.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

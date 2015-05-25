@@ -1,39 +1,40 @@
 #include "Runtime.h"
 #include "RuntimeTypes.h"
 #define RUNTIME_ALLOC_SYSTEM
+RUNTIME_NAMEBEGIN
 
-// This file contains low-level memory allocation drivers for when SQLite will use the standard C-library malloc/realloc/free interface
-// to obtain the memory it needs.
-//
-// This file contains implementations of the low-level memory allocation routines specified in the sqlite3_mem_methods object.  The content of
-// this file is only used if SQLITE_SYSTEM_MALLOC is defined.  The SQLITE_SYSTEM_MALLOC macro is defined automatically if neither the
-// SQLITE_MEMDEBUG nor the SQLITE_WIN32_MALLOC macros are defined.  The default configuration is to use memory allocation routines in this file.
-//
-// C-preprocessor macro summary:
-//
-//    HAVE_MALLOC_USABLE_SIZE     The configure script sets this symbol if the malloc_usable_size() interface exists
-//                                on the target platform.  Or, this symbol can be set manually, if desired.
-//                                If an equivalent interface exists by a different name, using a separate -D option to rename it.
-//
-//    RUNTIME_WITHOUT_ZONEMALLOC   Some older macs lack support for the zone memory allocator.  Set this symbol to enable building on older macs.
-//
-//    RUNTIME_WITHOUT_MSIZE        Set this symbol to disable the use of _msize() on windows systems.  This might be necessary when compiling for Delphi, for example.
+	// This file contains low-level memory allocation drivers for when SQLite will use the standard C-library malloc/realloc/free interface
+	// to obtain the memory it needs.
+	//
+	// This file contains implementations of the low-level memory allocation routines specified in the sqlite3_mem_methods object.  The content of
+	// this file is only used if SQLITE_SYSTEM_MALLOC is defined.  The SQLITE_SYSTEM_MALLOC macro is defined automatically if neither the
+	// SQLITE_MEMDEBUG nor the SQLITE_WIN32_MALLOC macros are defined.  The default configuration is to use memory allocation routines in this file.
+	//
+	// C-preprocessor macro summary:
+	//
+	//    HAVE_MALLOC_USABLE_SIZE     The configure script sets this symbol if the malloc_usable_size() interface exists
+	//                                on the target platform.  Or, this symbol can be set manually, if desired.
+	//                                If an equivalent interface exists by a different name, using a separate -D option to rename it.
+	//
+	//    RUNTIME_WITHOUT_ZONEMALLOC   Some older macs lack support for the zone memory allocator.  Set this symbol to enable building on older macs.
+	//
+	//    RUNTIME_WITHOUT_MSIZE        Set this symbol to disable the use of _msize() on windows systems.  This might be necessary when compiling for Delphi, for example.
 
 #ifdef RUNTIME_ALLOC_SYSTEM
 
-// The MSVCRT has malloc_usable_size() but it is called _msize(). The use of _msize() is automatic, but can be disabled by compiling with -DSQLITE_WITHOUT_MSIZE
+	// The MSVCRT has malloc_usable_size() but it is called _msize(). The use of _msize() is automatic, but can be disabled by compiling with -DSQLITE_WITHOUT_MSIZE
 #if defined(_MSC_VER) && !defined(RUNTIME_WITHOUT_MSIZE) && !defined(__CUDACC__)
 #define RUNTIME_ALLOCSIZE _msize
 #endif
 
 #if __CUDACC__
 
-// Use standard C library malloc and free on non-Apple systems. Also used by Apple systems if SQLITE_WITHOUT_ZONEMALLOC is defined.
+	// Use standard C library malloc and free on non-Apple systems. Also used by Apple systems if SQLITE_WITHOUT_ZONEMALLOC is defined.
 #define RUNTIME_ALLOC(x) malloc(x)
 #define RUNTIME_FREE(x) free(x)
 #define RUNTIME_REALLOC(x,y) _cudarealloc((x),(y))
 
-__device__ inline static void *_cudarealloc(void *old, size_t newSize)
+	__device__ inline static void *_cudarealloc(void *old, size_t newSize)
 { 
 	void *new_ = malloc(newSize + 8);
 	if (old)
@@ -48,11 +49,11 @@ __device__ inline static void *_cudarealloc(void *old, size_t newSize)
 
 #elif defined(__APPLE__) && !defined(RUNTIME_WITHOUT_ZONEMALLOC)
 
-// Use the zone allocator available on apple products unless the SQLITE_WITHOUT_ZONEMALLOC symbol is defined.
+	// Use the zone allocator available on apple products unless the SQLITE_WITHOUT_ZONEMALLOC symbol is defined.
 #include <sys/sysctl.h>
 #include <malloc/malloc.h>
 #include <libkern/OSAtomic.h>
-static malloc_zone_t * _zoneMalloc;
+	static malloc_zone_t * _zoneMalloc;
 #define RUNTIME_ALLOC(x) malloc_zone_malloc(_zoneMalloc,(x))
 #define RUNTIME_FREE(x) malloc_zone_free(_zoneMalloc,(x));
 #define RUNTIME_REALLOC(x,y) malloc_zone_realloc(_zoneMalloc,(x),(y))
@@ -60,7 +61,7 @@ static malloc_zone_t * _zoneMalloc;
 
 #else /* if not __APPLE__ */
 
-// Use standard C library malloc and free on non-Apple systems. Also used by Apple systems if SQLITE_WITHOUT_ZONEMALLOC is defined.
+	// Use standard C library malloc and free on non-Apple systems. Also used by Apple systems if SQLITE_WITHOUT_ZONEMALLOC is defined.
 #define RUNTIME_ALLOC(x) malloc(x)
 #define RUNTIME_FREE(x) free(x)
 #define RUNTIME_REALLOC(x,y) realloc((x),(y))
@@ -69,20 +70,20 @@ static malloc_zone_t * _zoneMalloc;
 #include <malloc.h> // Needed for malloc_usable_size on linux
 #endif
 
-//#ifdef HAVE_MALLOC_USABLE_SIZE
-//#ifndef RUNTIME_ALLOCSIZE
-//#define RUNTIME_ALLOCSIZE(x) malloc_usable_size(x)
-//#endif
-//#else
-//#undef RUNTIME_ALLOCSIZE
-//#endif
+	//#ifdef HAVE_MALLOC_USABLE_SIZE
+	//#ifndef RUNTIME_ALLOCSIZE
+	//#define RUNTIME_ALLOCSIZE(x) malloc_usable_size(x)
+	//#endif
+	//#else
+	//#undef RUNTIME_ALLOCSIZE
+	//#endif
 
 #endif /* __APPLE__ or not __APPLE__ */
 
-// Like malloc(), but remember the size of the allocation so that we can find it later using sqlite3MemSize().
-//
-// For this low-level routine, we are guaranteed that nByte>0 because cases of nByte<=0 will be intercepted and dealt with by higher level routines.
-__device__ void *__allocsystem_alloc(size_t size)
+	// Like malloc(), but remember the size of the allocation so that we can find it later using sqlite3MemSize().
+	//
+	// For this low-level routine, we are guaranteed that nByte>0 because cases of nByte<=0 will be intercepted and dealt with by higher level routines.
+	__device__ void *__allocsystem_alloc(size_t size)
 {
 #ifdef RUNTIME_ALLOCSIZE
 	void *p = RUNTIME_ALLOC(size);
@@ -211,5 +212,6 @@ __device__ void __allocsystem_shutdown(void *notUsed1)
 	UNUSED_PARAMETER(notUsed1);
 	return;
 }
-
 #endif /* RUNTIME_ALLOC_SYSTEM */
+
+RUNTIME_NAMEEND

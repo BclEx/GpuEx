@@ -1,3 +1,4 @@
 #include "Runtime.h"
-#include "RuntimeTypes.h"
+RUNTIME_NAMEBEGIN
 
+RUNTIME_NAMEEND

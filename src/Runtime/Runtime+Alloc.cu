@@ -1,11 +1,12 @@
 #include "Runtime.h"
 #include "RuntimeTypes.h"
 #include <stdarg.h>
+RUNTIME_NAMEBEGIN
 
-// Attempt to release up to n bytes of non-essential memory currently held by SQLite. An example of non-essential memory is memory used to
-// cache database pages that are not currently in use.
-// SoftHeapLimitEnforcer::This routine runs when the memory allocator sees that the total memory allocation is about to exceed the soft heap limit.
-__device__ static int __alloc_releasememory(void *arg, int64 used, int allocSize)
+	// Attempt to release up to n bytes of non-essential memory currently held by SQLite. An example of non-essential memory is memory used to
+	// cache database pages that are not currently in use.
+	// SoftHeapLimitEnforcer::This routine runs when the memory allocator sees that the total memory allocation is about to exceed the soft heap limit.
+	__device__ static int __alloc_releasememory(void *arg, int64 used, int allocSize)
 {
 #ifdef ENABLE_MEMORY_MANAGEMENT
 	return sqlite3PcacheReleaseMemory(allocSize);
@@ -556,3 +557,5 @@ __device__ char *_tagstrndup(TagBase *tag, const char *z, int n)
 	return newZ;
 }
 #endif
+
+RUNTIME_NAMEEND

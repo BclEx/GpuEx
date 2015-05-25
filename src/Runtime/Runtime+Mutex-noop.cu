@@ -1,4 +1,5 @@
 #include "Runtime.h"
+RUNTIME_NAMEBEGIN
 
 #ifdef MUTEX_NOOP
 #pragma region MUTEX_NOOP
@@ -90,3 +91,5 @@ __device__ void _mutex_leave(_mutex_obj *p)
 
 #pragma endregion
 #endif
+
+RUNTIME_NAMEEND

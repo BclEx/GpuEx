@@ -4,6 +4,7 @@
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
+    <ClCompile Include="Runtime+Sentinel.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RuntimeGL.h" />
@@ -40,9 +41,12 @@
     <None Include="Regex.2\Regex.2.cu">
       <Filter>Regex.2</Filter>
     </None>
-    <None Include="Runtime+Sentinel.cu" />
     <None Include="Runtime+Sentinel-win.cu" />
     <None Include="Runtime+Sentinel-gpu.cu" />
+    <None Include="Runtime+Bitvec.cu" />
+    <None Include="Runtime+Printf.cu" />
+    <None Include="Runtime+Utf.cu" />
+    <None Include="Runtime+TagBase.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Regex.1">

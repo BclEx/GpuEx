@@ -31,11 +31,11 @@
 #define _API extern
 #endif
 
+#define OMIT_AUTOINIT
 #if defined(_GPU) || defined(_SENTINEL)
 #define OS_MAP 1
-#define OMIT_AUTOINIT
 #else
-#define OS_MAP 0
+#define OS_MAP 1
 #endif
 
 #if __CUDACC__
@@ -50,6 +50,14 @@
 #define OS_WIN 0
 #define OS_UNIX 1
 #define OS_GPU 0
+#endif
+
+#ifdef RUNTIME_NAME
+#define RUNTIME_NAMEBEGIN namespace RUNTIME_NAME {
+#define RUNTIME_NAMEEND }
+#else
+#define RUNTIME_NAMEBEGIN
+#define RUNTIME_NAMEEND
 #endif
 
 #pragma endregion
@@ -252,6 +260,7 @@ extern "C" __device__ inline int _math_abs(int x)
 //////////////////////
 // MUTEX
 #pragma region MUTEX
+RUNTIME_NAMEBEGIN
 
 #if !defined(THREADSAFE)
 #if defined(__THREADSAFE__)
@@ -261,11 +270,11 @@ extern "C" __device__ inline int _math_abs(int x)
 #endif
 #endif
 
-// Figure out what version of the code to use.  The choices are
-//   MUTEX_OMIT         No mutex logic.  Not even stubs.  The mutexes implemention cannot be overridden at start-time.
-//   MUTEX_NOOP         For single-threaded applications.  No mutual exclusion is provided.  But this implementation can be overridden at start-time.
-//   MUTEX_PTHREADS     For multi-threaded applications on Unix.
-//   MUTEX_W32          For multi-threaded applications on Win32.
+	// Figure out what version of the code to use.  The choices are
+	//   MUTEX_OMIT         No mutex logic.  Not even stubs.  The mutexes implemention cannot be overridden at start-time.
+	//   MUTEX_NOOP         For single-threaded applications.  No mutual exclusion is provided.  But this implementation can be overridden at start-time.
+	//   MUTEX_PTHREADS     For multi-threaded applications on Unix.
+	//   MUTEX_W32          For multi-threaded applications on Win32.
 #if THREADSAFE == 0
 #define MUTEX_OMIT
 #else
@@ -280,7 +289,7 @@ extern "C" __device__ inline int _math_abs(int x)
 #endif
 #endif
 
-enum MUTEX : unsigned char
+	enum MUTEX : unsigned char
 {
 	MUTEX_FAST = 0,
 	MUTEX_RECURSIVE = 1,
@@ -308,26 +317,27 @@ typedef void *MutexEx;
 struct _mutex_obj;
 typedef _mutex_obj *MutexEx;
 #ifdef _DEBUG
-extern "C" __device__ bool _mutex_held(MutexEx p);
-extern "C" __device__ bool _mutex_notheld(MutexEx p);
+__device__ bool _mutex_held(MutexEx p);
+__device__ bool _mutex_notheld(MutexEx p);
 #endif
-extern "C" __device__ int _mutex_init();
-extern "C" __device__ void _mutex_shutdown();
-extern "C" __device__ MutexEx _mutex_alloc(MUTEX id);
-extern "C" __device__ void _mutex_free(MutexEx p);
-extern "C" __device__ void _mutex_enter(MutexEx p);
-extern "C" __device__ bool _mutex_tryenter(MutexEx p);
-extern "C" __device__ void _mutex_leave(MutexEx p);
+__device__ int _mutex_init();
+__device__ void _mutex_shutdown();
+__device__ MutexEx _mutex_alloc(MUTEX id);
+__device__ void _mutex_free(MutexEx p);
+__device__ void _mutex_enter(MutexEx p);
+__device__ bool _mutex_tryenter(MutexEx p);
+__device__ void _mutex_leave(MutexEx p);
 #define MUTEX_LOGIC(X) X
 #endif
 
+RUNTIME_NAMEEND
 #pragma endregion
 
-//////////////////////
-// STATUS
+	//////////////////////
+	// STATUS
 #pragma region STATUS
 
-enum STATUS : unsigned char
+	enum STATUS : unsigned char
 {
 	STATUS_MEMORY_USED = 0,
 	STATUS_PAGECACHE_USED = 1,
@@ -351,6 +361,7 @@ extern "C" __device__ bool _status(STATUS op, int *current, int *highwater, bool
 //////////////////////
 // TAGBASE
 #pragma region TAGBASE
+RUNTIME_NAMEBEGIN
 
 class TextBuilder;
 class TagBase
@@ -406,10 +417,15 @@ public:
 __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #define TagBase_RuntimeStatics _GLOBAL(TagBase::RuntimeStatics, g_RuntimeStatics)
 
+#ifndef OMIT_BLOB_LITERAL
+__device__ void *_taghextoblob(TagBase *tag, const char *z, size_t size);
+#endif
+
+RUNTIME_NAMEEND
 #pragma endregion
 
-//////////////////////
-// FUNC
+	//////////////////////
+	// FUNC
 #pragma region FUNC
 
 #define __toupper(x) ((x)&~(__curtCtypeMap[(unsigned char)(x)]&0x20))
@@ -423,7 +439,7 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 #define __tolower(x) (__curtUpperToLower[(unsigned char)(x)])
 #define _islower(x) (__curtUpperToLower[(unsigned char)(x)]==x)
 #define _ispoweroftwo(x) (((x)&((x)-1))==0)
-__device__ inline static bool _isalpha2(unsigned char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+	__device__ inline static bool _isalpha2(unsigned char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 
 #define _isprint(x) ((unsigned char)c>0x1f&&(unsigned char)c!=0x7f)
 #define _iscntrl(x) ((unsigned char)c<=0x1f||(unsigned char)c==0x7f)
@@ -603,9 +619,6 @@ __device__ __forceinline unsigned char _hextobyte(char h)
 	_assert((h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F'));
 	return (unsigned char)((h + 9*(1&(h>>6))) & 0xf);
 }
-#ifndef OMIT_BLOB_LITERAL
-__device__ void *_taghextoblob(TagBase *tag, const char *z, size_t size);
-#endif
 
 #ifndef OMIT_FLOATING_POINT
 __device__ inline bool _isnan(double x)
@@ -641,6 +654,7 @@ __device__ inline bool _isnan(double x)
 //////////////////////
 // MEMORY ALLOCATION
 #pragma region MEMORY ALLOCATION
+RUNTIME_NAMEBEGIN
 
 #define _ROUNDT(t, x)	(((x)+sizeof(t)-1)&~(sizeof(t)-1))
 #define _ROUND8(x)		(((x)+7)&~7)
@@ -651,7 +665,7 @@ __device__ inline bool _isnan(double x)
 #define _HASALIGNMENT8(X) ((((char *)(X) - (char *)0)&7) == 0)
 #endif
 
-enum MEMTYPE : unsigned char
+	enum MEMTYPE : unsigned char
 {
 	MEMTYPE_HEAP = 0x01,         // General heap allocations
 	MEMTYPE_LOOKASIDE = 0x02,    // Might have been lookaside memory
@@ -661,9 +675,9 @@ enum MEMTYPE : unsigned char
 };
 
 #if MEMDEBUG
-extern "C" __device__ inline static void _memdbg_settype(void *p, MEMTYPE memType) { }
-extern "C" __device__ inline static bool _memdbg_hastype(void *p, MEMTYPE memType) { return true; }
-extern "C" __device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return true; }
+__device__ inline static void _memdbg_settype(void *p, MEMTYPE memType) { }
+__device__ inline static bool _memdbg_hastype(void *p, MEMTYPE memType) { return true; }
+__device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return true; }
 #else
 #define _memdbg_settype(X,Y) // no-op
 #define _memdbg_hastype(X,Y) true
@@ -672,44 +686,44 @@ extern "C" __device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memTyp
 
 // BenignMallocHooks
 #ifndef OMIT_BUILTIN_TEST
-extern "C" __device__ void _benignalloc_hook(void (*benignBegin)(), void (*benignEnd)());
-extern "C" __device__ void _benignalloc_begin();
-extern "C" __device__ void _benignalloc_end();
+__device__ void _benignalloc_hook(void (*benignBegin)(), void (*benignEnd)());
+__device__ void _benignalloc_begin();
+__device__ void _benignalloc_end();
 #else
 #define _benignalloc_begin()
 #define _benignalloc_end()
 #endif
 //
-extern "C" __device__ void *__allocsystem_alloc(size_t size);
-extern "C" __device__ void __allocsystem_free(void *prior);
-extern "C" __device__ void *__allocsystem_realloc(void *prior, size_t size);
-extern "C" __device__ size_t __allocsystem_size(void *prior);
-extern "C" __device__ size_t __allocsystem_roundup(size_t size);
-extern "C" __device__ int __allocsystem_init(void *p);
-extern "C" __device__ void __allocsystem_shutdown(void *p);
+__device__ void *__allocsystem_alloc(size_t size);
+__device__ void __allocsystem_free(void *prior);
+__device__ void *__allocsystem_realloc(void *prior, size_t size);
+__device__ size_t __allocsystem_size(void *prior);
+__device__ size_t __allocsystem_roundup(size_t size);
+__device__ int __allocsystem_init(void *p);
+__device__ void __allocsystem_shutdown(void *p);
 //
 //__device__ void __alloc_setmemoryalarm(int (*callback)(void*,long long,int), void *arg, long long threshold);
 //__device__ long long __alloc_softheaplimit64(long long n);
 //__device__ void __alloc_softheaplimit(int n);
-extern "C" __device__ int _alloc_init();
-extern "C" __device__ bool _alloc_heapnearlyfull();
-extern "C" __device__ void _alloc_shutdown();
+__device__ int _alloc_init();
+__device__ bool _alloc_heapnearlyfull();
+__device__ void _alloc_shutdown();
 //__device__ long long __alloc_memoryused();
 //__device__ long long __alloc_memoryhighwater(bool resetFlag);
-extern "C" __device__ void *_alloc(size_t size);
-extern "C" __device__ void *_scratchalloc(size_t size);
-extern "C" __device__ void _scratchfree(void *p);
-extern "C" __device__ size_t _allocsize(void *p);
-extern "C" __device__ size_t _tagallocsize(TagBase *tag, void *p);
-extern "C" __device__ void _free(void *p);
-extern "C" __device__ void _tagfree(TagBase *tag, void *p);
-extern "C" __device__ void *_realloc(void *old, size_t newSize);
-extern "C" __device__ void *_allocZero(size_t size);
-extern "C" __device__ void *_tagallocZero(TagBase *tag, size_t size);
-extern "C" __device__ void *_tagalloc(TagBase *tag, size_t size);
-extern "C" __device__ void *_tagrealloc(TagBase *tag, void *old, size_t size);
+__device__ void *_alloc(size_t size);
+__device__ void *_scratchalloc(size_t size);
+__device__ void _scratchfree(void *p);
+__device__ size_t _allocsize(void *p);
+__device__ size_t _tagallocsize(TagBase *tag, void *p);
+__device__ void _free(void *p);
+__device__ void _tagfree(TagBase *tag, void *p);
+__device__ void *_realloc(void *old, size_t newSize);
+__device__ void *_allocZero(size_t size);
+__device__ void *_tagallocZero(TagBase *tag, size_t size);
+__device__ void *_tagalloc(TagBase *tag, size_t size);
+__device__ void *_tagrealloc(TagBase *tag, void *old, size_t size);
 //__device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize);
-extern "C" __device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
+__device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
 {
 	void *p = _tagrealloc(tag, old, newSize);
 	if (!p) _tagfree(tag, old);
@@ -717,7 +731,7 @@ extern "C" __device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void
 }
 
 //__device__ char *_tagstrdup(TagBase *tag, const char *z);
-extern "C" __device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
+__device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
 {
 	if (z == nullptr) return nullptr;
 	size_t n = _strlen(z) + 1;
@@ -727,7 +741,7 @@ extern "C" __device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z
 	return newZ;
 }
 //__device__ char *_tagstrndup(TagBase *tag, const char *z, int n);
-extern "C" __device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n)
+__device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n)
 {
 	if (z == nullptr) return nullptr;
 	_assert((n & 0x7fffffff) == n);
@@ -755,7 +769,12 @@ typedef void (*Destructor_t)(void *);
 #define DESTRUCTOR_TRANSIENT ((Destructor_t)-1)
 #define DESTRUCTOR_DYNAMIC ((Destructor_t)_allocsize)
 
+RUNTIME_NAMEEND
 #pragma endregion
+
+#ifdef RUNTIME_NAME
+	using namespace RUNTIME_NAME;
+#endif
 
 //////////////////////
 // BITVEC
@@ -810,39 +829,44 @@ public:
 #pragma region SENTINEL
 #if OS_MAP
 
+#define SENTINEL_MAGIC (unsigned short)0xC811
+#define SENTINEL_SIZE 4096
+#define SENTINEL_COUNT 1
 struct RuntimeSentinelMessage
 {
+	bool Async;
 	char OP;
-	void (*Prepare)(void*,char*,int);
-	__device__ RuntimeSentinelMessage(char op, void (*prepare)(void*,char*,int))
-		: OP(op), Prepare(prepare) { }
+	int Size;
+	char *(*Prepare)(void*,char*,char*);
+	__device__ RuntimeSentinelMessage(bool async, char op, int size, char *(*prepare)(void*,char*,char*))
+		: Async(async), OP(op), Size(size), Prepare(prepare) { }
 public:
 };
-#define RUNTIMESENTINELPREPARE(P) ((void (*)(void*,char*,int))&P)
+#define RUNTIMESENTINELPREPARE(P) ((char *(*)(void*,char*,char*))&P)
 
 typedef struct
 {
+	unsigned short Magic;
 	volatile long Status;
 	int Length;
-	char Data[1024];
+	char *Data;
 	inline void Dump()
 	{
-		char *b = Data;
-		int l = Length;
+		register char *b = Data;
+		register int l = Length;
 		printf("\nCommand: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'");
 	}
-
 } RuntimeSentinelCommand;
 
 typedef struct
 {
-	volatile long AddId;
-	volatile long RunId;
-	RuntimeSentinelCommand Commands[1];
+	long GetId;
+	volatile long SetId;
+	char Data[SENTINEL_SIZE*SENTINEL_COUNT];
 	inline void Dump()
 	{
-		char *b2 = (char *)this;
-		int l2 = sizeof(RuntimeSentinelMap);
+		register char *b2 = (char *)this;
+		register int l2 = sizeof(RuntimeSentinelMap);
 		printf("\nMap: 0x%x[%d] '", b2, l2); for (int i = 0; i < l2; i++) printf("%02x", b2[i] & 0xff); printf("'");
 	}
 } RuntimeSentinelMap;
@@ -854,7 +878,6 @@ typedef struct RuntimeSentinelExecutor
 	bool (*Executor)(void*,RuntimeSentinelMessage*,int);
 	void *Tag;
 } RuntimeSentinelExecutor;
-//#define RUNTIMESENTINELEXECUTOR(E) ((bool (*)(void*,RuntimeSentinelMessage*,int))&E)
 
 typedef struct RuntimeSentinelContext
 {
@@ -868,8 +891,6 @@ struct RuntimeSentinel
 public:
 	static void Initialize(RuntimeSentinelExecutor *executor = nullptr);
 	static void Shutdown();
-	__device__ static void SetDeviceMap(RuntimeSentinelMap *map);
-	__device__ static RuntimeSentinelMap *GetDeviceMap();
 	//
 	static RuntimeSentinelExecutor *FindExecutor(const char *name);
 	static void RegisterExecutor(RuntimeSentinelExecutor *exec, bool _default = false);
@@ -882,37 +903,43 @@ namespace Messages
 {
 	struct Stdio_fprintf
 	{
-		__device__ inline static void Prepare(Stdio_fprintf *t, char *data, int length)
+		__device__ inline static char *Prepare(Stdio_fprintf *t, char *data, char *dataEnd)
 		{
 			int formatLength = (t->Format ? _strlen(t->Format) + 1 : 0);
 			char *format = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += formatLength);
+			if (end > dataEnd) return nullptr;
 			_memcpy(format, t->Format, formatLength);
 			t->Format = format;
+			return end;
 		}
 		RuntimeSentinelMessage Base;
 		FILE *File; const char *Format;
-		__device__ Stdio_fprintf(FILE *file, const char *format)
-			: Base(1, RUNTIMESENTINELPREPARE(Prepare)), File(file), Format(format) { RuntimeSentinel::Send(this, sizeof(Stdio_fprintf)); }
+		__device__ Stdio_fprintf(bool async, FILE *file, const char *format)
+			: Base(async, 1, 1024, RUNTIMESENTINELPREPARE(Prepare)), File(file), Format(format) { RuntimeSentinel::Send(this, sizeof(Stdio_fprintf)); }
 		int RC; 
 	};
 
 	struct Stdio_fopen
 	{
-		__device__ inline static void Prepare(Stdio_fopen *t, char *data, int length)
+		__device__ inline static char *Prepare(Stdio_fopen *t, char *data, char *dataEnd)
 		{
 			int filenameLength = (t->Filename ? _strlen(t->Filename) + 1 : 0);
 			int modeLength = (t->Mode ? _strlen(t->Mode) + 1 : 0);
 			char *filename = (char *)(data += _ROUND8(sizeof(*t)));
 			char *mode = (char *)(data += filenameLength);
+			char *end = (char *)(data += modeLength);
+			if (end > dataEnd) return nullptr;
 			_memcpy(filename, t->Filename, filenameLength);
 			_memcpy(mode, t->Mode, modeLength);
 			t->Filename = filename;
 			t->Mode = mode;
+			return end;
 		}
 		RuntimeSentinelMessage Base;
 		const char *Filename; const char *Mode;
 		__device__ Stdio_fopen(const char *filename, const char *mode)
-			: Base(2, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Mode(mode) { RuntimeSentinel::Send(this, sizeof(Stdio_fopen)); }
+			: Base(false, 2, 1024, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Mode(mode) { RuntimeSentinel::Send(this, sizeof(Stdio_fopen)); }
 		FILE *RC; 
 	};
 
@@ -920,8 +947,8 @@ namespace Messages
 	{
 		RuntimeSentinelMessage Base;
 		FILE *File;
-		__device__ Stdio_fflush(FILE *file)
-			: Base(3, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fflush)); }
+		__device__ Stdio_fflush(bool async, FILE *file)
+			: Base(async, 3, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fflush)); }
 		int RC; 
 	};
 
@@ -929,8 +956,8 @@ namespace Messages
 	{
 		RuntimeSentinelMessage Base;
 		FILE *File;
-		__device__ Stdio_fclose(FILE *file)
-			: Base(4, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fclose)); }
+		__device__ Stdio_fclose(bool async, FILE *file)
+			: Base(async, 4, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fclose)); }
 		int RC; 
 	};
 
@@ -938,24 +965,27 @@ namespace Messages
 	{
 		RuntimeSentinelMessage Base;
 		int Ch; FILE *File;
-		__device__ Stdio_fputc(int ch, FILE *file)
-			: Base(5, nullptr), Ch(ch), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputc)); }
+		__device__ Stdio_fputc(bool async, int ch, FILE *file)
+			: Base(async, 5, 0, nullptr), Ch(ch), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputc)); }
 		int RC; 
 	};
 
 	struct Stdio_fputs
 	{
-		__device__ inline static void Prepare(Stdio_fputs *t, char *data, int length)
+		__device__ inline static char *Prepare(Stdio_fputs *t, char *data, char *dataEnd)
 		{
 			int strLength = (t->Str ? _strlen(t->Str) + 1 : 0);
 			char *str = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += strLength);
+			if (end > dataEnd) return nullptr;
 			_memcpy(str, t->Str, strLength);
 			t->Str = str;
+			return end;
 		}
 		RuntimeSentinelMessage Base;
 		const char *Str; FILE *File;
-		__device__ Stdio_fputs(const char *str, FILE *file)
-			: Base(6, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputs)); }
+		__device__ Stdio_fputs(bool async, const char *str, FILE *file)
+			: Base(async, 6, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputs)); }
 		int RC; 
 	};
 }
@@ -1065,14 +1095,20 @@ extern __constant__ FILE _stderr_file;
 #define stderr &_stderr_file
 #endif
 
-#if 0 && OS_MAP
-#define _fprintf(f, ...) _fprintf_(f, _mprintf("%s", __VA_ARGS__))
-extern "C" __device__ inline int _fprintf_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(f, v); return msg.RC; }
+#if 1 && OS_MAP
+#define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
+#define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
+extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
+extern "C" __device__ inline int __fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
 extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }
-extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(f); }
-extern "C" __device__ inline int _fclose(FILE *f) { Messages::Stdio_fclose msg(f); return msg.RC; }
-extern "C" __device__ inline void _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(c, f); }
-extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(s, f); }
+extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(true, f); }
+extern "C" __device__ inline int _fflushR(FILE *f) { Messages::Stdio_fflush msg(false, f); return msg.RC; }
+extern "C" __device__ inline void _fclose(FILE *f) { Messages::Stdio_fclose msg(true, f); }
+extern "C" __device__ inline int _fcloseR(FILE *f) { Messages::Stdio_fclose msg(false, f); return msg.RC; }
+extern "C" __device__ inline void _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(true, c, f); }
+extern "C" __device__ inline int _fputcR(int c, FILE *f) { Messages::Stdio_fputc msg(false, c, f); return msg.RC; }
+extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(true, s, f); }
+extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Stdio_fputs msg(false, s, f); return msg.RC; }
 #else
 #if __CUDACC__
 #define _fprintf(f, ...) printf(__VA_ARGS__)

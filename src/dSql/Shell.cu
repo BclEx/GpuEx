@@ -2820,17 +2820,19 @@ static void MainInit()
 	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
-	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*20));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*10));
 	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
 	//
 	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	cudaDeviceHeapSynchronize(_deviceHeap);
-	CoreS::VSystemSentinel::Initialize();
 #else
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, _data);
 	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
+#endif
+#if OS_MAP
+	CoreS::VSystemSentinel::Initialize();
 #endif
 }
 
@@ -2844,11 +2846,13 @@ __global__ void d_MainShutdown_0(struct CallbackData *data)
 #endif
 static void MainShutdown()
 {
+#if OS_MAP
+	CoreS::VSystemSentinel::Shutdown();
+#endif
 #if __CUDACC__
 	D_DATA(&_data); d_MainShutdown_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	D_FREE(&_data);
 	//
-	CoreS::VSystemSentinel::Shutdown();
 	cudaDeviceHeapDestroy(_deviceHeap);
 	cudaDeviceReset();
 #else

@@ -1,10 +1,18 @@
 #include <windows.h>
 #include <process.h>
 #include <assert.h>
+#undef __device__
+#define __device__
+#define RUNTIME_NAME RuntimeS
 #include "Runtime.h"
 
 #if OS_MAP
 #pragma region OS_MAP
+#include "Runtime+Alloc.cu"
+#include "Runtime+BenignAlloc.cu"
+#include "Runtime+Mem0.cu"
+#include "Runtime+Mem1.cu"
+#include "Runtime+TagBase.cu"
 
 static RuntimeSentinelContext _ctx;
 
@@ -46,24 +54,29 @@ static unsigned int __stdcall SentinelThread(void *data)
 	RuntimeSentinelMap *map = ctx->Map;
 	while (map)
 	{
-		long id = InterlockedAdd((long *)&map->RunId, 1);
-		RuntimeSentinelCommand *cmd = &map->Commands[(id-1)%_lengthof(map->Commands)];
+		long id = map->GetId;
+		RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
+		volatile long *status = (volatile long *)&cmd->Status;
 		unsigned int s_;
-		while ((s_ = InterlockedCompareExchange((long *)&cmd->Status, 3, 2)) != 2) {/*printf("[%d ]", s_);*/ Sleep(50); } //
+		while ((s_ = InterlockedCompareExchange((long *)status, 3, 2)) != 2) { /*printf("[%d ]", s_);*/ Sleep(50); } //
+		if (cmd->Magic != SENTINEL_MAGIC)
+		{
+			printf("Bad Sentinel Magic");
+			exit(1);
+		}
 		//map->Dump();
 		cmd->Dump();
-		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, (RuntimeSentinelMessage *)cmd->Data, cmd->Length); exec = exec->Next) { 
-			printf("|");
-		}
+		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
+		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
 		printf(".");
-		cmd->Status = 4;
+		*status = (!msg->Async ? 4 : 0);
+		map->GetId += SENTINEL_SIZE;
 	}
 	return 0;
 }
 
 static HANDLE _thread;
 static RuntimeSentinelExecutor _baseExecutor;
-__constant__ RuntimeSentinelMap *_runtimeSentinelMap = nullptr;
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 {
 #ifdef _GPU

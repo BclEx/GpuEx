@@ -1,6 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include "Runtime.h"
+RUNTIME_NAMEBEGIN
 
 #ifdef MUTEX_WIN
 #pragma region MUTEX_WIN
@@ -173,3 +174,5 @@ void _mutex_leave(MutexEx p)
 
 #pragma endregion
 #endif
+
+RUNTIME_NAMEEND

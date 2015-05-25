@@ -1,8 +1,0 @@
-#include "..\System.net\Core\SysEx.cu"
-#include "..\System.net\Core\Bitvec.cu"
-#include "..\System.net\Core\SysEx+Random.cu"
-#include "..\System.net\Core\IO\IO.JournalVFile.cu"
-#include "..\System.net\Core\IO\IO.MemoryVFile.cu"
-#include "..\System.net\Core\IO\IO.VFile.cu"
-#include "..\System.net\Core\VSystem.cu"
-#include "..\System.net\Core\VSystem-map.cu"

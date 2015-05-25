@@ -102,6 +102,7 @@ inline bool gpuAssert(cudaError_t code, const char *action, const char *file, in
 	if (code != cudaSuccess) 
 	{
 		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		getchar();
 		if (abort) exit(code);
 		return false;
 	}
