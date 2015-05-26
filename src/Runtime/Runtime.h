@@ -35,7 +35,7 @@
 #if defined(_GPU) || defined(_SENTINEL)
 #define OS_MAP 1
 #else
-#define OS_MAP 1
+#define OS_MAP 0
 #endif
 
 #if __CUDACC__

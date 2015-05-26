@@ -289,7 +289,9 @@ void __testRuntime(cudaDeviceHeap &r)
 #else
 void __testRuntime(cudaDeviceHeap &r)
 {
+#if OS_MAP
 	RuntimeSentinel::Initialize();
+#endif
 	runtime0(r.heap);
 	runtime1(r.heap);
 	runtime2(r.heap);
@@ -305,6 +307,8 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime12(r.heap);
 	runtime13(r.heap);
 	runtime14(r.heap);
+#if OS_MAP
 	RuntimeSentinel::Shutdown();
+#endif
 }
 #endif

@@ -3238,7 +3238,7 @@ set_child_ptrmaps_out:
 			return RC_OK;
 		}
 		_assert(cur->Pages[0]->IntKey || idxKey);
-		for (; ; )
+		for (;;)
 		{
 			// pPage->nCell must be greater than zero. If this is the root-page the cursor would have been INVALID above and this for(;;) loop
 			// not run. If this is not the root-page, then the MoveToChild() routine would have already detected db corruption. Similarly, pPage must
@@ -3246,15 +3246,15 @@ set_child_ptrmaps_out:
 			MemPage *page = cur->Pages[cur->ID];
 			_assert(page->Cells > 0);
 			_assert(page->IntKey == (idxKey == 0));
-			uint idx;
-			uint lwr = 0;
-			uint upr = page->Cells - 1;
+			int idx;
+			int lwr = 0;
+			int upr = page->Cells - 1;
 			if (biasRight)
 				cur->Idxs[cur->ID] = (uint16)(idx = upr);
 			else
 				cur->Idxs[cur->ID] = (uint16)(idx = (upr + lwr) / 2);
 			int c;
-			for (; ; )
+			for (;;)
 			{
 				_assert(idx == cur->Idxs[cur->ID]);
 				cur->Info.Size = 0;

@@ -1481,7 +1481,7 @@ static void TestBreakpoint()
 
 #pragma region META
 
-#if 1 || __CUDACC__
+#if __CUDACC__
 __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **args, int tag, void *tag2)
 {
 #pragma region Preamble

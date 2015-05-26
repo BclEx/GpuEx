@@ -351,6 +351,7 @@ namespace CORE_NAME
 
 #ifdef _DEBUG
 			// Only allow tracing if SQLITE_DEBUG is defined.
+			//Trace = stderr;
 			if (Trace)
 			{
 				if (pc == 0)
@@ -2811,7 +2812,7 @@ op_column_out:
 				}
 				else
 				{
-					if(!alreadyExists) pc = op->P2 - 1;
+					if (!alreadyExists) pc = op->P2 - 1;
 				}
 				break; }
 			case OP_IsUnique: { // jump, in3
@@ -3440,7 +3441,7 @@ op_column_out:
 				_assert(op->P1 >= 0 && op->P1 < Cursors.length);
 				_assert(op->P5 <= _lengthof(Cursors.data));
 				VdbeCursor *cur = Cursors[op->P1];
-				if (cur)
+				if (!cur)
 					break; // See ticket #2273
 				_assert(cur->IsSorter == (op->Opcode == OP_SorterNext));
 				int res;

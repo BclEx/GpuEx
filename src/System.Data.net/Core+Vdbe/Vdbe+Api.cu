@@ -279,7 +279,7 @@ __device__ RC Vdbe::Step2()
 	}
 
 #ifndef OMIT_EXPLAIN
-	if (_explain)
+	if (HasExplain)
 		rc = List();
 	else
 #endif
