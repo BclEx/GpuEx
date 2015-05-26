@@ -60,44 +60,44 @@ namespace CORE_NAME
 
 #pragma endregion
 
-#pragma region Gpu
-
-#ifndef MAP_DATA_DIRECTORY_TYPE // The value used with sqlite3_win32_set_directory() to specify that the data directory should be changed.
-#define MAP_DATA_DIRECTORY_TYPE (1)
-#endif
-#ifndef MAP_TEMP_DIRECTORY_TYPE // The value used with sqlite3_win32_set_directory() to specify that the temporary directory should be changed.
-#define MAP_TEMP_DIRECTORY_TYPE (2) 
-#endif
-
-#pragma endregion
-
-#pragma region Map
-
-	__device__ char *g_data_directory;
-	__device__ char *g_temp_directory;
-	__device__ RC map_SetDirectory(int type, void *value)
-	{
-#ifndef OMIT_AUTOINIT
-		RC rc = SysEx::AutoInitialize();
-		if (rc) return rc;
-#endif
-		char **directory = nullptr;
-		if (type == MAP_DATA_DIRECTORY_TYPE)
-			directory = &g_data_directory;
-		else if (type == MAP_TEMP_DIRECTORY_TYPE)
-			directory = &g_temp_directory;
-		_assert(!directory || type == MAP_DATA_DIRECTORY_TYPE || type == MAP_TEMP_DIRECTORY_TYPE);
-		_assert(!directory || _memdbg_hastype(*directory, MEMTYPE_HEAP));
-		if (directory)
-		{
-			_free(*directory);
-			*directory = (char *)value;
-			return RC_OK;
-		}
-		return RC_ERROR;
-	}
-
-#pragma endregion
+//#pragma region Gpu
+//
+//#ifndef MAP_DATA_DIRECTORY_TYPE // The value used with sqlite3_win32_set_directory() to specify that the data directory should be changed.
+//#define MAP_DATA_DIRECTORY_TYPE (1)
+//#endif
+//#ifndef MAP_TEMP_DIRECTORY_TYPE // The value used with sqlite3_win32_set_directory() to specify that the temporary directory should be changed.
+//#define MAP_TEMP_DIRECTORY_TYPE (2) 
+//#endif
+//
+//#pragma endregion
+//
+//#pragma region Map
+//
+//	__device__ char *g_data_directory;
+//	__device__ char *g_temp_directory;
+//	__device__ RC map_SetDirectory(int type, void *value)
+//	{
+//#ifndef OMIT_AUTOINIT
+//		RC rc = SysEx::AutoInitialize();
+//		if (rc) return rc;
+//#endif
+//		char **directory = nullptr;
+//		if (type == MAP_DATA_DIRECTORY_TYPE)
+//			directory = &g_data_directory;
+//		else if (type == MAP_TEMP_DIRECTORY_TYPE)
+//			directory = &g_temp_directory;
+//		_assert(!directory || type == MAP_DATA_DIRECTORY_TYPE || type == MAP_TEMP_DIRECTORY_TYPE);
+//		_assert(!directory || _memdbg_hastype(*directory, MEMTYPE_HEAP));
+//		if (directory)
+//		{
+//			_free(*directory);
+//			*directory = (char *)value;
+//			return RC_OK;
+//		}
+//		return RC_ERROR;
+//	}
+//
+//#pragma endregion
 
 #pragma region MapVFile
 
@@ -250,7 +250,7 @@ namespace CORE_NAME
 	__device__ RC MapVSystem::FullPathname(const char *relative, int fullLength, char *full)
 	{
 		Messages::System_FullPathname msg(relative, fullLength);
-		full = _mprintf("%s", msg.Full);
+		_memcpy(full, msg.Full, _strlen(msg.Full));
 		return msg.RC;
 	}
 

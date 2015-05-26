@@ -2820,7 +2820,7 @@ static void MainInit()
 	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
-	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*10));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*15));
 	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
 	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
 	//

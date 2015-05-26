@@ -19,7 +19,7 @@ void RuntimeSentinel::Send(void *msg, int msgLength)
 	cmd->Data = (char *)cmd + _ROUND8(sizeof(RuntimeSentinelCommand));
 	cmd->Magic = SENTINEL_MAGIC;
 	cmd->Length = msgLength;
-	if (msg2->Prepare && !msg2->Prepare(msg, &cmd->Data[0], &cmd->Data[length]))
+	if (msg2->Prepare && !msg2->Prepare(msg, cmd->Data, cmd->Data+length))
 	{
 		printf("msg too long");
 		exit(0);

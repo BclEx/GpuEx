@@ -1095,7 +1095,7 @@ extern __constant__ FILE _stderr_file;
 #define stderr &_stderr_file
 #endif
 
-#if 1 && OS_MAP
+#if 0 && OS_MAP
 #define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
 #define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
 extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }

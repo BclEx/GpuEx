@@ -1,8 +1,10 @@
 #include <windows.h>
 #include <process.h>
 #include <assert.h>
+#ifdef __device__
 #undef __device__
 #define __device__
+#endif
 #define RUNTIME_NAME RuntimeS
 #include "Runtime.h"
 
@@ -65,10 +67,10 @@ static unsigned int __stdcall SentinelThread(void *data)
 			exit(1);
 		}
 		//map->Dump();
-		cmd->Dump();
+		//cmd->Dump();
 		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
 		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
-		printf(".");
+		//printf(".");
 		*status = (!msg->Async ? 4 : 0);
 		map->GetId += SENTINEL_SIZE;
 	}
@@ -99,7 +101,7 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 
 void RuntimeSentinel::Shutdown()
 {
-	CloseHandle(_thread);
+	CloseHandle(_thread); _thread = nullptr;
 #ifdef _GPU
 	cudaErrorCheck(cudaFreeHost(_ctx.Map));
 #else

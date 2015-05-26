@@ -122,7 +122,7 @@ namespace CORE_NAME { namespace Messages
 	{
 		__device__ inline static char *Prepare(System_Open *t, char *data, char *dataEnd)
 		{
-			int nameLength = (t->Name ? _strlen(t->Name) + 1 : 0);
+			int nameLength = (t->Name ? _strlen(t->Name) + 2 : 0);
 			char *name = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += nameLength);
 			if (end > dataEnd) return nullptr;
