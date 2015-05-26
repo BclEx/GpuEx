@@ -50,6 +50,7 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 	return false;
 }
 
+static HANDLE _thread;
 static unsigned int __stdcall SentinelThread(void *data) 
 {
 	RuntimeSentinelContext *ctx = &_ctx; //(RuntimeSentinelContext *)data;
@@ -60,7 +61,8 @@ static unsigned int __stdcall SentinelThread(void *data)
 		RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
 		volatile long *status = (volatile long *)&cmd->Status;
 		unsigned int s_;
-		while ((s_ = InterlockedCompareExchange((long *)status, 3, 2)) != 2) { /*printf("[%d ]", s_);*/ Sleep(50); } //
+		while (_thread && (s_ = InterlockedCompareExchange((long *)status, 3, 2)) != 2) { /*printf("[%d ]", s_);*/ Sleep(50); } //
+		if (!_thread) return 0;
 		if (cmd->Magic != SENTINEL_MAGIC)
 		{
 			printf("Bad Sentinel Magic");
@@ -77,7 +79,6 @@ static unsigned int __stdcall SentinelThread(void *data)
 	return 0;
 }
 
-static HANDLE _thread;
 static RuntimeSentinelExecutor _baseExecutor;
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 {

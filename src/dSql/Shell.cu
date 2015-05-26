@@ -375,6 +375,16 @@ void H_DIRTY(struct CallbackData *p)
 	p->H_size = 0;
 }
 
+void D_FREE(struct CallbackData *p)
+{
+	if (p->D_)
+	{
+		free(p->H_);
+		cudaFree(p->D_);
+		p->H_ = p->D_ = nullptr;
+	}
+}
+
 void D_DATA(struct CallbackData *p)
 {
 	CallbackData *h = p->H_;
@@ -382,8 +392,7 @@ void D_DATA(struct CallbackData *p)
 	const char *dbFilename;
 	if (!p->H_size)
 	{
-		if (h)
-			free(h);
+		D_FREE(p);
 		// Allocate memory for the CallbackData structure, PCache object, the three file descriptors, the database file name and the journal file name.
 		int destTableLength = (p->DestTable ? (int)strlen(p->DestTable) + 1 : 0);
 		int dbFilenameLength = (p->DbFilename ? (int)strlen(p->DbFilename) + 1 : 0);
@@ -397,7 +406,7 @@ void D_DATA(struct CallbackData *p)
 			return;
 		}
 		memset(ptr, 0, size);
-		// create close to send to device
+		// create clone to send to device
 		h = p->H_ = (CallbackData *)(ptr);
 		destTable = (char *)(ptr += _ROUND8(sizeof(CallbackData)));
 		dbFilename = (char *)(ptr += destTableLength);
@@ -432,14 +441,6 @@ void H_DATA(struct CallbackData *p)
 	p->DbFilename = dbFilename;
 }
 
-void D_FREE(struct CallbackData *p)
-{
-	if (p->D_)
-	{
-		cudaFree(p->D_);
-		p->D_ = nullptr;
-	}
-}
 
 __device__ long d_return;
 long h_return;
@@ -447,6 +448,47 @@ void H_RETURN()
 {
 	cudaErrorCheck(cudaMemcpyFromSymbol(&h_return, d_return, sizeof(h_return), 0, cudaMemcpyDeviceToHost));
 }
+
+__global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **args, int tag, void *tag2);
+void D_META(struct CallbackData *p, int argsLength, char *args[50], int tag = 0, void *tag2 = nullptr)
+{
+	int argsSize = _ROUND8(sizeof(char*)*argsLength);
+	int size = argsSize;
+	for (int i = 0; i < argsLength; i++) size += (int)strlen(args[i]) + 1;
+	char *ptr = (char *)malloc(size);
+	if (!ptr)
+	{
+		printf("D_META: RC_NOMEM");
+		return;
+	}
+	memset(ptr, 0, size);
+	// create clone to send to device
+	char *h_ = ptr;
+	ptr += argsSize;
+	for (int i = 0; i < argsLength; i++)
+	{
+		int length = (int)strlen(args[i]) + 1;
+		memcpy((void *)ptr, args[i], length);
+		ptr += length;
+	}
+	//
+	cudaErrorCheck(cudaMalloc((void**)&ptr, size));
+	char *d_ = ptr;
+	ptr += argsSize;
+	char **h_args = (char **)h_;
+	for (int i = 0; i < argsLength; i++)
+	{
+		int length = (int)strlen(args[i]) + 1;
+		h_args[i] = ptr;
+		ptr += length;
+	}
+	cudaErrorCheck(cudaMemcpy(d_, h_, size, cudaMemcpyHostToDevice));
+	//
+	d_DoMetaCommand<<<1,1>>>(p->D_, argsLength, (char **)d_, tag, tag2); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); cudaErrorCheck(cudaDeviceSynchronize()); 
+	cudaFree(d_);
+	free(h_);
+}
+
 #else
 #define H_DIRTY(p) 0
 #endif
@@ -1297,13 +1339,10 @@ static char _help[] =
 	".timeout MS            Try opening locked tables for MS milliseconds\n"
 	".trace FILE|off        Output each SQL statement as it is run\n"
 	".vfsname ?AUX?         Print the name of the VFS stack\n"
-	".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n"
-	;
+	".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n";
 
 static char _timerHelp[] =
-	".timer ON|OFF          Turn the CPU timer measurement on or off\n"
-	;
-
+	".timer ON|OFF          Turn the CPU timer measurement on or off\n";
 
 static bool ProcessInput(struct CallbackData *p, FILE *in); // Forward reference
 
@@ -1425,10 +1464,10 @@ static FILE *OutputFileOpen(const char *file)
 }
 
 // A routine for handling output from sqlite3_trace().
-static void SqlTraceCallback(void *arg, const char *z)
+__device__ static void SqlTraceCallback(void *arg, const char *z)
 {
 	FILE *f = (FILE *)arg;
-	if (f) fprintf(f, "%s\n", z);
+	if (f) _fprintf(f, "%s\n", z);
 }
 
 // A no-op routine that runs with the ".breakpoint" doc-command.  This is a useful spot to set a debugger breakpoint.
@@ -1442,34 +1481,411 @@ static void TestBreakpoint()
 
 #pragma region META
 
-#if __CUDACC__
-__global__ void d_DoMetaCommand_databases(struct CallbackData *p)
+#if 1 || __CUDACC__
+__global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **args, int tag, void *tag2)
 {
-	struct CallbackData data;
-	memcpy(&data, p, sizeof(data));
-	data.ShowHeader = 1;
-	data.Mode = MODE_Column;
-	data.ColWidth[0] = 3;
-	data.ColWidth[1] = 15;
-	data.ColWidth[2] = 58;
-	data.Cnt = 0;
-	char *errMsg = nullptr;
-	Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
-	if (errMsg)
+#pragma region Preamble
+	int n = (int)_strlen(args[0]);
+	int c = args[0][0];
+	int rc = 0;
+#pragma endregion
+#pragma region .databases
+	if (c == 'd' && n > 1 && !_strncmp(args[0], "databases", n) && argsLength == 1)
 	{
-		_fprintf(stderr,"Error: %s\n", errMsg);
-		_free(errMsg);
-		d_return = 1;
-		return;
+		struct CallbackData data;
+		_memcpy(&data, p, sizeof(data));
+		data.ShowHeader = 1;
+		data.Mode = MODE_Column;
+		data.ColWidth[0] = 3;
+		data.ColWidth[1] = 15;
+		data.ColWidth[2] = 58;
+		data.Cnt = 0;
+		char *errMsg = nullptr;
+		Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
+		if (errMsg)
+		{
+			_fprintf(stderr, "Error: %s\n", errMsg);
+			_free(errMsg);
+			rc = 1;
+		}
 	}
-	d_return = 0;
+#pragma endregion
+#pragma region .dump
+	else if (c == 'd' && !_strncmp(args[0], "dump", n) && argsLength < 3)
+	{
+		// When playing back a "dump", the content might appear in an order which causes immediate foreign key constraints to be violated.
+		// So disable foreign-key constraint enforcement to prevent problems.
+		_fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
+		_fprintf(p->Out, "BEGIN TRANSACTION;\n");
+		p->WritableSchema = 0;
+		Main::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
+		p->Errs = 0;
+		if (argsLength == 1)
+		{
+			RunSchemaDumpQuery(p, 
+				"SELECT name, type, sql FROM sqlite_master "
+				"WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'");
+			RunSchemaDumpQuery(p, 
+				"SELECT name, type, sql FROM sqlite_master "
+				"WHERE name=='sqlite_sequence'");
+			RunTableDumpQuery(p,
+				"SELECT sql FROM sqlite_master "
+				"WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0);
+		}
+		else
+		{
+			for (int i = 1; i < argsLength; i++)
+			{
+				_shellStatic = args[i];
+				RunSchemaDumpQuery(p,
+					"SELECT name, type, sql FROM sqlite_master "
+					"WHERE tbl_name LIKE shellstatic() AND type=='table'"
+					"  AND sql NOT NULL");
+				RunTableDumpQuery(p,
+					"SELECT sql FROM sqlite_master "
+					"WHERE sql NOT NULL"
+					"  AND type IN ('index','trigger','view')"
+					"  AND tbl_name LIKE shellstatic()", 0);
+				_shellStatic = nullptr;
+			}
+		}
+		if (p->WritableSchema)
+		{
+			_fprintf(p->Out, "PRAGMA writable_schema=OFF;\n");
+			p->WritableSchema = 0;
+		}
+		Main::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
+		Main::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
+		_fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
+	}
+#pragma endregion
+#pragma region .import
+#pragma endregion
+#pragma region .indices
+	else if (c == 'i' && !_strncmp(args[0], "indices", n) && argsLength < 3)
+	{
+		struct CallbackData data;
+		char *errMsg = nullptr;
+		_memcpy(&data, p, sizeof(data));
+		data.ShowHeader = 0;
+		data.Mode = MODE_List;
+		if (argsLength == 1)
+			rc = Main::Exec(p->Ctx,
+			"SELECT name FROM sqlite_master "
+			"WHERE type='index' AND name NOT LIKE 'sqlite_%' "
+			"UNION ALL "
+			"SELECT name FROM sqlite_temp_master "
+			"WHERE type='index' "
+			"ORDER BY 1",
+			::Callback, &data, &errMsg);
+		else
+		{
+			_shellStatic = args[1];
+			rc = Main::Exec(p->Ctx,
+				"SELECT name FROM sqlite_master "
+				"WHERE type='index' AND tbl_name LIKE shellstatic() "
+				"UNION ALL "
+				"SELECT name FROM sqlite_temp_master "
+				"WHERE type='index' AND tbl_name LIKE shellstatic() "
+				"ORDER BY 1",
+				::Callback, &data, &errMsg);
+			_shellStatic = nullptr;
+		}
+		if (errMsg)
+		{
+			_fprintf(stderr, "Error: %s\n", errMsg);
+			_free(errMsg);
+			rc = 1;
+		}
+		else if (rc != RC_OK)
+		{
+			_fprintf(stderr, "Error: querying sqlite_master and sqlite_temp_master\n");
+			rc = 1;
+		}
+	}
+#pragma endregion
+#pragma region .restore
+#pragma endregion
+#pragma region .schema
+	else if (c == 's' && !_strncmp(args[0], "schema", n) && argsLength < 3)
+	{
+		struct CallbackData data;
+		char *errMsg = 0;
+		_memcpy(&data, p, sizeof(data));
+		data.ShowHeader = 0;
+		data.Mode = MODE_Semi;
+		if (argsLength > 1)
+		{
+			for (int i = 0; args[1][i]; i++) args[1][i] = __tolower(args[1][i]);
+			if (!_strcmp(args[1], "sqlite_master"))
+			{
+				char *new_argv[2], *new_colv[2];
+				new_argv[0] = "CREATE TABLE sqlite_master (\n"
+					"  type text,\n"
+					"  name text,\n"
+					"  tbl_name text,\n"
+					"  rootpage integer,\n"
+					"  sql text\n"
+					")";
+				new_argv[1] = 0;
+				new_colv[0] = "sql";
+				new_colv[1] = 0;
+				::Callback(&data, 1, new_argv, new_colv);
+				rc = RC_OK;
+			}
+			else if (!_strcmp(args[1], "sqlite_temp_master"))
+			{
+				char *new_argv[2], *new_colv[2];
+				new_argv[0] = "CREATE TEMP TABLE sqlite_temp_master (\n"
+					"  type text,\n"
+					"  name text,\n"
+					"  tbl_name text,\n"
+					"  rootpage integer,\n"
+					"  sql text\n"
+					")";
+				new_argv[1] = 0;
+				new_colv[0] = "sql";
+				new_colv[1] = 0;
+				::Callback(&data, 1, new_argv, new_colv);
+				rc = RC_OK;
+			}
+			else
+			{
+				_shellStatic = args[1];
+				rc = Main::Exec(p->Ctx,
+					"SELECT sql FROM "
+					"  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
+					"     FROM sqlite_master UNION ALL"
+					"   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
+					"WHERE lower(tbl_name) LIKE shellstatic()"
+					"  AND type!='meta' AND sql NOTNULL "
+					"ORDER BY substr(type,2,1), "
+					" CASE type WHEN 'view' THEN rowid ELSE name END",
+					::Callback, &data, &errMsg);
+				_shellStatic = nullptr;
+			}
+		}
+		else
+		{
+			rc = Main::Exec(p->Ctx,
+				"SELECT sql FROM "
+				"  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
+				"     FROM sqlite_master UNION ALL"
+				"   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
+				"WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%'"
+				"ORDER BY substr(type,2,1),"
+				" CASE type WHEN 'view' THEN rowid ELSE name END",
+				::Callback, &data, &errMsg);
+		}
+		if (errMsg) { _fprintf(stderr, "Error: %s\n", errMsg); _free(errMsg); rc = 1; }
+		else if (rc != RC_OK) { _fprintf(stderr, "Error: querying schema information\n"); rc = 1; }
+		else rc = 0;
+	}
+#pragma endregion
+#pragma region .tables
+	else if (c == 't' && n > 1 && !_strncmp(args[0], "tables", n) && argsLength < 3)
+	{
+		Vdbe *stmt;
+		rc = Prepare::Prepare_v2(p->Ctx, "PRAGMA database_list", -1, &stmt, 0);
+		if (rc) goto _metaend;
+		char *sql = _mprintf(
+			"SELECT name FROM sqlite_master"
+			" WHERE type IN ('table','view')"
+			"   AND name NOT LIKE 'sqlite_%%'"
+			"   AND name LIKE ?1");
+		while (stmt->Step() == RC_ROW)
+		{
+			const char *dbName = (const char *)Vdbe::Column_Text(stmt, 1);
+			if (!dbName || !_strcmp(dbName, "main")) continue;
+			if (!_strcmp(dbName, "temp"))
+				sql = _mprintf(
+				"%z UNION ALL "
+				"SELECT 'temp.' || name FROM sqlite_temp_master"
+				" WHERE type IN ('table','view')"
+				"   AND name NOT LIKE 'sqlite_%%'"
+				"   AND name LIKE ?1", sql);
+			else
+				sql = _mprintf(
+				"%z UNION ALL "
+				"SELECT '%q.' || name FROM \"%w\".sqlite_master"
+				" WHERE type IN ('table','view')"
+				"   AND name NOT LIKE 'sqlite_%%'"
+				"   AND name LIKE ?1", sql, dbName, dbName);
+		}
+		Vdbe::Finalize(stmt);
+		sql = _mprintf("%z ORDER BY 1", sql);
+		rc = Prepare::Prepare_v2(p->Ctx, sql, -1, &stmt, 0);
+		_free(sql);
+		if (rc) goto _metaend;
+		int rows, allocs;
+		rows = allocs = 0;
+		char **results = nullptr;
+		if (argsLength > 1)
+			Vdbe::Bind_Text(stmt, 1, args[1], -1, DESTRUCTOR_TRANSIENT);
+		else
+			Vdbe::Bind_Text(stmt, 1, "%", -1, DESTRUCTOR_STATIC);
+		while (stmt->Step() == RC_ROW)
+		{
+			if (rows >= allocs)
+			{
+				int n = allocs*2 + 10;
+				char **newResults = (char **)_realloc(results, sizeof(results[0])*n);
+				if (!newResults)
+				{
+					_fprintf(stderr, "Error: out_ of memory\n");
+					break;
+				}
+				allocs = n;
+				results = newResults;
+			}
+			results[rows] = _mprintf("%s", Vdbe::Column_Text(stmt, 0));
+			if (results[rows]) rows++;
+		}
+		Vdbe::Finalize(stmt);        
+		if (rows > 0)
+		{
+			int i;
+			int maxlen = 0;
+			for (i = 0; i < rows; i++)
+			{
+				int len = _strlen(results[i]);
+				if (len > maxlen) maxlen = len;
+			}
+			int printCols = 80/(maxlen+2);
+			if (printCols < 1) printCols = 1;
+			int printRows = (rows + printCols - 1)/printCols;
+			for (i = 0; i < printRows; i++)
+			{
+				for (int j = i; j < rows; j += printRows)
+				{
+					char *sp = (j < printRows ? "" : "  ");
+					_printf("%s%-*s", sp, maxlen, (results[j] ? results[j] : ""));
+				}
+				_printf("\n");
+			}
+		}
+		for (int ii = 0; ii < rows; ii++) _free(results[ii]);
+		_free(results);
+	}
+#pragma endregion
+#pragma region .testctrl
+	else if (c == 't' && n >= 8 && !_strncmp(args[0], "testctrl", n) && argsLength >= 2)
+	{
+		Main::TESTCTRL testctrl = (Main::TESTCTRL)tag;
+		switch (testctrl)
+		{
+		case Main::TESTCTRL_OPTIMIZATIONS:
+		case Main::TESTCTRL_RESERVE:
+			// Main::TestControl(int, db, int)
+			if (argsLength == 3)
+			{
+				int opt = (int)_atoi(args[2]);
+				rc = Main::TestControl(testctrl, p->Ctx, opt);
+				_printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				_fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
+			break;
+		case Main::TESTCTRL_PRNG_SAVE:
+		case Main::TESTCTRL_PRNG_RESTORE:
+		case Main::TESTCTRL_PRNG_RESET:
+			// Main::TestControl(int)
+			if (argsLength == 2)
+			{
+				rc = Main::TestControl(testctrl);
+				_printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				_fprintf(stderr, "Error: testctrl %s takes no options\n", args[1]);
+			break;
+		case Main::TESTCTRL_PENDING_BYTE:
+			// Main::TestControl(int, uint)
+			if (argsLength == 3)
+			{
+				unsigned int opt = (unsigned int)_atoi(args[2]);
+				rc = Main::TestControl(testctrl, opt);
+				_printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				_fprintf(stderr, "Error: testctrl %s takes a single unsigned int option\n", args[1]);
+			break;
+		case Main::TESTCTRL_ASSERT:
+		case Main::TESTCTRL_ALWAYS:
+			// Main::TestControl(int, int)
+			if (argsLength == 3)
+			{
+				int opt = _atoi(args[2]);        
+				rc = Main::TestControl(testctrl, opt);
+				_printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				_fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
+			break;
+#ifdef N_KEYWORD
+		case Main::TESTCTRL_ISKEYWORD:
+			// Main::TestControl(int, char *)
+			if (argsLength == 3)
+			{
+				const char *opt = args[2];
+				rc = Main::TestControl(testctrl, opt);
+				_printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				_fprintf(stderr, "Error: testctrl %s takes a single char * option\n", args[1]);
+			break;
+#endif
+		case Main::TESTCTRL_BITVEC_TEST:         
+		case Main::TESTCTRL_FAULT_INSTALL:       
+		case Main::TESTCTRL_BENIGN_MALLOC_HOOKS: 
+		case Main::TESTCTRL_SCRATCHMALLOC:       
+		default:
+			_fprintf(stderr, "Error: CLI support for testctrl %s not implemented\n", args[1]);
+			break;
+		}
+	}
+#pragma endregion
+#pragma region .timeout
+	else if (c == 't' && n > 4 && !_strncmp(args[0], "timeout", n) && argsLength == 2)
+	{
+		Main::BusyTimeout(p->Ctx, _atoi(args[1]));
+	}
+#pragma endregion
+#pragma region .trace
+	else if (c == 't' && !_strncmp(args[0], "trace", n) && argsLength > 1)
+	{
+#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
+		if (!p->TraceOut)
+			Main::Trace(p->Ctx, nullptr, nullptr);
+		else
+			Main::Trace(p->Ctx, SqlTraceCallback, p->TraceOut);
+#endif
+	}
+#pragma endregion
+#pragma region .vfsname
+	else if (c == 'v' && !_strncmp(args[0], "vfsname", n))
+	{
+		const char *dbName = (argsLength == 2 ? args[1] : "main");
+		char *vfsName = 0;
+		if (p->Ctx)
+		{
+			Main::FileControl(p->Ctx, dbName, VFile::FCNTL_VFSNAME, &vfsName);
+			if (vfsName)
+			{
+				printf("%s\n", vfsName);
+				_free(vfsName);
+			}
+		}
+	}
+#pragma endregion
+_metaend:
+	d_return = rc;
 }
 #endif
 static int DoMetaCommand(char *line, struct CallbackData *p)
 {
+#pragma region Preamble
 	int i = 1;
 	int argsLength = 0;
-	int rc = 0;
 	char *args[50];
 
 	// Parse the input line into tokens.
@@ -1499,6 +1915,10 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	if (argsLength == 0) return 0; // no tokens, no error
 	int n = (int)strlen(args[0]);
 	int c = args[0][0];
+	int rc = 0;
+#pragma endregion
+	//
+#pragma region .backup - todo
 	if (c == 'b' && n >= 3 && !strncmp(args[0], "backup", n))
 	{
 #ifndef __CUDACC__
@@ -1570,20 +1990,27 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Main::Close(dest);
 #endif
 	}
+#pragma endregion
+#pragma region .bail
 	else if (c == 'b' && n >= 3 && !strncmp(args[0], "bail", n) && argsLength > 1 && argsLength < 3)
 	{
 		_bailOnError = BooleanValue(args[1]);
 	}
+#pragma endregion
+#pragma region .breakpoint
 	else if (c == 'b' && n >= 3 && !strncmp(args[0], "breakpoint", n))
 	{
 		// The undocumented ".breakpoint" command causes a call to the no-op routine named TestBreakpoint().
 		TestBreakpoint();
 	}
+#pragma endregion
+#pragma region .databases - done
 	else if (c == 'd' && n > 1 && !strncmp(args[0], "databases", n) && argsLength == 1)
 	{
 		_OpenCtx(p);
 #if __CUDACC__
-		D_DATA(p); d_DoMetaCommand_databases<<<1,1>>>(p->D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); cudaErrorCheck(cudaDeviceSynchronize()); H_DATA(p);
+
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
 		H_RETURN(); if (h_return) rc = h_return;
 #else
 		struct CallbackData data;
@@ -1598,16 +2025,21 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
 		if (errMsg)
 		{
-			fprintf(stderr,"Error: %s\n", errMsg);
+			fprintf(stderr, "Error: %s\n", errMsg);
 			free(errMsg);
 			rc = 1;
 		}
 #endif
 	}
+#pragma endregion
+#pragma region .dump - done
 	else if (c == 'd' && !strncmp(args[0], "dump", n) && argsLength < 3)
 	{
-#ifndef __CUDACC__
 		_OpenCtx(p);
+#if __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 		// When playing back a "dump", the content might appear in an order which causes immediate foreign key constraints to be violated.
 		// So disable foreign-key constraint enforcement to prevent problems.
 		fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
@@ -1654,15 +2086,21 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
 #endif
 	}
+#pragma endregion
+#pragma region .echo
 	else if (c == 'e' && !strncmp(args[0], "echo", n) && argsLength > 1 && argsLength < 3)
 	{
 		p->EchoOn = BooleanValue(args[1]);
 	}
+#pragma endregion
+#pragma region .exit
 	else if (c == 'e' && !strncmp(args[0], "exit", n))
 	{
 		if (argsLength > 1 && (rc = atoi(args[1])) != 0) exit(rc);
 		rc = 2;
 	}
+#pragma endregion
+#pragma region .explain
 	else if (c == 'e' && !strncmp(args[0], "explain", n) && argsLength < 3)
 	{
 		int val = (argsLength >= 2 ? BooleanValue(args[1]) : 1);
@@ -1698,16 +2136,22 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			memcpy(p->ColWidth, p->ExplainPrev.ColWidth, sizeof(p->ColWidth));
 		}
 	}
+#pragma endregion
+#pragma region .header(s)
 	else if (c == 'h' && (!strncmp(args[0], "header", n) || !strncmp(args[0], "headers", n)) && argsLength > 1 && argsLength < 3)
 	{
 		p->ShowHeader = BooleanValue(args[1]);
 	}
+#pragma endregion
+#pragma region .help
 	else if (c == 'h' && !strncmp(args[0], "help", n))
 	{
 		fprintf(stderr, "%s", _help);
 		if (HAS_TIMER)
 			fprintf(stderr, "%s", _timerHelp);
 	}
+#pragma endregion
+#pragma region .import - todo
 	else if (c == 'i' && !strncmp(args[0], "import", n) && argsLength == 3)
 	{
 #ifndef __CUDACC__
@@ -1844,12 +2288,17 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Main::Exec(p->Ctx, commit, 0, 0, 0);
 #endif
 	}
+#pragma endregion
+#pragma region .indices - done
 	else if (c == 'i' && !strncmp(args[0], "indices", n) && argsLength < 3)
 	{
-#ifndef __CUDACC__
+		_OpenCtx(p);
+#ifdef __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 		struct CallbackData data;
 		char *errMsg = nullptr;
-		_OpenCtx(p);
 		memcpy(&data, p, sizeof(data));
 		data.ShowHeader = 0;
 		data.Mode = MODE_List;
@@ -1877,17 +2326,19 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		if (errMsg)
 		{
-			fprintf(stderr,"Error: %s\n", errMsg);
+			fprintf(stderr, "Error: %s\n", errMsg);
 			free(errMsg);
 			rc = 1;
 		}
-		else if( rc != RC_OK)
+		else if (rc != RC_OK)
 		{
-			fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
+			fprintf(stderr, "Error: querying sqlite_master and sqlite_temp_master\n");
 			rc = 1;
 		}
 #endif
 	}
+#pragma endregion
+#pragma region .iotrace
 #ifdef ENABLE_IOTRACE
 	else if (c == 'i' && !strncmp(args[0], "iotrace", n))
 	{
@@ -1915,6 +2366,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 	}
 #endif
+#pragma endregion
+#pragma region .load
 #ifndef OMIT_LOAD_EXTENSION
 	else if (c == 'l' && !strncmp(args[0], "load", n) && argsLength >= 2)
 	{
@@ -1931,12 +2384,16 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 	}
 #endif
+#pragma endregion
+#pragma region .log
 	else if (c == 'l' && !strncmp(args[0], "log", n) && argsLength >= 2)
 	{
 		const char *file = args[1];
 		OutputFileClose(p->Log);
 		p->Log = OutputFileOpen(file);
 	}
+#pragma endregion
+#pragma region .mode
 	else if (c == 'm' && !strncmp(args[0], "mode", n) && argsLength == 2)
 	{
 		int n2 = (int)strlen(args[1]);
@@ -1964,10 +2421,14 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			rc = 1;
 		}
 	}
+#pragma endregion
+#pragma region .nullvalue
 	else if (c == 'n' && !strncmp(args[0], "nullvalue", n) && argsLength == 2)
 	{
 		_snprintf(p->NullValue, sizeof(p->NullValue), "%.*s", (int)_lengthof(p->NullValue)-1, args[1]);
 	}
+#pragma endregion
+#pragma region .output
 	else if (c == 'o' && !strncmp(args[0], "output", n) && argsLength == 2)
 	{
 		if (p->Outfile[0] == '|') pclose(p->Out);
@@ -1999,6 +2460,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				_snprintf(p->Outfile, sizeof(p->Outfile), "%s", args[1]);
 		}
 	}
+#pragma endregion
+#pragma region .print
 	else if (c == 'p' && n >= 3 && !strncmp(args[0], "print", n))
 	{
 		for (int i = 1; i < argsLength; i++)
@@ -2008,6 +2471,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		fprintf(p->Out, "\n");
 	}
+#pragma endregion
+#pragma region .prompt
 	else if (c == 'p' && !strncmp(args[0], "prompt", n) && (argsLength == 2 || argsLength == 3))
 	{
 		if (argsLength >= 2)
@@ -2015,10 +2480,14 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		if (argsLength >= 3)
 			strncpy(_continuePrompt, args[2], (int)_lengthof(_continuePrompt)-1);
 	}
+#pragma endregion
+#pragma region .quit
 	else if (c == 'q' && !strncmp(args[0], "quit", n) && argsLength == 1)
 	{
 		rc = 2;
 	}
+#pragma endregion
+#pragma region .read
 	else if (c == 'r' && n >= 3 && !strncmp(args[0], "read", n) && argsLength == 2)
 	{
 		FILE *alt = fopen(args[1], "rb");
@@ -2033,6 +2502,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			fclose(alt);
 		}
 	}
+#pragma endregion
+#pragma region .restore - todo
 	else if (c == 'r' && n >= 3 && !strncmp(args[0], "restore", n) && argsLength > 1 && argsLength < 4)
 	{
 #ifndef __CUDACC__
@@ -2080,19 +2551,23 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Main::Close(src);
 #endif
 	}
+#pragma endregion
+#pragma region .schema - done
 	else if (c == 's' && !strncmp(args[0], "schema", n) && argsLength < 3)
 	{
-#ifndef __CUDACC__
+		_OpenCtx(p);
+#ifdef __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 		struct CallbackData data;
 		char *errMsg = 0;
-		_OpenCtx(p);
 		memcpy(&data, p, sizeof(data));
 		data.ShowHeader = 0;
 		data.Mode = MODE_Semi;
 		if (argsLength > 1)
 		{
-			int i;
-			for (i = 0; args[1][i]; i++) args[1][i] = ToLower(args[1][i]);
+			for (int i = 0; args[1][i]; i++) args[1][i] = ToLower(args[1][i]);
 			if (!strcmp(args[1], "sqlite_master"))
 			{
 				char *new_argv[2], *new_colv[2];
@@ -2153,15 +2628,19 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				" CASE type WHEN 'view' THEN rowid ELSE name END",
 				::Callback, &data, &errMsg);
 		}
-		if (errMsg) { fprintf(stderr,"Error: %s\n", errMsg); _free(errMsg); rc = 1; }
-		else if (rc != RC_OK) { fprintf(stderr,"Error: querying schema information\n"); rc = 1; }
+		if (errMsg) { fprintf(stderr, "Error: %s\n", errMsg); _free(errMsg); rc = 1; }
+		else if (rc != RC_OK) { fprintf(stderr, "Error: querying schema information\n"); rc = 1; }
 		else rc = 0;
 #endif	
 	}
+#pragma endregion
+#pragma region .separator
 	else if (c == 's' && !strncmp(args[0], "separator", n) && argsLength == 2)
 	{
 		_snprintf(p->Separator, sizeof(p->Separator), "%.*s", (int)sizeof(p->Separator)-1, args[1]);
 	}
+#pragma endregion
+#pragma region .show
 	else if (c == 's' && !strncmp(args[0], "show", n) && argsLength == 1)
 	{
 		fprintf(p->Out,"%9.9s: %s\n","echo", p->EchoOn ? "on" : "off");
@@ -2181,14 +2660,21 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			fprintf(p->Out, "%d ", p->ColWidth[i]);
 		fprintf(p->Out,"\n");
 	}
+#pragma endregion
+#pragma region .stats
 	else if (c == 's' && !strncmp(args[0], "stats", n) && argsLength > 1 && argsLength < 3)
 	{
 		p->StatsOn = BooleanValue(args[1]);
 	}
+#pragma endregion
+#pragma region .tables - done
 	else if (c == 't' && n > 1 && !strncmp(args[0], "tables", n) && argsLength < 3)
 	{
 		_OpenCtx(p);
-#ifndef __CUDACC__
+#if __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 		Vdbe *stmt;
 		rc = Prepare::Prepare_v2(p->Ctx, "PRAGMA database_list", -1, &stmt, 0);
 		if (rc) return rc;
@@ -2272,10 +2758,11 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		_free(results);
 #endif
 	}
+#pragma endregion
+#pragma region .testctrl - done
 #ifdef _TEST
 	else if (c == 't' && n >= 8 && !strncmp(args[0], "testctrl", n) && argsLength >= 2)
 	{
-#ifndef __CUDACC__
 		static const struct
 		{
 			const char *CtrlName;   // Name of a test-control option
@@ -2296,12 +2783,10 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			{ "scratchmalloc",         Main::TESTCTRL_SCRATCHMALLOC          },
 		};
 		Main::TESTCTRL testctrl = (Main::TESTCTRL)-1;
-		int rc = 0;
-		int i;
-		_OpenCtx(p);
+
 		// convert testctrl text option to value. allow any unique prefix of the option name, or a numerical value.
 		int n = (int)strlen(args[1]);
-		for (i = 0; i < (int)_lengthof(_ctrls); i++)
+		for (int i = 0; i < (int)_lengthof(_ctrls); i++)
 		{
 			if (!strncmp(args[1], _ctrls[i].CtrlName, n))
 			{
@@ -2317,115 +2802,139 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		if (testctrl < 0) testctrl = (Main::TESTCTRL)atoi(args[1]);
 		if ((testctrl < Main::TESTCTRL_FIRST) || (testctrl > Main::TESTCTRL_LAST))
-			fprintf(stderr, "Error: invalid testctrl option: %s\n", args[1]);
-		else
 		{
-			switch (testctrl)
+			fprintf(stderr, "Error: invalid testctrl option: %s\n", args[1]);
+			return 0;
+		}
+		_OpenCtx(p);
+#ifdef __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args, testctrl); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
+		switch (testctrl)
+		{
+		case Main::TESTCTRL_OPTIMIZATIONS:
+		case Main::TESTCTRL_RESERVE:
+			// Main::TestControl(int, db, int)
+			if (argsLength == 3)
 			{
-			case Main::TESTCTRL_OPTIMIZATIONS:
-			case Main::TESTCTRL_RESERVE:
-				// Main::TestControl(int, db, int)
-				if (argsLength == 3)
-				{
-					int opt = (int)strtol(args[2], 0, 0);
-					rc = Main::TestControl(testctrl, p->Ctx, opt);
-					printf("%d (0x%08x)\n", rc, rc);
-				}
-				else
-					fprintf(stderr,"Error: testctrl %s takes a single int option\n", args[1]);
-				break;
-			case Main::TESTCTRL_PRNG_SAVE:
-			case Main::TESTCTRL_PRNG_RESTORE:
-			case Main::TESTCTRL_PRNG_RESET:
-				// Main::TestControl(int)
-				if (argsLength == 2)
-				{
-					rc = Main::TestControl(testctrl);
-					printf("%d (0x%08x)\n", rc, rc);
-				}
-				else
-					fprintf(stderr,"Error: testctrl %s takes no options\n", args[1]);
-				break;
-			case Main::TESTCTRL_PENDING_BYTE:
-				// Main::TestControl(int, uint)
-				if (argsLength == 3)
-				{
-					unsigned int opt = (unsigned int)atoi(args[2]);
-					rc = Main::TestControl(testctrl, opt);
-					printf("%d (0x%08x)\n", rc, rc);
-				}
-				else
-					fprintf(stderr,"Error: testctrl %s takes a single unsigned int option\n", args[1]);
-				break;
-			case Main::TESTCTRL_ASSERT:
-			case Main::TESTCTRL_ALWAYS:
-				// Main::TestControl(int, int)
-				if (argsLength == 3)
-				{
-					int opt = atoi(args[2]);        
-					rc = Main::TestControl(testctrl, opt);
-					printf("%d (0x%08x)\n", rc, rc);
-				}
-				else
-					fprintf(stderr,"Error: testctrl %s takes a single int option\n", args[1]);
-				break;
-#ifdef N_KEYWORD
-			case Main::TESTCTRL_ISKEYWORD:
-				// Main::TestControl(int, char *)
-				if (argsLength == 3)
-				{
-					const char *opt = args[2];
-					rc = Main::TestControl(testctrl, opt);
-					printf("%d (0x%08x)\n", rc, rc);
-				}
-				else
-					fprintf(stderr,"Error: testctrl %s takes a single char * option\n", args[1]);
-				break;
-#endif
-			case Main::TESTCTRL_BITVEC_TEST:         
-			case Main::TESTCTRL_FAULT_INSTALL:       
-			case Main::TESTCTRL_BENIGN_MALLOC_HOOKS: 
-			case Main::TESTCTRL_SCRATCHMALLOC:       
-			default:
-				fprintf(stderr,"Error: CLI support for testctrl %s not implemented\n", args[1]);
-				break;
+				int opt = (int)atoi(args[2]);
+				rc = Main::TestControl(testctrl, p->Ctx, opt);
+				printf("%d (0x%08x)\n", rc, rc);
 			}
+			else
+				fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
+			break;
+		case Main::TESTCTRL_PRNG_SAVE:
+		case Main::TESTCTRL_PRNG_RESTORE:
+		case Main::TESTCTRL_PRNG_RESET:
+			// Main::TestControl(int)
+			if (argsLength == 2)
+			{
+				rc = Main::TestControl(testctrl);
+				printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				fprintf(stderr, "Error: testctrl %s takes no options\n", args[1]);
+			break;
+		case Main::TESTCTRL_PENDING_BYTE:
+			// Main::TestControl(int, uint)
+			if (argsLength == 3)
+			{
+				unsigned int opt = (unsigned int)atoi(args[2]);
+				rc = Main::TestControl(testctrl, opt);
+				printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				fprintf(stderr, "Error: testctrl %s takes a single unsigned int option\n", args[1]);
+			break;
+		case Main::TESTCTRL_ASSERT:
+		case Main::TESTCTRL_ALWAYS:
+			// Main::TestControl(int, int)
+			if (argsLength == 3)
+			{
+				int opt = atoi(args[2]);        
+				rc = Main::TestControl(testctrl, opt);
+				printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
+			break;
+#ifdef N_KEYWORD
+		case Main::TESTCTRL_ISKEYWORD:
+			// Main::TestControl(int, char *)
+			if (argsLength == 3)
+			{
+				const char *opt = args[2];
+				rc = Main::TestControl(testctrl, opt);
+				printf("%d (0x%08x)\n", rc, rc);
+			}
+			else
+				fprintf(stderr, "Error: testctrl %s takes a single char * option\n", args[1]);
+			break;
+#endif
+		case Main::TESTCTRL_BITVEC_TEST:         
+		case Main::TESTCTRL_FAULT_INSTALL:       
+		case Main::TESTCTRL_BENIGN_MALLOC_HOOKS: 
+		case Main::TESTCTRL_SCRATCHMALLOC:       
+		default:
+			fprintf(stderr, "Error: CLI support for testctrl %s not implemented\n", args[1]);
+			break;
 		}
 #endif
 	}
 #endif
+#pragma endregion
+#pragma region .timeout - done
 	else if (c == 't' && n > 4 && !strncmp(args[0], "timeout", n) && argsLength == 2)
 	{
-#ifndef __CUDACC__
 		_OpenCtx(p);
+#ifdef __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 		Main::BusyTimeout(p->Ctx, atoi(args[1]));
 #endif
 	}
+#pragma endregion
+#pragma region .timer
 	else if (HAS_TIMER && c == 't' && n >= 5 && !strncmp(args[0], "timer", n) && argsLength == 2)
 	{
 		_enableTimer = BooleanValue(args[1]);
 	}
+#pragma endregion
+#pragma region .trace - done
 	else if (c == 't' && !strncmp(args[0], "trace", n) && argsLength > 1)
 	{
-#ifndef __CUDACC__
 		_OpenCtx(p);
 		OutputFileClose(p->TraceOut);
 		p->TraceOut = OutputFileOpen(args[1]);
+#ifdef __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 #if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
-		if (p->TraceOut == 0)
-			Main::Trace(p->Ctx, 0, 0);
+		if (!p->TraceOut)
+			Main::Trace(p->Ctx, nullptr, nullptr);
 		else
 			Main::Trace(p->Ctx, SqlTraceCallback, p->TraceOut);
 #endif
 #endif
 	}
+#pragma endregion
+#pragma region .version
 	else if (c == 'v' && !strncmp(args[0], "version", n))
 	{
 		printf("SQLite %s %s\n", CORE_VERSION, CORE_SOURCE_ID);
 	}
+#pragma endregion
+#pragma region .vfsname - done
 	else if (c == 'v' && !strncmp(args[0], "vfsname", n))
 	{
-#ifndef __CUDACC__
+#if __CUDACC__
+		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
+		H_RETURN(); if (h_return) rc = h_return;
+#else
 		const char *dbName = (argsLength == 2 ? args[1] : "main");
 		char *vfsName = 0;
 		if (p->Ctx)
@@ -2439,6 +2948,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 #endif
 	}
+#pragma endregion
+#pragma region .wheretrace
 #if defined(_DEBUG) && defined(ENABLE_WHERETRACE)
 	else if (c == 'w' && !strncmp(args[0], "wheretrace", n))
 	{
@@ -2446,12 +2957,15 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		sqlite3WhereTrace = atoi(args[1]);
 	}
 #endif
+#pragma endregion
+#pragma region .width
 	else if (c == 'w' && !strncmp(args[0], "width", n) && argsLength > 1)
 	{
 		assert(argsLength <= _lengthof(args));
 		for (int j = 1; j < argsLength && j < _lengthof(p->ColWidth); j++)
 			p->ColWidth[j-1] = atoi(args[j]);
 	}
+#pragma endregion
 	else
 	{
 		fprintf(stderr, "Error: unknown command or invalid arguments:  \"%s\". Enter \".help\" for help\n", args[0]);
@@ -2821,7 +3335,7 @@ static void MainInit()
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
 	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*15));
-	_deviceHeap = cudaDeviceHeapCreate(256, 4096);
+	_deviceHeap = cudaDeviceHeapCreate(256, 100);
 	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
 	//
 	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
