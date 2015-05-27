@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <None Include="RT.cu" />
+    <ClCompile Include="CompileTime.cu" />
     <ClCompile Include="Regex.1\Regex.1.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -68,6 +69,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
+    <None Include="CompileTime.cu" />
     <None Include="Regex.1\Regex.1.cu" />
     <None Include="Regex.2\Regex.2.cu" />
     <None Include="Regex.cu" />
