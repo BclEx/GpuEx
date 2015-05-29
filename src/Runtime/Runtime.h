@@ -656,13 +656,16 @@ __device__ inline bool _isnan(double x)
 #pragma region MEMORY ALLOCATION
 RUNTIME_NAMEBEGIN
 
-#define _ROUNDT(t, x)	(((x)+sizeof(t)-1)&~(sizeof(t)-1))
-#define _ROUND8(x)		(((x)+7)&~7)
-#define _ROUNDDOWN8(x)	((x)&~7)
+#define MEMORY_ALIGNMENT 4096
+#define _ROUNDT(t, x)		(((x)+sizeof(t)-1)&~(sizeof(t)-1))
+#define _ROUND8(x)			(((x)+7)&~7)
+#define _ROUNDN(x, size)	(((size_t)(x)+(size-1))&~(size-1))
+#define _ROUNDDOWN8(x)		((x)&~7)
+#define _ROUNDDOWNN(x, size) (((size_t)(x))&~(size-1))
 #ifdef BYTEALIGNED4
-#define _HASALIGNMENT8(X) ((((char *)(X) - (char *)0)&3) == 0)
+#define _HASALIGNMENT8(x) ((((char *)(x) - (char *)0)&3) == 0)
 #else
-#define _HASALIGNMENT8(X) ((((char *)(X) - (char *)0)&7) == 0)
+#define _HASALIGNMENT8(x) ((((char *)(x) - (char *)0)&7) == 0)
 #endif
 
 	enum MEMTYPE : unsigned char
@@ -854,7 +857,7 @@ typedef struct
 	{
 		register char *b = Data;
 		register int l = Length;
-		printf("\nCommand: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'");
+		printf("Command: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'\n");
 	}
 } RuntimeSentinelCommand;
 
@@ -867,7 +870,7 @@ typedef struct
 	{
 		register char *b2 = (char *)this;
 		register int l2 = sizeof(RuntimeSentinelMap);
-		printf("\nMap: 0x%x[%d] '", b2, l2); for (int i = 0; i < l2; i++) printf("%02x", b2[i] & 0xff); printf("'");
+		printf("Map: 0x%x[%d] '", b2, l2); for (int i = 0; i < l2; i++) printf("%02x", b2[i] & 0xff); printf("'\n");
 	}
 } RuntimeSentinelMap;
 
@@ -1095,7 +1098,7 @@ extern __constant__ FILE _stderr_file;
 #define stderr &_stderr_file
 #endif
 
-#if 0 && OS_MAP
+#if 1 && OS_MAP
 #define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
 #define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
 extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }

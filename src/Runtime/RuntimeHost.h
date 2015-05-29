@@ -94,14 +94,15 @@ extern "C" cudaError_t cudaDeviceHeapSynchronize(cudaDeviceHeap &host, void *str
 //extern cudaError __cudaLastError;
 //#define cudaErrorCheck(action, failure) if ((__cudaLastError = action) != cudaSuccess) { printf("CudaError: %s \"%s\"\n", #action, cudaGetErrorString(__cudaLastError)); failure; }
 
-#define cudaErrorCheck(x) { gpuAssert((x), #x, __FILE__, __LINE__); }
-#define cudaErrorCheck2(x, f) { if (!gpuAssert((x), #x, __FILE__, __LINE__, false)) f; }
+#define cudaErrorCheck(x) { gpuAssert((x), #x, __FILE__, __LINE__, true); }
+#define cudaErrorCheckA(x) { gpuAssert((x), #x, __FILE__, __LINE__, false); }
+#define cudaErrorCheckF(x, f) { if (!gpuAssert((x), #x, __FILE__, __LINE__, false)) f; }
 #define cudaErrorCheckLast() { gpuAssert(cudaPeekAtLastError(), __FILE__, __LINE__); }
 inline bool gpuAssert(cudaError_t code, const char *action, const char *file, int line, bool abort = true)
 {
 	if (code != cudaSuccess) 
 	{
-		fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		fprintf(stderr, "GPUassert: %s [%s:%d]\n", cudaGetErrorString(code), file, line);
 		//getchar();
 		if (abort) exit(code);
 		return false;

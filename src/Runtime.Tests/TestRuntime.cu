@@ -202,9 +202,9 @@ __global__ static void runtime13(void *r)
 {
 	_runtimeSetHeap(r);
 	FILE *f = _fopen("C:\\T_\\fopen.txt", "w");
-	_fprintf(f, "The quick brown fox jumps over the lazy dog");
-	_fflush(f);
-	_fclose(f);
+	_fprintfR(f, "The quick brown fox jumps over the lazy dog");
+	_fflushR(f);
+	_fcloseR(f);
 	printf("Example: 13\n");
 }
 
