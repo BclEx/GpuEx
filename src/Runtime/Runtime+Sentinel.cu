@@ -82,6 +82,7 @@ static unsigned int __stdcall SentinelThread(void *data)
 static RuntimeSentinelExecutor _baseExecutor;
 static HANDLE _mapHandle = NULL;
 static int *_map = nullptr;
+//https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
 //https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 {
@@ -104,7 +105,7 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 #ifdef _GPU
 	cudaErrorCheckF(cudaHostRegister(&_ctx.Map, sizeof(RuntimeSentinelMap), cudaHostRegisterPortable | cudaHostRegisterMapped), goto initialize_error);
 	//cudaErrorCheckF(cudaHostAlloc(&_ctx.Map, sizeof(RuntimeSentinelMap), cudaHostAllocPortable | cudaHostAllocMapped), goto initialize_error);
-	RuntimeSentinelContext *d_map = (RuntimeSentinelContext *)_ctx.Map;
+	RuntimeSentinelContext *d_map;
 	cudaErrorCheckF(cudaHostGetDevicePointer(&d_map, _ctx.Map, 0), goto initialize_error);
 	cudaErrorCheckF(cudaMemcpyToSymbol(_runtimeSentinelMap, &d_map, sizeof(_ctx.Map)), goto initialize_error);
 #else
