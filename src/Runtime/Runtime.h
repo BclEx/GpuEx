@@ -10,6 +10,24 @@
 #if !defined(_DEBUG) && !defined(NDEBUG)
 #define NDEBUG
 #endif
+
+// from runtimehost.h
+#ifndef CUDADEVICEHEAP
+#define CUDADEVICEHEAP
+typedef void (*cudaAssertHandler)();
+typedef struct
+{
+	void *reserved;
+	void *heap;
+	char *blocks;
+	char *blockStart;
+	size_t blockSize;
+	size_t blocksLength;
+	size_t length;
+	cudaAssertHandler assertHandler;
+} cudaDeviceHeap;
+#endif
+
 #if __CUDACC__
 #define __forceinline __forceinline__
 #define __host_device__ __host__ __device__
@@ -773,11 +791,10 @@ typedef void (*Destructor_t)(void *);
 #define DESTRUCTOR_DYNAMIC ((Destructor_t)_allocsize)
 
 RUNTIME_NAMEEND
-#pragma endregion
-
 #ifdef RUNTIME_NAME
 	using namespace RUNTIME_NAME;
 #endif
+#pragma endregion
 
 //////////////////////
 // BITVEC
@@ -991,6 +1008,43 @@ namespace Messages
 			: Base(async, 6, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputs)); }
 		int RC; 
 	};
+
+	struct Stdio_fread
+	{
+		__device__ inline static char *Prepare(Stdio_fread *t, char *data, char *dataEnd)
+		{
+			size_t size = t->Size * t->Num;
+			t->Ptr = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += size);
+			if (end > dataEnd) return nullptr;
+			return end;
+		}
+		RuntimeSentinelMessage Base;
+		size_t Size; size_t Num; FILE *File;
+		__device__ Stdio_fread(bool async, size_t size, size_t num, FILE *file)
+			: Base(async, 7, 1024, RUNTIMESENTINELPREPARE(Prepare)), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fread)); }
+		size_t RC;
+		void *Ptr; 
+	};
+
+	struct Stdio_fwrite
+	{
+		__device__ inline static char *Prepare(Stdio_fwrite *t, char *data, char *dataEnd)
+		{
+			size_t size = t->Size * t->Num;
+			char *ptr = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += size);
+			if (end > dataEnd) return nullptr;
+			_memcpy(ptr, t->Ptr, size);
+			t->Ptr = ptr;
+			return end;
+		}
+		RuntimeSentinelMessage Base;
+		const void *Ptr; size_t Size; size_t Num; FILE *File;
+		__device__ Stdio_fwrite(bool async, const void *ptr, size_t size, size_t num, FILE *file)
+			: Base(async, 8, 1024, RUNTIMESENTINELPREPARE(Prepare)), Ptr(ptr), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fwrite)); }
+		size_t RC; 
+	};
 }
 
 #endif
@@ -1112,6 +1166,8 @@ extern "C" __device__ inline void _fputc(int c, FILE *f) { Messages::Stdio_fputc
 extern "C" __device__ inline int _fputcR(int c, FILE *f) { Messages::Stdio_fputc msg(false, c, f); return msg.RC; }
 extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(true, s, f); }
 extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Stdio_fputs msg(false, s, f); return msg.RC; }
+extern "C" __device__ inline size_t _fread(void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fread msg(false, s, n, f); memcpy(p, msg.Ptr, msg.RC); return msg.RC; }
+extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fwrite msg(false, p, s, n, f); return msg.RC; }
 #else
 #if __CUDACC__
 #define _fprintf(f, ...) printf(__VA_ARGS__)
@@ -1120,6 +1176,8 @@ extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Std
 #define _fclose(f)
 #define _fputc(c, f) printf("%c", c)
 #define _fputs(s, f) printf("%s\n", c)
+#define _fread(p, s, n, f)
+#define _fwrite(p, s, n, f)
 #else
 #define _fprintf(f, ...) fprintf(f, __VA_ARGS__)
 #define _fopen(f, m) fopen(f, m)
@@ -1127,6 +1185,8 @@ extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Std
 #define _fclose(f) fclose(f)
 #define _fputc(c, f) fputc(c, f)
 #define _fputs(s, f) fputs(s, f)
+#define _fread(p, s, n, f) fread(p, s, n, f)
+#define _fwrite(p, s, n, f) fread(p, s, n, f)
 #endif
 #endif
 

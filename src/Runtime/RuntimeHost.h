@@ -21,8 +21,9 @@
 // External function definitions for host-side code
 #pragma region HOST SIDE
 
+#ifndef CUDADEVICEHEAP
+#define CUDADEVICEHEAP
 typedef void (*cudaAssertHandler)();
-
 typedef struct
 {
 	void *reserved;
@@ -34,6 +35,7 @@ typedef struct
 	size_t length;
 	cudaAssertHandler assertHandler;
 } cudaDeviceHeap;
+#endif
 
 //
 //	cudaDeviceHeapSelect

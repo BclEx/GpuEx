@@ -1,4 +1,5 @@
 #include <Runtime.h>
+#include <RuntimeHost.h>
 
 // NATIVE: assert
 __global__ static void runtime0(void *r)

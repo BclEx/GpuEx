@@ -5,14 +5,23 @@
 #ifndef __RUNTIME_CPU_H__
 #define __RUNTIME_CPU_H__
 
-//#include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 //#include <process.h>
 //#include <string.h>
 #ifdef HAVE_ISNAN
 #include <math.h>
 #endif
 #pragma warning(disable:4996)
-#include "RuntimeHost.h"
+//#include "RuntimeHost.h"
+
+#ifndef __device__
+#define __device__
+#define __constant__ const
+#define __shared__
+#define __restrict__ __restrict
+#define cudaError_t int
+#endif
 
 //////////////////////
 // ASSERT
@@ -49,7 +58,7 @@ extern "C" const unsigned char __curtUpperToLower[256];
 extern "C" const unsigned char __curtCtypeMap[256];
 
 #ifdef __EMBED__
-cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return cudaSuccess; }
+cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return 0; }
 #endif
 
 #pragma endregion

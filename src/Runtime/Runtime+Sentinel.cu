@@ -7,6 +7,7 @@
 #endif
 #define RUNTIME_NAME RuntimeS
 #include "Runtime.h"
+#include "RuntimeHost.h"
 
 #if OS_MAP
 #pragma region OS_MAP
@@ -46,12 +47,49 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 		Messages::Stdio_fputs *msg = (Messages::Stdio_fputs *)data;
 		msg->RC = fputs(msg->Str, msg->File);
 		return true; }
+	case 7: {
+		Messages::Stdio_fread *msg = (Messages::Stdio_fread *)data;
+		msg->RC = fread(msg->Ptr, msg->Size, msg->Num, msg->File);
+		return true; }
+	case 8: {
+		Messages::Stdio_fwrite *msg = (Messages::Stdio_fwrite *)data;
+		msg->RC = fwrite(msg->Ptr, msg->Size, msg->Num, msg->File);
+		return true; }
 	}
 	return false;
 }
 
-static HANDLE _threadHandle = NULL;
-static unsigned int __stdcall SentinelThread(void *data) 
+static HANDLE _threadHostHandle = NULL;
+static unsigned int __stdcall SentinelHostThread(void *data) 
+{
+	RuntimeSentinelContext *ctx = &_ctx;
+	RuntimeSentinelMap *map = ctx->Map;
+	while (map)
+	{
+		long id = map->GetId;
+		RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
+		volatile long *status = (volatile long *)&cmd->Status;
+		unsigned int s_;
+		while (_threadHostHandle && (s_ = InterlockedCompareExchange((long *)status, 3, 2)) != 2) { /*printf("[%d ]", s_);*/ Sleep(50); } //
+		if (!_threadHostHandle) return 0;
+		if (cmd->Magic != SENTINEL_MAGIC)
+		{
+			printf("Bad Sentinel Magic");
+			exit(1);
+		}
+		//map->Dump();
+		cmd->Dump();
+		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
+		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
+		//printf(".");
+		*status = (!msg->Async ? 4 : 0);
+		map->GetId += SENTINEL_SIZE;
+	}
+	return 0;
+}
+
+static HANDLE _threadDeviceHandle = NULL;
+static unsigned int __stdcall SentinelDeviceThread(void *data) 
 {
 	RuntimeSentinelContext *ctx = &_ctx; //(RuntimeSentinelContext *)data;
 	RuntimeSentinelMap *map = ctx->Map;
@@ -61,8 +99,8 @@ static unsigned int __stdcall SentinelThread(void *data)
 		RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
 		volatile long *status = (volatile long *)&cmd->Status;
 		unsigned int s_;
-		while (_threadHandle && (s_ = InterlockedCompareExchange((long *)status, 3, 2)) != 2) { /*printf("[%d ]", s_);*/ Sleep(50); } //
-		if (!_threadHandle) return 0;
+		while (_threadDeviceHandle && (s_ = InterlockedCompareExchange((long *)status, 3, 2)) != 2) { /*printf("[%d ]", s_);*/ Sleep(50); } //
+		if (!_threadDeviceHandle) return 0;
 		if (cmd->Magic != SENTINEL_MAGIC)
 		{
 			printf("Bad Sentinel Magic");
@@ -80,42 +118,51 @@ static unsigned int __stdcall SentinelThread(void *data)
 }
 
 static RuntimeSentinelExecutor _baseExecutor;
-static HANDLE _mapHandle = NULL;
-static int *_map = nullptr;
-//https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
-//https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
+#if HAS_HOST
+static HANDLE _mapHostHandle = NULL;
+static int *_mapHost = nullptr;
+#endif
+static HANDLE _mapDeviceHandle = NULL;
+static int *_mapDevice = nullptr;
+
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 {
-	_mapHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT, "MyName"); //"Global\\MyFileMappingObject"
-	if (!_mapHandle)
+	//https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
+	//https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
+	// host
+#if HAS_HOST
+	_mapForHostHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT, "MyName"); //"Global\\MyFileMappingObject"
+	if (!_mapForHostHandle)
 	{
 		printf("Could not create file mapping object (%d).\n", GetLastError());
 		exit(1);
 	}
-	_map = (int *)MapViewOfFile(_mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT);
-	//_map = (int *)malloc(sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT);
-	//_map = (int *)VirtualAlloc(NULL, (sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	if (!_map)
+	_mapForHost = (int *)MapViewOfFile(_mapForHostHandle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT);
+	if (!_mapForHost)
 	{
 		printf("Could not map view of file (%d).\n", GetLastError());
-		CloseHandle(_mapHandle);
+		CloseHandle(_mapForHostHandle);
 		exit(1);
 	}
-	_ctx.Map = (RuntimeSentinelMap *)_ROUNDN(_map, MEMORY_ALIGNMENT);
+#endif
+	// device
 #ifdef _GPU
-	cudaErrorCheckF(cudaHostRegister(&_ctx.Map, sizeof(RuntimeSentinelMap), cudaHostRegisterPortable | cudaHostRegisterMapped), goto initialize_error);
-	//cudaErrorCheckF(cudaHostAlloc(&_ctx.Map, sizeof(RuntimeSentinelMap), cudaHostAllocPortable | cudaHostAllocMapped), goto initialize_error);
-	RuntimeSentinelContext *d_map;
-	cudaErrorCheckF(cudaHostGetDevicePointer(&d_map, _ctx.Map, 0), goto initialize_error);
-	cudaErrorCheckF(cudaMemcpyToSymbol(_runtimeSentinelMap, &d_map, sizeof(_ctx.Map)), goto initialize_error);
+	cudaErrorCheckF(cudaHostAlloc(&_mapDevice, sizeof(RuntimeSentinelMap), cudaHostAllocPortable | cudaHostAllocMapped), goto initialize_error);
+	_ctx.Map = _mapDevice;
+	RuntimeSentinelContext *d_mapDevice;
+	cudaErrorCheckF(cudaHostGetDevicePointer(&d_mapDevice, _ctx.Map, 0), goto initialize_error);
+	cudaErrorCheckF(cudaMemcpyToSymbol(_runtimeSentinelMap, &d_mapDevice, sizeof(_ctx.Map)), goto initialize_error);
 #else
-	_runtimeSentinelMap = _ctx.Map; //= (RuntimeSentinelMap *)malloc(sizeof(RuntimeSentinelMap));
-	if (!_runtimeSentinelMap)
+	//_mapDevice = (int *)VirtualAlloc(NULL, (sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+	_mapDevice = (int *)malloc(sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT);
+	_ctx.Map = (RuntimeSentinelMap *)_ROUNDN(_mapDevice, MEMORY_ALIGNMENT);
+	_runtimeSentinelMap = _ctx.Map;
+#endif
+	if (!_ctx.Map)
 	{
 		printf("Could not create map.\n");
 		goto initialize_error;
 	}
-#endif
 	memset(_ctx.Map, 0, sizeof(RuntimeSentinelMap));
 	_baseExecutor.Name = "base";
 	_baseExecutor.Executor = Executor;
@@ -123,8 +170,10 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 	RegisterExecutor(&_baseExecutor, true);
 	if (executor)
 		RegisterExecutor(executor, true);
-	_threadHandle = (HANDLE)_beginthreadex(0, 0, SentinelThread, nullptr, 0, 0);
-	return;
+#if HAS_HOST
+	_threadHostHandle = (HANDLE)_beginthreadex(0, 0, SentinelHostThread, nullptr, 0, 0);
+#endif
+	_threadDeviceHandle = (HANDLE)_beginthreadex(0, 0, SentinelDeviceThread, nullptr, 0, 0);
 initialize_error:
 	Shutdown();
 	exit(1);
@@ -132,21 +181,19 @@ initialize_error:
 
 void RuntimeSentinel::Shutdown()
 {
-	if (_threadHandle) { CloseHandle(_threadHandle); _threadHandle = NULL; }
-#ifdef _GPU
-	if (_ctx.Map) { cudaErrorCheckA(cudaHostUnregister(_ctx.Map)); _ctx.Map = nullptr; }
-	//if (_ctx.Map) { cudaErrorCheckA(cudaFreeHost(_ctx.Map)); _ctx.Map = nullptr; }
-#else
-	//free(_ctx.Map);
+	// host
+#if HAS_HOST
+	if (_threadHostHandle) { CloseHandle(_threadHostHandle); _threadHostHandle = NULL; }
+	if (_mapHost) { _mapForHost(_map); _mapHost = nullptr; }
+	if (_mapHostHandle) { CloseHandle(_mapHostHandle); _mapHostHandle = NULL; }
 #endif
-	if (_map)
-	{
-		//VirtualFree(_map, 0, MEM_RELEASE);
-		//free(_map);
-		UnmapViewOfFile(_map);
-		_map = nullptr;
-	}
-	if (_mapHandle) { CloseHandle(_mapHandle); _mapHandle = NULL; }
+	// device
+	if (_threadDeviceHandle) { CloseHandle(_threadDeviceHandle); _threadDeviceHandle = NULL; }
+#ifdef _GPU
+	if (_mapDevice) { cudaErrorCheckA(cudaFreeHost(_mapDevice)); _mapDevice = nullptr; }
+#else
+	if (_mapDevice) { free(_mapDevice); /*VirtualFree(_mapDevice, 0, MEM_RELEASE);*/ _mapDevice = nullptr; }
+#endif
 }
 
 RuntimeSentinelExecutor *RuntimeSentinel::FindExecutor(const char *name)
