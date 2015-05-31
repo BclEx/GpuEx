@@ -59,7 +59,7 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 	return false;
 }
 
-#if HAS_HOST
+#if HAS_HOSTSENTINEL
 static HANDLE _threadHostHandle = NULL;
 static unsigned int __stdcall SentinelHostThread(void *data) 
 {
@@ -120,29 +120,29 @@ static unsigned int __stdcall SentinelDeviceThread(void *data)
 }
 
 static RuntimeSentinelExecutor _baseExecutor;
-#if HAS_HOST
+#if HAS_HOSTSENTINEL
 static HANDLE _mapHostHandle = NULL;
 static int *_mapHost = nullptr;
 #endif
 static int *_mapDevice = nullptr;
 
-void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
+void RuntimeSentinel::ServerInitialize(RuntimeSentinelExecutor *executor, char *mapHostName)
 {
 	//https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
 	//https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
 	// host
-#if HAS_HOST
-	_mapForHostHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT, "MyName"); //"Global\\MyFileMappingObject"
-	if (!_mapForHostHandle)
+#if HAS_HOSTSENTINEL
+	_mapHostHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT, mapHostName);
+	if (!_mapHostHandle)
 	{
 		printf("Could not create file mapping object (%d).\n", GetLastError());
 		exit(1);
 	}
-	_mapForHost = (int *)MapViewOfFile(_mapForHostHandle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT);
-	if (!_mapForHost)
+	_mapHost = (int *)MapViewOfFile(_mapHostHandle, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT);
+	if (!_mapHost)
 	{
 		printf("Could not map view of file (%d).\n", GetLastError());
-		CloseHandle(_mapForHostHandle);
+		CloseHandle(_mapHostHandle);
 		exit(1);
 	}
 #endif
@@ -171,22 +171,22 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 	RegisterExecutor(&_baseExecutor, true);
 	if (executor)
 		RegisterExecutor(executor, true);
-#if HAS_HOST
+#if HAS_HOSTSENTINEL
 	_threadHostHandle = (HANDLE)_beginthreadex(0, 0, SentinelHostThread, nullptr, 0, 0);
 #endif
 	_threadDeviceHandle = (HANDLE)_beginthreadex(0, 0, SentinelDeviceThread, nullptr, 0, 0);
 	return;
 initialize_error:
-	Shutdown();
+	ServerShutdown();
 	exit(1);
 }
 
-void RuntimeSentinel::Shutdown()
+void RuntimeSentinel::ServerShutdown()
 {
 	// host
-#if HAS_HOST
+#if HAS_HOSTSENTINEL
 	if (_threadHostHandle) { CloseHandle(_threadHostHandle); _threadHostHandle = NULL; }
-	if (_mapHost) { _mapForHost(_map); _mapHost = nullptr; }
+	if (_mapHost) { UnmapViewOfFile(_mapHost); _mapHost = nullptr; }
 	if (_mapHostHandle) { CloseHandle(_mapHostHandle); _mapHostHandle = NULL; }
 #endif
 	// device
@@ -196,6 +196,14 @@ void RuntimeSentinel::Shutdown()
 #else
 	if (_mapDevice) { free(_mapDevice); /*VirtualFree(_mapDevice, 0, MEM_RELEASE);*/ _mapDevice = nullptr; }
 #endif
+}
+
+void RuntimeSentinel::ClientInitialize(char *mapHostName)
+{
+}
+
+void RuntimeSentinel::ClientShutdown()
+{
 }
 
 RuntimeSentinelExecutor *RuntimeSentinel::FindExecutor(const char *name)

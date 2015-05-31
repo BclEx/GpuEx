@@ -51,8 +51,10 @@ typedef struct
 #define OMIT_AUTOINIT
 #if defined(_GPU) || defined(_SENTINEL)
 #define OS_MAP 1
+#define HAS_HOSTSENTINEL 1
 #else
 #define OS_MAP 1
+#define HAS_HOSTSENTINEL 1
 #endif
 
 #if __CUDACC__
@@ -905,11 +907,15 @@ typedef struct RuntimeSentinelContext
 } RuntimeSentinelContext;
 
 extern __constant__ RuntimeSentinelMap *_runtimeSentinelMap;
+//#define SENTINEL_NAME "Global\\RuntimeSentinel"
+#define SENTINEL_NAME "RuntimeSentinel"
 struct RuntimeSentinel
 {
 public:
-	static void Initialize(RuntimeSentinelExecutor *executor = nullptr);
-	static void Shutdown();
+	static void ServerInitialize(RuntimeSentinelExecutor *executor = nullptr, char *mapHostName = SENTINEL_NAME); 
+	static void ServerShutdown();
+	static void ClientInitialize(char *mapHostName = SENTINEL_NAME);
+	static void ClientShutdown();
 	//
 	static RuntimeSentinelExecutor *FindExecutor(const char *name);
 	static void RegisterExecutor(RuntimeSentinelExecutor *exec, bool _default = false);

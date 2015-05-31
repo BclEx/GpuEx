@@ -17,6 +17,7 @@ void dumpfile(FILE *f)
 
 int main(int argc, char **argv)
 {
+	RuntimeSentinel::ClientInitialize();
 	if (argc <= 1)
 		dumpfile(stdin);
 	else
@@ -40,4 +41,5 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+	RuntimeSentinel::ClientShutdown();
 }

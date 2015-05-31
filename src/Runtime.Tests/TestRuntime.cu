@@ -269,7 +269,7 @@ __global__ static void runtime14(void *r)
 #if __CUDACC__
 void __testRuntime(cudaDeviceHeap &r)
 {
-	RuntimeSentinel::Initialize();
+	RuntimeSentinel::ServerInitialize();
 	runtime0<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime1<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime2<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
@@ -285,13 +285,13 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime12<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime13<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime14<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
-	RuntimeSentinel::Shutdown();
+	RuntimeSentinel::ServerShutdown();
 }
 #else
 void __testRuntime(cudaDeviceHeap &r)
 {
 #if OS_MAP
-	RuntimeSentinel::Initialize();
+	RuntimeSentinel::ServerInitialize();
 #endif
 	runtime0(r.heap);
 	runtime1(r.heap);
@@ -309,7 +309,7 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime13(r.heap);
 	runtime14(r.heap);
 #if OS_MAP
-	RuntimeSentinel::Shutdown();
+	RuntimeSentinel::ServerShutdown();
 #endif
 }
 #endif

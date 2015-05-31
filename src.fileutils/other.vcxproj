@@ -66,6 +66,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dd.c" />
+    <ClCompile Include="l.c" />
+    <ClCompile Include="ln.c" />
     <ClCompile Include="mkfifo.c" />
     <ClCompile Include="mknod.c" />
     <ClCompile Include="sync.c" />
