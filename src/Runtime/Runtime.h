@@ -4,17 +4,16 @@
 
 //////////////////////
 // NATIVE
+
 #pragma region NATIVE
 
 #include <stdio.h>
+#pragma warning(disable:4996)
 #if !defined(_DEBUG) && !defined(NDEBUG)
 #define NDEBUG
 #endif
 
-// from runtimehost.h
-#ifndef CUDADEVICEHEAP
-#define CUDADEVICEHEAP
-typedef void (*cudaAssertHandler)();
+#ifndef __RUNTIMEHOST_H__
 typedef struct
 {
 	void *reserved;
@@ -24,7 +23,7 @@ typedef struct
 	size_t blockSize;
 	size_t blocksLength;
 	size_t length;
-	cudaAssertHandler assertHandler;
+	void *cudaAssertHandler;
 } cudaDeviceHeap;
 #endif
 
@@ -1152,7 +1151,7 @@ extern __constant__ FILE _stderr_file;
 #define stderr &_stderr_file
 #endif
 
-#if 1 && OS_MAP
+#if 0 && OS_MAP
 #define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
 #define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
 extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
@@ -1169,6 +1168,11 @@ extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Std
 extern "C" __device__ inline size_t _fread(void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fread msg(false, s, n, f); memcpy(p, msg.Ptr, msg.RC); return msg.RC; }
 extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fwrite msg(false, p, s, n, f); return msg.RC; }
 #else
+#define _fprintfR _fprintf
+#define _fflushR _fflush
+#define _fcloseR _fclose
+#define _fputcR _fputc
+#define _fputsR _fputs
 #if __CUDACC__
 #define _fprintf(f, ...) printf(__VA_ARGS__)
 #define _fopen(f, m) 0

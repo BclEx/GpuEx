@@ -52,3 +52,12 @@ extern	void	freechunks();
 extern	BOOL	intflag;
 
 /* END CODE */
+
+struct group { short gr_gid; };
+struct group *getgrnam(char *name) { return nullptr; }
+
+struct passwd { short pw_uid; };
+struct passwd *getpwnam(char *name) { return nullptr; }
+
+int chown(char *name, short uid, int gid) { return 0; }
+int chmod(char *name, int mode) { return 0; }

@@ -1,3 +1,4 @@
+#include <RuntimeHost.h>
 #include <Core\Core.cu.h>
 
 #pragma region Preamble

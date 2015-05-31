@@ -1,5 +1,5 @@
-#include <RuntimeHost.h>
 #include <string.h>
+#include <RuntimeHost.h>
 
 void __testSystem(cudaDeviceHeap &r);
 

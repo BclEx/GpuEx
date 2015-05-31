@@ -1,9 +1,8 @@
 #pragma warning(disable: 4996)
 #ifndef _LIB
 
-#include "RuntimeHost.h"
 #include <stdio.h>
-
+#include "RuntimeHost.h"
 #include "..\Runtime.Tests\TestRuntime.cu"
 
 cudaDeviceHeap _deviceHeap;

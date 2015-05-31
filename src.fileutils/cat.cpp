@@ -1,8 +1,5 @@
-#include <Runtime.h>
 #include <string.h>
-//#include <sys/types.h>
-//#include <fcntl.h>
-//#include <errno.h>
+#include <Runtime.h>
 
 #define CAT_BUF_SIZE 4096
 
@@ -14,7 +11,7 @@ void dumpfile(FILE *f)
 {
 	int nred;
 	static char readbuf[CAT_BUF_SIZE];
-	while ((nred = _fread(readbuf, cat_read_size, 1, f)) > 0)
+	while ((nred = _fread(readbuf, 1, cat_read_size, f)) > 0)
 		_fwrite(readbuf, nred, 1, stdout);
 }
 
@@ -29,11 +26,11 @@ int main(int argc, char **argv)
 			FILE *f = _fopen(argv[i], "r");
 			if (!f)
 			{
-				_fwrite(argv[0], strlen(argv[0]), 1, stderr);
+				_fwrite(argv[0], 1, strlen(argv[0]), stderr);
 				_fwrite(colon, 2, 1, stderr);
-				_fwrite(argv[i], strlen(argv[i]), 1, stderr);
-				_fwrite(colon, 2, 1, stderr);
-				_fwrite(strerror(errno), strlen(strerror(errno)), 1, stderr);
+				_fwrite(argv[i], 1, strlen(argv[i]), stderr);
+				_fwrite(colon, 1, 2, stderr);
+				_fwrite(strerror(errno), 1, strlen(strerror(errno)), stderr);
 				_fwrite(&nl, 1, 1, stderr);
 			}
 			else

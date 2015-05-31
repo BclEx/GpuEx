@@ -6,8 +6,8 @@
 #define __device__
 #endif
 #define RUNTIME_NAME RuntimeS
-#include "Runtime.h"
 #include "RuntimeHost.h"
+#include "Runtime.h"
 
 #if OS_MAP
 #pragma region OS_MAP
@@ -59,6 +59,7 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 	return false;
 }
 
+#if HAS_HOST
 static HANDLE _threadHostHandle = NULL;
 static unsigned int __stdcall SentinelHostThread(void *data) 
 {
@@ -78,7 +79,7 @@ static unsigned int __stdcall SentinelHostThread(void *data)
 			exit(1);
 		}
 		//map->Dump();
-		cmd->Dump();
+		//cmd->Dump();
 		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
 		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
 		//printf(".");
@@ -87,6 +88,7 @@ static unsigned int __stdcall SentinelHostThread(void *data)
 	}
 	return 0;
 }
+#endif
 
 static HANDLE _threadDeviceHandle = NULL;
 static unsigned int __stdcall SentinelDeviceThread(void *data) 
@@ -107,7 +109,7 @@ static unsigned int __stdcall SentinelDeviceThread(void *data)
 			exit(1);
 		}
 		//map->Dump();
-		cmd->Dump();
+		//cmd->Dump();
 		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
 		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
 		//printf(".");
@@ -122,7 +124,6 @@ static RuntimeSentinelExecutor _baseExecutor;
 static HANDLE _mapHostHandle = NULL;
 static int *_mapHost = nullptr;
 #endif
-static HANDLE _mapDeviceHandle = NULL;
 static int *_mapDevice = nullptr;
 
 void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
@@ -148,7 +149,7 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 	// device
 #ifdef _GPU
 	cudaErrorCheckF(cudaHostAlloc(&_mapDevice, sizeof(RuntimeSentinelMap), cudaHostAllocPortable | cudaHostAllocMapped), goto initialize_error);
-	_ctx.Map = _mapDevice;
+	_ctx.Map = (RuntimeSentinelMap *)_mapDevice;
 	RuntimeSentinelContext *d_mapDevice;
 	cudaErrorCheckF(cudaHostGetDevicePointer(&d_mapDevice, _ctx.Map, 0), goto initialize_error);
 	cudaErrorCheckF(cudaMemcpyToSymbol(_runtimeSentinelMap, &d_mapDevice, sizeof(_ctx.Map)), goto initialize_error);
@@ -174,6 +175,7 @@ void RuntimeSentinel::Initialize(RuntimeSentinelExecutor *executor)
 	_threadHostHandle = (HANDLE)_beginthreadex(0, 0, SentinelHostThread, nullptr, 0, 0);
 #endif
 	_threadDeviceHandle = (HANDLE)_beginthreadex(0, 0, SentinelDeviceThread, nullptr, 0, 0);
+	return;
 initialize_error:
 	Shutdown();
 	exit(1);

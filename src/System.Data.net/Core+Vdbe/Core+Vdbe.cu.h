@@ -1,6 +1,7 @@
 ﻿#ifndef __CORE_VDBE_CU_H__
 #define __CORE_VDBE_CU_H__
 
+#include <stddef.h>
 #include "../Core+Btree/Core+Btree.cu.h"
 #include "Parse+Parser.orig.h"
 #include "../Opcodes.h"

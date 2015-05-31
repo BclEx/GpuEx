@@ -1,5 +1,5 @@
-#include <RuntimeHost.h>
 #include <string.h>
+#include <RuntimeHost.h>
 //http://thelegendofrandom.com/blog/archives/2231
 
 void __testRuntime(cudaDeviceHeap &r);

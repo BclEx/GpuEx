@@ -22,8 +22,6 @@ __constant__ FILE _stderr_file = {0, 2, 0};
 #ifdef VISUAL
 
 #if __CUDACC__
-#include "RuntimeHost.h"
-
 //#define MAX(a,b) (a > b ? a : b)
 #define BLOCKPITCH 64
 #define HEADERPITCH 4

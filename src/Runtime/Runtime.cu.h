@@ -9,8 +9,6 @@
 #error Atomics only used with > sm_10 architecture
 #endif
 
-//#include "RuntimeHost.h"
-
 //////////////////////
 // ASSERT
 #pragma region ASSERT

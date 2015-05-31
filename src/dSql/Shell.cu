@@ -21,8 +21,8 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include "..\System.Data.net\Core+Vdbe\VdbeInt.cu.h"
 #include <RuntimeHost.h>
+#include "..\System.Data.net\Core+Vdbe\VdbeInt.cu.h"
 
 #if !defined(_WIN32) && !defined(WIN32)
 #include <signal.h>

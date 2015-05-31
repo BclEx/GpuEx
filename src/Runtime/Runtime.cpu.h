@@ -7,18 +7,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <process.h>
-//#include <string.h>
 #ifdef HAVE_ISNAN
 #include <math.h>
 #endif
-#pragma warning(disable:4996)
-//#include "RuntimeHost.h"
-
-#ifndef __device__
+//
+#ifndef __global__
+#define __host__
+#define __global__
 #define __device__
-#define __constant__ const
+#define __constant__
 #define __shared__
+#define __inline__ __inline
 #define __restrict__ __restrict
 #define cudaError_t int
 #endif
@@ -32,7 +31,7 @@
 #ifndef NDEBUG
 #define _assert(X) assert(X)
 #define ASSERTONLY(X) X
-__device__ inline void Coverage(int line) { }
+__device__ __forceinline void Coverage(int line) { }
 #define ASSERTCOVERAGE(X) if (X) { Coverage(__LINE__); }
 #else
 #define _assert(X) ((void)0)

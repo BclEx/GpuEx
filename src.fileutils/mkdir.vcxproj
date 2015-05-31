@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7236B42F-BB44-4284-B96A-B611DA1F86BD}</ProjectGuid>
+    <ProjectGuid>{4314B1E0-BC0E-4D9D-A3B3-B6CB162D04A6}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -66,26 +66,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cat.c" />
-    <ClCompile Include="chgrp.c" />
-    <ClCompile Include="chmod.c" />
-    <ClCompile Include="chown.c" />
-    <ClCompile Include="cmp.c" />
-    <ClCompile Include="cp.c" />
-    <ClCompile Include="dd.c" />
-    <ClCompile Include="grep.c" />
-    <ClCompile Include="l.c" />
-    <ClCompile Include="ln.c" />
-    <ClCompile Include="ls.c" />
     <ClCompile Include="mkdir.c" />
-    <ClCompile Include="mkfifo.c" />
-    <ClCompile Include="mknod.c" />
-    <ClCompile Include="more.c" />
-    <ClCompile Include="mv.c" />
-    <ClCompile Include="rm.c" />
-    <ClCompile Include="rmdir.c" />
-    <ClCompile Include="sync.c" />
-    <ClCompile Include="touch.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />
