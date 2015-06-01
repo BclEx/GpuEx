@@ -40,18 +40,26 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 		msg->RC = fclose(msg->File);
 		return true; }
 	case 5: {
+		Messages::Stdio_fgetc *msg = (Messages::Stdio_fgetc *)data;
+		msg->RC = fgetc(msg->File);
+		return true; }
+	case 6: {
+		Messages::Stdio_fgets *msg = (Messages::Stdio_fgets *)data;
+		msg->RC = fgets(msg->Str, msg->Num, msg->File);
+		return true; }
+	case 7: {
 		Messages::Stdio_fputc *msg = (Messages::Stdio_fputc *)data;
 		msg->RC = fputc(msg->Ch, msg->File);
 		return true; }
-	case 6: {
+	case 8: {
 		Messages::Stdio_fputs *msg = (Messages::Stdio_fputs *)data;
 		msg->RC = fputs(msg->Str, msg->File);
 		return true; }
-	case 7: {
+	case 9: {
 		Messages::Stdio_fread *msg = (Messages::Stdio_fread *)data;
 		msg->RC = fread(msg->Ptr, msg->Size, msg->Num, msg->File);
 		return true; }
-	case 8: {
+	case 10: {
 		Messages::Stdio_fwrite *msg = (Messages::Stdio_fwrite *)data;
 		msg->RC = fwrite(msg->Ptr, msg->Size, msg->Num, msg->File);
 		return true; }

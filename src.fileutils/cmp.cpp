@@ -4,6 +4,8 @@
 
 int main(int argc, char	**argv)
 {
+	atexit(RuntimeSentinel::ClientShutdown);
+	RuntimeSentinel::ClientInitialize();
 	struct stat statbuf1;
 	if (stat(argv[1], &statbuf1) < 0)
 	{
@@ -47,13 +49,13 @@ int main(int argc, char	**argv)
 	char *bp2;
 	while (1)
 	{
-		int cc1 = _fread(buf1, 1, sizeof(buf1), f1);
+		size_t cc1 = _fread(buf1, 1, sizeof(buf1), f1);
 		if (cc1 < 0)
 		{
 			perror(argv[1]);
 			goto eof;
 		}
-		int cc2 = _fread(buf2, 1, sizeof(buf2), f2);
+		size_t cc2 = _fread(buf2, 1, sizeof(buf2), f2);
 		if (cc2 < 0)
 		{
 			perror(argv[2]);
@@ -76,7 +78,7 @@ int main(int argc, char	**argv)
 		}
 		if (!memcmp(buf1, buf2, cc1))
 		{
-			pos += cc1;
+			pos += (long)cc1;
 			continue;
 		}
 		//

@@ -5,6 +5,8 @@
 
 int main(int argc, char **argv)
 {
+	atexit(RuntimeSentinel::ClientShutdown);
+	RuntimeSentinel::ClientInitialize();
 	char *cp = argv[1];
 	int gid;
 	struct group *grp;

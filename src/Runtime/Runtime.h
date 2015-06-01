@@ -985,13 +985,41 @@ namespace Messages
 			: Base(async, 4, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fclose)); }
 		int RC; 
 	};
+	
+	struct Stdio_fgetc
+	{
+		RuntimeSentinelMessage Base;
+		int Ch; FILE *File;
+		__device__ Stdio_fgetc(FILE *file)
+			: Base(false, 5, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fgetc)); }
+		int RC; 
+	};
+
+	struct Stdio_fgets
+	{
+		__device__ inline static char *Prepare(Stdio_fgets *t, char *data, char *dataEnd)
+		{
+			int strLength = (t->Str ? _strlen(t->Str) + 1 : 0);
+			char *str = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += strLength);
+			if (end > dataEnd) return nullptr;
+			_memcpy(str, t->Str, strLength);
+			t->Str = str;
+			return end;
+		}
+		RuntimeSentinelMessage Base;
+		const char *Str; FILE *File;
+		__device__ Stdio_fgets(char *str, int num, FILE *file)
+			: Base(false, 6, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fgets)); }
+		int RC; 
+	};
 
 	struct Stdio_fputc
 	{
 		RuntimeSentinelMessage Base;
 		int Ch; FILE *File;
 		__device__ Stdio_fputc(bool async, int ch, FILE *file)
-			: Base(async, 5, 0, nullptr), Ch(ch), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputc)); }
+			: Base(async, 7, 0, nullptr), Ch(ch), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputc)); }
 		int RC; 
 	};
 
@@ -1010,7 +1038,7 @@ namespace Messages
 		RuntimeSentinelMessage Base;
 		const char *Str; FILE *File;
 		__device__ Stdio_fputs(bool async, const char *str, FILE *file)
-			: Base(async, 6, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputs)); }
+			: Base(async, 8, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputs)); }
 		int RC; 
 	};
 
@@ -1027,7 +1055,7 @@ namespace Messages
 		RuntimeSentinelMessage Base;
 		size_t Size; size_t Num; FILE *File;
 		__device__ Stdio_fread(bool async, size_t size, size_t num, FILE *file)
-			: Base(async, 7, 1024, RUNTIMESENTINELPREPARE(Prepare)), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fread)); }
+			: Base(async, 9, 1024, RUNTIMESENTINELPREPARE(Prepare)), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fread)); }
 		size_t RC;
 		void *Ptr; 
 	};
@@ -1047,7 +1075,7 @@ namespace Messages
 		RuntimeSentinelMessage Base;
 		const void *Ptr; size_t Size; size_t Num; FILE *File;
 		__device__ Stdio_fwrite(bool async, const void *ptr, size_t size, size_t num, FILE *file)
-			: Base(async, 8, 1024, RUNTIMESENTINELPREPARE(Prepare)), Ptr(ptr), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fwrite)); }
+			: Base(async, 10, 1024, RUNTIMESENTINELPREPARE(Prepare)), Ptr(ptr), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fwrite)); }
 		size_t RC; 
 	};
 }
@@ -1167,6 +1195,8 @@ extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(
 extern "C" __device__ inline int _fflushR(FILE *f) { Messages::Stdio_fflush msg(false, f); return msg.RC; }
 extern "C" __device__ inline void _fclose(FILE *f) { Messages::Stdio_fclose msg(true, f); }
 extern "C" __device__ inline int _fcloseR(FILE *f) { Messages::Stdio_fclose msg(false, f); return msg.RC; }
+extern "C" __device__ inline int _fgetc(FILE *f) { Messages::Stdio_fgetc msg(f); return msg.RC; }
+extern "C" __device__ inline int _fgets(char *c, int n, FILE *f) { Messages::Stdio_fgets msg(c, n, f); return msg.RC; }
 extern "C" __device__ inline void _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(true, c, f); }
 extern "C" __device__ inline int _fputcR(int c, FILE *f) { Messages::Stdio_fputc msg(false, c, f); return msg.RC; }
 extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(true, s, f); }
@@ -1184,6 +1214,8 @@ extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, F
 #define _fopen(f, m) 0
 #define _fflush(f)
 #define _fclose(f)
+#define _fgetc(c, f)
+#define _fgets(s, f)
 #define _fputc(c, f) printf("%c", c)
 #define _fputs(s, f) printf("%s\n", c)
 #define _fread(p, s, n, f)
@@ -1193,6 +1225,8 @@ extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, F
 #define _fopen(f, m) fopen(f, m)
 #define _fflush(f) fflush(f)
 #define _fclose(f) fclose(f)
+#define _fgetc(f) fgetc(f)
+#define _fgets(s, n, f) fgets(s, n, f)
 #define _fputc(c, f) fputc(c, f)
 #define _fputs(s, f) fputs(s, f)
 #define _fread(p, s, n, f) fread(p, s, n, f)

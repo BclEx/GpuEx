@@ -125,6 +125,8 @@ char *buildname(char *dirname, char *filename)
 
 int main(int argc, char	**argv)
 {
+	atexit(RuntimeSentinel::ClientShutdown);
+	RuntimeSentinel::ClientInitialize();
 	char *lastarg = argv[argc - 1];
 	bool dirflag = isadir(lastarg);
 	if (argc > 3 && !dirflag)

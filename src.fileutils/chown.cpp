@@ -4,6 +4,8 @@
 
 int main(int argc, char	**argv)
 {
+	atexit(RuntimeSentinel::ClientShutdown);
+	RuntimeSentinel::ClientInitialize();
 	char *cp = argv[1];
 	int uid;
 	if (isdecimal(*cp))
@@ -27,7 +29,7 @@ int main(int argc, char	**argv)
 		}
 		uid = pwd->pw_uid;
 	}
-
+	//
 	argc--;
 	argv++;
 	while (argc-- > 1)
