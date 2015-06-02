@@ -16,8 +16,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{33526560-DA86-4C8A-8756-8F22D28EB02E}</ProjectGuid>
+    <ProjectGuid>{4314B1E0-BC0E-4D9D-A3B3-B6CB162D04A6}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
+    <ProjectName>dmkdir</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'" Label="Configuration">
@@ -75,7 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mv.c" />
+    <ClCompile Include="dmkdir.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />

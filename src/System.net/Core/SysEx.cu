@@ -126,8 +126,7 @@ namespace CORE_NAME
 			SysEx_GlobalStatics.InProgress = true;
 			rc = VSystem::Initialize();
 		}
-		if (rc != RC_OK)
-			_mutex_leave(SysEx_GlobalStatics.InitMutex);
+		if (rc != RC_OK) { _mutex_leave(SysEx_GlobalStatics.InitMutex); }
 		return rc;
 	}
 

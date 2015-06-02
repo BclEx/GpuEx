@@ -16,8 +16,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7236B42F-BB44-4284-B96A-B611DA1F86BD}</ProjectGuid>
+    <ProjectGuid>{A8A42CE6-53C2-4F09-BA00-1C50C47CF608}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
+    <ProjectName>dcat</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'" Label="Configuration">
@@ -75,7 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="chgrp.cpp" />
+    <ClCompile Include="dcat.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />

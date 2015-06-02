@@ -75,13 +75,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="dd.c" />
-    <ClCompile Include="l.c" />
-    <ClCompile Include="ln.c" />
-    <ClCompile Include="mkfifo.c" />
-    <ClCompile Include="mknod.c" />
-    <ClCompile Include="sync.c" />
-    <ClCompile Include="touch.c" />
+    <ClCompile Include="ddd.c" />
+    <ClCompile Include="dl.c" />
+    <ClCompile Include="dln.c" />
+    <ClCompile Include="dmkfifo.c" />
+    <ClCompile Include="dmknod.c" />
+    <ClCompile Include="dsync.c" />
+    <ClCompile Include="dtouch.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />

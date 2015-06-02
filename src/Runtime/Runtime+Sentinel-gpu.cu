@@ -3,13 +3,14 @@
 #if OS_MAP && OS_GPU
 #pragma region OS_GPU
 
-__constant__ RuntimeSentinelMap *_runtimeSentinelMap = nullptr;
+__device__ volatile unsigned int _runtimeSentinelMapId;
+__constant__ RuntimeSentinelMap *_runtimeSentinelDeviceMap[SENTINEL_DEVICEMAPS];
 __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 {
-	RuntimeSentinelMap *map = _runtimeSentinelMap;
+	RuntimeSentinelMap *map = _runtimeSentinelDeviceMap[_runtimeSentinelMapId++ % SENTINEL_DEVICEMAPS];
 	RuntimeSentinelMessage *msg2 = (RuntimeSentinelMessage *)msg;
 	int length = msgLength + msg2->Size;
-	long id = __iAtomicAdd((int *)&map->SetId, SENTINEL_SIZE);
+	long id = __iAtomicAdd((int *)&map->SetId, SENTINEL_MSGSIZE);
 	RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
 	volatile long *status = (volatile long *)&cmd->Status;
 	//while (atomicCAS((unsigned int *)status, 1, 0) != 0) { __syncthreads(); }

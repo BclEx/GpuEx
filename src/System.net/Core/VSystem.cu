@@ -12,7 +12,7 @@ namespace CORE_NAME
 		if (rc) return nullptr;
 #endif
 		VSystem *vfs = nullptr;
-		MutexEx mutex = _mutex_alloc(MUTEX_STATIC_MASTER);
+		MUTEX_LOGIC(MutexEx mutex = )_mutex_alloc(MUTEX_STATIC_MASTER);
 		_mutex_enter(mutex);
 		for (vfs = _vfsList; vfs && name && _strcmp(name, vfs->Name); vfs = vfs->Next) { }
 		_mutex_leave(mutex);
@@ -37,7 +37,7 @@ namespace CORE_NAME
 
 	__device__ RC VSystem::RegisterVfs(VSystem *vfs, bool default_)
 	{
-		MutexEx mutex = _mutex_alloc(MUTEX_STATIC_MASTER);
+		MUTEX_LOGIC(MutexEx mutex = )_mutex_alloc(MUTEX_STATIC_MASTER);
 		_mutex_enter(mutex);
 		UnlinkVfs(vfs);
 		if (default_ || !_vfsList)
@@ -57,7 +57,7 @@ namespace CORE_NAME
 
 	__device__ RC VSystem::UnregisterVfs(VSystem *vfs)
 	{
-		MutexEx mutex = _mutex_alloc(MUTEX_STATIC_MASTER);
+		MUTEX_LOGIC(MutexEx mutex = )_mutex_alloc(MUTEX_STATIC_MASTER);
 		_mutex_enter(mutex);
 		UnlinkVfs(vfs);
 		_mutex_leave(mutex);

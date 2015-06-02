@@ -16,8 +16,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1483D509-D5E0-4B1E-ACD5-E44FD27E544F}</ProjectGuid>
+    <ProjectGuid>{25F3C375-592E-44E7-ACD1-28CB3CA31BAE}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
+    <ProjectName>dchown</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'" Label="Configuration">
@@ -75,7 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cmp.cpp" />
+    <ClCompile Include="dchown.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />

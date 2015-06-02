@@ -85,28 +85,21 @@ namespace CORE_NAME
 		return false;
 	}
 
-#ifndef _GPU
-	//extern RC MapVSystem_Initialize();
-#endif
 	static RuntimeSentinelExecutor _sysExecutor;
 	void VSystemSentinel::Initialize()
 	{
 		MutexEx masterMutex;
 		SysEx::Initialize(masterMutex);
 		VSystem *vfs = VSystem::FindVfs(nullptr);
-#ifndef _GPU
-		//VSystem::UnregisterVfs(vfs);
-		//MapVSystem_Initialize();
-#endif
 		_sysExecutor.Name = "sys";
 		_sysExecutor.Executor = Executor;
 		_sysExecutor.Tag = vfs;
-		RuntimeSentinel::Initialize(&_sysExecutor);
+		RuntimeSentinel::ServerInitialize(&_sysExecutor);
 	}
 
 	void VSystemSentinel::Shutdown()
 	{
-		RuntimeSentinel::Shutdown();
+		RuntimeSentinel::ServerShutdown();
 		SysEx::Shutdown();
 	}
 }

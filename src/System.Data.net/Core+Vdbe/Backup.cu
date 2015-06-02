@@ -189,8 +189,7 @@ namespace CORE_NAME
 	{
 		_mutex_enter(SrcCtx->Mutex);
 		Src->Enter();
-		if (DestCtx)
-			_mutex_enter(DestCtx->Mutex);
+		if (DestCtx) { _mutex_enter(DestCtx->Mutex); }
 
 		RC rc = RC_;
 		if (!IsFatalError(rc))
@@ -375,8 +374,7 @@ namespace CORE_NAME
 				rc = RC_NOMEM;
 			RC_ = rc;
 		}
-		if (DestCtx)
-			_mutex_leave(DestCtx->Mutex);
+		if (DestCtx) { _mutex_leave(DestCtx->Mutex); }
 		Src->Leave();
 		_mutex_leave(SrcCtx->Mutex);
 		return rc;
@@ -389,8 +387,7 @@ namespace CORE_NAME
 		Context *srcCtx = p->SrcCtx; // Source database connection
 		_mutex_enter(srcCtx->Mutex);
 		p->Src->Enter();
-		if (p->DestCtx)
-			_mutex_enter(p->DestCtx->Mutex);
+		if (p->DestCtx) { _mutex_enter(p->DestCtx->Mutex); }
 
 		// Detach this backup from the source pager.
 		if (p->DestCtx)

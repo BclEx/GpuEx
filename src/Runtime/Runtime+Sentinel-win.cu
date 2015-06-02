@@ -6,13 +6,14 @@
 #if OS_MAP && OS_WIN
 #pragma region OS_WIN
 
-RuntimeSentinelMap *_runtimeSentinelMap = nullptr;
+volatile unsigned int _runtimeSentinelMapId;
+RuntimeSentinelMap *_runtimeSentinelDeviceMap[SENTINEL_DEVICEMAPS];
 void RuntimeSentinel::Send(void *msg, int msgLength)
 {
-	RuntimeSentinelMap *map = _runtimeSentinelMap;
+	RuntimeSentinelMap *map = _runtimeSentinelDeviceMap[_runtimeSentinelMapId++ % SENTINEL_DEVICEMAPS];
 	RuntimeSentinelMessage *msg2 = (RuntimeSentinelMessage *)msg;
 	int length = msgLength + msg2->Size;
-	long id = (InterlockedAdd((long *)&map->SetId, SENTINEL_SIZE) - SENTINEL_SIZE);
+	long id = (InterlockedAdd((long *)&map->SetId, SENTINEL_MSGSIZE) - SENTINEL_MSGSIZE);
 	RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
 	volatile long *status = (volatile long *)&cmd->Status;
 	while (InterlockedCompareExchange((long *)status, 1, 0) != 0) { }

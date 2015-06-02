@@ -16,8 +16,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A6788A79-9E23-425B-9F59-ADD30A29F261}</ProjectGuid>
+    <ProjectGuid>{16F32343-9A7F-4FB2-B371-E5EC1620632F}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
+    <ProjectName>dmore</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'" Label="Configuration">
@@ -75,7 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cp.cpp" />
+    <ClCompile Include="dmore.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />

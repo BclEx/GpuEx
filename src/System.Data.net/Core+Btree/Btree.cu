@@ -1251,7 +1251,7 @@ ptrmap_exit:
 						return rc;
 					}
 				}
-				MutexEx mutexShared;
+				MUTEX_LOGIC(MutexEx mutexShared;)
 #if THREADSAFE
 				mutexOpen = _mutex_alloc(MUTEX_STATIC_OPEN); // Prevents a race condition. Ticket #3537
 				_mutex_enter(mutexOpen);
@@ -1360,7 +1360,7 @@ ptrmap_exit:
 			if (p->Sharable_)
 			{
 				bt->Refs = 1;
-				MutexEx mutexShared;
+				MUTEX_LOGIC(MutexEx mutexShared;)
 #if THREADSAFE
 				mutexShared = _mutex_alloc(MUTEX_STATIC_MASTER);
 #endif
@@ -1441,7 +1441,7 @@ btree_open_out:
 	{
 #ifndef OMIT_SHARED_CACHE
 		_assert(_mutex_held(bt->Mutex));
-		MutexEx master;
+		MUTEX_LOGIC(MutexEx master;)
 #if THREADSAFE
 		master = _mutex_alloc(MUTEX_STATIC_MASTER);
 #endif

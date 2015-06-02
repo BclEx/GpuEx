@@ -147,6 +147,7 @@
     <ClCompile Include="..\System.net\Core\VFile+MemoryVFile.cu" />
     <ClCompile Include="..\System.net\Core\VFile.cu" />
     <ClCompile Include="..\System.net\Core\VSystem.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-gpu.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-map.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
     <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
@@ -161,6 +162,7 @@
     <None Include="..\System.net\Core\VFile+MemoryVFile.cu" />
     <None Include="..\System.net\Core\VFile.cu" />
     <None Include="..\System.net\Core\VSystem.cu" />
+    <None Include="..\System.net\Core\VSystem-gpu.cu" />
     <None Include="..\System.net\Core\VSystem-map.cu" />
     <None Include="..\System.net\Core\VSystem-unix.cu" />
     <None Include="..\System.net\Core\VSystem-win.cu" />

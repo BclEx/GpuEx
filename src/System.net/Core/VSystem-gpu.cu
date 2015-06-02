@@ -1,6 +1,5 @@
 ﻿// os_gpu.c
 #include "Core.cu.h"
-#include <RuntimeOS.h>
 #include <new.h>
 
 #if OS_GPUx

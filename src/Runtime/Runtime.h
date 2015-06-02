@@ -851,8 +851,12 @@ public:
 #if OS_MAP
 
 #define SENTINEL_MAGIC (unsigned short)0xC811
-#define SENTINEL_SIZE 4096
-#define SENTINEL_COUNT 1
+#define SENTINEL_MSGSIZE 4096
+#define SENTINEL_MSGCOUNT 1
+//#define SENTINEL_NAME "Global\\RuntimeSentinel"
+#define SENTINEL_NAME "RuntimeSentinel"
+#define SENTINEL_DEVICEMAPS 1
+
 struct RuntimeSentinelMessage
 {
 	bool Async;
@@ -883,7 +887,7 @@ typedef struct
 {
 	long GetId;
 	volatile long SetId;
-	char Data[SENTINEL_SIZE*SENTINEL_COUNT];
+	char Data[SENTINEL_MSGSIZE*SENTINEL_MSGCOUNT];
 	inline void Dump()
 	{
 		register char *b2 = (char *)this;
@@ -902,13 +906,15 @@ typedef struct RuntimeSentinelExecutor
 
 typedef struct RuntimeSentinelContext
 {
-	RuntimeSentinelMap *Map;
+	RuntimeSentinelMap *DeviceMap[SENTINEL_DEVICEMAPS];
+	RuntimeSentinelMap *HostMap;
 	RuntimeSentinelExecutor *List;
 } RuntimeSentinelContext;
 
-extern __constant__ RuntimeSentinelMap *_runtimeSentinelMap;
-//#define SENTINEL_NAME "Global\\RuntimeSentinel"
-#define SENTINEL_NAME "RuntimeSentinel"
+#if HAS_HOSTSENTINEL
+extern RuntimeSentinelMap *_runtimeSentinelHostMap;
+#endif
+extern __constant__ RuntimeSentinelMap *_runtimeSentinelDeviceMap[SENTINEL_DEVICEMAPS];
 struct RuntimeSentinel
 {
 public:
@@ -989,7 +995,7 @@ namespace Messages
 	struct Stdio_fgetc
 	{
 		RuntimeSentinelMessage Base;
-		int Ch; FILE *File;
+		FILE *File;
 		__device__ Stdio_fgetc(FILE *file)
 			: Base(false, 5, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fgetc)); }
 		int RC; 
@@ -999,19 +1005,17 @@ namespace Messages
 	{
 		__device__ inline static char *Prepare(Stdio_fgets *t, char *data, char *dataEnd)
 		{
-			int strLength = (t->Str ? _strlen(t->Str) + 1 : 0);
-			char *str = (char *)(data += _ROUND8(sizeof(*t)));
-			char *end = (char *)(data += strLength);
+			t->Str = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += 1024);
 			if (end > dataEnd) return nullptr;
-			_memcpy(str, t->Str, strLength);
-			t->Str = str;
 			return end;
 		}
 		RuntimeSentinelMessage Base;
-		const char *Str; FILE *File;
+		int Num; FILE *File;
 		__device__ Stdio_fgets(char *str, int num, FILE *file)
 			: Base(false, 6, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fgets)); }
-		int RC; 
+		char *Str; 
+		char *RC; 
 	};
 
 	struct Stdio_fputc
@@ -1046,9 +1050,8 @@ namespace Messages
 	{
 		__device__ inline static char *Prepare(Stdio_fread *t, char *data, char *dataEnd)
 		{
-			size_t size = t->Size * t->Num;
 			t->Ptr = (char *)(data += _ROUND8(sizeof(*t)));
-			char *end = (char *)(data += size);
+			char *end = (char *)(data += 1024);
 			if (end > dataEnd) return nullptr;
 			return end;
 		}

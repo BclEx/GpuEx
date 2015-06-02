@@ -669,8 +669,7 @@ __device__ RC Vdbe::Bind_Int64(Vdbe *p, int i, int64 value)
 __device__ RC Vdbe::Bind_Null(Vdbe *p, int i)
 {
 	RC rc = VdbeUnbind(p, i);
-	if (rc == RC_OK)
-		_mutex_leave(p->Ctx->Mutex);
+	if (rc == RC_OK) { _mutex_leave(p->Ctx->Mutex); }
 	return rc;
 }
 __device__ RC Vdbe::Bind_Text(Vdbe *p, int i, const char *z, int n, void (*del)(void *)) { return BindText(p, i, z, n, del, TEXTENCODE_UTF8); }

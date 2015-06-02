@@ -16,8 +16,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{25F3C375-592E-44E7-ACD1-28CB3CA31BAE}</ProjectGuid>
+    <ProjectGuid>{B2502BD4-B988-4CEB-B089-B8F3FE289E17}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
+    <ProjectName>drm</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'" Label="Configuration">
@@ -75,7 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="chown.cpp" />
+    <ClCompile Include="drm.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />

@@ -18,6 +18,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0C32BFEA-04C5-4010-9CBE-85D7EAFC49A6}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
+    <ProjectName>dgrep</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'" Label="Configuration">
@@ -75,7 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="grep.cpp" />
+    <ClCompile Include="dgrep.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />

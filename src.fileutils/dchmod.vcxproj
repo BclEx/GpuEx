@@ -16,8 +16,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{16F32343-9A7F-4FB2-B371-E5EC1620632F}</ProjectGuid>
+    <ProjectGuid>{AA39133E-E5E2-41E8-A12C-B8E051BD51DA}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
+    <ProjectName>dchmod</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'" Label="Configuration">
@@ -75,7 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="more.c" />
+    <ClCompile Include="dchmod.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="futils.h" />
