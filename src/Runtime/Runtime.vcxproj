@@ -33,6 +33,7 @@
     <ClInclude Include="Runtime.h" />
     <ClInclude Include="RuntimeGL.h" />
     <ClInclude Include="RuntimeHost.h" />
+    <ClInclude Include="RuntimeOS.h" />
     <ClInclude Include="RuntimeTypes.h" />
     <ClInclude Include="VisualHost.h" />
   </ItemGroup>
@@ -66,6 +67,7 @@
     <ClCompile Include="Runtime+Status.cu" />
     <ClCompile Include="Runtime+TagBase.cu" />
     <ClCompile Include="Runtime+Sentinel.cu" />
+    <ClCompile Include="RuntimeOS.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RT.cu" />
@@ -93,6 +95,7 @@
     <None Include="Runtime+Status.cu" />
     <None Include="Runtime+TagBase.cu" />
     <CudaCompile Include="Runtime+Sentinel.cu" />
+    <None Include="RuntimeOS.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.cpp" />

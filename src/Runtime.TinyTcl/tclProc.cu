@@ -18,12 +18,9 @@
 
 #include "tclInt.h"
 
-/*
-* Forward references to procedures defined later in this file:
-*/
-
-__device__ static int InterpProc _ANSI_ARGS_((ClientData clientData, Tcl_Interp *interp, int argc, char **argv));
-__device__ static void ProcDeleteProc _ANSI_ARGS_((ClientData clientData));
+// Forward references to procedures defined later in this file:
+__device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int argc, char **argv);
+__device__ static void ProcDeleteProc(ClientData clientData);
 
 /*
 *----------------------------------------------------------------------
@@ -102,9 +99,9 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			result = TCL_ERROR;
 			goto procError;
 		}
-		nameLength = strlen(fieldValues[0]) + 1;
+		nameLength = _strlen(fieldValues[0]) + 1;
 		if (fieldCount == 2) {
-			valueLength = strlen(fieldValues[1]) + 1;
+			valueLength = _strlen(fieldValues[1]) + 1;
 		} else {
 			valueLength = 0;
 		}

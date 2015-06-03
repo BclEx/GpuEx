@@ -1,5 +1,5 @@
-#ifndef __RUNTIMEOS_CU_H__
-#define __RUNTIMEOS_CU_H__
+#ifndef __RUNTIMEOS_H__
+#define __RUNTIMEOS_H__
 
 //////////////////////
 // OPERATING SYSTEM
@@ -33,27 +33,27 @@ typedef HANDLE *LPHANDLE;
 #define ERROR_NOT_LOCKED                 158L
 #define ERROR_ALREADY_EXISTS             183L
 
-typedef struct
-{
-	unsigned __int64 *Internal;
-	unsigned __int64 *InternalHigh;
-	union
-	{
-		struct
-		{
-			DWORD Offset;
-			DWORD OffsetHigh;
-		};
-		void *Pointer;
-	};
-	HANDLE hEvent;
-} osOVERLAPPED;
+//typedef struct
+//{
+//	unsigned __int64 *Internal;
+//	unsigned __int64 *InternalHigh;
+//	union
+//	{
+//		struct
+//		{
+//			DWORD Offset;
+//			DWORD OffsetHigh;
+//		};
+//		void *Pointer;
+//	};
+//	HANDLE hEvent;
+//} OSOVERLAPPED;
 
-__device__ void _sleep(DWORD milliseconds);
-__device__ DWORD osGetLastError();
-__device__ DWORD osWaitForSingleObject(HANDLE handle, DWORD milliseconds);
-__device__ HANDLE osCreateMutexA(void *dummy1, bool initialOwner, const char *name);
-__device__ void osReleaseMutex(HANDLE h);
+//__device__ void osSleep(DWORD milliseconds);
+//__device__ DWORD osGetLastError();
+//__device__ DWORD osWaitForSingleObject(HANDLE handle, DWORD milliseconds);
+//__device__ HANDLE osCreateMutexA(void *dummy1, bool initialOwner, const char *name);
+//__device__ void osReleaseMutex(HANDLE h);
 
 #pragma endregion
 
@@ -112,23 +112,40 @@ __device__ void osReleaseMutex(HANDLE h);
 #define FILE_MAP_ALL_ACCESS FILE_MAP_WRITE|FILE_MAP_READ
 #endif
 
-__device__ HANDLE osCreateFileA(char *path, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dummy1, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, DWORD dummy2);
-__device__ DWORD osGetFileAttributesA(char *path);
-__device__ DWORD osGetFileSize(HANDLE h, LPDWORD upper);
-__device__ DWORD osDeleteFileA(char *path);
-__device__ bool osCloseHandle(HANDLE h);
-__device__ bool osReadFile(HANDLE h, void *buffer, DWORD amount, LPDWORD read, OVERLAPPED *overlapped);
-__device__ bool osWriteFile(HANDLE h, const void *buffer, DWORD amount, LPDWORD write, OVERLAPPED *overlapped);
-__device__ bool osSetFilePointer(HANDLE h, __int64 offset, int *reserved, int seekType);
-__device__ bool osSetEndOfFile(HANDLE h);
-__device__ bool osFlushFileBuffers(HANDLE h);
-
+//__device__ HANDLE osCreateFileA(char *path, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dummy1, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, DWORD dummy2);
+//__device__ DWORD osGetFileAttributesA(char *path);
+//__device__ DWORD osGetFileSize(HANDLE h, LPDWORD upper);
+//__device__ DWORD osDeleteFileA(char *path);
+//__device__ bool osCloseHandle(HANDLE h);
+//__device__ bool osReadFile(HANDLE h, void *buffer, DWORD amount, LPDWORD read, OSOVERLAPPED *overlapped);
+//__device__ bool osWriteFile(HANDLE h, const void *buffer, DWORD amount, LPDWORD write, OSOVERLAPPED *overlapped);
+//__device__ bool osSetFilePointer(HANDLE h, __int64 offset, int *reserved, int seekType);
+//__device__ bool osSetEndOfFile(HANDLE h);
+//__device__ bool osFlushFileBuffers(HANDLE h);
 //
-__device__ HANDLE osCreateFileMappingA(HANDLE h, void *dummy1, int flags, void *dummy2, int length, const char *name);
-__device__ HANDLE osMapViewOfFile(HANDLE h, int flags, void *dummy1, void *dummy2, int length);
-__device__ void osUnmapViewOfFile(HANDLE h);
+////
+//__device__ HANDLE osCreateFileMappingA(HANDLE h, void *dummy1, int flags, void *dummy2, int length, const char *name);
+//__device__ HANDLE osMapViewOfFile(HANDLE h, int flags, void *dummy1, void *dummy2, int length);
+//__device__ void osUnmapViewOfFile(HANDLE h);
 
 #pragma endregion
 
+//////////////////////
+// DIR ENT
+#pragma region DIR ENT
 
-#endif // __RUNTIMEOS_CU_H__
+typedef struct DIR DIR;
+
+struct dirent
+{
+	char *d_name;
+};
+
+__device__ DIR *_opendir(const char *);
+__device__ int _closedir(DIR *);
+__device__ struct dirent *_readdir(DIR *);
+__device__ void _rewinddir(DIR *);
+
+#pragma endregion
+
+#endif // __RUNTIMEOS_H__

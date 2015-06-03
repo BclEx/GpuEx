@@ -26,23 +26,15 @@
 //#include <unistd.h>
 //#include <syslog.h>
 
-/*
-* The variable below caches the name of the current working directory
-* in order to avoid repeated calls to getwd.  The string is malloc-ed.
-* NULL means the cache needs to be refreshed.
-*/
-
+// The variable below caches the name of the current working directory in order to avoid repeated calls to getwd.  The string is malloc-ed. NULL means the cache needs to be refreshed.
 __device__ static char *currentDir =  NULL;
 
-/*
-* Prototypes for local procedures defined in this file:
-*/
-
+// Prototypes for local procedures defined in this file:
 #ifndef NO_FORK
-__device__ static int CleanupChildren _ANSI_ARGS_((Tcl_Interp *interp, int numPids, int *pidPtr, int errorId));
+__device__ static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidPtr, int errorId);
 #endif
-__device__ static char *GetFileType _ANSI_ARGS_((int mode));
-__device__ static int StoreStatData _ANSI_ARGS_((Tcl_Interp *interp, char *varName, struct stat *statPtr));
+__device__ static char *GetFileType(int mode);
+__device__ static int StoreStatData(Tcl_Interp *interp, char *varName, struct stat *statPtr);
 
 /*
 *----------------------------------------------------------------------

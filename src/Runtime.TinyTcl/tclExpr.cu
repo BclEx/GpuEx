@@ -155,11 +155,11 @@ char *operatorStrings[] = {
 * Declarations for local procedures to this file:
 */
 
-__device__ static int		ExprGetValue _ANSI_ARGS_((Tcl_Interp *interp, ExprInfo *infoPtr, int prec, Value *valuePtr));
-__device__ static int		ExprLex _ANSI_ARGS_((Tcl_Interp *interp, ExprInfo *infoPtr, Value *valuePtr));
-__device__ static void		ExprMakeString _ANSI_ARGS_((Value *valuePtr));
-__device__ static int		ExprParseString _ANSI_ARGS_((Tcl_Interp *interp, char *string, Value *valuePtr));
-__device__ static int		ExprTopLevel _ANSI_ARGS_((Tcl_Interp *interp, char *string, Value *valuePtr));
+__device__ static int ExprGetValue(Tcl_Interp *interp, ExprInfo *infoPtr, int prec, Value *valuePtr);
+__device__ static int ExprLex(Tcl_Interp *interp, ExprInfo *infoPtr, Value *valuePtr);
+__device__ static void ExprMakeString(Value *valuePtr);
+__device__ static int ExprParseString(Tcl_Interp *interp, char *string, Value *valuePtr);
+__device__ static int ExprTopLevel(Tcl_Interp *interp, char *string, Value *valuePtr);
 
 /*
 *--------------------------------------------------------------

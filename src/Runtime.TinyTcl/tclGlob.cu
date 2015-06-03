@@ -19,29 +19,17 @@
 #include "tclInt.h"
 #include "tclOS.h"
 
-/*
-* The structure below is used to keep track of a globbing result
-* being built up (i.e. a partial list of file names).  The list
-* grows dynamically to be as big as needed.
-*/
-
+// The structure below is used to keep track of a globbing result being built up (i.e. a partial list of file names).  The list grows dynamically to be as big as needed.
 typedef struct {
-	char *result;		/* Pointer to result area. */
-	int totalSpace;		/* Total number of characters allocated
-						* for result. */
-	int spaceUsed;		/* Number of characters currently in use
-						* to hold the partial result (not including
-						* the terminating NULL). */
-	int dynamic;		/* 0 means result is static space, 1 means
-						* it's dynamic. */
+	char *result;		// Pointer to result area.
+	int totalSpace;		// Total number of characters allocated for result.
+	int spaceUsed;		// Number of characters currently in use to hold the partial result (not including the terminating NULL). */
+	int dynamic;		// 0 means result is static space, 1 means it's dynamic.
 } GlobResult;
 
-/*
-* Declarations for procedures local to this file:
-*/
-
-__device__ static void AppendResult _ANSI_ARGS_((Tcl_Interp *interp, char *dir, char *separator, char *name, int nameLength));
-__device__ static int DoGlob _ANSI_ARGS_((Tcl_Interp *interp, char *dir, char *rem));
+// Declarations for procedures local to this file:
+__device__ static void AppendResult(Tcl_Interp *interp, char *dir, char *separator, char *name, int nameLength);
+__device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem);
 
 /*
 *----------------------------------------------------------------------
@@ -60,17 +48,12 @@ __device__ static int DoGlob _ANSI_ARGS_((Tcl_Interp *interp, char *dir, char *r
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static void AppendResult(Tcl_Interp *interp, char *dir, char *separator, char *name, int nameLength)
 {
 	int dirFlags, nameFlags;
 	char *p, saved;
 
-	/*
-	* Next, see if we can put together a valid list element from dir
-	* and name by calling Tcl_AppendResult.
-	*/
-
+	// Next, see if we can put together a valid list element from dir and name by calling Tcl_AppendResult.
 	if (*dir == 0) {
 		dirFlags = 0;
 	} else {
@@ -89,14 +72,9 @@ __device__ static void AppendResult(Tcl_Interp *interp, char *dir, char *separat
 		return;
 	}
 
-	/*
-	* This name has weird characters in it, so we have to convert it to
-	* a list element.  To do that, we have to merge the characters
-	* into a single name.  To do that, malloc a buffer to hold everything.
-	*/
-
-	p = (char *) ckalloc((unsigned) (strlen(dir) + strlen(separator)
-		+ nameLength + 1));
+	// This name has weird characters in it, so we have to convert it to a list element.  To do that, we have to merge the characters
+	// into a single name.  To do that, malloc a buffer to hold everything.
+	p = (char *) ckalloc((unsigned) (strlen(dir) + strlen(separator) + nameLength + 1));
 	_sprintf(p, "%s%s%s", dir, separator, name);
 	name[nameLength] = saved;
 	Tcl_AppendElement(interp, p, 0);
@@ -210,14 +188,14 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		} else {
 			newRem = (char *) ckalloc((unsigned) remLength);
 		}
-		l1 = openBrace-rem;
+		l1 = (int)(openBrace-rem);
 		_strncpy(newRem, rem, l1);
 		for (p = openBrace; *p != '}'; ) {
 			element = p+1;
 			for (p = element; ((*p != '}') && (*p != ',')); p++) {
 				/* Empty loop body:  just find end of this element. */
 			}
-			l2 = p - element;
+			l2 = (int)(p - element);
 			_strncpy(newRem+l1, element, l2);
 			_strcpy(newRem+l1+l2, closeBrace+1);
 			if (DoGlob(interp, dir, newRem) != TCL_OK) {
@@ -265,7 +243,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 			return TCL_ERROR;
 		}
 		l1 = _strlen(dir);
-		l2 = (p - rem);
+		l2 = (int)(p - rem);
 		if (l2 < STATIC_SIZE) {
 			pattern = static2;
 		} else {
@@ -324,14 +302,14 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 	*/
 
 	if (*p == 0) {
-		AppendResult(interp, dir, separator, rem, p-rem);
+		AppendResult(interp, dir, separator, rem, (int)(p-rem));
 	} else {
 		int l1, l2;
 		char *newDir;
 		char static1[STATIC_SIZE];
 
 		l1 = _strlen(dir);
-		l2 = l1 + (p - rem) + 2;
+		l2 = l1 + (int)(p - rem) + 2;
 		if (l2 <= STATIC_SIZE) {
 			newDir = static1;
 		} else {
@@ -497,14 +475,14 @@ notEnoughArgs:
 		*/
 
 		thisName = argv[i];
-		#if TCL_PW
+#if TCL_PW
 		if (*thisName == '~') {
 			thisName = Tcl_TildeSubst(interp, thisName);
 			if (thisName == NULL) {
 				return TCL_ERROR;
 			}
 		}
-		#endif
+#endif
 		if (*thisName == '/') {
 			result = DoGlob(interp, "/", thisName+1);
 		} else {

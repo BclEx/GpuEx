@@ -18,45 +18,29 @@
 
 #include "tclInt.h"
 
-/*
-* Imported library procedures for which there are no header files:
-*/
-
+// Imported library procedures for which there are no header files:
 //extern void panic();
 
-/*
-* When there are this many entries per bucket, on average, rebuild
-* the hash table to make it larger.
-*/
-
+// When there are this many entries per bucket, on average, rebuild the hash table to make it larger.
 #define REBUILD_MULTIPLIER	3
 
 
-/*
-* The following macro takes a preliminary integer hash value and
-* produces an index into a hash tables bucket list.  The idea is
-* to make it so that preliminary values that are arbitrarily similar
-* will end up in different buckets.  The hash function was taken
-* from a random-number generator.
-*/
+// The following macro takes a preliminary integer hash value and produces an index into a hash tables bucket list.  The idea is
+// to make it so that preliminary values that are arbitrarily similar will end up in different buckets.  The hash function was taken
+// from a random-number generator.
+#define RANDOM_INDEX(tablePtr, i) (((((long) (i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
-#define RANDOM_INDEX(tablePtr, i) \
-	(((((long) (i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
-
-/*
-* Procedure prototypes for static procedures in this file:
-*/
-
-__device__ static Tcl_HashEntry *ArrayFind _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key));
-__device__ static Tcl_HashEntry *ArrayCreate _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key, int *newPtr));
-__device__ static Tcl_HashEntry *BogusFind _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key));
-__device__ static Tcl_HashEntry *BogusCreate _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key, int *newPtr));
-__device__ static unsigned int HashString _ANSI_ARGS_((char *string));
-__device__ static void RebuildTable _ANSI_ARGS_((Tcl_HashTable *tablePtr));
-__device__ static Tcl_HashEntry *StringFind _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key));
-__device__ static Tcl_HashEntry *StringCreate _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key, int *newPtr));
-__device__ static Tcl_HashEntry *OneWordFind _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key));
-__device__ static Tcl_HashEntry *OneWordCreate _ANSI_ARGS_((Tcl_HashTable *tablePtr, char *key, int *newPtr));
+// Procedure prototypes for static procedures in this file:
+__device__ static Tcl_HashEntry *ArrayFind(Tcl_HashTable *tablePtr, char *key);
+__device__ static Tcl_HashEntry *ArrayCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
+__device__ static Tcl_HashEntry *BogusFind(Tcl_HashTable *tablePtr, char *key);
+__device__ static Tcl_HashEntry *BogusCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
+__device__ static unsigned int HashString(char *string);
+__device__ static void RebuildTable(Tcl_HashTable *tablePtr);
+__device__ static Tcl_HashEntry *StringFind(Tcl_HashTable *tablePtr, char *key);
+__device__ static Tcl_HashEntry *StringCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
+__device__ static Tcl_HashEntry *OneWordFind(Tcl_HashTable *tablePtr, char *key);
+__device__ static Tcl_HashEntry *OneWordCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr);
 
 /*
 *----------------------------------------------------------------------
@@ -75,7 +59,6 @@ __device__ static Tcl_HashEntry *OneWordCreate _ANSI_ARGS_((Tcl_HashTable *table
 *
 *----------------------------------------------------------------------
 */
-
 __device__ void Tcl_InitHashTable(register Tcl_HashTable *tablePtr, int keyType)
 {
 	tablePtr->buckets = tablePtr->staticBuckets;
@@ -117,7 +100,6 @@ __device__ void Tcl_InitHashTable(register Tcl_HashTable *tablePtr, int keyType)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ void Tcl_DeleteHashEntry(Tcl_HashEntry *entryPtr)
 {
 	register Tcl_HashEntry *prevPtr;
@@ -155,7 +137,6 @@ __device__ void Tcl_DeleteHashEntry(Tcl_HashEntry *entryPtr)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ void Tcl_DeleteHashTable(register Tcl_HashTable *tablePtr)
 {
 	register Tcl_HashEntry *hPtr, *nextPtr;
@@ -212,7 +193,6 @@ __device__ void Tcl_DeleteHashTable(register Tcl_HashTable *tablePtr)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr)
 {
 	searchPtr->tablePtr = tablePtr;
@@ -239,7 +219,6 @@ __device__ Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr, Tcl_HashSe
 *
 *----------------------------------------------------------------------
 */
-
 __device__ Tcl_HashEntry *Tcl_NextHashEntry(register Tcl_HashSearch *searchPtr)
 {
 	Tcl_HashEntry *hPtr;
@@ -275,7 +254,6 @@ __device__ Tcl_HashEntry *Tcl_NextHashEntry(register Tcl_HashSearch *searchPtr)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 {
 #define NUM_COUNTERS 10
@@ -284,10 +262,7 @@ __device__ char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 	register Tcl_HashEntry *hPtr;
 	char *result, *p;
 
-	/*
-	* Compute a histogram of bucket usage.
-	*/
-
+	// Compute a histogram of bucket usage.
 	for (i = 0; i < NUM_COUNTERS; i++) {
 		count[i] = 0;
 	}
@@ -307,21 +282,15 @@ __device__ char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 		average += (tmp+1.0)*(tmp/tablePtr->numEntries)/2.0;
 	}
 
-	/*
-	* Print out the histogram and a few other pieces of information.
-	*/
-
+	// Print out the histogram and a few other pieces of information.
 	result = (char *) ckalloc((unsigned) ((NUM_COUNTERS*60) + 300));
-	_sprintf(result, "%d entries in table, %d buckets\n",
-		tablePtr->numEntries, tablePtr->numBuckets);
+	_sprintf(result, "%d entries in table, %d buckets\n", tablePtr->numEntries, tablePtr->numBuckets);
 	p = result + _strlen(result);
 	for (i = 0; i < NUM_COUNTERS; i++) {
-		_sprintf(p, "number of buckets with %d entries: %d\n",
-			i, count[i]);
+		_sprintf(p, "number of buckets with %d entries: %d\n", i, count[i]);
 		p += _strlen(p);
 	}
-	_sprintf(p, "number of buckets with more %d or more entries: %d\n",
-		NUM_COUNTERS, overflow);
+	_sprintf(p, "number of buckets with more %d or more entries: %d\n", NUM_COUNTERS, overflow);
 	p += _strlen(p);
 	_sprintf(p, "average search distance for entry: %.1f", average);
 	return result;
@@ -344,7 +313,6 @@ __device__ char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static unsigned int HashString(register char *string)
 {
 	register unsigned int result;
@@ -395,7 +363,6 @@ __device__ static unsigned int HashString(register char *string)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static Tcl_HashEntry *StringFind(Tcl_HashTable *tablePtr, char *key)
 {
 	register Tcl_HashEntry *hPtr;
@@ -442,7 +409,6 @@ __device__ static Tcl_HashEntry *StringFind(Tcl_HashTable *tablePtr, char *key)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static Tcl_HashEntry *StringCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr)
 {
 	register Tcl_HashEntry *hPtr;
@@ -511,7 +477,6 @@ __device__ static Tcl_HashEntry *StringCreate(Tcl_HashTable *tablePtr, char *key
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static Tcl_HashEntry *OneWordFind(Tcl_HashTable *tablePtr, register char *key)
 {
 	register Tcl_HashEntry *hPtr;
@@ -552,7 +517,6 @@ __device__ static Tcl_HashEntry *OneWordFind(Tcl_HashTable *tablePtr, register c
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static Tcl_HashEntry *OneWordCreate(Tcl_HashTable *tablePtr, register char *key, int *newPtr)
 {
 	register Tcl_HashEntry *hPtr;
@@ -614,7 +578,6 @@ __device__ static Tcl_HashEntry *OneWordCreate(Tcl_HashTable *tablePtr, register
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static Tcl_HashEntry *ArrayFind(Tcl_HashTable *tablePtr, char *key)
 {
 	register Tcl_HashEntry *hPtr;
@@ -667,7 +630,6 @@ __device__ static Tcl_HashEntry *ArrayFind(Tcl_HashTable *tablePtr, char *key)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static Tcl_HashEntry *ArrayCreate(Tcl_HashTable *tablePtr, register char *key, int *newPtr)
 {
 	register Tcl_HashEntry *hPtr;
@@ -745,7 +707,6 @@ __device__ static Tcl_HashEntry *ArrayCreate(Tcl_HashTable *tablePtr, register c
 *
 *----------------------------------------------------------------------
 */
-
 /* ARGSUSED */
 __device__ static Tcl_HashEntry *BogusFind(Tcl_HashTable *tablePtr, char *key)
 {
@@ -770,7 +731,6 @@ __device__ static Tcl_HashEntry *BogusFind(Tcl_HashTable *tablePtr, char *key)
 *
 *----------------------------------------------------------------------
 */
-
 /* ARGSUSED */
 __device__ static Tcl_HashEntry *BogusCreate(Tcl_HashTable *tablePtr, char *key, int *newPtr)
 {
@@ -797,7 +757,6 @@ __device__ static Tcl_HashEntry *BogusCreate(Tcl_HashTable *tablePtr, char *key,
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static void RebuildTable(register Tcl_HashTable *tablePtr)
 {
 	int oldSize, count, index;

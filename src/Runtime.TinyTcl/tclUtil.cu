@@ -45,11 +45,8 @@
 #define USE_BRACES		2
 #define BRACES_UNMATCHED	4
 
-/*
-* Function prototypes for local procedures in this file:
-*/
-
-__device__ static void SetupAppendBuffer _ANSI_ARGS_((Interp *iPtr, int newSpace));
+// Function prototypes for local procedures in this file:
+__device__ static void SetupAppendBuffer(Interp *iPtr, int newSpace);
 
 /*
 *----------------------------------------------------------------------
@@ -143,7 +140,7 @@ __device__ int TclFindElement(Tcl_Interp *interp, register char *list, char **el
 			if (openBraces == 1) {
 				char *p2;
 
-				size = p - list;
+				size = (int)(p - list);
 				p++;
 				if ((__isascii(*p) && _isspace(*p)) || (*p == 0)) {
 					goto done;
@@ -187,7 +184,7 @@ __device__ int TclFindElement(Tcl_Interp *interp, register char *list, char **el
 		case '\t':
 		case '\v':
 			if ((openBraces == 0) && !inQuotes) {
-				size = p - list;
+				size = (int)(p - list);
 				goto done;
 			}
 			break;
@@ -200,7 +197,7 @@ __device__ int TclFindElement(Tcl_Interp *interp, register char *list, char **el
 			if (inQuotes) {
 				char *p2;
 
-				size = p-list;
+				size = (int)(p - list);
 				p++;
 				if ((__isascii(*p) && _isspace(*p)) || (*p == 0)) {
 					goto done;
@@ -231,7 +228,7 @@ __device__ int TclFindElement(Tcl_Interp *interp, register char *list, char **el
 					TCL_STATIC);
 				return TCL_ERROR;
 			}
-			size = p - list;
+			size = (int)(p - list);
 			goto done;
 
 		}
@@ -493,7 +490,7 @@ __device__ int Tcl_ScanElement(const char *string, int *flagPtr)
 	* two spaces for braces.
 	*/
 
-	return 2*(p-string) + 2;
+	return 2*(int)(p-string) + 2;
 }
 
 /*
@@ -518,7 +515,7 @@ __device__ int Tcl_ScanElement(const char *string, int *flagPtr)
 *----------------------------------------------------------------------
 */
 
-__device__ int Tcl_ConvertElement(register CONST char *src, char *dst, int flags)
+__device__ int Tcl_ConvertElement(register const char *src, char *dst, int flags)
 {
 	register char *p = dst;
 
@@ -603,7 +600,7 @@ __device__ int Tcl_ConvertElement(register CONST char *src, char *dst, int flags
 		}
 	}
 	*p = '\0';
-	return p-dst;
+	return (int)(p-dst);
 }
 
 /*
@@ -1020,7 +1017,7 @@ void
 *----------------------------------------------------------------------
 */
 
-__device__ void Tcl_AppendElement(Tcl_Interp *interp, CONST char *string, int noSep)
+__device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, int noSep)
 {
 	register Interp *iPtr = (Interp *) interp;
 	int size, flags;

@@ -95,12 +95,9 @@ __constant__ char tclTypeTable[] = {
 	TCL_NORMAL,        TCL_CLOSE_BRACE,   TCL_NORMAL,        TCL_NORMAL,
 };
 
-/*
-* Function prototypes for procedures local to this file:
-*/
-
-__device__ static char *QuoteEnd _ANSI_ARGS_((char *string, int term));
-__device__ static char *VarNameEnd _ANSI_ARGS_((char *string));
+// Function prototypes for procedures local to this file:
+__device__ static char *QuoteEnd(char *string, int term);
+__device__ static char *VarNameEnd(char *string);
 
 /*
 *----------------------------------------------------------------------
@@ -126,9 +123,9 @@ __device__ static char *VarNameEnd _ANSI_ARGS_((char *string));
 *----------------------------------------------------------------------
 */
 
-__device__ char Tcl_Backslash(CONST char *src, int *readPtr)
+__device__ char Tcl_Backslash(const char *src, int *readPtr)
 {
-	register CONST char *p = src+1;
+	register const char *p = src+1;
 	char result;
 	int count;
 
@@ -387,7 +384,7 @@ __device__ int TclParseNestedCmd(Tcl_Interp *interp, char *string, int flags, ch
 	}
 	(*termPtr) += 1;
 	length = _strlen(iPtr->result);
-	shortfall = length + 1 - (pvPtr->end - pvPtr->next);
+	shortfall = length + 1 - (int)(pvPtr->end - pvPtr->next);
 	if (shortfall > 0) {
 		(*pvPtr->expandProc)(pvPtr, shortfall);
 	}
@@ -773,7 +770,7 @@ __device__ void TclExpandParseValue(register ParseValue *pvPtr, int needed)
 	* to meet the demand, whichever produces a larger new buffer.
 	*/
 
-	newSpace = (pvPtr->end - pvPtr->buffer) + 1;
+	newSpace = (int)(pvPtr->end - pvPtr->buffer) + 1;
 	if (newSpace < needed) {
 		newSpace += needed;
 	} else {

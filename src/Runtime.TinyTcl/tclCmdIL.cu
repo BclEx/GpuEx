@@ -25,7 +25,7 @@
 * Forward declarations for procedures defined in this file:
 */
 
-__device__ static int SortCompareProc _ANSI_ARGS_((CONST VOID *first, CONST VOID *second));
+__device__ static int SortCompareProc(const VOID *first, const VOID *second);
 
 /*
 *----------------------------------------------------------------------
@@ -1113,12 +1113,12 @@ __device__ int Tcl_LsearchCmd(ClientData notUsed, Tcl_Interp *interp, int argc, 
 * the proper ordering between two elements.
 */
 
-__device__ static int SortCompareProc(CONST VOID *first, CONST VOID *second)
+__device__ static int SortCompareProc(const VOID *first, const VOID *second)
 {
 	return _strcmp(*((char **) first), *((char **) second));
 }
 
-__device__ static int IntegerSortCompareProc(CONST VOID *first, CONST VOID *second)
+__device__ static int IntegerSortCompareProc(const VOID *first, const VOID *second)
 {
 	int firstint = _atoi(*((char **) first));
 	int secondint = _atoi(*((char **) second));
@@ -1131,7 +1131,7 @@ __device__ static char *sort_command = 0;
 __device__ static int sort_result = TCL_OK;
 __device__ static Tcl_Interp *sort_interp = 0;
 
-__device__ static int CommandSortCompareProc(CONST VOID *first, CONST VOID *second)
+__device__ static int CommandSortCompareProc(const VOID *first, const VOID *second)
 {
 	char *cmdargv[4];
 	char *compare_cmd;

@@ -24,27 +24,20 @@
 
 #include "tclInt.h"
 
-/*
-* The strings below are used to indicate what went wrong when a
-* variable access is denied.
-*/
-
+// The strings below are used to indicate what went wrong when a variable access is denied.
 __constant__ static char *noSuchVar = "no such variable";
 __constant__ static char *isArray = "variable is array";
 __constant__ static char *needArray = "variable isn't array";
 __constant__ static char *noSuchElement = "no such element in array";
 __constant__ static char *traceActive = "trace is active on variable";
 
-/*
-* Forward references to procedures defined later in this file:
-*/
-
-__device__ static  char *CallTraces _ANSI_ARGS_((Interp *iPtr, Var *arrayPtr, Tcl_HashEntry *hPtr, char *part1, char *part2, int flags));
-__device__ static void DeleteSearches _ANSI_ARGS_((Var *arrayVarPtr));
-__device__ static void DeleteArray _ANSI_ARGS_((Interp *iPtr, char *arrayName, Var *varPtr, int flags));
-__device__ static Var *NewVar _ANSI_ARGS_((int space));
-__device__ static ArraySearch *ParseSearchId _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr, char *varName, char *string));
-__device__ static void VarErrMsg _ANSI_ARGS_((Tcl_Interp *interp, char *part1, char *part2, char *operation, char *reason));
+// Forward references to procedures defined later in this file:
+__device__ static  char *CallTraces(Interp *iPtr, Var *arrayPtr, Tcl_HashEntry *hPtr, char *part1, char *part2, int flags);
+__device__ static void DeleteSearches(Var *arrayVarPtr);
+__device__ static void DeleteArray(Interp *iPtr, char *arrayName, Var *varPtr, int flags);
+__device__ static Var *NewVar(int space);
+__device__ static ArraySearch *ParseSearchId(Tcl_Interp *interp, Var *varPtr, char *varName, char *string);
+__device__ static void VarErrMsg(Tcl_Interp *interp, char *part1, char *part2, char *operation, char *reason);
 
 /*
 *----------------------------------------------------------------------
@@ -1364,7 +1357,7 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 
 	c = argv[1][0];
 	length = _strlen(argv[1]);
-	if ((c == 'a') && (_strncmp(argv[1], "anymore", length) == 0)) {
+	if ((c == 'a') && (!_strncmp(argv[1], "anymore", length))) {
 		ArraySearch *searchPtr;
 
 		if (argc != 4) {
@@ -1396,7 +1389,7 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 		}
 		interp->result = "1";
 		return TCL_OK;
-	} else if ((c == 'd') && (_strncmp(argv[1], "donesearch", length) == 0)) {
+	} else if ((c == 'd') && (!_strncmp(argv[1], "donesearch", length))) {
 		ArraySearch *searchPtr, *prevPtr;
 
 		if (argc != 4) {
@@ -1422,14 +1415,14 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 			}
 		}
 		ckfree((char *) searchPtr);
-	} else if ((c == 'e') && (_strncmp(argv[1], "exists", length) == 0)) {
+	} else if ((c == 'e') && (!_strncmp(argv[1], "exists", length))) {
 		if (argc != 3) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"",
 				argv[0], " exists arrayName\"", (char *) NULL);
 			return TCL_ERROR;
 		}
 		interp->result = (notArray) ? "0" : "1";
-	} else if ((c == 'g') && (strncmp(argv[1], "get", length) == 0)) {
+	} else if ((c == 'g') && (!_strncmp(argv[1], "get", length))) {
 		Tcl_HashSearch search;
 		Var *varPtr2;
 		char *name;
@@ -1455,7 +1448,7 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 				Tcl_AppendElement(interp, name, 0);
 				Tcl_AppendElement(interp, varPtr2->value.string, 0);
 		}
-	} else if ((c == 'n') && (strncmp(argv[1], "names", length) == 0)
+	} else if ((c == 'n') && (!_strncmp(argv[1], "names", length))
 		&& (length >= 2)) {
 			Tcl_HashSearch search;
 			Var *varPtr2;
@@ -1481,7 +1474,7 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 					}
 					Tcl_AppendElement(interp, name, 0);
 			}
-	} else if ((c == 'u') && (strncmp(argv[1], "unset", length) == 0)
+	} else if ((c == 'u') && (!_strncmp(argv[1], "unset", length))
 		&& (length >= 2)) {
 			Tcl_HashSearch search;
 			Var *varPtr2;
@@ -1508,7 +1501,7 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 						}
 					}
 			}
-	} else if ((c == 'n') && (strncmp(argv[1], "nextelement", length) == 0)
+	} else if ((c == 'n') && (!_strncmp(argv[1], "nextelement", length))
 		&& (length >= 2)) {
 			ArraySearch *searchPtr;
 			Tcl_HashEntry *hPtr;
@@ -1544,7 +1537,7 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 				}
 			}
 			interp->result = Tcl_GetHashKey(varPtr->value.tablePtr, hPtr);
-	} else if ((c == 's') && (strncmp(argv[1], "set", length) == 0)
+	} else if ((c == 's') && (!_strncmp(argv[1], "set", length))
 		&& (length >= 2)) {
 			char **valueArgv;
 			int valueArgc, i, result;
@@ -1573,7 +1566,7 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 setDone:
 			ckfree((char *) valueArgv);
 			return result;
-	} else if ((c == 's') && (strncmp(argv[1], "size", length) == 0)
+	} else if ((c == 's') && (!_strncmp(argv[1], "size", length))
 		&& (length >= 2)) {
 			Tcl_HashSearch search;
 			Var *varPtr2;
@@ -1596,7 +1589,7 @@ setDone:
 				}
 			}
 			_sprintf(interp->result, "%d", size);
-	} else if ((c == 's') && (strncmp(argv[1], "startsearch", length) == 0)
+	} else if ((c == 's') && (!_strncmp(argv[1], "startsearch", length))
 		&& (length >= 2)) {
 			ArraySearch *searchPtr;
 

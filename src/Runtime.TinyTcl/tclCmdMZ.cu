@@ -39,7 +39,7 @@ typedef struct {
 * Forward declarations for procedures defined in this file:
 */
 
-__device__ static char * TraceVarProc _ANSI_ARGS_((ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags));
+__device__ static char * TraceVarProc(ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags);
 
 /* Resize the regexp cache */
 __device__ static void expand_regexp_cache(Interp *iPtr, int newsize)

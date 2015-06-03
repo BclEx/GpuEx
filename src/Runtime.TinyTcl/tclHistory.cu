@@ -75,25 +75,19 @@
 * has finished).
 */
 
-/*
-* Default space allocation for command strings:
-*/
-
+// Default space allocation for command strings:
 #define INITIAL_CMD_SIZE 40
 
-/*
-* Forward declarations for procedures defined later in this file:
-*/
-
-__device__ static void DoRevs _ANSI_ARGS_((Interp *iPtr));
-__device__ static HistoryEvent *GetEvent _ANSI_ARGS_((Interp *iPtr, char *string));
-__device__ static char *GetWords _ANSI_ARGS_((Interp *iPtr, char *command, char *words));
-__device__ static void InitHistory _ANSI_ARGS_((Interp *iPtr));
-__device__ static void InsertRev _ANSI_ARGS_((Interp *iPtr, HistoryRev *revPtr));
-__device__ static void MakeSpace _ANSI_ARGS_((HistoryEvent *hPtr, int size));
-__device__ static void RevCommand _ANSI_ARGS_((Interp *iPtr, char *string));
-__device__ static void RevResult _ANSI_ARGS_((Interp *iPtr, char *string));
-__device__ static int SubsAndEval _ANSI_ARGS_((Interp *iPtr, char *cmd, char *old, char *new_));
+// Forward declarations for procedures defined later in this file:
+__device__ static void DoRevs(Interp *iPtr);
+__device__ static HistoryEvent *GetEvent(Interp *iPtr, char *string);
+__device__ static char *GetWords(Interp *iPtr, char *command, char *words);
+__device__ static void InitHistory(Interp *iPtr);
+__device__ static void InsertRev(Interp *iPtr, HistoryRev *revPtr);
+__device__ static void MakeSpace(HistoryEvent *hPtr, int size);
+__device__ static void RevCommand(Interp *iPtr, char *string);
+__device__ static void RevResult(Interp *iPtr, char *string);
+__device__ static int SubsAndEval(Interp *iPtr, char *cmd, char *old, char *new_);
 
 /*
 *----------------------------------------------------------------------
@@ -253,14 +247,14 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 	c = argv[1][0];
 	length = _strlen(argv[1]);
 
-	if ((c == 'a') && (_strncmp(argv[1], "add", length)) == 0) {
+	if ((c == 'a') && (!_strncmp(argv[1], "add", length))) {
 		if ((argc != 3) && (argc != 4)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" add event ?exec?\"", (char *) NULL);
 			return TCL_ERROR;
 		}
 		if (argc == 4) {
-			if (_strncmp(argv[3], "exec", _strlen(argv[3])) != 0) {
+			if (_strncmp(argv[3], "exec", _strlen(argv[3]))) {
 				Tcl_AppendResult(interp, "bad argument \"", argv[3],
 					"\": should be \"exec\"", (char *) NULL);
 				return TCL_ERROR;
@@ -268,7 +262,7 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 			return Tcl_RecordAndEval(interp, argv[2], 0);
 		}
 		return Tcl_RecordAndEval(interp, argv[2], TCL_NO_EVAL);
-	} else if ((c == 'c') && (_strncmp(argv[1], "change", length)) == 0) {
+	} else if ((c == 'c') && (!_strncmp(argv[1], "change", length))) {
 		if ((argc != 3) && (argc != 4)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" change newValue ?event?\"", (char *) NULL);
@@ -294,7 +288,7 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 		MakeSpace(eventPtr, (int) _strlen(argv[2]) + 1);
 		_strcpy(eventPtr->command, argv[2]);
 		return TCL_OK;
-	} else if ((c == 'e') && (_strncmp(argv[1], "event", length)) == 0) {
+	} else if ((c == 'e') && (!_strncmp(argv[1], "event", length))) {
 		if (argc > 3) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" event ?event?\"", (char *) NULL);
@@ -307,7 +301,7 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 		RevResult(iPtr, eventPtr->command);
 		Tcl_SetResult(interp, eventPtr->command, TCL_VOLATILE);
 		return TCL_OK;
-	} else if ((c == 'i') && (_strncmp(argv[1], "info", length)) == 0) {
+	} else if ((c == 'i') && (!_strncmp(argv[1], "info", length))) {
 		int count, indx, i;
 		char *newline;
 
@@ -364,7 +358,7 @@ infoCmd:
 				Tcl_AppendResult(interp, cur, (char *) NULL);
 		}
 		return TCL_OK;
-	} else if ((c == 'k') && (_strncmp(argv[1], "keep", length)) == 0) {
+	} else if ((c == 'k') && (!_strncmp(argv[1], "keep", length))) {
 		int count, i, src;
 		HistoryEvent *events;
 
@@ -430,7 +424,7 @@ infoCmd:
 		}
 		iPtr->numEvents = count;
 		return TCL_OK;
-	} else if ((c == 'n') && (_strncmp(argv[1], "nextid", length)) == 0) {
+	} else if ((c == 'n') && (!_strncmp(argv[1], "nextid", length))) {
 		if (argc != 2) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" nextid\"", (char *) NULL);
@@ -438,7 +432,7 @@ infoCmd:
 		}
 		_sprintf(iPtr->result, "%d", iPtr->curEventNum+1);
 		return TCL_OK;
-	} else if ((c == 'r') && (_strncmp(argv[1], "redo", length)) == 0) {
+	} else if ((c == 'r') && (!_strncmp(argv[1], "redo", length))) {
 		if (argc > 3) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" redo ?event?\"", (char *) NULL);
@@ -450,7 +444,7 @@ infoCmd:
 		}
 		RevCommand(iPtr, eventPtr->command);
 		return Tcl_Eval(interp, eventPtr->command, 0, 0);
-	} else if ((c == 's') && (_strncmp(argv[1], "substitute", length)) == 0) {
+	} else if ((c == 's') && (!_strncmp(argv[1], "substitute", length))) {
 		if ((argc > 5) || (argc < 4)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" substitute old new ?event?\"", (char *) NULL);
@@ -461,7 +455,7 @@ infoCmd:
 			return TCL_ERROR;
 		}
 		return SubsAndEval(iPtr, eventPtr->command, argv[2], argv[3]);
-	} else if ((c == 'w') && (strncmp(argv[1], "words", length)) == 0) {
+	} else if ((c == 'w') && (!_strncmp(argv[1], "words", length))) {
 		char *words;
 
 		if ((argc != 3) && (argc != 4)) {

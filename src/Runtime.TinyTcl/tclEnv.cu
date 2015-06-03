@@ -42,9 +42,7 @@ static EnvInterp *firstInterpPtr;
  * Declarations for local procedures defined in this file:
  */
 
-static char *		EnvTraceProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, char *name2,
-			    int flags));
+static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags);
 
 /*
  *----------------------------------------------------------------------
