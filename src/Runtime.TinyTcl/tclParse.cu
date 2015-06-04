@@ -28,7 +28,7 @@
 * ones.
 */
 
-__constant__ char tclTypeTable[] = {
+__constant__ char _tclTypeTable[] = {
 	TCL_NORMAL,        TCL_NORMAL,        TCL_NORMAL,        TCL_NORMAL,
 	TCL_NORMAL,        TCL_NORMAL,        TCL_NORMAL,        TCL_NORMAL,
 	TCL_NORMAL,        TCL_NORMAL,        TCL_NORMAL,        TCL_NORMAL,

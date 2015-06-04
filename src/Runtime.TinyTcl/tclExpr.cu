@@ -124,7 +124,7 @@ typedef struct {
 * Precedence table.  The values for non-operator token types are ignored.
 */
 
-int precTable[] = {
+__constant__ int _precTable[] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	11, 11, 11,				/* MULT, DIVIDE, MOD */
 	10, 10,				/* PLUS, MINUS */
@@ -595,7 +595,7 @@ __device__ static int ExprGetValue(Tcl_Interp *interp, register ExprInfo *infoPt
 			*/
 
 			operator_ = infoPtr->token;
-			result = ExprGetValue(interp, infoPtr, precTable[infoPtr->token],
+			result = ExprGetValue(interp, infoPtr, _precTable[infoPtr->token],
 				valuePtr);
 			if (result != TCL_OK) {
 				goto done;
@@ -667,7 +667,7 @@ __device__ static int ExprGetValue(Tcl_Interp *interp, register ExprInfo *infoPt
 				goto syntaxError;
 			}
 		}
-		if (precTable[operator_] <= prec) {
+		if (_precTable[operator_] <= prec) {
 			result = TCL_OK;
 			goto done;
 		}
@@ -689,13 +689,13 @@ __device__ static int ExprGetValue(Tcl_Interp *interp, register ExprInfo *infoPt
 			if (((operator_ == AND) && !valuePtr->intValue)
 				|| ((operator_ == OR) && valuePtr->intValue)) {
 					iPtr->noEval++;
-					result = ExprGetValue(interp, infoPtr, precTable[operator_],
+					result = ExprGetValue(interp, infoPtr, _precTable[operator_],
 						&value2);
 					iPtr->noEval--;
 			} else if (operator_ == QUESTY) {
 				if (valuePtr->intValue != 0) {
 					valuePtr->pv.next = valuePtr->pv.buffer;
-					result = ExprGetValue(interp, infoPtr, precTable[operator_],
+					result = ExprGetValue(interp, infoPtr, _precTable[operator_],
 						valuePtr);
 					if (result != TCL_OK) {
 						goto done;
@@ -705,12 +705,12 @@ __device__ static int ExprGetValue(Tcl_Interp *interp, register ExprInfo *infoPt
 					}
 					value2.pv.next = value2.pv.buffer;
 					iPtr->noEval++;
-					result = ExprGetValue(interp, infoPtr, precTable[operator_],
+					result = ExprGetValue(interp, infoPtr, _precTable[operator_],
 						&value2);
 					iPtr->noEval--;
 				} else {
 					iPtr->noEval++;
-					result = ExprGetValue(interp, infoPtr, precTable[operator_],
+					result = ExprGetValue(interp, infoPtr, _precTable[operator_],
 						&value2);
 					iPtr->noEval--;
 					if (result != TCL_OK) {
@@ -720,15 +720,15 @@ __device__ static int ExprGetValue(Tcl_Interp *interp, register ExprInfo *infoPt
 						goto syntaxError;
 					}
 					valuePtr->pv.next = valuePtr->pv.buffer;
-					result = ExprGetValue(interp, infoPtr, precTable[operator_],
+					result = ExprGetValue(interp, infoPtr, _precTable[operator_],
 						valuePtr);
 				}
 			} else {
-				result = ExprGetValue(interp, infoPtr, precTable[operator_],
+				result = ExprGetValue(interp, infoPtr, _precTable[operator_],
 					&value2);
 			}
 		} else {
-			result = ExprGetValue(interp, infoPtr, precTable[operator_],
+			result = ExprGetValue(interp, infoPtr, _precTable[operator_],
 				&value2);
 		}
 		if (result != TCL_OK) {
@@ -1007,12 +1007,8 @@ divideByZero:
 			valuePtr->intValue |= value2.intValue;
 			break;
 
-			/*
-			* For AND and OR, we know that the first value has already
-			* been converted to an integer.  Thus we need only consider
-			* the possibility of int vs. double for the second value.
-			*/
-
+			// For AND and OR, we know that the first value has already been converted to an integer.  Thus we need only consider
+			// the possibility of int vs. double for the second value.
 		case AND:
 			if (value2.type == TYPE_DOUBLE) {
 				value2.intValue = value2.doubleValue != 0;
@@ -1043,16 +1039,12 @@ done:
 
 syntaxError:
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "syntax error in expression \"",
-		infoPtr->originalExpr, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "syntax error in expression \"", infoPtr->originalExpr, "\"", (char *)NULL);
 	result = TCL_ERROR;
 	goto done;
 
 illegalType:
-	Tcl_AppendResult(interp, "can't use ", (badType == TYPE_DOUBLE) ?
-		"floating-point value" : "non-numeric string",
-		" as operand of \"", operatorStrings[operator_], "\"",
-		(char *) NULL);
+	Tcl_AppendResult(interp, "can't use ", (badType == TYPE_DOUBLE ? "floating-point value" : "non-numeric string", " as operand of \"", operatorStrings[operator_], "\"", (char *)NULL));
 	result = TCL_ERROR;
 	goto done;
 }

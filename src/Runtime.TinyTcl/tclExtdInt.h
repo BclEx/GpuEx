@@ -118,22 +118,22 @@ extern char *tclXWrongArgs;
 #define STRNEQU(str1, str2, cnt) (((str1)[0] == (str2)[0]) && (!_strncmp (str1, str2, cnt)))
 
 // Prototypes for utility procedures.
-void Tcl_DynBufInit(dynamicBuf_t *dynBufPtr);
-void Tcl_DynBufFree(dynamicBuf_t *dynBufPtr);
-void Tcl_DynBufReturn(Tcl_Interp *interp, dynamicBuf_t *dynBufPtr);
-void Tcl_DynBufAppend(dynamicBuf_t *dynBufPtr, char *newStr);
-void Tcl_ExpandDynBuf(dynamicBuf_t *dynBufPtr, int appendSize);
-int Tcl_DynamicFgets(dynamicBuf_t *dynBufPtr, FILE *filePtr, int append);
-int Tcl_ConvertFileHandle(Tcl_Interp *interp, char *handle);
-time_t Tcl_GetDate(char *p, time_t now, long zone);
-int Tcl_ProcessSignal(Tcl_Interp *interp, int cmdResultCode);
-void Tcl_RegExpClean(regexp_pt regExpPtr);
-int Tcl_RegExpCompile(Tcl_Interp *interp, regexp_pt regExpPtr, char *expression, int flags);
-int Tcl_RegExpExecute(Tcl_Interp *interp, regexp_pt regExpPtr, char *matchStrIn, char *matchStrLower);
-void Tcl_ResetSignals();
-int Tcl_ReturnDouble(Tcl_Interp *interp, double number);
-int Tcl_SetupFileEntry(Tcl_Interp *interp, int fileNum, int readable, int writable);
-void Tcl_SetupSigInt();
+__device__ void Tcl_DynBufInit(dynamicBuf_t *dynBufPtr);
+__device__ void Tcl_DynBufFree(dynamicBuf_t *dynBufPtr);
+__device__ void Tcl_DynBufReturn(Tcl_Interp *interp, dynamicBuf_t *dynBufPtr);
+__device__ void Tcl_DynBufAppend(dynamicBuf_t *dynBufPtr, char *newStr);
+__device__ void Tcl_ExpandDynBuf(dynamicBuf_t *dynBufPtr, int appendSize);
+__device__ int Tcl_DynamicFgets(dynamicBuf_t *dynBufPtr, FILE *filePtr, int append);
+__device__ int Tcl_ConvertFileHandle(Tcl_Interp *interp, char *handle);
+__device__ time_t Tcl_GetDate(char *p, time_t now, long zone);
+__device__ int Tcl_ProcessSignal(Tcl_Interp *interp, int cmdResultCode);
+__device__ void Tcl_RegExpClean(regexp_pt regExpPtr);
+__device__ int Tcl_RegExpCompile(Tcl_Interp *interp, regexp_pt regExpPtr, char *expression, int flags);
+__device__ int Tcl_RegExpExecute(Tcl_Interp *interp, regexp_pt regExpPtr, char *matchStrIn, char *matchStrLower);
+__device__ void Tcl_ResetSignals();
+__device__ int Tcl_ReturnDouble(Tcl_Interp *interp, double number);
+__device__ int Tcl_SetupFileEntry(Tcl_Interp *interp, int fileNum, int readable, int writable);
+__device__ void Tcl_SetupSigInt();
 
 // Definitions required to initialize all extended commands.  These are either the command executors or initialization routines that do the command
 // initialization.  The initialization routines are used when there is more to initializing the command that just binding the command name to the
@@ -141,129 +141,129 @@ void Tcl_SetupSigInt();
 // type `Tcl_CmdProc', but this blows up some compilers, so they are declared with an ANSI prototype.
 
 // from tclXbsearch.c
-extern int Tcl_BsearchCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_BsearchCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXchmod.c
-extern int Tcl_ChmodCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_ChownCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_ChgrpCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ChmodCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ChownCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ChgrpCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXclock.c
-extern int Tcl_GetclockCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_FmtclockCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_GetclockCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FmtclockCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXcnvclock.c
-extern int Tcl_ConvertclockCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ConvertclockCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXcmdloop.c
-extern int Tcl_CommandloopCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CommandloopCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXdebug.c
-extern void Tcl_InitDebug(Tcl_Interp *interp);
+extern __device__ void Tcl_InitDebug(Tcl_Interp *interp);
 
 // from tclXgen.c
-extern void TclX_InitGeneral(Tcl_Interp *interp);
+extern __device__ void TclX_InitGeneral(Tcl_Interp *interp);
 
 // from tclXdup.c
-extern int Tcl_DupCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_DupCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXfcntl.c
-extern int Tcl_FcntlCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FcntlCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXfilecmds.c
-extern int Tcl_PipeCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_CopyfileCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_FstatCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LgetsCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_FlockCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_FunlockCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_PipeCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CopyfileCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FstatCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LgetsCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FlockCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FunlockCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXfilescan.c
-extern void Tcl_InitFilescan(Tcl_Interp *interp);
+extern __device__ void Tcl_InitFilescan(Tcl_Interp *interp);
 
 // from tclXfmath.c
-extern int Tcl_AcosCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_AsinCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_AtanCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_CosCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_SinCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_TanCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_CoshCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_SinhCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_TanhCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_ExpCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LogCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_Log10Cmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_SqrtCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_FabsCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_FloorCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_CeilCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_FmodCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_PowCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_AcosCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_AsinCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_AtanCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CosCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_SinCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_TanCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CoshCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_SinhCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_TanhCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ExpCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LogCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_Log10Cmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_SqrtCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FabsCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FloorCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CeilCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_FmodCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_PowCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXgeneral.c
-extern int Tcl_EchoCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_InfoxCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LoopCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_EchoCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_InfoxCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LoopCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXid.c
-extern int Tcl_IdCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_IdCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXkeylist.c
-extern int Tcl_KeyldelCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_KeylgetCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_KeylkeysCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_KeylsetCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_KeyldelCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_KeylgetCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_KeylkeysCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_KeylsetCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXlist.c
-extern int Tcl_LvarpopCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LvarcatCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LvarpushCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LemptyCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LvarpopCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LvarcatCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LvarpushCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LemptyCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXmath.c
-extern int Tcl_MaxCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_MinCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_RandomCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_MaxCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_MinCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_RandomCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXmsgcat.c
-extern void Tcl_InitMsgCat(Tcl_Interp *interp);
+extern __device__ void Tcl_InitMsgCat(Tcl_Interp *interp);
 
 // from tclXprocess.c
-extern int Tcl_ExeclCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_ForkCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_WaitCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ExeclCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ForkCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_WaitCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXprofile.c
-void Tcl_InitProfile(Tcl_Interp *interp);
+extern __device__ void Tcl_InitProfile(Tcl_Interp *interp);
 
 // from tclXselect.c
-extern int Tcl_SelectCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_SelectCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXsignal.c
-extern void Tcl_InitSignalHandling(Tcl_Interp *interp);
+extern __device__ void Tcl_InitSignalHandling(Tcl_Interp *interp);
 
 // from tclXstring.c
-extern int Tcl_CindexCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_ClengthCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_CrangeCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_ReplicateCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_TranslitCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_CtypeCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CindexCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ClengthCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CrangeCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_ReplicateCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_TranslitCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_CtypeCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXlib.c
-extern int Tcl_Demand_loadCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LoadlibindexCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_Demand_loadCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LoadlibindexCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXunixcmds.c
-extern int Tcl_AlarmCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_SleepCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_SystemCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_TimesCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_UmaskCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_LinkCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_UnlinkCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_MkdirCmd(ClientData, Tcl_Interp*, int, char**);
-extern int Tcl_RmdirCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_AlarmCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_SleepCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_SystemCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_TimesCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_UmaskCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_LinkCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_UnlinkCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_MkdirCmd(ClientData, Tcl_Interp*, int, char**);
+extern __device__ int Tcl_RmdirCmd(ClientData, Tcl_Interp*, int, char**);
 
 #endif

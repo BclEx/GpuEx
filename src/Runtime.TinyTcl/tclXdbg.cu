@@ -80,7 +80,7 @@ static void PrintArg(FILE *filePtr, char *argStr, int noTruncate)
 	int idx, argLen, printLen;
 	int quote_it;
 
-	argLen = strlen(argStr);
+	argLen = _strlen(argStr);
 	printLen = argLen;
 	if ((!noTruncate) && (printLen > ARG_TRUNCATE_SIZE))
 		printLen = ARG_TRUNCATE_SIZE;
@@ -112,6 +112,7 @@ static void PrintArg(FILE *filePtr, char *argStr, int noTruncate)
 static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *command, int argc, char **argv)
 {
 	int idx, printLen;
+#if NOTSUP
 	static struct timeval last_time;
 	struct timeval this_time;
 
@@ -123,14 +124,14 @@ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *command, int a
 		fprintf(traceInfoPtr->filePtr, " (%luus)", (this_time.tv_sec - last_time.tv_sec)*1000000 + (this_time.tv_usec - last_time.tv_usec));
 	}
 	last_time = this_time;
-
+#endif
 	if (level > 20)
 		level = 20;
 	for (idx = 0; idx < level; idx++) 
 		fprintf(traceInfoPtr->filePtr, "  ");
 
 	if (traceInfoPtr->noEval) {
-		printLen = strlen(command);
+		printLen = _strlen(command);
 		if ((!traceInfoPtr->noTruncate) && (printLen > CMD_TRUNCATE_SIZE))
 			printLen = CMD_TRUNCATE_SIZE;
 
@@ -250,8 +251,7 @@ static int Tcl_CmdtraceCmd (ClientData clientData, Tcl_Interp *interp, int argc,
 			infoPtr->procCalls = TRUE;
 			continue;
 		}
-		if (STRNEQU(argv [idx], "std", 3) || 
-			STRNEQU(argv [idx], "file", 4)) {
+		if (STRNEQU(argv [idx], "std", 3) || STRNEQU(argv [idx], "file", 4)) {
 				if (fileHandle != NULL)
 					goto argumentError;
 				fileHandle = argv [idx];
@@ -268,12 +268,10 @@ static int Tcl_CmdtraceCmd (ClientData clientData, Tcl_Interp *interp, int argc,
 	}
 	if (fileHandle != NULL) {
 		OpenFile *tclFilePtr;
-
 		if (TclGetOpenFile(interp, fileHandle, &tclFilePtr) != TCL_OK)
 			return TCL_ERROR;
 		if (!tclFilePtr->writable) {
-			Tcl_AppendResult(interp, "file not writable: ", fileHandle,
-				(char *) NULL);
+			Tcl_AppendResult(interp, "file not writable: ", fileHandle, (char *)NULL);
 			return TCL_ERROR;
 		}
 		infoPtr->filePtr = tclFilePtr->f;
@@ -281,11 +279,9 @@ static int Tcl_CmdtraceCmd (ClientData clientData, Tcl_Interp *interp, int argc,
 
 	infoPtr->traceHolder = Tcl_CreateTrace(interp, infoPtr->depth, CmdTraceRoutine, (ClientData)infoPtr);
 	return TCL_OK;
-
 argumentError:
 	Tcl_AppendResult (interp, "wrong # args: ", argv [0], " level | on [noeval] [notruncate] [flush] [procs]", "[handle] | off | depth", (char *)NULL);
 	return TCL_ERROR;
-
 invalidOption:
 	Tcl_AppendResult (interp, "invalid option: expected ", "one of \"noeval\", \"notruncate\", \"procs\", ", "\"flush\" or a file handle", (char *) NULL);
 	return TCL_ERROR;
@@ -300,10 +296,9 @@ invalidOption:
 *
 *-----------------------------------------------------------------------------
 */
-static void CleanUpDebug(ClientData clientData)
+__device__ static void CleanUpDebug(ClientData clientData)
 {
 	traceInfo_pt infoPtr = (traceInfo_pt)clientData;
-
 	if (infoPtr->traceHolder != NULL)
 		Tcl_DeleteTrace(infoPtr->interp, infoPtr->traceHolder);
 	ckfree((char *)infoPtr);
@@ -318,12 +313,10 @@ static void CleanUpDebug(ClientData clientData)
 *
 *-----------------------------------------------------------------------------
 */
-void Tcl_InitDebug(Tcl_Interp *interp)
+__device__ void Tcl_InitDebug(Tcl_Interp *interp)
 {
 	traceInfo_pt infoPtr;
-
 	infoPtr = (traceInfo_pt)ckalloc(sizeof(traceInfo_t));
-
 	infoPtr->interp      = interp;
 	infoPtr->traceHolder = NULL;
 	infoPtr->noEval      = FALSE;
@@ -331,8 +324,5 @@ void Tcl_InitDebug(Tcl_Interp *interp)
 	infoPtr->procCalls   = FALSE;
 	infoPtr->flush       = FALSE;
 	infoPtr->depth       = 0;
-
 	Tcl_CreateCommand(interp, "cmdtrace", Tcl_CmdtraceCmd, (ClientData)infoPtr, CleanUpDebug);
 }
-
-

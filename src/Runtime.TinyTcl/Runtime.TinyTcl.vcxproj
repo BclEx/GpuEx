@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <LD></LD>
+    <LD>
+    </LD>
     <LC>35</LC>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
@@ -70,7 +71,6 @@
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_LIB;_TEST;TCL_GENERIC_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -170,9 +170,7 @@
     <ClCompile Include="tclTest.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclunxaz.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="tclUnixAZ.cu" />
     <ClCompile Include="tclUtil.cu" />
     <ClCompile Include="tcluxstr.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
@@ -186,8 +184,7 @@
     <ClCompile Include="tinytcl.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
-    <None Include="RTinyTcl.cu" />
-    <None Include="dos.cu" />
+    <CudaCompile Include="RTinyTcl.cu" />
     <None Include="dos.cu" />
     <None Include="noextensions.cu" />
     <None Include="panic.cu" />
@@ -212,7 +209,7 @@
     <None Include="tclParse.cu" />
     <None Include="tclProc.cu" />
     <None Include="tclTest.cu" />
-    <None Include="tclunxaz.cu" />
+    <None Include="tclUnixAZ.cu" />
     <None Include="tclUtil.cu" />
     <None Include="tcluxstr.cu" />
     <None Include="tcluxutl.cu" />

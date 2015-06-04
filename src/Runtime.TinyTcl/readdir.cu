@@ -30,24 +30,21 @@
 *      Standard TCL result.
 *-----------------------------------------------------------------------------
 */
-int Tcl_ReaddirCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ReaddirCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
 {
 	char *dirPath;
 	DIR *dirPtr;
 	struct dirent *entryPtr;
 
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "bad # args: ", argv [0], 
-			" dirPath", (char *) NULL);
+		Tcl_AppendResult(interp, "bad # args: ", argv [0], " dirPath", (char *) NULL);
 		return TCL_ERROR;
 	}
 
 	dirPath = argv[1];
-
 	dirPtr = _opendir(dirPath);
 	if (dirPtr == NULL)  {
-		Tcl_AppendResult(interp, dirPath, ": ", Tcl_UnixError (interp),
-			(char *) NULL);
+		Tcl_AppendResult(interp, dirPath, ": ", Tcl_UnixError (interp), (char *)NULL);
 		goto errorExit;
 	}
 
@@ -55,11 +52,10 @@ int Tcl_ReaddirCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **a
 		entryPtr = _readdir(dirPtr);
 		if (entryPtr == NULL)
 			break;
-		if (entryPtr->d_name [0] == '.') {
-			if (entryPtr->d_name [1] == '\0')
+		if (entryPtr->d_name[0] == '.') {
+			if (entryPtr->d_name[1] == '\0')
 				continue;
-			if ((entryPtr->d_name [1] == '.') &&
-				(entryPtr->d_name [2] == '\0'))
+			if ((entryPtr->d_name[1] == '.') && (entryPtr->d_name[2] == '\0'))
 				continue;
 		}
 		Tcl_AppendElement(interp, entryPtr->d_name, 0);
@@ -71,11 +67,9 @@ errorExit:
 	return TCL_ERROR;
 }
 
-int Tcl_InitReaddir(Tcl_Interp *interp)
+__device__ int Tcl_InitReaddir(Tcl_Interp *interp)
 {
-	Tcl_CreateCommand(interp, "readdir", Tcl_ReaddirCmd, (ClientData) NULL,
-		(Tcl_CmdDeleteProc *) NULL);
-
+	Tcl_CreateCommand(interp, "readdir", Tcl_ReaddirCmd, (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 	return TCL_OK;
 }
 

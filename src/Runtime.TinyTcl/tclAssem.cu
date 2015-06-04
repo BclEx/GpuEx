@@ -19,28 +19,17 @@
 
 #include "tclInt.h"
 
-/*
-* The structure below is the internal representation for a command
-* buffer, which is used to hold a piece of a command until a full
-* command is available.  When a full command is available, it will
-* be returned to the user, but it will also be retained in the buffer
-* until the NEXT call to Tcl_AssembleCmd, at which point it will be
-* removed.
-*/
+// The structure below is the internal representation for a command buffer, which is used to hold a piece of a command until a full
+// command is available.  When a full command is available, it will be returned to the user, but it will also be retained in the buffer
+// until the NEXT call to Tcl_AssembleCmd, at which point it will be removed.
 
 typedef struct {
-	char *buffer;		/* Storage for command being assembled.
-						* Malloc-ed, and grows as needed. */
-	int bufSize;		/* Total number of bytes in buffer. */
-	int bytesUsed;		/* Number of bytes in buffer currently
-						* occupied (0 means there is not a
-						* buffered incomplete command). */
+	char *buffer;		// Storage for command being assembled. Malloc-ed, and grows as needed.
+	int bufSize;		// Total number of bytes in buffer.
+	int bytesUsed;		// Number of bytes in buffer currently occupied (0 means there is not a buffered incomplete command).
 } CmdBuf;
 
-/*
-* Default amount of space to allocate in command buffer:
-*/
-
+// Default amount of space to allocate in command buffer:
 #define CMD_BUF_SIZE 100
 
 /*
@@ -59,13 +48,11 @@ typedef struct {
 *
 *----------------------------------------------------------------------
 */
-
 __device__ Tcl_CmdBuf Tcl_CreateCmdBuf()
 {
 	register CmdBuf *cbPtr;
-
-	cbPtr = (CmdBuf *) ckalloc(sizeof(CmdBuf));
-	cbPtr->buffer = (char *) ckalloc(CMD_BUF_SIZE);
+	cbPtr = (CmdBuf *)ckalloc(sizeof(CmdBuf));
+	cbPtr->buffer = (char *)ckalloc(CMD_BUF_SIZE);
 	cbPtr->buffer[0] = '\0';
 	cbPtr->bufSize = CMD_BUF_SIZE;
 	cbPtr->bytesUsed = 0;
@@ -88,13 +75,11 @@ __device__ Tcl_CmdBuf Tcl_CreateCmdBuf()
 *
 *----------------------------------------------------------------------
 */
-
 __device__ void Tcl_DeleteCmdBuf(Tcl_CmdBuf buffer)
 {
-	register CmdBuf *cbPtr = (CmdBuf *) buffer;
-
+	register CmdBuf *cbPtr = (CmdBuf *)buffer;
 	ckfree(cbPtr->buffer);
-	ckfree((char *) cbPtr);
+	ckfree((char *)cbPtr);
 }
 
 /*
@@ -126,14 +111,10 @@ __device__ void Tcl_DeleteCmdBuf(Tcl_CmdBuf buffer)
 
 __device__ char *Tcl_AssembleCmd(Tcl_CmdBuf buffer, char *string)
 {
-	register CmdBuf *cbPtr = (CmdBuf *) buffer;
+	register CmdBuf *cbPtr = (CmdBuf *)buffer;
 	int length, totalLength, c;
 
-	/*
-	* If an empty string is passed in, just pretend the current
-	* command is complete, whether it really is or not.
-	*/
-
+	// If an empty string is passed in, just pretend the current command is complete, whether it really is or not.
 	length = _strlen(string);
 	if (length == 0) {
 		cbPtr->buffer[cbPtr->bytesUsed] = 0;
@@ -141,23 +122,17 @@ __device__ char *Tcl_AssembleCmd(Tcl_CmdBuf buffer, char *string)
 		return cbPtr->buffer;
 	}
 
-	/*
-	* Add the new information to the buffer.  If the current buffer
-	* isn't large enough, grow it by at least a factor of two, or
-	* enough to hold the new text.
-	*/
-
+	// Add the new information to the buffer.  If the current buffer isn't large enough, grow it by at least a factor of two, or enough to hold the new text.
 	length = _strlen(string);
 	totalLength = cbPtr->bytesUsed + length + 1;
 	if (totalLength > cbPtr->bufSize) {
 		unsigned int newSize;
 		char *newBuf;
-
 		newSize = cbPtr->bufSize*2;
 		if (newSize < totalLength) {
 			newSize = totalLength;
 		}
-		newBuf = (char *) ckalloc(newSize);
+		newBuf = (char *)ckalloc(newSize);
 		_strcpy(newBuf, cbPtr->buffer);
 		ckfree(cbPtr->buffer);
 		cbPtr->buffer = newBuf;
@@ -166,10 +141,7 @@ __device__ char *Tcl_AssembleCmd(Tcl_CmdBuf buffer, char *string)
 	_strcpy(cbPtr->buffer+cbPtr->bytesUsed, string);
 	cbPtr->bytesUsed += length;
 
-	/*
-	* See if there is now a complete command in the buffer.
-	*/
-
+	// See if there is now a complete command in the buffer.
 	c = cbPtr->buffer[cbPtr->bytesUsed-1];
 	if ((c != '\n') && (c != ';')) {
 		return NULL;
@@ -198,11 +170,9 @@ __device__ char *Tcl_AssembleCmd(Tcl_CmdBuf buffer, char *string)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ int Tcl_CommandComplete(char *cmd)
 {
 	register char *p = cmd;
-
 	while (1) {
 		while (_isspace(*p)) {
 			p++;

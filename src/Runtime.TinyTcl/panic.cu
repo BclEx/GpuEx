@@ -36,7 +36,7 @@
 *----------------------------------------------------------------------
 */
 
-void panic(char *format, char *arg1, char *arg2, char *arg3, char *arg4, char *arg5, char *arg6, char *arg7, char *arg8)
+__device__ void panic(char *format, char *arg1, char *arg2, char *arg3, char *arg4, char *arg5, char *arg6, char *arg7, char *arg8)
 {
 	fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 	fflush(stderr);
