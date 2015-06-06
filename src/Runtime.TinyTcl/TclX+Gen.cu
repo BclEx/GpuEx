@@ -342,7 +342,7 @@ __device__ int Tcl_KillCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		return TCL_OK;
 	}
 
-	Tcl_AppendResult (interp, "Failed to deliver signal", (char *) NULL);
+	Tcl_AppendResult (interp, "Failed to deliver signal", (char *)NULL);
 #endif
 	return TCL_ERROR;
 }

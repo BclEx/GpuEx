@@ -29,8 +29,8 @@
 
 //#include <alloc.h>
 
-/* From generated load_extensions.c */
-void init_extensions(Tcl_Interp *interp);
+// From generated load_extensions.c
+__device__ void init_extensions(Tcl_Interp *interp);
 
 Tcl_Interp *interp;
 Tcl_CmdBuf buffer;
@@ -44,7 +44,7 @@ char initCmd[] = "puts stdout \"\nEmbedded Tcl 6.8.0\n\"";//; source tcl_sys/aut
 int cmdCheckmem(ClientData clientData, Tcl_Interp *interp, int argc, char *argv)
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileName\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileName\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	strcpy(dumpFile, argv[1]);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 		// Before we eval the file, create an argv global containing the remaining arguments
 		args = Tcl_Merge(argc - 2, argv + 2);
 		Tcl_SetVar(interp, "argv", args, TCL_GLOBAL_ONLY);
-		ckfree(args);
+		_freeFast(args);
 
 		result = Tcl_EvalFile(interp, filename);
 		if (result != TCL_OK)
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 #ifndef TCL_GENERIC_ONLY
 		if (!noninteractive)
 		{
-			result = Tcl_Eval(interp, initCmd, 0, (char **) NULL);
+			result = Tcl_Eval(interp, initCmd, 0, (char **)NULL);
 			if (result != TCL_OK)
 			{
 				printf("%s\n", interp->result);

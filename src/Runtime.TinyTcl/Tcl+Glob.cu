@@ -64,9 +64,9 @@ __device__ static void AppendResult(Tcl_Interp *interp, char *dir, char *separat
 	Tcl_ScanElement(name, &nameFlags);
 	if ((dirFlags == 0) && (nameFlags == 0)) {
 		if (*interp->result != 0) {
-			Tcl_AppendResult(interp, " ", dir, separator, name, (char *) NULL);
+			Tcl_AppendResult(interp, " ", dir, separator, name, (char *)NULL);
 		} else {
-			Tcl_AppendResult(interp, dir, separator, name, (char *) NULL);
+			Tcl_AppendResult(interp, dir, separator, name, (char *)NULL);
 		}
 		name[nameLength] = saved;
 		return;
@@ -74,11 +74,11 @@ __device__ static void AppendResult(Tcl_Interp *interp, char *dir, char *separat
 
 	// This name has weird characters in it, so we have to convert it to a list element.  To do that, we have to merge the characters
 	// into a single name.  To do that, malloc a buffer to hold everything.
-	p = (char *) ckalloc((unsigned) (strlen(dir) + strlen(separator) + nameLength + 1));
+	p = (char *) _allocFast((unsigned) (strlen(dir) + strlen(separator) + nameLength + 1));
 	_sprintf(p, "%s%s%s", dir, separator, name);
 	name[nameLength] = saved;
 	Tcl_AppendElement(interp, p, 0);
-	ckfree(p);
+	_freeFast(p);
 }
 
 /*
@@ -186,7 +186,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		if (remLength <= STATIC_SIZE) {
 			newRem = static1;
 		} else {
-			newRem = (char *) ckalloc((unsigned) remLength);
+			newRem = (char *) _allocFast((unsigned) remLength);
 		}
 		l1 = (int)(openBrace-rem);
 		_strncpy(newRem, rem, l1);
@@ -203,7 +203,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 			}
 		}
 		if (remLength > STATIC_SIZE) {
-			ckfree(newRem);
+			_freeFast(newRem);
 		}
 		return TCL_OK;
 	}
@@ -239,7 +239,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		if (d == NULL) {
 			Tcl_ResetResult(interp);
 			Tcl_AppendResult(interp, "couldn't read directory \"",
-				dirName, "\": ", Tcl_UnixError(interp), (char *) NULL);
+				dirName, "\": ", Tcl_UnixError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
 		l1 = _strlen(dir);
@@ -247,7 +247,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		if (l2 < STATIC_SIZE) {
 			pattern = static2;
 		} else {
-			pattern = (char *) ckalloc((unsigned) (l2+1));
+			pattern = (char *) _allocFast((unsigned) (l2+1));
 		}
 		_strncpy(pattern, rem, l2);
 		pattern[l2] = '\0';
@@ -275,12 +275,12 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 					if ((l1+nameLength+2) <= STATIC_SIZE) {
 						newDir = static1;
 					} else {
-						newDir = (char *) ckalloc((unsigned) (l1+nameLength+2));
+						newDir = (char *) _allocFast((unsigned) (l1+nameLength+2));
 					}
 					_sprintf(newDir, "%s%s%s", dir, separator, entryPtr->d_name);
 					result = DoGlob(interp, newDir, p+1);
 					if (newDir != static1) {
-						ckfree(newDir);
+						_freeFast(newDir);
 					}
 					if (result != TCL_OK) {
 						break;
@@ -290,7 +290,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		}
 		_closedir(d);
 		if (pattern != static2) {
-			ckfree(pattern);
+			_freeFast(pattern);
 		}
 		return result;
 	}
@@ -313,12 +313,12 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		if (l2 <= STATIC_SIZE) {
 			newDir = static1;
 		} else {
-			newDir = (char *) ckalloc((unsigned) l2);
+			newDir = (char *) _allocFast((unsigned) l2);
 		}
 		_sprintf(newDir, "%s%s%.*s", dir, separator, (int)(p-rem), rem);
 		result = DoGlob(interp, newDir, p+1);
 		if (newDir != static1) {
-			ckfree(newDir);
+			_freeFast(newDir);
 		}
 		if (result != TCL_OK) {
 			return TCL_ERROR;
@@ -374,7 +374,7 @@ __device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name)
 		if (dir == NULL) {
 			Tcl_ResetResult(interp);
 			Tcl_AppendResult(interp, "couldn't find HOME environment ",
-				"variable to expand \"", name, "\"", (char *) NULL);
+				"variable to expand \"", name, "\"", (char *)NULL);
 			return NULL;
 		}
 		p = name+1;
@@ -395,7 +395,7 @@ __device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name)
 			endpwent();
 			Tcl_ResetResult(interp);
 			Tcl_AppendResult(interp, "user \"", curBuf,
-				"\" doesn't exist", (char *) NULL);
+				"\" doesn't exist", (char *)NULL);
 			return NULL;
 		}
 		dir = pwPtr->pw_dir;
@@ -410,10 +410,10 @@ __device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name)
 	length = _strlen(dir) + _strlen(p);
 	if (length >= curSize) {
 		if (curBuf != staticBuf) {
-			ckfree(curBuf);
+			_freeFast(curBuf);
 		}
 		curSize = length + 1;
-		curBuf = (char *) ckalloc((unsigned) curSize);
+		curBuf = (char *) _allocFast((unsigned) curSize);
 	}
 
 	/*
@@ -455,7 +455,7 @@ __device__ int Tcl_GlobCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	if (argc < 2) {
 notEnoughArgs:
 		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			" ?-nocomplain? name ?name ...?\"", (char *) NULL);
+			" ?-nocomplain? name ?name ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	noComplain = 0;
@@ -496,12 +496,12 @@ notEnoughArgs:
 		char *sep = "";
 
 		Tcl_AppendResult(interp, "no files matched glob pattern",
-			(argc == 2) ? " \"" : "s \"", (char *) NULL);
+			(argc == 2) ? " \"" : "s \"", (char *)NULL);
 		for (i = 1; i < argc; i++) {
-			Tcl_AppendResult(interp, sep, argv[i], (char *) NULL);
+			Tcl_AppendResult(interp, sep, argv[i], (char *)NULL);
 			sep = " ";
 		}
-		Tcl_AppendResult(interp, "\"", (char *) NULL);
+		Tcl_AppendResult(interp, "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;

@@ -74,10 +74,10 @@ __device__ int Tcl_CdCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **
 		return TCL_ERROR;
 	}
 	if (currentDir != NULL) {
-		ckfree(currentDir);
+		_freeFast(currentDir);
 		currentDir = NULL;
 	}
-	if (chdir(dirName) != 0) {
+	if (_chdir(dirName) != 0) {
 		Tcl_AppendResult(interp, "couldn't change working directory to \"", dirName, "\": ", Tcl_UnixError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
@@ -108,7 +108,7 @@ __device__ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char
 	int result = TCL_OK;
 
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	if (TclGetOpenFile(interp, argv[1], &filePtr) != TCL_OK) {
@@ -124,7 +124,7 @@ __device__ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char
 		}
 	}
 	if (fclose(filePtr->f) == EOF) {
-		Tcl_AppendResult(interp, "error closing \"", argv[1], "\": ", Tcl_UnixError(interp), "\n", (char *) NULL);
+		Tcl_AppendResult(interp, "error closing \"", argv[1], "\": ", Tcl_UnixError(interp), "\n", (char *)NULL);
 		result = TCL_ERROR;
 	}
 
@@ -138,7 +138,7 @@ __device__ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char
 	}
 #endif
 
-	ckfree((char *) filePtr);
+	_freeFast((char *) filePtr);
 	return result;
 }
 
@@ -215,7 +215,7 @@ __device__ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			return TCL_ERROR;
 		}
 		Tcl_DetachPids(numPids, pidPtr);
-		ckfree((char *) pidPtr);
+		_freeFast((char *) pidPtr);
 		return TCL_OK;
 	}
 
@@ -240,12 +240,12 @@ __device__ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			}
 			if (count < 0) {
 				Tcl_ResetResult(interp);
-				Tcl_AppendResult(interp, "error reading from output pipe: ", Tcl_UnixError(interp), (char *) NULL);
+				Tcl_AppendResult(interp, "error reading from output pipe: ", Tcl_UnixError(interp), (char *)NULL);
 				result = TCL_ERROR;
 				break;
 			}
 			buffer[count] = 0;
-			Tcl_AppendResult(interp, buffer, (char *) NULL);
+			Tcl_AppendResult(interp, buffer, (char *)NULL);
 		}
 		close(outputId);
 	}
@@ -311,12 +311,12 @@ __device__ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		}
 		if (count < 0) {
 			Tcl_ResetResult(interp);
-			Tcl_AppendResult(interp, "error reading result: ", Tcl_UnixError(interp), (char *) NULL);
+			Tcl_AppendResult(interp, "error reading result: ", Tcl_UnixError(interp), (char *)NULL);
 			result = TCL_ERROR;
 			break;
 		}
 		buffer[count] = 0;
-		Tcl_AppendResult(interp, buffer, (char *) NULL);
+		Tcl_AppendResult(interp, buffer, (char *)NULL);
 	}
 	close(tmpfd);
 
@@ -389,7 +389,7 @@ __device__ int Tcl_FileCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	char *fileName, c;
 
 	if (argc < 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " option name ?arg ...?\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " option name ?arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	c = argv[1][0];
@@ -404,7 +404,7 @@ __device__ int Tcl_FileCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		if (argc != 3) {
 			argv[1] = "dirname";
 not3Args:
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ", argv[1], " name\"", (char *) NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ", argv[1], " name\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		p = _strrchr(fileName, '/');
@@ -471,7 +471,7 @@ not3Args:
 		}
 		mode = R_OK;
 checkAccess:
-		if (access(fileName, mode) == -1) {
+		if (_access(fileName, mode) == -1) {
 			interp->result = "0";
 		} else {
 			interp->result = "1";
@@ -514,11 +514,11 @@ checkAccess:
 	}
 	else if (!_strcmp(argv[1], "rename")) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ", argv[1], " source target\"", (char *) NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ", argv[1], " source target\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (rename(argv[2], argv[3]) == -1) {
-			Tcl_AppendResult(interp, "couldn't rename \"", argv[2], "\": ", Tcl_UnixError(interp), (char *) NULL);
+			Tcl_AppendResult(interp, "couldn't rename \"", argv[2], "\": ", Tcl_UnixError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
 		return TCL_OK;
@@ -549,11 +549,11 @@ checkAccess:
 		statOp = 1;
 	} else if ((c == 'l') && (!_strncmp(argv[1], "lstat", length))) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " lstat name varName\"", (char *) NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " lstat name varName\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (lstat(fileName, &statBuf) == -1) {
-			Tcl_AppendResult(interp, "couldn't lstat \"", argv[2], "\": ", Tcl_UnixError(interp), (char *) NULL);
+			Tcl_AppendResult(interp, "couldn't lstat \"", argv[2], "\": ", Tcl_UnixError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
 		return StoreStatData(interp, argv[3], &statBuf);
@@ -584,7 +584,7 @@ checkAccess:
 		}
 		linkLength = readlink(fileName, linkValue, sizeof(linkValue) - 1);
 		if (linkLength == -1) {
-			Tcl_AppendResult(interp, "couldn't readlink \"", argv[2], "\": ", Tcl_UnixError(interp), (char *) NULL);
+			Tcl_AppendResult(interp, "couldn't readlink \"", argv[2], "\": ", Tcl_UnixError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
 		linkValue[linkLength] = 0;
@@ -603,13 +603,13 @@ checkAccess:
 		return TCL_OK;
 	} else if ((c == 's') && (!_strncmp(argv[1], "stat", length)) && (length >= 2)) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " stat name varName\"", (char *) NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " stat name varName\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 
 		if (stat(fileName, &statBuf) == -1) {
 badStat:
-			Tcl_AppendResult(interp, "couldn't stat \"", argv[2], "\": ", Tcl_UnixError(interp), (char *) NULL);
+			Tcl_AppendResult(interp, "couldn't stat \"", argv[2], "\": ", Tcl_UnixError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
 		return StoreStatData(interp, argv[3], &statBuf);
@@ -631,7 +631,7 @@ badStat:
 			"root, size, stat, tail, type, ", "or writable", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (stat(fileName, &statBuf) == -1) {
+	if (_stat(fileName, &statBuf) == -1) {
 		interp->result = "0";
 		return TCL_OK;
 	}
@@ -865,7 +865,7 @@ __device__ int Tcl_GetsCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 		}
 		*p = 0;
 		if (argc == 2) {
-			Tcl_AppendResult(interp, buffer, (char *) NULL);
+			Tcl_AppendResult(interp, buffer, (char *)NULL);
 		} else {
 			if (Tcl_SetVar(interp, argv[2], buffer, flags|TCL_LEAVE_ERR_MSG) == NULL) {
 				return TCL_ERROR;
@@ -910,11 +910,11 @@ __device__ int Tcl_OpenCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 	} else if (argc == 3) {
 		access = argv[2];
 	} else {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " filename ?access?\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " filename ?access?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	//
-	filePtr = (OpenFile *)ckalloc(sizeof(OpenFile));
+	filePtr = (OpenFile *)_allocFast(sizeof(OpenFile));
 	filePtr->f = NULL;
 	filePtr->f2 = NULL;
 	filePtr->readable = 0;
@@ -929,7 +929,7 @@ __device__ int Tcl_OpenCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 #ifndef NO_FORK
 		pipeline = 1;
 #else
-		Tcl_AppendResult(interp, "open with pipeline not supported in this version of Tcl", (char *) NULL);
+		Tcl_AppendResult(interp, "open with pipeline not supported in this version of Tcl", (char *)NULL);
 		return TCL_ERROR;
 #endif
 	}
@@ -945,7 +945,7 @@ __device__ int Tcl_OpenCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 		break;
 	default:
 badAccess:
-		Tcl_AppendResult(interp, "illegal access mode \"", access, "\"", (char *) NULL);
+		Tcl_AppendResult(interp, "illegal access mode \"", access, "\"", (char *)NULL);
 		goto error;
 	}
 	if (access[1] == '+') {
@@ -972,7 +972,7 @@ badAccess:
 		}
 		filePtr->f = fopen(fileName, access);
 		if (filePtr->f == NULL) {
-			Tcl_AppendResult(interp, "couldn't open \"", argv[1], "\": ", Tcl_UnixError(interp), (char *) NULL);
+			Tcl_AppendResult(interp, "couldn't open \"", argv[1], "\": ", Tcl_UnixError(interp), (char *)NULL);
 			goto error;
 		}
 #ifdef DEBUG_FDS
@@ -991,7 +991,7 @@ badAccess:
 		outPipePtr = (filePtr->readable ? &outPipe : NULL);
 		inPipe = outPipe = -1;
 		filePtr->numPids = Tcl_CreatePipeline(interp, cmdArgc, cmdArgv, &filePtr->pidPtr, inPipePtr, outPipePtr, &filePtr->errorId);
-		ckfree((char *) cmdArgv);
+		_freeFast((char *) cmdArgv);
 		if (filePtr->numPids < 0) {
 			goto error;
 		}
@@ -1039,13 +1039,13 @@ error:
 #ifndef NO_FORK
 	if (filePtr->numPids > 0) {
 		Tcl_DetachPids(filePtr->numPids, filePtr->pidPtr);
-		ckfree((char *) filePtr->pidPtr);
+		_freeFast((char *) filePtr->pidPtr);
 	}
 #endif
 	if (filePtr->errorId != -1) {
 		close(filePtr->errorId);
 	}
-	ckfree((char *) filePtr);
+	_freeFast((char *) filePtr);
 	return TCL_ERROR;
 }
 
@@ -1083,7 +1083,7 @@ __device__ int Tcl_PwdCmd(ClientData dummy, Tcl_Interp *interp, int argc, char *
 			}
 			return TCL_ERROR;
 		}
-		currentDir = (char *)ckalloc((unsigned)(strlen(buffer) + 1));
+		currentDir = (char *)_allocFast((unsigned)(strlen(buffer) + 1));
 		strcpy(currentDir, buffer);
 	}
 	interp->result = currentDir;
@@ -1121,14 +1121,14 @@ __device__ int Tcl_PutsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		i++;
 	}
 	if ((i < (argc-3)) || (i >= argc)) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\" ?-nonewline? ?fileId? string", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\" ?-nonewline? ?fileId? string", (char *)NULL);
 		return TCL_ERROR;
 	}
 
 	// The code below provides backwards compatibility with an old form of the command that is no longer recommended or documented.
 	if (i == (argc-3)) {
 		if (_strncmp(argv[i+2], "nonewline", _strlen(argv[i+2])) != 0) {
-			Tcl_AppendResult(interp, "bad argument \"", argv[i+2], "\": should be \"nonewline\"", (char *) NULL);
+			Tcl_AppendResult(interp, "bad argument \"", argv[i+2], "\": should be \"nonewline\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		newline = 0;
@@ -1144,7 +1144,7 @@ __device__ int Tcl_PutsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		return TCL_ERROR;
 	}
 	if (!filePtr->writable) {
-		Tcl_AppendResult(interp, "\"", fileId, "\" wasn't opened for writing", (char *) NULL);
+		Tcl_AppendResult(interp, "\"", fileId, "\" wasn't opened for writing", (char *)NULL);
 		return TCL_ERROR;
 	}
 	f = filePtr->f2;
@@ -1157,7 +1157,7 @@ __device__ int Tcl_PutsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		fputc('\n', f);
 	}
 	if (ferror(f)) {
-		Tcl_AppendResult(interp, "error writing \"", fileId, "\": ", Tcl_UnixError(interp), (char *) NULL);
+		Tcl_AppendResult(interp, "error writing \"", fileId, "\": ", Tcl_UnixError(interp), (char *)NULL);
 		clearerr(f);
 		return TCL_ERROR;
 	}
@@ -1191,7 +1191,7 @@ __device__ int Tcl_ReadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	int newline, i;
 
 	if ((argc != 2) && (argc != 3)) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId ?numBytes?\" or \"", argv[0], " ?-nonewline? fileId\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId ?numBytes?\" or \"", argv[0], " ?-nonewline? fileId\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	i = 1;
@@ -1205,7 +1205,7 @@ __device__ int Tcl_ReadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		return TCL_ERROR;
 	}
 	if (!filePtr->readable) {
-		Tcl_AppendResult(interp, "\"", argv[i], "\" wasn't opened for reading", (char *) NULL);
+		Tcl_AppendResult(interp, "\"", argv[i], "\" wasn't opened for reading", (char *)NULL);
 		return TCL_ERROR;
 	}
 
@@ -1223,7 +1223,7 @@ __device__ int Tcl_ReadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 				newline = 0;
 			} else {
 				Tcl_AppendResult(interp, "bad argument \"", argv[i+1],
-					"\": should be \"nonewline\"", (char *) NULL);
+					"\": should be \"nonewline\"", (char *)NULL);
 				return TCL_ERROR;
 			}
 		}
@@ -1236,10 +1236,10 @@ __device__ int Tcl_ReadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		if (bytesLeft < READ_BUF_SIZE) {
 			count = bytesLeft;
 		}
-		count = fread(buffer, 1, count, filePtr->f);
+		count = (int)_fread(buffer, 1, count, filePtr->f);
 		if (ferror(filePtr->f)) {
 			Tcl_ResetResult(interp);
-			Tcl_AppendResult(interp, "error reading \"", argv[i], "\": ", Tcl_UnixError(interp), (char *) NULL);
+			Tcl_AppendResult(interp, "error reading \"", argv[i], "\": ", Tcl_UnixError(interp), (char *)NULL);
 			clearerr(filePtr->f);
 			return TCL_ERROR;
 		}
@@ -1247,7 +1247,7 @@ __device__ int Tcl_ReadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			break;
 		}
 		buffer[count] = 0;
-		Tcl_AppendResult(interp, buffer, (char *) NULL);
+		Tcl_AppendResult(interp, buffer, (char *)NULL);
 		bytesLeft -= count;
 		bytesRead += count;
 	}
@@ -1281,7 +1281,7 @@ __device__ int Tcl_SeekCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 	int offset, mode;
 
 	if ((argc != 3) && (argc != 4)) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId offset ?origin?\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId offset ?origin?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	if (TclGetOpenFile(interp, argv[1], &filePtr) != TCL_OK) {
@@ -1303,12 +1303,12 @@ __device__ int Tcl_SeekCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 		} else if ((c == 'e') && (strncmp(argv[3], "end", length) == 0)) {
 			mode = SEEK_END;
 		} else {
-			Tcl_AppendResult(interp, "bad origin \"", argv[3], "\": should be start, current, or end", (char *) NULL);
+			Tcl_AppendResult(interp, "bad origin \"", argv[3], "\": should be start, current, or end", (char *)NULL);
 			return TCL_ERROR;
 		}
 	}
 	if (fseek(filePtr->f, (long)offset, mode) == -1) {
-		Tcl_AppendResult(interp, "error during seek: ", Tcl_UnixError(interp), (char *) NULL);
+		Tcl_AppendResult(interp, "error during seek: ", Tcl_UnixError(interp), (char *)NULL);
 		clearerr(filePtr->f);
 		return TCL_ERROR;
 	}
@@ -1337,7 +1337,7 @@ __device__ int Tcl_SeekCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 __device__ int Tcl_SourceCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileName\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileName\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return Tcl_EvalFile(interp, argv[1]);
@@ -1365,7 +1365,7 @@ __device__ int Tcl_TellCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 {
 	OpenFile *filePtr;
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileId\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	if (TclGetOpenFile(interp, argv[1], &filePtr) != TCL_OK) {
@@ -1412,7 +1412,7 @@ __device__ int Tcl_TimeCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			return TCL_ERROR;
 		}
 	} else {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " command ?count?\"", (char *) NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " command ?count?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 #if TCL_GETTOD
@@ -1508,7 +1508,7 @@ __device__ static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidP
 			}
 		}
 	}
-	ckfree((char *) pidPtr);
+	_freeFast((char *) pidPtr);
 
 	// Read the standard error file.  If there's anything there, then return an error and add the file's contents to the result string.
 	if (errorId >= 0) {
@@ -1522,11 +1522,11 @@ __device__ static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidP
 			}
 			if (count < 0) {
 				Tcl_AppendResult(interp, "error reading stderr output file: ",
-					Tcl_UnixError(interp), (char *) NULL);
+					Tcl_UnixError(interp), (char *)NULL);
 				break;
 			}
 			buffer[count] = 0;
-			Tcl_AppendResult(interp, buffer, (char *) NULL);
+			Tcl_AppendResult(interp, buffer, (char *)NULL);
 		}
 		close(errorId);
 	}
@@ -1556,10 +1556,10 @@ __device__ int Tcl_PidCmd (ClientData clientData, Tcl_Interp *interp, int argc, 
 {
 	char buf[10];
 	if (argc != 1) {
-		Tcl_AppendResult (interp, "bad # args: ", argv[0], (char *) NULL);
+		Tcl_AppendResult (interp, "bad # args: ", argv[0], (char *)NULL);
 		return TCL_ERROR;
 	}
 	_sprintf(buf, "%d", getpid());
-	Tcl_AppendResult (interp, buf, (char *) NULL);
+	Tcl_AppendResult (interp, buf, (char *)NULL);
 	return TCL_OK;
 }

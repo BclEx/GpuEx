@@ -338,20 +338,20 @@ __device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, char 
 		}
 	}
 	size++;			/* Leave space for final NULL pointer. */
-	argv = (char **) ckalloc((unsigned)
+	argv = (char **) _allocFast((unsigned)
 		((size * sizeof(char *)) + (p - list) + 1));
 	for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 		*list != 0; i++) {
 			result = TclFindElement(interp, list, &element, &list, &elSize, &brace);
 			if (result != TCL_OK) {
-				ckfree((char *) argv);
+				_freeFast((char *) argv);
 				return result;
 			}
 			if (*element == 0) {
 				break;
 			}
 			if (i >= size) {
-				ckfree((char *) argv);
+				_freeFast((char *) argv);
 				Tcl_SetResult(interp, "internal error in Tcl_SplitList",
 					TCL_STATIC);
 				return TCL_ERROR;
@@ -640,7 +640,7 @@ __device__ char *Tcl_Merge(int argc, char **argv)
 	if (argc <= LOCAL_SIZE) {
 		flagPtr = localFlags;
 	} else {
-		flagPtr = (int *) ckalloc((unsigned) argc*sizeof(int));
+		flagPtr = (int *) _allocFast((unsigned) argc*sizeof(int));
 	}
 	numChars = 1;
 	for (i = 0; i < argc; i++) {
@@ -651,7 +651,7 @@ __device__ char *Tcl_Merge(int argc, char **argv)
 	* Pass two: copy into the result area.
 	*/
 
-	result = (char *) ckalloc((unsigned) numChars);
+	result = (char *) _allocFast((unsigned) numChars);
 	dst = result;
 	for (i = 0; i < argc; i++) {
 		numChars = Tcl_ConvertElement(argv[i], dst, flagPtr[i]);
@@ -666,7 +666,7 @@ __device__ char *Tcl_Merge(int argc, char **argv)
 	}
 
 	if (flagPtr != localFlags) {
-		ckfree((char *) flagPtr);
+		_freeFast((char *) flagPtr);
 	}
 	return result;
 }
@@ -699,7 +699,7 @@ __device__ char *Tcl_Concat(int argc, char **argv)
 	for (totalSize = 1, i = 0; i < argc; i++) {
 		totalSize += _strlen(argv[i]) + 1;
 	}
-	result = (char *) ckalloc((unsigned) totalSize);
+	result = (char *) _allocFast((unsigned) totalSize);
 	if (argc == 0) {
 		*result = '\0';
 		return result;
@@ -900,7 +900,7 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 	} else if (freeProc == TCL_VOLATILE) {
 		length = _strlen(string);
 		if (length > TCL_RESULT_SIZE) {
-			iPtr->result = (char *) ckalloc((unsigned) length+1);
+			iPtr->result = (char *) _allocFast((unsigned) length+1);
 			iPtr->freeProc = (Tcl_FreeProc *) _free;
 		} else {
 			iPtr->result = iPtr->resultSpace;
@@ -919,7 +919,7 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 
 	if (oldFreeProc != 0) {
 		if (oldFreeProc == (Tcl_FreeProc *) _free) {
-			ckfree(oldResult);
+			_freeFast(oldResult);
 		} else {
 			(*oldFreeProc)(oldResult);
 		}
@@ -945,8 +945,7 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 *----------------------------------------------------------------------
 */
 
-void
-	Tcl_AppendResult(Tcl_Interp *interp, ...)
+void _Tcl_AppendResult(Tcl_Interp *interp, ...)
 {
 	_va_list argList;
 	register Interp *iPtr = (Interp *)interp;
@@ -1084,7 +1083,7 @@ __device__ static void SetupAppendBuffer(register Interp *iPtr, int newSpace)
 		*/
 
 		if (iPtr->appendAvl > 500) {
-			ckfree(iPtr->appendResult);
+			_freeFast(iPtr->appendResult);
 			iPtr->appendResult = NULL;
 			iPtr->appendAvl = 0;
 		}
@@ -1099,10 +1098,10 @@ __device__ static void SetupAppendBuffer(register Interp *iPtr, int newSpace)
 		} else {
 			totalSpace *= 2;
 		}
-		new_ = (char *) ckalloc((unsigned) totalSpace);
+		new_ = (char *) _allocFast((unsigned) totalSpace);
 		_strcpy(new_, iPtr->result);
 		if (iPtr->appendResult != NULL) {
-			ckfree(iPtr->appendResult);
+			_freeFast(iPtr->appendResult);
 		}
 		iPtr->appendResult = new_;
 		iPtr->appendAvl = totalSpace;
@@ -1163,9 +1162,8 @@ __device__ void Tcl_ResetResult(Tcl_Interp *interp)
 *
 *----------------------------------------------------------------------
 */
-__device__ void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
+__device__ void _Tcl_SetErrorCode(Tcl_Interp *interp, _va_list *argList)
 {
-	_va_list argList;
 	char *string;
 	int flags;
 	register Interp *iPtr = (Interp *) interp;
@@ -1175,7 +1173,6 @@ __device__ void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 	* $errorCode as list elements.
 	*/
 
-	_va_start(argList, interp);
 	flags = TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT;
 	while (1) {
 		string = _va_arg(argList, char *);
@@ -1183,10 +1180,9 @@ __device__ void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 			break;
 		}
 		(void) Tcl_SetVar2(interp, "errorCode",
-			(char *) NULL, string, flags);
+			(char *)NULL, string, flags);
 		flags |= TCL_APPEND_VALUE;
 	}
-	_va_end(argList);
 	iPtr->flags |= ERROR_CODE_SET;
 }
 
@@ -1226,7 +1222,7 @@ __device__ int TclGetListIndex(Tcl_Interp *interp, char *string, int *indexPtr)
 		*indexPtr = 1<<30;
 	} else {
 		Tcl_AppendResult(interp, "bad index \"", string,
-			"\": must be integer or \"end\"", (char *) NULL);
+			"\": must be integer or \"end\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -1300,11 +1296,11 @@ __device__ regex_t *TclCompileRegexp(Tcl_Interp *interp, char *string, int nocas
 	* cache.
 	*/
 
-	result = (regex_t *)ckalloc(sizeof(*result));
+	result = (regex_t *)_allocFast(sizeof(*result));
 
 	/* Allocate the original string before compiling, since regcomp
 	* expects it to exist for the life of the pattern */
-	pattern = (char *) ckalloc((unsigned) (length+1));
+	pattern = (char *) _allocFast((unsigned) (length+1));
 	_strcpy(pattern, string);
 
 #ifndef REG_ICASE
@@ -1316,15 +1312,15 @@ __device__ regex_t *TclCompileRegexp(Tcl_Interp *interp, char *string, int nocas
 		regerror(ret, result, buf, sizeof(buf));
 		Tcl_AppendResult(interp,
 			"couldn't compile regular expression pattern: ",
-			buf, (char *) NULL);
-		ckfree((char *)result);
-		ckfree(pattern);
+			buf, (char *)NULL);
+		_freeFast((char *)result);
+		_freeFast(pattern);
 		return NULL;
 	}
 	if (iPtr->regexps[iPtr->num_regexps-1].pattern != NULL) {
-		ckfree(iPtr->regexps[iPtr->num_regexps-1].pattern);
+		_freeFast(iPtr->regexps[iPtr->num_regexps-1].pattern);
 		regfree(iPtr->regexps[iPtr->num_regexps-1].regexp);
-		ckfree((char *)iPtr->regexps[iPtr->num_regexps-1].regexp);
+		_freeFast((char *)iPtr->regexps[iPtr->num_regexps-1].regexp);
 		iPtr->regexps[iPtr->num_regexps-1].pattern = 0;
 	}
 	for (i = iPtr->num_regexps - 2; i >= 0; i--) {

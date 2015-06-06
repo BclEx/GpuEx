@@ -49,7 +49,7 @@ __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr)
 	}
 	if ((end == string) || (*end != 0)) {
 		Tcl_AppendResult(interp, "expected integer but got \"", string,
-			"\"", (char *) NULL);
+			"\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	*intPtr = (int) i;
@@ -87,7 +87,7 @@ __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr
 	}
 	if ((end == string) || (*end != 0)) {
 		Tcl_AppendResult(interp, "expected floating-point number but got \"",
-			string, "\"", (char *) NULL);
+			string, "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	*doublePtr = d;
@@ -158,7 +158,7 @@ __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr)
 		}
 	} else {
 		Tcl_AppendResult(interp, "expected boolean value but got \"",
-			string, "\"", (char *) NULL);
+			string, "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;

@@ -105,27 +105,27 @@ Tcl_EvalFile(interp, fileName)
     fileId = open(fileName, O_RDONLY, 0);
     if (fileId < 0) {
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
-		"\": ", Tcl_UnixError(interp), (char *) NULL);
+		"\": ", Tcl_UnixError(interp), (char *)NULL);
 	goto error;
     }
     if (fstat(fileId, &statBuf) == -1) {
 	Tcl_AppendResult(interp, "couldn't stat file \"", fileName,
-		"\": ", Tcl_UnixError(interp), (char *) NULL);
+		"\": ", Tcl_UnixError(interp), (char *)NULL);
 	close(fileId);
 	goto error;
     }
-    cmdBuffer = (char *) ckalloc((unsigned) statBuf.st_size+1);
+    cmdBuffer = (char *) _allocFast((unsigned) statBuf.st_size+1);
     if (read(fileId, cmdBuffer, (int) statBuf.st_size) != statBuf.st_size) {
 	Tcl_AppendResult(interp, "error in reading file \"", fileName,
-		"\": ", Tcl_UnixError(interp), (char *) NULL);
+		"\": ", Tcl_UnixError(interp), (char *)NULL);
 	close(fileId);
-	ckfree(cmdBuffer);
+	_freeFast(cmdBuffer);
 	goto error;
     }
     if (close(fileId) != 0) {
 	Tcl_AppendResult(interp, "error closing file \"", fileName,
-		"\": ", Tcl_UnixError(interp), (char *) NULL);
-	ckfree(cmdBuffer);
+		"\": ", Tcl_UnixError(interp), (char *)NULL);
+	_freeFast(cmdBuffer);
 	goto error;
     }
     cmdBuffer[statBuf.st_size] = 0;
@@ -144,7 +144,7 @@ Tcl_EvalFile(interp, fileName)
 		interp->errorLine);
 	Tcl_AddErrorInfo(interp, msg);
     }
-    ckfree(cmdBuffer);
+    _freeFast(cmdBuffer);
     iPtr->scriptFile = oldScriptFile;
     return result;
 
@@ -202,12 +202,12 @@ Tcl_Fork()
 	WaitInfo *newWaitTable;
 
 	newSize = waitTableSize + WAIT_TABLE_GROW_BY;
-	newWaitTable = (WaitInfo *) ckalloc((unsigned)
+	newWaitTable = (WaitInfo *) _allocFast((unsigned)
 		(newSize * sizeof(WaitInfo)));
 	memcpy((VOID *) newWaitTable, (VOID *) waitTable,
 		(waitTableSize * sizeof(WaitInfo)));
 	if (waitTable != NULL) {
-	    ckfree((char *) waitTable);
+	    _freeFast((char *) waitTable);
 	}
 	waitTable = newWaitTable;
 	waitTableSize = newSize;
@@ -590,7 +590,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	}
 	if (i + removecount > argc) {
 	    Tcl_AppendResult(interp, "can't specify \"", argv[i],
-		    "\" as last word in command", (char *) NULL);
+		    "\" as last word in command", (char *)NULL);
 	    return -1;
 	}
 	for (j = i+removecount; j < argc; j++) {
@@ -630,20 +630,20 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    if (inputId < 0) {
 		Tcl_AppendResult(interp,
 			"couldn't create input file for command: ",
-			Tcl_UnixError(interp), (char *) NULL);
+			Tcl_UnixError(interp), (char *)NULL);
 		goto error;
 	    }
 	    length = strlen(input);
 	    if (write(inputId, input, length) != length) {
 		Tcl_AppendResult(interp,
 			"couldn't write file input for command: ",
-			Tcl_UnixError(interp), (char *) NULL);
+			Tcl_UnixError(interp), (char *)NULL);
 		goto error;
 	    }
 	    if ((lseek(inputId, 0L, 0) == -1) || (unlink(inName) == -1)) {
 		Tcl_AppendResult(interp,
 			"couldn't reset or remove input file for command: ",
-			Tcl_UnixError(interp), (char *) NULL);
+			Tcl_UnixError(interp), (char *)NULL);
 		goto error;
 	    }
 	} else if (inputFile == 2) {
@@ -657,7 +657,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    }
 	    if (!filePtr->readable) {
 		Tcl_AppendResult(interp, "\"", input,
-			"\" wasn't opened for reading", (char *) NULL);
+			"\" wasn't opened for reading", (char *)NULL);
 		goto error;
 	    }
 	    inputId = dup(fileno(filePtr->f2 ?: filePtr->f));
@@ -670,7 +670,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    if (inputId < 0) {
 		Tcl_AppendResult(interp,
 			"couldn't read file \"", input, "\": ",
-			Tcl_UnixError(interp), (char *) NULL);
+			Tcl_UnixError(interp), (char *)NULL);
 		goto error;
 	    }
 	}
@@ -678,7 +678,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	if (pipe(pipeIds) != 0) {
 	    Tcl_AppendResult(interp,
 		    "couldn't create input pipe for command: ",
-		    Tcl_UnixError(interp), (char *) NULL);
+		    Tcl_UnixError(interp), (char *)NULL);
 	    goto error;
 	}
 	inputId = pipeIds[0];
@@ -700,7 +700,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    }
 	    if (!filePtr->writable) {
 		Tcl_AppendResult(interp, "\"", input,
-			"\" wasn't opened for writing", (char *) NULL);
+			"\" wasn't opened for writing", (char *)NULL);
 		goto error;
 	    }
 	    fflush(filePtr->f2 ?: filePtr->f);
@@ -720,7 +720,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    if (lastOutputId < 0) {
 		Tcl_AppendResult(interp,
 			"couldn't write file \"", output, "\": ",
-			Tcl_UnixError(interp), (char *) NULL);
+			Tcl_UnixError(interp), (char *)NULL);
 		goto error;
 	    }
 	}
@@ -732,7 +732,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	if (pipe(pipeIds) != 0) {
 	    Tcl_AppendResult(interp,
 		    "couldn't create output pipe: ",
-		    Tcl_UnixError(interp), (char *) NULL);
+		    Tcl_UnixError(interp), (char *)NULL);
 	    goto error;
 	}
 	lastOutputId = pipeIds[1];
@@ -750,7 +750,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    }
 	    if (!filePtr->writable) {
 		Tcl_AppendResult(interp, "\"", input,
-			"\" wasn't opened for writing", (char *) NULL);
+			"\" wasn't opened for writing", (char *)NULL);
 		goto error;
 	    }
 	    fflush(filePtr->f2 ?: filePtr->f);
@@ -770,7 +770,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    if (errorId < 0) {
 		Tcl_AppendResult(interp,
 			"couldn't write file \"", error, "\": ",
-			Tcl_UnixError(interp), (char *) NULL);
+			Tcl_UnixError(interp), (char *)NULL);
 		goto error;
 	    }
 	}
@@ -798,7 +798,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	    errFileError:
 	    Tcl_AppendResult(interp,
 		    "couldn't create error file for command: ",
-		    Tcl_UnixError(interp), (char *) NULL);
+		    Tcl_UnixError(interp), (char *)NULL);
 	    goto error;
 	}
 	*errFilePtr = open(errName, O_RDONLY, 0);
@@ -808,7 +808,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	if (unlink(errName) == -1) {
 	    Tcl_AppendResult(interp,
 		    "couldn't remove error file for command: ",
-		    Tcl_UnixError(interp), (char *) NULL);
+		    Tcl_UnixError(interp), (char *)NULL);
 	    goto error;
 	}
     }
@@ -818,7 +818,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
      * group of arguments between "|" arguments.
      */
 
-    pidPtr = (int *) ckalloc((unsigned) (cmdCount * sizeof(int)));
+    pidPtr = (int *) _allocFast((unsigned) (cmdCount * sizeof(int)));
     for (i = 0; i < numPids; i++) {
 	pidPtr[i] = -1;
     }
@@ -834,7 +834,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	} else {
 	    if (pipe(pipeIds) != 0) {
 		Tcl_AppendResult(interp, "couldn't create pipe: ",
-			Tcl_UnixError(interp), (char *) NULL);
+			Tcl_UnixError(interp), (char *)NULL);
 		goto error;
 	    }
 	    outputId = pipeIds[1];
@@ -843,7 +843,7 @@ Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	pid = Tcl_Fork();
 	if (pid == -1) {
 	    Tcl_AppendResult(interp, "couldn't fork child process: ",
-		    Tcl_UnixError(interp), (char *) NULL);
+		    Tcl_UnixError(interp), (char *)NULL);
 	    goto error;
 	}
 	if (pid == 0) {
@@ -933,7 +933,7 @@ cleanup:
 		Tcl_DetachPids(1, &pidPtr[i]);
 	    }
 	}
-	ckfree((char *) pidPtr);
+	_freeFast((char *) pidPtr);
     }
     numPids = -1;
     goto cleanup;
@@ -969,7 +969,7 @@ Tcl_UnixError(interp)
 
     id = Tcl_ErrnoId();
     msg = strerror(errno);
-    Tcl_SetErrorCode(interp, "UNIX", id, msg, (char *) NULL);
+    Tcl_SetErrorCode(interp, "UNIX", id, msg, (char *)NULL);
     return msg;
 }
 
@@ -1022,7 +1022,7 @@ TclMakeFileTable(iPtr, index)
 	syslog(LOG_INFO, "TclMakeFileTable() allocating table of size %d", iPtr->numFiles);
 #endif
 
-	iPtr->filePtrArray = (OpenFile **) ckalloc((unsigned)
+	iPtr->filePtrArray = (OpenFile **) _allocFast((unsigned)
 		((iPtr->numFiles)*sizeof(OpenFile *)));
 	for (i = iPtr->numFiles-1; i >= 0; i--) {
 	    iPtr->filePtrArray[i] = NULL;
@@ -1056,7 +1056,7 @@ TclMakeFileTable(iPtr, index)
 #endif
 
 	if (fileno(stdin) >= 0) {
-	    filePtr = (OpenFile *) ckalloc(sizeof(OpenFile));
+	    filePtr = (OpenFile *) _allocFast(sizeof(OpenFile));
 	    filePtr->f = stdin;
 	    filePtr->f2 = NULL;
 	    filePtr->readable = 1;
@@ -1068,7 +1068,7 @@ TclMakeFileTable(iPtr, index)
 	}
 
 	if (fileno(stdout) >= 0) {
-	    filePtr = (OpenFile *) ckalloc(sizeof(OpenFile));
+	    filePtr = (OpenFile *) _allocFast(sizeof(OpenFile));
 	    filePtr->f = stdout;
 	    filePtr->f2 = NULL;
 	    filePtr->readable = 0;
@@ -1080,7 +1080,7 @@ TclMakeFileTable(iPtr, index)
 	}
 
 	if (fileno(stderr) >= 0) {
-	    filePtr = (OpenFile *) ckalloc(sizeof(OpenFile));
+	    filePtr = (OpenFile *) _allocFast(sizeof(OpenFile));
 	    filePtr->f = stderr;
 	    filePtr->f2 = NULL;
 	    filePtr->readable = 0;
@@ -1101,14 +1101,14 @@ TclMakeFileTable(iPtr, index)
 	syslog(LOG_INFO, "TclMakeFileTable() increasing size from %d to %d", iPtr->numFiles, newSize);
 #endif
 
-	newPtrArray = (OpenFile **) ckalloc((unsigned)
+	newPtrArray = (OpenFile **) _allocFast((unsigned)
 		((newSize)*sizeof(OpenFile *)));
 	memcpy((VOID *) newPtrArray, (VOID *) iPtr->filePtrArray,
 		iPtr->numFiles*sizeof(OpenFile *));
 	for (i = iPtr->numFiles; i < newSize; i++) {
 	    newPtrArray[i] = NULL;
 	}
-	ckfree((char *) iPtr->filePtrArray);
+	_freeFast((char *) iPtr->filePtrArray);
 	iPtr->numFiles = newSize;
 	iPtr->filePtrArray = newPtrArray;
     }
@@ -1167,7 +1167,7 @@ TclGetOpenFile(interp, string, filePtrPtr)
     } else {
 	badId:
 	Tcl_AppendResult(interp, "bad file identifier \"", string,
-		"\"", (char *) NULL);
+		"\"", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -1179,7 +1179,7 @@ TclGetOpenFile(interp, string, filePtrPtr)
     }
     if (fd >= iPtr->numFiles || iPtr->filePtrArray[fd] == NULL) {
 	Tcl_AppendResult(interp, "file \"", string, "\" isn't open",
-		(char *) NULL);
+		(char *)NULL);
 	return TCL_ERROR;
     }
 #ifdef DEBUG_FDS

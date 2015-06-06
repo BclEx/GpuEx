@@ -1,6 +1,5 @@
 //#include "dos.cu"
 #include "noextensions.cu"
-//#include "panic.cu"
 #include "readdir.cu"
 //#include "regex_compat.cu"
 //#include "tclalloc.cu"
@@ -9,7 +8,8 @@
 #include "tclCmdAH.cu"
 #include "tclCmdIL.cu"
 #include "tclCmdMZ.cu"
-//#include "tclEmbed.cu"
+#undef STATIC_SIZE
+//#include "tclEmbed.cu" -- Test Driver
 //#include "tclEnv.cu"
 #include "tclExpr.cu"
 #include "tclGet.cu"
@@ -21,7 +21,7 @@
 //#include "tclmod.cu"
 #include "tclParse.cu"
 #include "tclProc.cu"
-//#include "tclTest.cu"
+//#include "tclTest.cu" -- Test Driver
 #include "tclUnixAZ.cu"
 #include "tclUtil.cu"
 //#include "tcluxstr.cu"
@@ -29,4 +29,4 @@
 #include "tclVar.cu"
 #include "tclXdbg.cu"
 #include "tclXgen.cu"
-#include "tinytcl.cu"
+#include "tinytcl.cu" -- Test Driver

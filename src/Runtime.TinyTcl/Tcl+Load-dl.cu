@@ -96,7 +96,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     if (handle == NULL) {
 	Tcl_AppendResult(interp, "couldn't load file \"", 
 			 pathPtr,
-			 "\": ", dlerror(), (char *) NULL);
+			 "\": ", dlerror(), (char *)NULL);
 	return TCL_ERROR;
     }
 

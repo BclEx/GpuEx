@@ -37,7 +37,7 @@ __device__ int Tcl_ReaddirCmd(ClientData clientData, Tcl_Interp *interp, int arg
 	struct dirent *entryPtr;
 
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "bad # args: ", argv [0], " dirPath", (char *) NULL);
+		Tcl_AppendResult(interp, "bad # args: ", argv [0], " dirPath", (char *)NULL);
 		return TCL_ERROR;
 	}
 

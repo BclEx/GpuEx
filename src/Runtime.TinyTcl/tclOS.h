@@ -119,47 +119,47 @@
 #endif
 
 // Define pid_t and uid_t if they're not already defined.
-#if ! TCL_PID_T
+#if !TCL_PID_T
 #define pid_t int
 #endif
-#if ! TCL_UID_T
+#if !TCL_UID_T
 #define uid_t int
 #endif
 
-// Variables provided by the C library:
-#if defined(_sgi) || defined(__sgi)
-#define environ _environ
-#endif
-extern char **environ;
+//// Variables provided by the C library:
+//#if defined(_sgi) || defined(__sgi)
+//#define environ _environ
+//#endif
+//extern char **environ;
 
 // uClinux can't do fork(), only vfork()
 #define NO_FORK
 
-// Library procedures used by Tcl but not declared in a header file:
-#ifndef _CRAY
-extern int access(const char *path, int mode);
-extern int chdir(const char *path);
-extern int close(int fd);
-extern int dup2(int src, int dst);
-extern void	endpwent();
-// extern int execvp(const char *name, char **argv);
-extern void _exit(int status);
-// extern pid_t	fork();
-// extern uid_t	geteuid();
-// extern pid_t	getpid();
-// extern char *getcwd(char *buffer, int size);
-extern char * getwd(char *buffer);
-// extern int kill(pid_t pid, int sig);
-// extern long lseek(int fd, int offset, int whence);
-extern char * mktemp(char *template_);
-#if !(defined(sparc) || defined(_IBMR2))
-extern int open(const char *path, int flags, ...);
-#endif
-extern int pipe(int *fdPtr);
-// extern int read(int fd, char *buf, int numBytes);
-// extern int readlink(const char *path, char *buf, int size);
-extern int unlink(const char *path);
-// extern int write(int fd, char *buf, int numBytes);
-#endif /* _CRAY */
+//// Library procedures used by Tcl but not declared in a header file:
+//#ifndef _CRAY
+//extern int access(const char *path, int mode);
+//extern int chdir(const char *path);
+//extern int close(int fd);
+//extern int dup2(int src, int dst);
+//extern void	endpwent();
+//// extern int execvp(const char *name, char **argv);
+//extern void _exit(int status);
+//// extern pid_t	fork();
+//// extern uid_t	geteuid();
+//// extern pid_t	getpid();
+//// extern char *getcwd(char *buffer, int size);
+//extern char * getwd(char *buffer);
+//// extern int kill(pid_t pid, int sig);
+//// extern long lseek(int fd, int offset, int whence);
+//extern char *mktemp(char *template_);
+//#if !(defined(sparc) || defined(_IBMR2))
+//extern int open(const char *path, int flags, ...);
+//#endif
+//extern int pipe(int *fdPtr);
+//// extern int read(int fd, char *buf, int numBytes);
+//// extern int readlink(const char *path, char *buf, int size);
+//extern int unlink(const char *path);
+//// extern int write(int fd, char *buf, int numBytes);
+//#endif /* _CRAY */
 
 #endif /* _TCLUNIX */

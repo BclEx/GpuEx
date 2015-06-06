@@ -73,7 +73,7 @@ Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
      */
 
     if (pkgname) {
-	initname = ckalloc(strlen(pkgname) + 6);
+	initname = _allocFast(strlen(pkgname) + 6);
 	strcpy(initname, pkgname);
 	strcat(initname, "_Init");
     }
@@ -96,7 +96,7 @@ Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	    pkgname += 3;
 	}
 
-	initname = ckalloc(strlen(pkgname) + 6);
+	initname = _allocFast(strlen(pkgname) + 6);
 	strcpy(initname, pkgname);
 
 	/* Now remove any extension */
@@ -113,7 +113,7 @@ Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	if (unloader != NULL) {
 	    (*unloader)(handle);
 	}
-	ckfree(initname);
+	_freeFast(initname);
 	return TCL_ERROR;
     }
 
@@ -125,7 +125,7 @@ Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 
     code = initProc(interp);
 
-    ckfree(initname);
+    _freeFast(initname);
 
     if (code != TCL_OK) {
 	Tcl_AppendResult(interp, "failed to execute init procedure in ", modname, 0);

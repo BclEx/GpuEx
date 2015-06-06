@@ -51,12 +51,12 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 
 	if (argc != 4) {
 		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			" name args body\"", (char *) NULL);
+			" name args body\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 
-	procPtr = (Proc *) ckalloc(sizeof(Proc));
-	procPtr->command = (char *) ckalloc((unsigned) strlen(argv[3]) + 1);
+	procPtr = (Proc *) _allocFast(sizeof(Proc));
+	procPtr->command = (char *) _allocFast((unsigned) strlen(argv[3]) + 1);
 	_strcpy(procPtr->command, argv[3]);
 	procPtr->argPtr = NULL;
 	procPtr->uses = 1; /* 1 for initial definition */
@@ -85,17 +85,17 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			goto procError;
 		}
 		if (fieldCount > 2) {
-			ckfree((char *) fieldValues);
+			_freeFast((char *) fieldValues);
 			Tcl_AppendResult(interp,
 				"too many fields in argument specifier \"",
-				argArray[i], "\"", (char *) NULL);
+				argArray[i], "\"", (char *)NULL);
 			result = TCL_ERROR;
 			goto procError;
 		}
 		if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
-			ckfree((char *) fieldValues);
+			_freeFast((char *) fieldValues);
 			Tcl_AppendResult(interp, "procedure \"", argv[1],
-				"\" has argument with no name", (char *) NULL);
+				"\" has argument with no name", (char *)NULL);
 			result = TCL_ERROR;
 			goto procError;
 		}
@@ -105,7 +105,7 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		} else {
 			valueLength = 0;
 		}
-		argPtr = (Arg *) ckalloc((unsigned)
+		argPtr = (Arg *) _allocFast((unsigned)
 			(sizeof(Arg) - sizeof(argPtr->name) + nameLength
 			+ valueLength));
 		if (lastArgPtr == NULL) {
@@ -122,24 +122,24 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		} else {
 			argPtr->defValue = NULL;
 		}
-		ckfree((char *) fieldValues);
+		_freeFast((char *) fieldValues);
 	}
 
 	Tcl_CreateCommand(interp, argv[1], InterpProc, (ClientData) procPtr,
 		ProcDeleteProc);
-	ckfree((char *) argArray);
+	_freeFast((char *) argArray);
 	return TCL_OK;
 
 procError:
-	ckfree(procPtr->command);
+	_freeFast(procPtr->command);
 	while (procPtr->argPtr != NULL) {
 		argPtr = procPtr->argPtr;
 		procPtr->argPtr = argPtr->nextPtr;
-		ckfree((char *) argPtr);
+		_freeFast((char *) argPtr);
 	}
-	ckfree((char *) procPtr);
+	_freeFast((char *) procPtr);
 	if (argArray != NULL) {
-		ckfree((char *) argArray);
+		_freeFast((char *) argArray);
 	}
 	return result;
 }
@@ -192,7 +192,7 @@ __device__ int TclGetFrame(Tcl_Interp *interp, char *string, CallFrame **framePt
 		if (level < 0) {
 levelError:
 			Tcl_AppendResult(interp, "bad level \"", string, "\"",
-				(char *) NULL);
+				(char *)NULL);
 			return -1;
 		}
 	} else if (_isdigit(*string)) {
@@ -254,7 +254,7 @@ __device__ int Tcl_UplevelCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 	if (argc < 2) {
 uplevelSyntax:
 		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			" ?level? command ?arg ...?\"", (char *) NULL);
+			" ?level? command ?arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 
@@ -284,13 +284,13 @@ uplevelSyntax:
 	*/
 
 	if (argc == 1) {
-		result = Tcl_Eval(interp, argv[0], 0, (char **) NULL);
+		result = Tcl_Eval(interp, argv[0], 0, (char **)NULL);
 	} else {
 		char *cmd;
 
 		cmd = Tcl_Concat(argc, argv);
-		result = Tcl_Eval(interp, cmd, 0, (char **) NULL);
-		ckfree(cmd);
+		result = Tcl_Eval(interp, cmd, 0, (char **)NULL);
+		_freeFast(cmd);
 	}
 	if (result == TCL_ERROR) {
 		char msg[60];
@@ -433,7 +433,7 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 					}
 					value = Tcl_Merge(argc, args);
 					Tcl_SetVar(interp, argPtr->name, value, 0);
-					ckfree(value);
+					_freeFast(value);
 					argc = 0;
 					break;
 			} else if (argc > 0) {
@@ -443,7 +443,7 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 			} else {
 				Tcl_AppendResult(interp, "no value given for parameter \"",
 					argPtr->name, "\" to \"", argv[0], "\"",
-					(char *) NULL);
+					(char *)NULL);
 				result = TCL_ERROR;
 				goto procDone;
 			}
@@ -451,7 +451,7 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 	}
 	if (argc > 0) {
 		Tcl_AppendResult(interp, "called \"", argv[0],
-			"\" with too many arguments", (char *) NULL);
+			"\" with too many arguments", (char *)NULL);
 		result = TCL_ERROR;
 		goto procDone;
 	}
@@ -536,13 +536,13 @@ __device__ static void ProcDeleteProc(ClientData clientData)
 	register Arg *argPtr;
 
 	if (--procPtr->uses <= 0) {
-		ckfree((char *) procPtr->command);
+		_freeFast((char *) procPtr->command);
 		for (argPtr = procPtr->argPtr; argPtr != NULL; ) {
 			Arg *nextPtr = argPtr->nextPtr;
 
-			ckfree((char *) argPtr);
+			_freeFast((char *) argPtr);
 			argPtr = nextPtr;
 		}
-		ckfree((char *) procPtr);
+		_freeFast((char *) procPtr);
 	}
 }

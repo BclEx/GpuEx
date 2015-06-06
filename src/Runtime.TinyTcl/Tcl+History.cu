@@ -114,9 +114,9 @@ __device__ static void InitHistory(register Interp *iPtr)
 	}
 	iPtr->numEvents = 20;
 	iPtr->events = (HistoryEvent *)
-		ckalloc((unsigned) (iPtr->numEvents * sizeof(HistoryEvent)));
+		_allocFast((unsigned) (iPtr->numEvents * sizeof(HistoryEvent)));
 	for (i = 0; i < iPtr->numEvents; i++) {
-		iPtr->events[i].command = (char *) ckalloc(INITIAL_CMD_SIZE);
+		iPtr->events[i].command = (char *) _allocFast(INITIAL_CMD_SIZE);
 		*iPtr->events[i].command = 0;
 		iPtr->events[i].bytesAvl = INITIAL_CMD_SIZE;
 	}
@@ -229,7 +229,7 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 {
 	register Interp *iPtr = (Interp *) interp;
 	register HistoryEvent *eventPtr;
-	size_t length;
+	int length;
 	int c;
 
 	if (iPtr->numEvents == 0) {
@@ -250,13 +250,13 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 	if ((c == 'a') && (!_strncmp(argv[1], "add", length))) {
 		if ((argc != 3) && (argc != 4)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" add event ?exec?\"", (char *) NULL);
+				" add event ?exec?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (argc == 4) {
 			if (_strncmp(argv[3], "exec", _strlen(argv[3]))) {
 				Tcl_AppendResult(interp, "bad argument \"", argv[3],
-					"\": should be \"exec\"", (char *) NULL);
+					"\": should be \"exec\"", (char *)NULL);
 				return TCL_ERROR;
 			}
 			return Tcl_RecordAndEval(interp, argv[2], 0);
@@ -265,7 +265,7 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 	} else if ((c == 'c') && (!_strncmp(argv[1], "change", length))) {
 		if ((argc != 3) && (argc != 4)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" change newValue ?event?\"", (char *) NULL);
+				" change newValue ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (argc == 3) {
@@ -274,9 +274,9 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 			while (iPtr->revPtr != NULL) {
 				HistoryRev *nextPtr;
 
-				ckfree(iPtr->revPtr->newBytes);
+				_freeFast(iPtr->revPtr->newBytes);
 				nextPtr = iPtr->revPtr->nextPtr;
-				ckfree((char *) iPtr->revPtr);
+				_freeFast((char *) iPtr->revPtr);
 				iPtr->revPtr = nextPtr;
 			}
 		} else {
@@ -291,7 +291,7 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 	} else if ((c == 'e') && (!_strncmp(argv[1], "event", length))) {
 		if (argc > 3) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" event ?event?\"", (char *) NULL);
+				" event ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		eventPtr = GetEvent(iPtr, argc==2 ? "-1" : argv[2]);
@@ -307,7 +307,7 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 
 		if ((argc != 2) && (argc != 3)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" info ?count?\"", (char *) NULL);
+				" info ?count?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 infoCmd:
@@ -335,7 +335,7 @@ infoCmd:
 					continue;		/* No command recorded here. */
 				}
 				_sprintf(serial, "%6d  ", iPtr->curEventNum + 1 - (count - i));
-				Tcl_AppendResult(interp, newline, serial, (char *) NULL);
+				Tcl_AppendResult(interp, newline, serial, (char *)NULL);
 				newline = "\n";
 
 				/*
@@ -351,11 +351,11 @@ infoCmd:
 					next++;
 					savedChar = *next;
 					*next = 0;
-					Tcl_AppendResult(interp, cur, "\t", (char *) NULL);
+					Tcl_AppendResult(interp, cur, "\t", (char *)NULL);
 					*next = savedChar;
 					cur = next;
 				}
-				Tcl_AppendResult(interp, cur, (char *) NULL);
+				Tcl_AppendResult(interp, cur, (char *)NULL);
 		}
 		return TCL_OK;
 	} else if ((c == 'k') && (!_strncmp(argv[1], "keep", length))) {
@@ -364,7 +364,7 @@ infoCmd:
 
 		if (argc != 3) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" keep number\"", (char *) NULL);
+				" keep number\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (Tcl_GetInt(interp, argv[2], &count) != TCL_OK) {
@@ -372,7 +372,7 @@ infoCmd:
 		}
 		if ((count <= 0) || (count > 1000)) {
 			Tcl_AppendResult(interp, "illegal keep count \"", argv[2],
-				"\"", (char *) NULL);
+				"\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 
@@ -382,7 +382,7 @@ infoCmd:
 		*/
 
 		events = (HistoryEvent *)
-			ckalloc((unsigned) (count * sizeof(HistoryEvent)));
+			_allocFast((unsigned) (count * sizeof(HistoryEvent)));
 		if (count < iPtr->numEvents) {
 			src = iPtr->curEvent + 1 - count;
 			if (src < 0) {
@@ -399,7 +399,7 @@ infoCmd:
 				events[i] = iPtr->events[src];
 				iPtr->events[src].command = NULL;
 			} else {
-				events[i].command = (char *) ckalloc(INITIAL_CMD_SIZE);
+				events[i].command = (char *) _allocFast(INITIAL_CMD_SIZE);
 				events[i].command[0] = 0;
 				events[i].bytesAvl = INITIAL_CMD_SIZE;
 			}
@@ -412,10 +412,10 @@ infoCmd:
 
 		for (i = 0; i < iPtr->numEvents; i++) {
 			if (iPtr->events[i].command != NULL) {
-				ckfree(iPtr->events[i].command);
+				_freeFast(iPtr->events[i].command);
 			}
 		}
-		ckfree((char *) iPtr->events);
+		_freeFast((char *) iPtr->events);
 		iPtr->events = events;
 		if (count < iPtr->numEvents) {
 			iPtr->curEvent = count-1;
@@ -427,7 +427,7 @@ infoCmd:
 	} else if ((c == 'n') && (!_strncmp(argv[1], "nextid", length))) {
 		if (argc != 2) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" nextid\"", (char *) NULL);
+				" nextid\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		_sprintf(iPtr->result, "%d", iPtr->curEventNum+1);
@@ -435,7 +435,7 @@ infoCmd:
 	} else if ((c == 'r') && (!_strncmp(argv[1], "redo", length))) {
 		if (argc > 3) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" redo ?event?\"", (char *) NULL);
+				" redo ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		eventPtr = GetEvent(iPtr, argc==2 ? "-1" : argv[2]);
@@ -447,7 +447,7 @@ infoCmd:
 	} else if ((c == 's') && (!_strncmp(argv[1], "substitute", length))) {
 		if ((argc > 5) || (argc < 4)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" substitute old new ?event?\"", (char *) NULL);
+				" substitute old new ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		eventPtr = GetEvent(iPtr, argc==4 ? "-1" : argv[4]);
@@ -460,7 +460,7 @@ infoCmd:
 
 		if ((argc != 3) && (argc != 4)) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" words num-num/pat ?event?\"", (char *) NULL);
+				" words num-num/pat ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		eventPtr = GetEvent(iPtr, argc==3 ? "-1" : argv[3]);
@@ -479,7 +479,7 @@ infoCmd:
 
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be add, change, event, info, keep, nextid, ",
-		"redo, substitute, or words", (char *) NULL);
+		"redo, substitute, or words", (char *)NULL);
 	return TCL_ERROR;
 }
 
@@ -504,8 +504,8 @@ infoCmd:
 __device__ static void MakeSpace(HistoryEvent *hPtr, int size)
 {
 	if (hPtr->bytesAvl < size) {
-		ckfree(hPtr->command);
-		hPtr->command = (char *) ckalloc((unsigned) size);
+		_freeFast(hPtr->command);
+		hPtr->command = (char *) _allocFast((unsigned) size);
 		hPtr->bytesAvl = size;
 	}
 }
@@ -546,15 +546,15 @@ __device__ static void InsertRev(Interp *iPtr, register HistoryRev *revPtr)
 					curPtr->firstIndex = revPtr->firstIndex;
 					curPtr->lastIndex = revPtr->lastIndex;
 					curPtr->newSize = revPtr->newSize;
-					ckfree(curPtr->newBytes);
+					_freeFast(curPtr->newBytes);
 					curPtr->newBytes = revPtr->newBytes;
-					ckfree((char *) revPtr);
+					_freeFast((char *) revPtr);
 					return;
 			}
 			if ((revPtr->firstIndex >= curPtr->firstIndex)
 				&& (revPtr->lastIndex <= curPtr->lastIndex)) {
-					ckfree(revPtr->newBytes);
-					ckfree((char *) revPtr);
+					_freeFast(revPtr->newBytes);
+					_freeFast((char *) revPtr);
 					return;
 			}
 
@@ -601,11 +601,11 @@ __device__ static void RevCommand(register Interp *iPtr, char *string)
 	if ((iPtr->evalFirst == NULL) || (iPtr->revDisables > 0)) {
 		return;
 	}
-	revPtr = (HistoryRev *) ckalloc(sizeof(HistoryRev));
-	revPtr->firstIndex = iPtr->evalFirst - iPtr->historyFirst;
-	revPtr->lastIndex = iPtr->evalLast - iPtr->historyFirst;
+	revPtr = (HistoryRev *) _allocFast(sizeof(HistoryRev));
+	revPtr->firstIndex = (int)(iPtr->evalFirst - iPtr->historyFirst);
+	revPtr->lastIndex = (int)(iPtr->evalLast - iPtr->historyFirst);
 	revPtr->newSize = _strlen(string);
-	revPtr->newBytes = (char *) ckalloc((unsigned) (revPtr->newSize+1));
+	revPtr->newBytes = (char *) _allocFast((unsigned) (revPtr->newSize+1));
 	_strcpy(revPtr->newBytes, string);
 	InsertRev(iPtr, revPtr);
 }
@@ -664,9 +664,9 @@ __device__ static void RevResult(register Interp *iPtr, char *string)
 		return;
 	}
 
-	revPtr = (HistoryRev *) ckalloc(sizeof(HistoryRev));
-	revPtr->firstIndex = evalFirst - iPtr->historyFirst;
-	revPtr->lastIndex = evalLast - iPtr->historyFirst;
+	revPtr = (HistoryRev *) _allocFast(sizeof(HistoryRev));
+	revPtr->firstIndex = (int)(evalFirst - iPtr->historyFirst);
+	revPtr->lastIndex = (int)(evalLast - iPtr->historyFirst);
 	argv[0] = string;
 	revPtr->newBytes = Tcl_Merge(1, argv);
 	revPtr->newSize = _strlen(revPtr->newBytes);
@@ -715,7 +715,7 @@ __device__ static void DoRevs(register Interp *iPtr)
 		size += revPtr->newSize;
 	}
 
-	newCommand = (char *) ckalloc(size);
+	newCommand = (char *) _allocFast(size);
 	p = newCommand;
 	bytesSeen = 0;
 	for (revPtr = iPtr->revPtr; revPtr != NULL; ) {
@@ -729,8 +729,8 @@ __device__ static void DoRevs(register Interp *iPtr)
 		_strncpy(p, revPtr->newBytes, (size_t) revPtr->newSize);
 		p += revPtr->newSize;
 		bytesSeen = revPtr->lastIndex+1;
-		ckfree(revPtr->newBytes);
-		ckfree((char *) revPtr);
+		_freeFast(revPtr->newBytes);
+		_freeFast((char *) revPtr);
 		revPtr = nextPtr;
 	}
 	_strcpy(p, eventPtr->command + bytesSeen);
@@ -739,7 +739,7 @@ __device__ static void DoRevs(register Interp *iPtr)
 	* Replace the command in the event.
 	*/
 
-	ckfree(eventPtr->command);
+	_freeFast(eventPtr->command);
 	eventPtr->command = newCommand;
 	eventPtr->bytesAvl = size;
 	iPtr->revPtr = NULL;
@@ -784,13 +784,13 @@ __device__ static HistoryEvent *GetEvent(register Interp *iPtr, char *string)
 		}
 		if (eventNum > iPtr->curEventNum) {
 			Tcl_AppendResult((Tcl_Interp *) iPtr, "event \"", string,
-				"\" hasn't occurred yet", (char *) NULL);
+				"\" hasn't occurred yet", (char *)NULL);
 			return NULL;
 		}
 		if ((eventNum <= iPtr->curEventNum-iPtr->numEvents)
 			|| (eventNum <= 0)) {
 				Tcl_AppendResult((Tcl_Interp *) iPtr, "event \"", string,
-					"\" is too far in the past", (char *) NULL);
+					"\" is too far in the past", (char *)NULL);
 				return NULL;
 		}
 		index = iPtr->curEvent + (eventNum - iPtr->curEventNum);
@@ -821,7 +821,7 @@ __device__ static HistoryEvent *GetEvent(register Interp *iPtr, char *string)
 	}
 
 	Tcl_AppendResult((Tcl_Interp *) iPtr, "no event matches \"", string,
-		"\"", (char *) NULL);
+		"\"", (char *)NULL);
 	return NULL;
 }
 
@@ -869,7 +869,7 @@ __device__ static int SubsAndEval(register Interp *iPtr, char *cmd, char *old, c
 	}
 	if (count == 0) {
 		Tcl_AppendResult((Tcl_Interp *) iPtr, "\"", old,
-			"\" doesn't appear in event", (char *) NULL);
+			"\" doesn't appear in event", (char *)NULL);
 		return TCL_ERROR;
 	}
 	length = _strlen(cmd) + count*(newLength - oldLength);
@@ -878,7 +878,7 @@ __device__ static int SubsAndEval(register Interp *iPtr, char *cmd, char *old, c
 	* Generate a substituted command.
 	*/
 
-	newCmd = (char *) ckalloc((unsigned) (length + 1));
+	newCmd = (char *) _allocFast((unsigned) (length + 1));
 	dst = newCmd;
 	while (1) {
 		src = (char *)_strstr(cmd, old);
@@ -895,7 +895,7 @@ __device__ static int SubsAndEval(register Interp *iPtr, char *cmd, char *old, c
 
 	RevCommand(iPtr, newCmd);
 	result = Tcl_Eval((Tcl_Interp *) iPtr, newCmd, 0, 0);
-	ckfree(newCmd);
+	_freeFast(newCmd);
 	return result;
 }
 
@@ -975,7 +975,7 @@ __device__ static char *GetWords(register Interp *iPtr, char *command, char *wor
 	* enough to hold all the words if necessary.
 	*/
 
-	result = (char *) ckalloc((unsigned) (strlen(command) + 1));
+	result = (char *) _allocFast((unsigned) (strlen(command) + 1));
 	dst = result;
 	for (next = command; _isspace(*next); next++) {
 		/* Empty loop body:  just find start of first word. */
@@ -1020,15 +1020,15 @@ __device__ static char *GetWords(register Interp *iPtr, char *command, char *wor
 	*/
 
 	if ((last >= index) || (first >= index)) {
-		ckfree(result);
+		_freeFast(result);
 		Tcl_AppendResult((Tcl_Interp *) iPtr, "word selector \"", words,
-			"\" specified non-existent words", (char *) NULL);
+			"\" specified non-existent words", (char *)NULL);
 		return NULL;
 	}
 	return result;
 
 error:
 	Tcl_AppendResult((Tcl_Interp *) iPtr, "bad word selector \"", words,
-		"\": should be num-num or pattern", (char *) NULL);
+		"\": should be num-num or pattern", (char *)NULL);
 	return NULL;
 }

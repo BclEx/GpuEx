@@ -93,7 +93,7 @@ TclSetupEnv(interp)
      * Next, add the interpreter to the list of those that we manage.
      */
 
-    eiPtr = (EnvInterp *) ckalloc(sizeof(EnvInterp));
+    eiPtr = (EnvInterp *) _allocFast(sizeof(EnvInterp));
     eiPtr->interp = interp;
     eiPtr->nextPtr = firstInterpPtr;
     firstInterpPtr = eiPtr;
@@ -104,7 +104,7 @@ TclSetupEnv(interp)
      * writes and unsets to that array.
      */
 
-    (void) Tcl_UnsetVar2(interp, "env", (char *) NULL, TCL_GLOBAL_ONLY);
+    (void) Tcl_UnsetVar2(interp, "env", (char *)NULL, TCL_GLOBAL_ONLY);
     for (i = 0; ; i++) {
 	char *p, *p2;
 
@@ -119,7 +119,7 @@ TclSetupEnv(interp)
 	(void) Tcl_SetVar2(interp, "env", p, p2+1, TCL_GLOBAL_ONLY);
 	*p2 = '=';
     }
-    Tcl_TraceVar2(interp, "env", (char *) NULL,
+    Tcl_TraceVar2(interp, "env", (char *)NULL,
 	    TCL_GLOBAL_ONLY | TCL_TRACE_WRITES | TCL_TRACE_UNSETS,
 	    EnvTraceProc, (ClientData) NULL);
 }
@@ -184,7 +184,7 @@ EnvTraceProc(clientData, interp, name1, name2, flags)
 		}
 	    }
 	}
-	ckfree((char *) eiPtr);
+	_freeFast((char *) eiPtr);
 	return NULL;
     }
 

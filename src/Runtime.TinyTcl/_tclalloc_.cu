@@ -1,15 +1,11 @@
 /* 
  * tclCkalloc.c --
- *    Interface to malloc and free that provides support for debugging problems
- *    involving overwritten, double freeing memory and loss of memory.
+ *    Interface to malloc and free that provides support for debugging problems involving overwritten, double freeing memory and loss of memory.
  *
  * Copyright 1991 Regents of the University of California
- * Permission to use, copy, modify, and distribute this
- * software and its documentation for any purpose and without
- * fee is hereby granted, provided that the above copyright
- * notice appear in all copies.  The University of California
- * makes no representations about the suitability of this
- * software for any purpose.  It is provided "as is" without
+ * Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
  * express or implied warranty.
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
@@ -419,7 +415,7 @@ MemoryCmd (clientData, interp, argc, argv)
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args:  should be \"",
-		argv[0], " option [args..]\"", (char *) NULL);
+		argv[0], " option [args..]\"", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -463,7 +459,7 @@ MemoryCmd (clientData, interp, argc, argv)
     if (strcmp(argv[1],"active") == 0) {
         if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args:  should be \"",
-		    argv[0], " active file", (char *) NULL);
+		    argv[0], " active file", (char *)NULL);
 	    return TCL_ERROR;
 	}
         fileName = argv [2];
@@ -472,24 +468,24 @@ MemoryCmd (clientData, interp, argc, argv)
                 return TCL_ERROR;
         if (Tcl_DumpActiveMemory (fileName) != TCL_OK) {
 	    Tcl_AppendResult(interp, "error accessing ", argv[2], 
-		    (char *) NULL);
+		    (char *)NULL);
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
     }
     Tcl_AppendResult(interp, "bad option \"", argv[1],
 	    "\":  should be info, init, active, break_on_malloc, ",
-	    "trace_on_at_malloc, trace, or validate", (char *) NULL);
+	    "trace_on_at_malloc, trace, or validate", (char *)NULL);
     return TCL_ERROR;
 
 argError:
     Tcl_AppendResult(interp, "wrong # args:  should be \"", argv[0],
-	    " ", argv[1], "count\"", (char *) NULL);
+	    " ", argv[1], "count\"", (char *)NULL);
     return TCL_ERROR;
 
 bad_suboption:
     Tcl_AppendResult(interp, "wrong # args:  should be \"", argv[0],
-	    " ", argv[1], " on|off\"", (char *) NULL);
+	    " ", argv[1], " on|off\"", (char *)NULL);
     return TCL_ERROR;
 }
 

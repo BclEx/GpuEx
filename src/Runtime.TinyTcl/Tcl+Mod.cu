@@ -52,11 +52,11 @@ static int check_match_command(Tcl_Interp *interp, const tclmod_command_type *ct
 {
 	if (strcmp(ct->cmd, argv[1]) == 0) {
 		if (argc == 3 && strcmp(argv[2], "?") == 0) {
-			Tcl_AppendResult (interp, "Usage: ", argv[0], " ", ct->cmd, " ", ct->args, "\n\n", ct->description, (char *) NULL);
+			Tcl_AppendResult (interp, "Usage: ", argv[0], " ", ct->cmd, " ", ct->args, "\n\n", ct->description, (char *)NULL);
 			return -1;
 		}
 		if (argc < ct->minargs + 2 || (ct->maxargs >= 0 && argc > ct->maxargs + 2)) {
-			Tcl_AppendResult (interp, "wrong # args: should be \"", argv[0], " ", ct->cmd, " ", ct->args, "\"", (char *) NULL);
+			Tcl_AppendResult (interp, "wrong # args: should be \"", argv[0], " ", ct->cmd, " ", ct->args, "\"", (char *)NULL);
 			return -1;
 		}
 
@@ -73,8 +73,8 @@ tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, i
 	int ret;
 
 	if (argc < 2) {
-		Tcl_AppendResult (interp, "wrong # args: should be \"", argv[0], " command ...\"\n", (char *) NULL);
-		Tcl_AppendResult (interp, "Use \"", argv[0], " ?\" or \"", argv[0], " command ?\" for help", (char *) NULL);
+		Tcl_AppendResult (interp, "wrong # args: should be \"", argv[0], " command ...\"\n", (char *)NULL);
+		Tcl_AppendResult (interp, "Use \"", argv[0], " ?\" or \"", argv[0], " command ?\" for help", (char *)NULL);
 		return 0;
 	}
 
@@ -104,16 +104,16 @@ tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, i
 
 	/* No, so show usage */
 	if (strcmp(argv[1], "?") == 0) {
-		Tcl_AppendResult(interp, "Usage: \"", argv[0], " command ...\", where command is one of: ", (char *) NULL);
+		Tcl_AppendResult(interp, "Usage: \"", argv[0], " command ...\", where command is one of: ", (char *)NULL);
 	}
 	else {
-		Tcl_AppendResult(interp, "Error: ", argv[0], ", unknown command \"", argv[1], "\": should be ", (char *) NULL);
+		Tcl_AppendResult(interp, "Error: ", argv[0], ", unknown command \"", argv[1], "\": should be ", (char *)NULL);
 	}
 
 	sep = "";
 	for (ct = command_table; ct->cmd; ct++) {
 		if (!(ct->flags & TCL_MODFLAG_HIDDEN)) {
-			Tcl_AppendResult(interp, sep, ct->cmd, (char *) NULL);
+			Tcl_AppendResult(interp, sep, ct->cmd, (char *)NULL);
 			sep = ", ";
 		}
 	}

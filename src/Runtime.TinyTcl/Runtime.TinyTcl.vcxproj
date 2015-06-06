@@ -116,107 +116,105 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="regex_compat.h" />
-    <ClInclude Include="tcl.h" />
-    <ClInclude Include="tclExtdInt.h" />
-    <ClInclude Include="tclExtend.h" />
-    <ClInclude Include="tclHash.h" />
-    <ClInclude Include="tclInt.h" />
-    <ClInclude Include="tclLoad.h" />
-    <ClInclude Include="tclmod.h" />
-    <ClInclude Include="tclOS.h" />
-    <ClInclude Include="tclUnix.h" />
+    <ClInclude Include="Tcl.h" />
+    <ClInclude Include="TclExtdInt.h" />
+    <ClInclude Include="TclExtend.h" />
+    <ClInclude Include="Tcl+Hash.h" />
+    <ClInclude Include="Tcl+Int.h" />
+    <ClInclude Include="Tcl+Load.h" />
+    <ClInclude Include="Tcl+Mod.h" />
+    <ClInclude Include="TclOS.h" />
+    <ClInclude Include="Tcl+Unix.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
-    <None Include="RTinyTcl.cu" />
+    <None Include="RTcl.cu" />
     <ClCompile Include="dos.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="noextensions.cu" />
-    <ClCompile Include="panic.cu" />
     <ClCompile Include="readdir.cu" />
     <ClCompile Include="regex_compat.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclalloc.cu">
+    <ClCompile Include="Tcl+Alloc.cu" />
+    <ClCompile Include="Tcl+Assem.cu" />
+    <ClCompile Include="Tcl+Basic.cu" />
+    <ClCompile Include="Tcl+CmdAH.cu" />
+    <ClCompile Include="Tcl+CmdIL.cu" />
+    <ClCompile Include="Tcl+CmdMZ.cu" />
+    <ClCompile Include="Tcl+Env.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclAssem.cu" />
-    <ClCompile Include="tclBasic.cu" />
-    <ClCompile Include="tclCmdAH.cu" />
-    <ClCompile Include="tclCmdIL.cu" />
-    <ClCompile Include="tclCmdMZ.cu" />
-    <ClCompile Include="tclEmbed.cu">
+    <ClCompile Include="Tcl+Expr.cu" />
+    <ClCompile Include="Tcl+Get.cu" />
+    <ClCompile Include="Tcl+Glob.cu" />
+    <ClCompile Include="Tcl+Hash.cu" />
+    <ClCompile Include="Tcl+History.cu" />
+    <ClCompile Include="Tcl+Load.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclEnv.cu">
+    <ClCompile Include="Tcl+Load-dl.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclExpr.cu" />
-    <ClCompile Include="tclGet.cu" />
-    <ClCompile Include="tclGlob.cu" />
-    <ClCompile Include="tclHash.cu" />
-    <ClCompile Include="tclHistory.cu" />
-    <ClCompile Include="tclLoad.cu">
+    <ClCompile Include="Tcl+Main-embed.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclLoadDl.cu">
+    <ClCompile Include="Tcl+Main-test.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclmod.cu">
+    <ClCompile Include="Tcl+Main-test2.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclParse.cu" />
-    <ClCompile Include="tclProc.cu" />
-    <ClCompile Include="tclTest.cu">
+    <ClCompile Include="Tcl+Mod.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclUnixAZ.cu" />
-    <ClCompile Include="tclUtil.cu" />
-    <ClCompile Include="tcluxstr.cu">
+    <ClCompile Include="Tcl+Parse.cu" />
+    <ClCompile Include="Tcl+Proc.cu" />
+    <ClCompile Include="Tcl+UnixAZ.cu" />
+    <ClCompile Include="Tcl+UnixStr.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tcluxutl.cu">
+    <ClCompile Include="Tcl+UnixUtil.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="tclVar.cu" />
-    <ClCompile Include="tclXdbg.cu" />
-    <ClCompile Include="tclXgen.cu" />
-    <ClCompile Include="tinytcl.cu" />
+    <ClCompile Include="Tcl+Util.cu" />
+    <ClCompile Include="Tcl+Var.cu" />
+    <ClCompile Include="TclX+Dbg.cu" />
+    <ClCompile Include="TclX+Gen.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
-    <CudaCompile Include="RTinyTcl.cu" />
+    <CudaCompile Include="RTcl.cu" />
     <None Include="dos.cu" />
     <None Include="noextensions.cu" />
-    <None Include="panic.cu" />
     <None Include="readdir.cu" />
     <None Include="regex_compat.cu" />
-    <None Include="tclalloc.cu" />
-    <None Include="tclAssem.cu" />
-    <None Include="tclBasic.cu" />
-    <None Include="tclCmdAH.cu" />
-    <None Include="tclCmdIL.cu" />
-    <None Include="tclCmdMZ.cu" />
-    <None Include="tclEmbed.cu" />
-    <None Include="tclEnv.cu" />
-    <None Include="tclExpr.cu" />
-    <None Include="tclGet.cu" />
-    <None Include="tclGlob.cu" />
-    <None Include="tclHash.cu" />
-    <None Include="tclHistory.cu" />
-    <None Include="tclLoad.cu" />
-    <None Include="tclLoadDl.cu" />
-    <None Include="tclmod.cu" />
-    <None Include="tclParse.cu" />
-    <None Include="tclProc.cu" />
-    <None Include="tclTest.cu" />
-    <None Include="tclUnixAZ.cu" />
-    <None Include="tclUtil.cu" />
-    <None Include="tcluxstr.cu" />
-    <None Include="tcluxutl.cu" />
-    <None Include="tclVar.cu" />
-    <None Include="tclXdbg.cu" />
-    <None Include="tclXgen.cu" />
-    <None Include="tinytcl.cu" />
+    <None Include="Tcl+Alloc.cu" />
+    <None Include="Tcl+Assem.cu" />
+    <None Include="Tcl+Basic.cu" />
+    <None Include="Tcl+CmdAH.cu" />
+    <None Include="Tcl+CmdIL.cu" />
+    <None Include="Tcl+CmdMZ.cu" />
+    <None Include="Tcl+Env.cu" />
+    <None Include="Tcl+Expr.cu" />
+    <None Include="Tcl+Get.cu" />
+    <None Include="Tcl+Glob.cu" />
+    <None Include="Tcl+Hash.cu" />
+    <None Include="Tcl+History.cu" />
+    <None Include="Tcl+Load.cu" />
+    <None Include="Tcl+Load-dl.cu" />
+    <None Include="Tcl+Main-embed.cu" />
+    <None Include="Tcl+Main-test.cu" />
+    <None Include="Tcl+Main-test2.cu" />
+    <None Include="Tcl+Mod.cu" />
+    <None Include="Tcl+Parse.cu" />
+    <None Include="Tcl+Proc.cu" />
+    <None Include="Tcl+UnixAZ.cu" />
+    <None Include="Tcl+UnixStr.cu" />
+    <None Include="Tcl+UnixUtil.cu" />
+    <None Include="Tcl+Util.cu" />
+    <None Include="Tcl+Var.cu" />
+    <None Include="TclX+Dbg.cu" />
+    <None Include="TclX+Gen.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

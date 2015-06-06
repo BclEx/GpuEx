@@ -144,7 +144,7 @@ __constant__ int _precTable[] = {
 * Mapping from operator numbers to strings;  used for error messages.
 */
 
-char *operatorStrings[] = {
+__constant__ char *_operatorStrings[] = {
 	"VALUE", "(", ")", "END", "UNKNOWN", "5", "6", "7",
 	"*", "/", "%", "+", "-", "<<", ">>", "<", ">", "<=",
 	">=", "==", "!=", "&", "^", "|", "&&", "||", "?", ":",
@@ -210,11 +210,11 @@ __device__ static int ExprParseString(Tcl_Interp *interp, char *string, Value *v
 				if (valuePtr->doubleValue == 0.0) {
 					Tcl_AppendResult(interp, "floating-point value \"",
 						string, "\" too small to represent",
-						(char *) NULL);
+						(char *)NULL);
 				} else {
 					Tcl_AppendResult(interp, "floating-point value \"",
 						string, "\" too large to represent",
-						(char *) NULL);
+						(char *)NULL);
 				}
 				return TCL_ERROR;
 			}
@@ -236,7 +236,7 @@ __device__ static int ExprParseString(Tcl_Interp *interp, char *string, Value *v
 
 		length = _strlen(string);
 		valuePtr->pv.next = valuePtr->pv.buffer;
-		shortfall = length - (valuePtr->pv.end - valuePtr->pv.buffer);
+		shortfall = length - (int)(valuePtr->pv.end - valuePtr->pv.buffer);
 		if (shortfall > 0) {
 			(*valuePtr->pv.expandProc)(&valuePtr->pv, shortfall);
 		}
@@ -580,7 +580,7 @@ __device__ static int ExprGetValue(Tcl_Interp *interp, register ExprInfo *infoPt
 			Tcl_ResetResult(interp);
 			Tcl_AppendResult(interp,
 				"unmatched parentheses in expression \"",
-				infoPtr->originalExpr, "\"", (char *) NULL);
+				infoPtr->originalExpr, "\"", (char *)NULL);
 			result = TCL_ERROR;
 			goto done;
 		}
@@ -1033,7 +1033,7 @@ divideByZero:
 
 done:
 	if (value2.pv.buffer != value2.staticSpace) {
-		ckfree(value2.pv.buffer);
+		_freeFast(value2.pv.buffer);
 	}
 	return result;
 
@@ -1044,7 +1044,7 @@ syntaxError:
 	goto done;
 
 illegalType:
-	Tcl_AppendResult(interp, "can't use ", (badType == TYPE_DOUBLE ? "floating-point value" : "non-numeric string", " as operand of \"", operatorStrings[operator_], "\"", (char *)NULL));
+	Tcl_AppendResult(interp, "can't use ", (badType == TYPE_DOUBLE ? "floating-point value" : "non-numeric string", " as operand of \"", _operatorStrings[operator_], "\"", (char *)NULL));
 	result = TCL_ERROR;
 	goto done;
 }
@@ -1071,7 +1071,7 @@ __device__ static void ExprMakeString(register Value *valuePtr)
 {
 	int shortfall;
 
-	shortfall = 150 - (valuePtr->pv.end - valuePtr->pv.buffer);
+	shortfall = 150 - (int)(valuePtr->pv.end - valuePtr->pv.buffer);
 	if (shortfall > 0) {
 		(*valuePtr->pv.expandProc)(&valuePtr->pv, shortfall);
 	}
@@ -1124,7 +1124,7 @@ __device__ static int ExprTopLevel(Tcl_Interp *interp, char *string, Value *valu
 	}
 	if (info.token != END) {
 		Tcl_AppendResult(interp, "syntax error in expression \"",
-			string, "\"", (char *) NULL);
+			string, "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -1162,14 +1162,14 @@ __device__ int Tcl_ExprLong(Tcl_Interp *interp, char *string, long *ptr)
 		if (value.type == TYPE_INT) {
 			*ptr = value.intValue;
 		} else if (value.type == TYPE_DOUBLE) {
-			*ptr = value.doubleValue;
+			*ptr = (long)value.doubleValue;
 		} else {
 			interp->result = "expression didn't have numeric value";
 			result = TCL_ERROR;
 		}
 	}
 	if (value.pv.buffer != value.staticSpace) {
-		ckfree(value.pv.buffer);
+		_freeFast(value.pv.buffer);
 	}
 	return result;
 }
@@ -1191,7 +1191,7 @@ __device__ int Tcl_ExprDouble(Tcl_Interp *interp, char *string, double *ptr)
 		}
 	}
 	if (value.pv.buffer != value.staticSpace) {
-		ckfree(value.pv.buffer);
+		_freeFast(value.pv.buffer);
 	}
 	return result;
 }
@@ -1213,7 +1213,7 @@ __device__ int Tcl_ExprBoolean(Tcl_Interp *interp, char *string, int *ptr)
 		}
 	}
 	if (value.pv.buffer != value.staticSpace) {
-		ckfree(value.pv.buffer);
+		_freeFast(value.pv.buffer);
 	}
 	return result;
 }
@@ -1259,7 +1259,7 @@ __device__ int Tcl_ExprString(Tcl_Interp *interp, char *string)
 		}
 	}
 	if (value.pv.buffer != value.staticSpace) {
-		ckfree(value.pv.buffer);
+		_freeFast(value.pv.buffer);
 	}
 	return result;
 }

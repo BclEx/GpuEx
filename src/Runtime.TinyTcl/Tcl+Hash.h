@@ -74,11 +74,11 @@ typedef struct Tcl_HashSearch {
 #define Tcl_CreateHashEntry(tablePtr, key, newPtr) (*((tablePtr)->createProc))(tablePtr, key, newPtr)
 
 // Exported procedures:
-extern void Tcl_DeleteHashEntry(Tcl_HashEntry *entryPtr);
-extern void Tcl_DeleteHashTable( Tcl_HashTable *tablePtr);
-extern Tcl_HashEntry *Tcl_FirstHashEntry( Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr);
-extern char *Tcl_HashStats(Tcl_HashTable *tablePtr);
-extern void Tcl_InitHashTable(Tcl_HashTable *tablePtr, int keyType);
-extern Tcl_HashEntry *Tcl_NextHashEntry( Tcl_HashSearch *searchPtr);
+extern __device__ void Tcl_DeleteHashEntry(Tcl_HashEntry *entryPtr);
+extern __device__ void Tcl_DeleteHashTable( Tcl_HashTable *tablePtr);
+extern __device__ Tcl_HashEntry *Tcl_FirstHashEntry( Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr);
+extern __device__ char *Tcl_HashStats(Tcl_HashTable *tablePtr);
+extern __device__ void Tcl_InitHashTable(Tcl_HashTable *tablePtr, int keyType);
+extern __device__ Tcl_HashEntry *Tcl_NextHashEntry( Tcl_HashSearch *searchPtr);
 
 #endif /* _TCLHASH */

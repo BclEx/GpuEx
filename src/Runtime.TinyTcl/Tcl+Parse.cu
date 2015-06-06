@@ -776,7 +776,7 @@ __device__ void TclExpandParseValue(register ParseValue *pvPtr, int needed)
 	} else {
 		newSpace += newSpace;
 	}
-	new_ = (char *) ckalloc((unsigned) newSpace);
+	new_ = (char *) _allocFast((unsigned) newSpace);
 
 	/*
 	* Copy from old buffer to new, free old buffer if needed, and
@@ -786,7 +786,7 @@ __device__ void TclExpandParseValue(register ParseValue *pvPtr, int needed)
 	_memcpy((VOID *) new_, (VOID *) pvPtr->buffer, pvPtr->next - pvPtr->buffer);
 	pvPtr->next = new_ + (pvPtr->next - pvPtr->buffer);
 	if (pvPtr->clientData != 0) {
-		ckfree(pvPtr->buffer);
+		_freeFast(pvPtr->buffer);
 	}
 	pvPtr->buffer = new_;
 	pvPtr->end = new_ + newSpace - 1;
@@ -1127,7 +1127,7 @@ __device__ char *Tcl_ParseVar(Tcl_Interp *interp, register char *string, char **
 
 done:
 	if ((name2 != NULL) && (pv.buffer != copyStorage)) {
-		ckfree(pv.buffer);
+		_freeFast(pv.buffer);
 	}
 	return result;
 }

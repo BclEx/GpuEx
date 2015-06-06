@@ -118,7 +118,7 @@ __device__ void Tcl_DeleteHashEntry(Tcl_HashEntry *entryPtr)
 		}
 	}
 	entryPtr->tablePtr->numEntries--;
-	ckfree((char *) entryPtr);
+	_freeFast((char *) entryPtr);
 }
 
 /*
@@ -150,7 +150,7 @@ __device__ void Tcl_DeleteHashTable(register Tcl_HashTable *tablePtr)
 		hPtr = tablePtr->buckets[i];
 		while (hPtr != NULL) {
 			nextPtr = hPtr->nextPtr;
-			ckfree((char *) hPtr);
+			_freeFast((char *) hPtr);
 			hPtr = nextPtr;
 		}
 	}
@@ -160,7 +160,7 @@ __device__ void Tcl_DeleteHashTable(register Tcl_HashTable *tablePtr)
 	*/
 
 	if (tablePtr->buckets != tablePtr->staticBuckets) {
-		ckfree((char *) tablePtr->buckets);
+		_freeFast((char *) tablePtr->buckets);
 	}
 
 	/*
@@ -283,7 +283,7 @@ __device__ char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 	}
 
 	// Print out the histogram and a few other pieces of information.
-	result = (char *) ckalloc((unsigned) ((NUM_COUNTERS*60) + 300));
+	result = (char *) _allocFast((unsigned) ((NUM_COUNTERS*60) + 300));
 	_sprintf(result, "%d entries in table, %d buckets\n", tablePtr->numEntries, tablePtr->numBuckets);
 	p = result + _strlen(result);
 	for (i = 0; i < NUM_COUNTERS; i++) {
@@ -439,7 +439,7 @@ __device__ static Tcl_HashEntry *StringCreate(Tcl_HashTable *tablePtr, char *key
 	*/
 
 	*newPtr = 1;
-	hPtr = (Tcl_HashEntry *) ckalloc((unsigned)
+	hPtr = (Tcl_HashEntry *) _allocFast((unsigned)
 		(sizeof(Tcl_HashEntry) + strlen(key) - (sizeof(hPtr->key) -1)));
 	hPtr->tablePtr = tablePtr;
 	hPtr->bucketPtr = &(tablePtr->buckets[index]);
@@ -541,7 +541,7 @@ __device__ static Tcl_HashEntry *OneWordCreate(Tcl_HashTable *tablePtr, register
 	*/
 
 	*newPtr = 1;
-	hPtr = (Tcl_HashEntry *) ckalloc(sizeof(Tcl_HashEntry));
+	hPtr = (Tcl_HashEntry *) _allocFast(sizeof(Tcl_HashEntry));
 	hPtr->tablePtr = tablePtr;
 	hPtr->bucketPtr = &(tablePtr->buckets[index]);
 	hPtr->nextPtr = *hPtr->bucketPtr;
@@ -666,7 +666,7 @@ __device__ static Tcl_HashEntry *ArrayCreate(Tcl_HashTable *tablePtr, register c
 	*/
 
 	*newPtr = 1;
-	hPtr = (Tcl_HashEntry *) ckalloc((unsigned) (sizeof(Tcl_HashEntry)
+	hPtr = (Tcl_HashEntry *) _allocFast((unsigned) (sizeof(Tcl_HashEntry)
 		+ (tablePtr->keyType*sizeof(int)) - 4));
 	hPtr->tablePtr = tablePtr;
 	hPtr->bucketPtr = &(tablePtr->buckets[index]);
@@ -773,7 +773,7 @@ __device__ static void RebuildTable(register Tcl_HashTable *tablePtr)
 	*/
 
 	tablePtr->numBuckets *= 4;
-	tablePtr->buckets = (Tcl_HashEntry **) ckalloc((unsigned)
+	tablePtr->buckets = (Tcl_HashEntry **) _allocFast((unsigned)
 		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
 	for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 		count > 0; count--, newChainPtr++) {
@@ -815,6 +815,6 @@ __device__ static void RebuildTable(register Tcl_HashTable *tablePtr)
 	*/
 
 	if (oldBuckets != tablePtr->staticBuckets) {
-		ckfree((char *) oldBuckets);
+		_freeFast((char *) oldBuckets);
 	}
 }

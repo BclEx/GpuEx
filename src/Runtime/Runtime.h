@@ -44,6 +44,20 @@ typedef struct
 #include "Runtime.cpu.h"
 #endif
 
+// Macro to use instead of "void" for arguments that must have type "void *" in ANSI C;  maps them to type "char *" in non-ANSI systems.
+#ifndef VOID
+# ifdef __STDC__
+# define VOID void
+# else
+# define VOID char
+# endif
+#endif
+
+// Miscellaneous declarations (to allow Tcl to be used stand-alone, without the rest of Sprite).
+#ifndef NULL
+#define NULL 0
+#endif
+
 #ifndef _API
 #define _API extern
 #endif
@@ -991,7 +1005,7 @@ namespace Messages
 			: Base(async, 4, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fclose)); }
 		int RC; 
 	};
-	
+
 	struct Stdio_fgetc
 	{
 		RuntimeSentinelMessage Base;
