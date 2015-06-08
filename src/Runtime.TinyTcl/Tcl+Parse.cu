@@ -19,7 +19,7 @@
 * $Id: tclParse.c,v 1.1.1.1 2001/04/29 20:35:00 karll Exp $
 */
 
-#include "tclInt.h"
+#include "Tcl+Int.h"
 
 /*
 * The following table assigns a type to each character.  Only types

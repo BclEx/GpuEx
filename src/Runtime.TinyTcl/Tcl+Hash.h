@@ -1,26 +1,18 @@
-/*
-* tclHash.h --
-*
-*	This header file declares the facilities provided by the
-*	Tcl hash table procedures.
-*
-* Copyright 1991 Regents of the University of California
-* Permission to use, copy, modify, and distribute this
-* software and its documentation for any purpose and without
-* fee is hereby granted, provided that the above copyright
-* notice appear in all copies.  The University of California
-* makes no representations about the suitability of this
-* software for any purpose.  It is provided "as is" without
-* express or implied warranty.
-*
-* $Id: tclHash.h,v 1.1.1.1 2001/04/29 20:34:51 karll Exp $
-*/
+// tclHash.h --
+//
+//	This header file declares the facilities provided by the Tcl hash table procedures.
+//
+// Copyright 1991 Regents of the University of California
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without
+// fee is hereby granted, provided that the above copyright notice appear in all copies.  The University of California
+// makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
+// express or implied warranty.
 
-#ifndef _TCLHASH
-#define _TCLHASH
+#ifndef __TCL_HASH_H__
+#define __TCL_HASH_H__
 
-#ifndef _TCL
-#include <tcl.h>
+#ifndef __TCL_H__
+#include <Tcl.h>
 #endif
 
 // Structure definition for an entry in a hash table.  No-one outside Tcl should access any of these fields directly;  use the macros defined below.
@@ -29,15 +21,14 @@ typedef struct Tcl_HashEntry {
 	struct Tcl_HashTable *tablePtr;	// Pointer to table containing entry.
 	struct Tcl_HashEntry **bucketPtr;	// Pointer to bucket that points to first entry in this entry's chain: used for deleting the entry.
 	ClientData clientData;		// Application stores something here with Tcl_SetHashValue.
-	union {				// Key has one of these forms:
+	union {						// Key has one of these forms:
 		char *oneWordValue;		// One-word value for key.
 		int words[1];			// Multiple integer words for key. The actual size will be as large as necessary for this table's keys.
 		char string[4];			// String for key.  The actual size will be as large as needed to hold the key.
 	} key;				// MUST BE LAST FIELD IN RECORD!!
 } Tcl_HashEntry;
 
-// Structure definition for a hash table.  Must be in tcl.h so clients can allocate space for these structures, but clients should never
-// access any fields in this structure.
+// Structure definition for a hash table.  Must be in tcl.h so clients can allocate space for these structures, but clients should never access any fields in this structure.
 #define TCL_SMALL_HASH_TABLE 4
 typedef struct Tcl_HashTable {
 	Tcl_HashEntry **buckets;	// Pointer to bucket array.  Each element points to first entry in bucket's hash chain, or NULL.
@@ -67,7 +58,7 @@ typedef struct Tcl_HashSearch {
 // Macros for clients to use to access fields of hash entries:
 #define Tcl_GetHashValue(h) ((h)->clientData)
 #define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
-#define Tcl_GetHashKey(tablePtr, h) ((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS) ? (h)->key.oneWordValue : (h)->key.string))
+#define Tcl_GetHashKey(tablePtr, h) ((char *)(((tablePtr)->keyType == TCL_ONE_WORD_KEYS) ? (h)->key.oneWordValue : (h)->key.string))
 
 // Macros to use for clients to use to invoke find and create procedures for hash tables:
 #define Tcl_FindHashEntry(tablePtr, key) (*((tablePtr)->findProc))(tablePtr, key)
@@ -76,9 +67,9 @@ typedef struct Tcl_HashSearch {
 // Exported procedures:
 extern __device__ void Tcl_DeleteHashEntry(Tcl_HashEntry *entryPtr);
 extern __device__ void Tcl_DeleteHashTable( Tcl_HashTable *tablePtr);
-extern __device__ Tcl_HashEntry *Tcl_FirstHashEntry( Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr);
+extern __device__ Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr);
 extern __device__ char *Tcl_HashStats(Tcl_HashTable *tablePtr);
 extern __device__ void Tcl_InitHashTable(Tcl_HashTable *tablePtr, int keyType);
 extern __device__ Tcl_HashEntry *Tcl_NextHashEntry( Tcl_HashSearch *searchPtr);
 
-#endif /* _TCLHASH */
+#endif /* __TCL_HASH_H__ */

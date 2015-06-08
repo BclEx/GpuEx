@@ -1,50 +1,29 @@
-/*
-* tclUnix.h --
-*
-*	This file reads in UNIX-related header files and sets up
-*	UNIX-related macros for Tcl's UNIX core.  It should be the
-*	only file that contains #ifdefs to handle different flavors
-*	of UNIX.  This file sets up the union of all UNIX-related
-*	things needed by any of the Tcl core files.  This file
-*	depends on configuration #defines in tclConfig.h
-*
-*	The material in this file was originally contributed by
-*	Karl Lehenbauer, Mark Diekhans and Peter da Silva.
-*
-* Copyright 1991 Regents of the University of California
-* Permission to use, copy, modify, and distribute this
-* software and its documentation for any purpose and without
-* fee is hereby granted, provided that this copyright
-* notice appears in all copies.  The University of California
-* makes no representations about the suitability of this
-* software for any purpose.  It is provided "as is" without
-* express or implied warranty.
-*
-* $Id: tclUnix.h,v 1.1.1.1 2001/04/29 20:35:04 karll Exp $
-*/
+// tclUnix.h --
+//
+//	This file reads in UNIX-related header files and sets up UNIX-related macros for Tcl's UNIX core.  It should be the
+//	only file that contains #ifdefs to handle different flavors of UNIX.  This file sets up the union of all UNIX-related
+//	things needed by any of the Tcl core files.  This file depends on configuration #defines in tclConfig.h
+//
+// Copyright 1991 Regents of the University of California
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without
+// fee is hereby granted, provided that this copyright notice appears in all copies.  The University of California
+// makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
+// express or implied warranty.
 
-#ifndef _TCLUNIX
-#define _TCLUNIX
+#ifndef __TCL_UNIX_H__
+#define __TCL_UNIX_H__
 
 // The following #defines are used to distinguish between different UNIX systems.  These #defines are normally set by the "config" script
 // based on information it gets by looking in the include and library areas.  The defaults below are for BSD-based systems like SunOS or Ultrix.
 //
-// TCL_GETTOD -			1 means there exists a library procedure "gettimeofday" (e.g. BSD systems).  0 means have to use "times" instead.
-// TCL_GETWD -			1 means there exists a library procedure "getwd" (e.g. BSD systems).  0 means have to use "getcwd" instead.
-// TCL_SYS_ERRLIST -	1 means that the array sys_errlist is defined as part of the C library.
-// TCL_SYS_TIME_H -		1 means there exists an include file <sys/time.h> (e.g. BSD derivatives).
-// TCL_SYS_WAIT_H -		1 means there exists an include file <sys/wait.h> that defines constants related to the results of "wait".
-// TCL_UNION_WAIT -		1 means that the "wait" system call returns a structure of type "union wait" (e.g. BSD systems).  0 means "wait" returns an int (e.g. System V and POSIX).
-// TCL_PID_T -			1 means that <sys/types> defines the type pid_t.  0 means that it doesn't.
-// TCL_UID_T -			1 means that <sys/types> defines the type uid_t.  0 means that it doesn't.
-#define TCL_GETTOD 0
-#define TCL_SYS_ERRLIST 0
-#define TCL_SYS_TIME_H 0
-#define TCL_SYS_WAIT_H 0
-#define TCL_UNION_WAIT 0
-#define TCL_PID_T 0
-#define TCL_UID_T 0
-#define TCL_PW 0
+#define TCL_GETTOD		0 // 1 means there exists a library procedure "gettimeofday" (e.g. BSD systems).  0 means have to use "times" instead.
+#define TCL_GETWD		0 // 1 means there exists a library procedure "getwd" (e.g. BSD systems).  0 means have to use "getcwd" instead.
+#define TCL_SYS_ERRLIST 0 // 1 means that the array sys_errlist is defined as part of the C library.
+#define TCL_SYS_TIME_H	0 // 1 means there exists an include file <sys/time.h> (e.g. BSD derivatives).
+#define TCL_SYS_WAIT_H	0 // 1 means there exists an include file <sys/wait.h> that defines constants related to the results of "wait".
+#define TCL_UNION_WAIT	0 // 1 means that the "wait" system call returns a structure of type "union wait" (e.g. BSD systems).  0 means "wait" returns an int (e.g. System V and POSIX).
+#define TCL_PID_T		0 // 1 means that <sys/types> defines the type pid_t.  0 means that it doesn't.
+#define TCL_UID_T		0 // 1 means that <sys/types> defines the type uid_t.  0 means that it doesn't.
 
 //#define HAVE_MKSTEMP
 //#define HAVE_GETHOSTNAME
@@ -141,12 +120,12 @@
 //extern int chdir(const char *path);
 //extern int close(int fd);
 //extern int dup2(int src, int dst);
-//extern void	endpwent();
+//extern void endpwent();
 //// extern int execvp(const char *name, char **argv);
 //extern void _exit(int status);
-//// extern pid_t	fork();
-//// extern uid_t	geteuid();
-//// extern pid_t	getpid();
+//// extern pid_t fork();
+//// extern uid_t geteuid();
+//// extern pid_t getpid();
 //// extern char *getcwd(char *buffer, int size);
 //extern char * getwd(char *buffer);
 //// extern int kill(pid_t pid, int sig);

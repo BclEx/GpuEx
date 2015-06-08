@@ -16,8 +16,7 @@
 * $Id: tclUtil.c,v 1.1.1.1 2001/04/29 20:35:11 karll Exp $
 */
 
-#include "tclInt.h"
-//#include <stdarg.h>
+#include "Tcl+Int.h"
 
 #ifndef __isascii
 //#define __isascii isascii

@@ -1,15 +1,10 @@
-/*
- * tclmod.c
- *
- *
- * Copyright (c) 2005 Snapgear
- *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- */
-#include <string.h>
+// tclmod.c
+//
+// Copyright (c) 2005 Snapgear
+//
+// See the file "license.terms" for information on usage and redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
+#include <string.h>
 #include "tclmod.h"
 
 int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv)
@@ -23,8 +18,8 @@ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv)
 }
 
 /**
- * Implements the common 'commands' subcommand
- */
+* Implements the common 'commands' subcommand
+*/
 static int tclmod_cmd_commands(Tcl_Interp *interp, int argc, char **argv)
 {
 	/* Nothing to do, since the result has already been created */
@@ -32,8 +27,8 @@ static int tclmod_cmd_commands(Tcl_Interp *interp, int argc, char **argv)
 }
 
 /**
- * Builtin command.
- */
+* Builtin command.
+*/
 static const tclmod_command_type tclmod_command_entry = {
 	.cmd = "commands",
 	.minargs = 0,
@@ -44,10 +39,10 @@ static const tclmod_command_type tclmod_command_entry = {
 };
 
 /**
- * Returns 0 if no match.
- * Returns 1 if match and args OK.
- * Returns -1 if match but args not OK (leaves error in interp->result)
- */
+* Returns 0 if no match.
+* Returns 1 if match and args OK.
+* Returns -1 if match but args not OK (leaves error in interp->result)
+*/
 static int check_match_command(Tcl_Interp *interp, const tclmod_command_type *ct, int argc, char *argv[])
 {
 	if (strcmp(ct->cmd, argv[1]) == 0) {
@@ -66,7 +61,7 @@ static int check_match_command(Tcl_Interp *interp, const tclmod_command_type *ct
 }
 
 const tclmod_command_type *
-tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, char **argv)
+	tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, char **argv)
 {
 	const tclmod_command_type *ct;
 	const char *sep;

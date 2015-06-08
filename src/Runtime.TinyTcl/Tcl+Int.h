@@ -5,6 +5,7 @@
 // fee is hereby granted, provided that the above copyright notice appear in all copies.  The University of California
 // makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
 // express or implied warranty.
+
 #ifndef _TCL_INT_H_
 #define _TCL_INT_H_
 
@@ -16,10 +17,10 @@
 #include <Runtime.h>
 //#include <stdio.h>
 
-#ifndef _TCL_H_
+#ifndef __TCL_H__
 #include "Tcl.h"
 #endif
-#ifndef _TCL_HASH_H
+#ifndef __TCL_HASH_H__
 #include "Tcl+Hash.h"
 #endif
 #ifndef __UC_LIBC__
@@ -29,6 +30,7 @@
 #endif
 
 #define _panic(fmt, ...) printf(fmt, __VA_ARGS__)
+
 //int _atoi(const char *str);
 __device__ long int _strtol(const char *str, char **endptr, int base);
 __device__ double _strtod(const char *str, char **endptr);
@@ -101,17 +103,11 @@ typedef struct Var {
 } Var;
 
 // Flag bits for variables:
-//
-// VAR_ARRAY -			1 means this is an array variable rather than a scalar variable.
-// VAR_UPVAR - 			1 means this variable just contains a pointer to another variable that has the real value.  Variables like this come about through the "upvar" and "global" commands.
-// VAR_UNDEFINED -		1 means that the variable is currently undefined.  Undefined variables usually go away completely, but if an undefined variable has a trace on it, or if it is a global variable being used by a procedure, then it stays around even when undefined.
-// VAR_ELEMENT_ACTIVE -	Used only in array variables;  1 means that an element of the array is currently being manipulated in some way, so that it isn't safe to delete the whole array.
-// VAR_TRACE_ACTIVE -	1 means that trace processing is currently underway for a read or write access, so new read or write accesses should not cause trace procedures to be called and the variable can't be deleted.
-#define VAR_ARRAY		1
-#define VAR_UPVAR		2
-#define VAR_UNDEFINED		4
-#define VAR_ELEMENT_ACTIVE	0x10
-#define VAR_TRACE_ACTIVE	0x20
+#define VAR_ARRAY			1 // 1 means this is an array variable rather than a scalar variable.
+#define VAR_UPVAR			2 // 1 means this variable just contains a pointer to another variable that has the real value.  Variables like this come about through the "upvar" and "global" commands.
+#define VAR_UNDEFINED		4 // 1 means that the variable is currently undefined.  Undefined variables usually go away completely, but if an undefined variable has a trace on it, or if it is a global variable being used by a procedure, then it stays around even when undefined.
+#define VAR_ELEMENT_ACTIVE	0x10 // Used only in array variables;  1 means that an element of the array is currently being manipulated in some way, so that it isn't safe to delete the whole array.
+#define VAR_TRACE_ACTIVE	0x20 // 1 means that trace processing is currently underway for a read or write access, so new read or write accesses should not cause trace procedures to be called and the variable can't be deleted.
 #define VAR_SEARCHES_POSSIBLE	0x40
 
 /*
@@ -271,16 +267,10 @@ typedef struct Interp {
 } Interp;
 
 // Flag bits for Interp structures:
-//
-// DELETED:		Non-zero means the interpreter has been deleted: don't process any more commands for it, and destroy the structure as soon as all nested invocations of Tcl_Eval are done.
-// ERR_IN_PROGRESS:	Non-zero means an error unwind is already in progress. Zero means a command proc has been invoked since last error occured.
-// ERR_ALREADY_LOGGED:	Non-zero means information has already been logged in $errorInfo for the current Tcl_Eval instance, so Tcl_Eval needn't log it (used to implement the "error message log" command).
-// ERROR_CODE_SET:	Non-zero means that Tcl_SetErrorCode has been called to record information for the current error.  Zero means Tcl_Eval must clear the errorCode variable if an error is returned.
-
-#define DELETED			1
-#define ERR_IN_PROGRESS		2
-#define ERR_ALREADY_LOGGED	4
-#define ERROR_CODE_SET		8
+#define DELETED				1 // Non-zero means the interpreter has been deleted: don't process any more commands for it, and destroy the structure as soon as all nested invocations of Tcl_Eval are done.
+#define ERR_IN_PROGRESS		2 // Non-zero means an error unwind is already in progress. Zero means a command proc has been invoked since last error occured.
+#define ERR_ALREADY_LOGGED	4 // Non-zero means information has already been logged in $errorInfo for the current Tcl_Eval instance, so Tcl_Eval needn't log it (used to implement the "error message log" command).
+#define ERROR_CODE_SET		8 // Non-zero means that Tcl_SetErrorCode has been called to record information for the current error.  Zero means Tcl_Eval must clear the errorCode variable if an error is returned.
 
 /*
 *----------------------------------------------------------------
@@ -306,31 +296,19 @@ extern __constant__ char _tclTypeTable[];
 #define CHAR_TYPE(c) (_tclTypeTable+128)[c]
 
 // Possible values returned by CHAR_TYPE:
-//
-// TCL_NORMAL -		All characters that don't have special significance to the Tcl language.
-// TCL_SPACE -		Character is space, tab, or return.
-// TCL_COMMAND_END -	Character is newline or null or semicolon or close-bracket.
-// TCL_QUOTE -		Character is a double-quote.
-// TCL_OPEN_BRACKET -	Character is a "[".
-// TCL_OPEN_BRACE -	Character is a "{".
-// TCL_CLOSE_BRACE -	Character is a "}".
-// TCL_BACKSLASH -	Character is a "\".
-// TCL_DOLLAR -		Character is a "$".
-#define TCL_NORMAL		0
-#define TCL_SPACE		1
-#define TCL_COMMAND_END		2
-#define TCL_QUOTE		3
-#define TCL_OPEN_BRACKET	4
-#define TCL_OPEN_BRACE		5
-#define TCL_CLOSE_BRACE		6
-#define TCL_BACKSLASH		7
-#define TCL_DOLLAR		8
+#define TCL_NORMAL			0 // All characters that don't have special significance to the Tcl language.
+#define TCL_SPACE			1 // Character is space, tab, or return.
+#define TCL_COMMAND_END		2 // Character is newline or null or semicolon or close-bracket.
+#define TCL_QUOTE			3 // Character is a double-quote.
+#define TCL_OPEN_BRACKET	4 // Character is a "[".
+#define TCL_OPEN_BRACE		5 // Character is a "{".
+#define TCL_CLOSE_BRACE		6 // Character is a "}".
+#define TCL_BACKSLASH		7 // Character is a "\".
+#define TCL_DOLLAR			8 // Character is a "$".
 
 // Additional flags passed to Tcl_Eval.  See tcl.h for other flags to Tcl_Eval;  these ones are only used internally by Tcl.
-// TCL_RECORD_BOUNDS	Tells Tcl_Eval to record information in the evalFirst and evalLast fields for each command executed directly from the string (top-level commands and those from command substitution).
-// TCL_CATCH_SIGNAL	Tells Tcl_Eval that a signal can be caught and delivered at this level.
-#define TCL_RECORD_BOUNDS	0x100
-#define TCL_CATCH_SIGNAL	0x200
+#define TCL_RECORD_BOUNDS	0x100 // Tells Tcl_Eval to record information in the evalFirst and evalLast fields for each command executed directly from the string (top-level commands and those from command substitution).
+#define TCL_CATCH_SIGNAL	0x200 // Tells Tcl_Eval that a signal can be caught and delivered at this level.
 
 // Maximum number of levels of nesting permitted in Tcl commands.
 #define MAX_NESTING_DEPTH	100

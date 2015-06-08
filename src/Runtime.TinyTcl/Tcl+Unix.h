@@ -1,52 +1,36 @@
-/*
-* tclUnix.h --
-*
-*	This file reads in UNIX-related header files and sets up
-*	UNIX-related macros for Tcl's UNIX core.  It should be the
-*	only file that contains #ifdefs to handle different flavors
-*	of UNIX.  This file sets up the union of all UNIX-related
-*	things needed by any of the Tcl core files.  This file
-*	depends on configuration #defines in tclConfig.h
-*
-*	The material in this file was originally contributed by
-*	Karl Lehenbauer, Mark Diekhans and Peter da Silva.
-*
-* Copyright 1991 Regents of the University of California
-* Permission to use, copy, modify, and distribute this
-* software and its documentation for any purpose and without
-* fee is hereby granted, provided that this copyright
-* notice appears in all copies.  The University of California
-* makes no representations about the suitability of this
-* software for any purpose.  It is provided "as is" without
-* express or implied warranty.
-*
-* $Id: tclUnix.h,v 1.1.1.1 2001/04/29 20:35:04 karll Exp $
-*/
+// tclUnix.h --
+//
+//	This file reads in UNIX-related header files and sets up UNIX-related macros for Tcl's UNIX core.  It should be the
+//	only file that contains #ifdefs to handle different flavors of UNIX.  This file sets up the union of all UNIX-related
+//	things needed by any of the Tcl core files.  This file depends on configuration #defines in tclConfig.h
+//
+// Copyright 1991 Regents of the University of California
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without
+// fee is hereby granted, provided that this copyright notice appears in all copies.  The University of California
+// makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
+// express or implied warranty.
 
-#ifndef _TCLUNIX
-#define _TCLUNIX
+#ifndef __TCL_UNIX_H__
+#define __TCL_UNIX_H__
 
 // The following #defines are used to distinguish between different UNIX systems.  These #defines are normally set by the "config" script
 // based on information it gets by looking in the include and library areas.  The defaults below are for BSD-based systems like SunOS or Ultrix.
 //
-// TCL_GETTOD -			1 means there exists a library procedure "gettimeofday" (e.g. BSD systems).  0 means have to use "times" instead.
-// TCL_GETWD -			1 means there exists a library procedure "getwd" (e.g. BSD systems).  0 means have to use "getcwd" instead.
-// TCL_SYS_ERRLIST -	1 means that the array sys_errlist is defined as part of the C library.
-// TCL_SYS_TIME_H -		1 means there exists an include file <sys/time.h> (e.g. BSD derivatives).
-// TCL_SYS_WAIT_H -		1 means there exists an include file <sys/wait.h> that defines constants related to the results of "wait".
-// TCL_UNION_WAIT -		1 means that the "wait" system call returns a structure of type "union wait" (e.g. BSD systems).  0 means "wait" returns an int (e.g. System V and POSIX).
-// TCL_PID_T -			1 means that <sys/types> defines the type pid_t.  0 means that it doesn't.
-// TCL_UID_T -			1 means that <sys/types> defines the type uid_t.  0 means that it doesn't.
-#define TCL_GETTOD 1
-#define TCL_SYS_ERRLIST 1
-#define TCL_SYS_TIME_H 1
-#define TCL_SYS_WAIT_H 1
-#define TCL_UNION_WAIT 0
-#define TCL_PID_T 1
-#define TCL_UID_T 1
+#define TCL_GETTOD		1 // 1 means there exists a library procedure "gettimeofday" (e.g. BSD systems).  0 means have to use "times" instead.
+#define TCL_GETWD       0 // 1 means there exists a library procedure "getwd" (e.g. BSD systems).  0 means have to use "getcwd" instead.
+#define TCL_SYS_ERRLIST 1 // 1 means that the array sys_errlist is defined as part of the C library.
+#define TCL_SYS_TIME_H	1 // 1 means there exists an include file <sys/time.h> (e.g. BSD derivatives).
+#define TCL_SYS_WAIT_H	1 // 1 means there exists an include file <sys/wait.h> that defines constants related to the results of "wait".
+#define TCL_UNION_WAIT	0 // 1 means that the "wait" system call returns a structure of type "union wait" (e.g. BSD systems).  0 means "wait" returns an int (e.g. System V and POSIX).
+#define TCL_PID_T		1 // 1 means that <sys/types> defines the type pid_t.  0 means that it doesn't.
+#define TCL_UID_T		1 // 1 means that <sys/types> defines the type uid_t.  0 means that it doesn't.
 
 #define HAVE_MKSTEMP
 #define HAVE_GETHOSTNAME
+
+#ifndef __TCL_INT_H__
+#include "Tcl+Int.h"
+#endif
 
 #include <errno.h>
 #include <fcntl.h>
@@ -89,38 +73,31 @@ extern int sys_nerr;
 
 // Supply definitions for macros to query wait status, if not already defined in header files above.
 #ifndef WIFEXITED
-#define WIFEXITED(stat)  (((*((int *) &(stat))) & 0xff) == 0)
+#define WIFEXITED(stat) (((*((int *)&(stat))) & 0xff) == 0)
 #endif
-
 #ifndef WEXITSTATUS
-#define WEXITSTATUS(stat) (((*((int *) &(stat))) >> 8) & 0xff)
+#define WEXITSTATUS(stat) (((*((int *)&(stat))) >> 8) & 0xff)
 #endif
-
 #ifndef WIFSIGNALED
-#define WIFSIGNALED(stat) (((*((int *) &(stat)))) && ((*((int *) &(stat))) == ((*((int *) &(stat))) & 0x00ff)))
+#define WIFSIGNALED(stat) (((*((int *)&(stat)))) && ((*((int *)&(stat))) == ((*((int *)&(stat))) & 0x00ff)))
 #endif
-
 #ifndef WTERMSIG
-#define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7f)
+#define WTERMSIG(stat) ((*((int *)&(stat))) & 0x7f)
 #endif
-
 #ifndef WIFSTOPPED
-#define WIFSTOPPED(stat)  (((*((int *) &(stat))) & 0xff) == 0177)
+#define WIFSTOPPED(stat) (((*((int *)&(stat))) & 0xff) == 0177)
 #endif
-
 #ifndef WSTOPSIG
-#define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xff)
+#define WSTOPSIG(stat) (((*((int *)&(stat))) >> 8) & 0xff)
 #endif
 
 // Supply macros for seek offsets, if they're not already provided by an include file.
 #ifndef SEEK_SET
 #define SEEK_SET 0
 #endif
-
 #ifndef SEEK_CUR
 #define SEEK_CUR 1
 #endif
-
 #ifndef SEEK_END
 #define SEEK_END 2
 #endif
@@ -128,7 +105,7 @@ extern int sys_nerr;
 // The stuff below is needed by the "time" command.  If this system has no gettimeofday call, then must use times and the
 // CLK_TCK #define (from sys/param.h) to compute elapsed time. Unfortunately, some systems only have HZ and no CLK_TCK, and
 // some might not even have HZ.
-#if ! TCL_GETTOD
+#if !TCL_GETTOD
 #include <sys/times.h>
 #include <sys/param.h>
 #ifndef CLK_TCK
@@ -220,10 +197,10 @@ extern int sys_nerr;
 #endif
 
 // Define pid_t and uid_t if they're not already defined.
-#if ! TCL_PID_T
+#if !TCL_PID_T
 #define pid_t int
 #endif
-#if ! TCL_UID_T
+#if !TCL_UID_T
 #define uid_t int
 #endif
 
@@ -265,4 +242,4 @@ extern int unlink(const char *path);
 // extern int write(int fd, char *buf, int numBytes);
 #endif /* _CRAY */
 
-#endif /* _TCLUNIX */
+#endif /* __TCL_UNIX_H__ */

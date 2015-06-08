@@ -16,7 +16,7 @@
 * $Id: tclProc.c,v 1.1.1.1 2001/04/29 20:35:02 karll Exp $
 */
 
-#include "tclInt.h"
+#include "Tcl+Int.h"
 
 // Forward references to procedures defined later in this file:
 __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int argc, char **argv);

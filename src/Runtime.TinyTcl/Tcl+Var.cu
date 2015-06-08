@@ -22,7 +22,7 @@
 * $Id: tclVar.c,v 1.1.1.1 2001/04/29 20:35:17 karll Exp $
 */
 
-#include "tclInt.h"
+#include "Tcl+Int.h"
 
 // The strings below are used to indicate what went wrong when a variable access is denied.
 __constant__ static char *noSuchVar = "no such variable";
@@ -1659,7 +1659,7 @@ __device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 	int new_;
 
 	if (argc < 2) {
-		Tcl_AppendResult((Tcl_Interp *) iPtr, "wrong # args: should be \"",
+		Tcl_AppendResult((Tcl_Interp *)iPtr, "wrong # args: should be \"",
 			argv[0], " varName ?varName ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
@@ -1683,7 +1683,7 @@ __device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 			if (varPtr->flags & VAR_UPVAR) {
 				continue;
 			} else {
-				Tcl_AppendResult((Tcl_Interp *) iPtr, "variable \"", *argv,
+				Tcl_AppendResult((Tcl_Interp *)iPtr, "variable \"", *argv,
 					"\" already exists", (char *)NULL);
 				return TCL_ERROR;
 			}
@@ -1778,7 +1778,7 @@ upvarSyntax:
 		hPtr2 = Tcl_CreateHashEntry(&iPtr->varFramePtr->varTable,
 			argv[1], &new_);
 		if (!new_) {
-			Tcl_AppendResult((Tcl_Interp *) iPtr, "variable \"", argv[1],
+			Tcl_AppendResult((Tcl_Interp *)iPtr, "variable \"", argv[1],
 				"\" already exists", (char *)NULL);
 			return TCL_ERROR;
 		}
