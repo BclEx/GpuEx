@@ -19,7 +19,7 @@
 #include <signal.h>
 //#include <unistd.h>
 
-#include "tclExtdInt.h"
+#include "tclEx+Int.h"
 
 // These globals must be set by main for the information to be defined.
 __device__ char *tclxVersion    = "?";   // Extended Tcl version number.

@@ -1,20 +1,12 @@
-/* 
-* tclProc.c --
-*
-*	This file contains routines that implement Tcl procedures,
-*	including the "proc" and "uplevel" commands.
-*
-* Copyright 1987-1991 Regents of the University of California
-* Permission to use, copy, modify, and distribute this
-* software and its documentation for any purpose and without
-* fee is hereby granted, provided that the above copyright
-* notice appear in all copies.  The University of California
-* makes no representations about the suitability of this
-* software for any purpose.  It is provided "as is" without
-* express or implied warranty.
-*
-* $Id: tclProc.c,v 1.1.1.1 2001/04/29 20:35:02 karll Exp $
-*/
+// tclProc.c --
+//
+//	This file contains routines that implement Tcl procedures, including the "proc" and "uplevel" commands.
+//
+// Copyright 1987-1991 Regents of the University of California
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without
+// fee is hereby granted, provided that the above copyright notice appear in all copies.  The University of California
+// makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
+// express or implied warranty.
 
 #include "Tcl+Int.h"
 
@@ -26,9 +18,7 @@ __device__ static void ProcDeleteProc(ClientData clientData);
 *----------------------------------------------------------------------
 *
 * Tcl_ProcCmd --
-*
-*	This procedure is invoked to process the "proc" Tcl command.
-*	See the user documentation for details on what it does.
+*	This procedure is invoked to process the "proc" Tcl command. See the user documentation for details on what it does.
 *
 * Results:
 *	A standard Tcl result value.
@@ -38,76 +28,55 @@ __device__ static void ProcDeleteProc(ClientData clientData);
 *
 *----------------------------------------------------------------------
 */
-
-/* ARGSUSED */
 __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
-	register Proc *procPtr;
-	int result, argCount, i;
-	char **argArray = NULL;
-	Arg *lastArgPtr;
-	register Arg *argPtr = NULL;	/* Initialization not needed, but
-									* prevents compiler warning. */
-
 	if (argc != 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			" name args body\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " name args body\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-
-	procPtr = (Proc *) _allocFast(sizeof(Proc));
-	procPtr->command = (char *) _allocFast((unsigned) strlen(argv[3]) + 1);
+	register Arg *argPtr = NULL; // Initialization not needed, but prevents compiler warning.
+	register Proc *procPtr = (Proc *)_allocFast(sizeof(Proc));
+	procPtr->command = (char *)_allocFast((unsigned)_strlen(argv[3]) + 1);
 	_strcpy(procPtr->command, argv[3]);
 	procPtr->argPtr = NULL;
-	procPtr->uses = 1; /* 1 for initial definition */
+	procPtr->uses = 1; // 1 for initial definition
 
-	/*
-	* Break up the argument list into argument specifiers, then process
-	* each argument specifier.
-	*/
-
-	result = Tcl_SplitList(interp, argv[2], &argCount, &argArray);
+	// Break up the argument list into argument specifiers, then process each argument specifier.
+	int argCount;
+	char **argArray = NULL;
+	int result = Tcl_SplitList(interp, argv[2], &argCount, &argArray);
 	if (result != TCL_OK) {
 		goto procError;
 	}
-	lastArgPtr = NULL;
-	for (i = 0; i < argCount; i++) {
-		int fieldCount, nameLength, valueLength;
+	Arg *lastArgPtr = NULL;
+	for (int i = 0; i < argCount; i++) {
+		// Now divide the specifier up into name and default.
+		int fieldCount;
 		char **fieldValues;
-
-		/*
-		* Now divide the specifier up into name and default.
-		*/
-
-		result = Tcl_SplitList(interp, argArray[i], &fieldCount,
-			&fieldValues);
+		result = Tcl_SplitList(interp, argArray[i], &fieldCount, &fieldValues);
 		if (result != TCL_OK) {
 			goto procError;
 		}
 		if (fieldCount > 2) {
-			_freeFast((char *) fieldValues);
-			Tcl_AppendResult(interp,
-				"too many fields in argument specifier \"",
-				argArray[i], "\"", (char *)NULL);
+			_freeFast((char *)fieldValues);
+			Tcl_AppendResult(interp, "too many fields in argument specifier \"", argArray[i], "\"", (char *)NULL);
 			result = TCL_ERROR;
 			goto procError;
 		}
-		if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
+		if (fieldCount == 0 || *fieldValues[0] == 0) {
 			_freeFast((char *) fieldValues);
-			Tcl_AppendResult(interp, "procedure \"", argv[1],
-				"\" has argument with no name", (char *)NULL);
+			Tcl_AppendResult(interp, "procedure \"", argv[1], "\" has argument with no name", (char *)NULL);
 			result = TCL_ERROR;
 			goto procError;
 		}
-		nameLength = _strlen(fieldValues[0]) + 1;
+		int nameLength = _strlen(fieldValues[0]) + 1;
+		int valueLength;
 		if (fieldCount == 2) {
 			valueLength = _strlen(fieldValues[1]) + 1;
 		} else {
 			valueLength = 0;
 		}
-		argPtr = (Arg *) _allocFast((unsigned)
-			(sizeof(Arg) - sizeof(argPtr->name) + nameLength
-			+ valueLength));
+		argPtr = (Arg *) _allocFast((unsigned)(sizeof(Arg) - sizeof(argPtr->name) + nameLength + valueLength));
 		if (lastArgPtr == NULL) {
 			procPtr->argPtr = argPtr;
 		} else {
@@ -122,12 +91,10 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		} else {
 			argPtr->defValue = NULL;
 		}
-		_freeFast((char *) fieldValues);
+		_freeFast((char *)fieldValues);
 	}
-
-	Tcl_CreateCommand(interp, argv[1], InterpProc, (ClientData) procPtr,
-		ProcDeleteProc);
-	_freeFast((char *) argArray);
+	Tcl_CreateCommand(interp, argv[1], InterpProc, (ClientData) procPtr, ProcDeleteProc);
+	_freeFast((char *)argArray);
 	return TCL_OK;
 
 procError:
@@ -135,11 +102,11 @@ procError:
 	while (procPtr->argPtr != NULL) {
 		argPtr = procPtr->argPtr;
 		procPtr->argPtr = argPtr->nextPtr;
-		_freeFast((char *) argPtr);
+		_freeFast((char *)argPtr);
 	}
-	_freeFast((char *) procPtr);
+	_freeFast((char *)procPtr);
 	if (argArray != NULL) {
-		_freeFast((char *) argArray);
+		_freeFast((char *)argArray);
 	}
 	return result;
 }
@@ -148,51 +115,37 @@ procError:
 *----------------------------------------------------------------------
 *
 * TclGetFrame --
-*
-*	Given a description of a procedure frame, such as the first
-*	argument to an "uplevel" or "upvar" command, locate the
+*	Given a description of a procedure frame, such as the first argument to an "uplevel" or "upvar" command, locate the
 *	call frame for the appropriate level of procedure.
 *
 * Results:
-*	The return value is -1 if an error occurred in finding the
-*	frame (in this case an error message is left in interp->result).
-*	1 is returned if string was either a number or a number preceded
-*	by "#" and it specified a valid frame.  0 is returned if string
-*	isn't one of the two things above (in this case, the lookup
-*	acts as if string were "1").  The variable pointed to by
-*	framePtrPtr is filled in with the address of the desired frame
-*	(unless an error occurs, in which case it isn't modified).
+*	The return value is -1 if an error occurred in finding the frame (in this case an error message is left in interp->result).
+*	1 is returned if string was either a number or a number preceded by "#" and it specified a valid frame.  0 is returned if string
+*	isn't one of the two things above (in this case, the lookup acts as if string were "1").  The variable pointed to by
+*	framePtrPtr is filled in with the address of the desired frame (unless an error occurs, in which case it isn't modified).
 *
 * Side effects:
 *	None.
 *
 *----------------------------------------------------------------------
 */
-
 __device__ int TclGetFrame(Tcl_Interp *interp, char *string, CallFrame **framePtrPtr)
 {
-	register Interp *iPtr = (Interp *) interp;
-	int level, result;
-	CallFrame *framePtr;
-
+	register Interp *iPtr = (Interp *)interp;
 	if (iPtr->varFramePtr == NULL) {
 		iPtr->result = "already at top level";
 		return -1;
 	}
-
-	/*
-	* Parse string to figure out which level number to go to.
-	*/
-
-	result = 1;
+	// Parse string to figure out which level number to go to.
+	int level;
+	int result = 1;
 	if (*string == '#') {
 		if (Tcl_GetInt(interp, string+1, &level) != TCL_OK) {
 			return -1;
 		}
 		if (level < 0) {
 levelError:
-			Tcl_AppendResult(interp, "bad level \"", string, "\"",
-				(char *)NULL);
+			Tcl_AppendResult(interp, "bad level \"", string, "\"", (char *)NULL);
 			return -1;
 		}
 	} else if (_isdigit(*string)) {
@@ -204,20 +157,15 @@ levelError:
 		level = iPtr->varFramePtr->level - 1;
 		result = 0;
 	}
-
-	/*
-	* Figure out which frame to use, and modify the interpreter so
-	* its variables come from that frame.
-	*/
-
+	// Figure out which frame to use, and modify the interpreter so its variables come from that frame.
+	CallFrame *framePtr;
 	if (level == 0) {
 		framePtr = NULL;
 	} else {
-		for (framePtr = iPtr->varFramePtr; framePtr != NULL;
-			framePtr = framePtr->callerVarPtr) {
-				if (framePtr->level == level) {
-					break;
-				}
+		for (framePtr = iPtr->varFramePtr; framePtr != NULL; framePtr = framePtr->callerVarPtr) {
+			if (framePtr->level == level) {
+				break;
+			}
 		}
 		if (framePtr == NULL) {
 			goto levelError;
@@ -231,9 +179,7 @@ levelError:
 *----------------------------------------------------------------------
 *
 * Tcl_UplevelCmd --
-*
-*	This procedure is invoked to process the "uplevel" Tcl command.
-*	See the user documentation for details on what it does.
+*	This procedure is invoked to process the "uplevel" Tcl command. See the user documentation for details on what it does.
 *
 * Results:
 *	A standard Tcl result value.
@@ -243,26 +189,18 @@ levelError:
 *
 *----------------------------------------------------------------------
 */
-
-/* ARGSUSED */
 __device__ int Tcl_UplevelCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
-	register Interp *iPtr = (Interp *) interp;
-	int result;
-	CallFrame *savedVarFramePtr, *framePtr;
-
+	register Interp *iPtr = (Interp *)interp;
 	if (argc < 2) {
 uplevelSyntax:
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			" ?level? command ?arg ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ?level? command ?arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 
-	/*
-	* Find the level to use for executing the command.
-	*/
-
-	result = TclGetFrame(interp, argv[1], &framePtr);
+	// Find the level to use for executing the command.
+	CallFrame *framePtr;
+	int result = TclGetFrame(interp, argv[1], &framePtr);
 	if (result == -1) {
 		return TCL_ERROR;
 	}
@@ -272,23 +210,15 @@ uplevelSyntax:
 	}
 	argv += (result+1);
 
-	/*
-	* Modify the interpreter state to execute in the given frame.
-	*/
-
-	savedVarFramePtr = iPtr->varFramePtr;
+	// Modify the interpreter state to execute in the given frame.
+	CallFrame *savedVarFramePtr = iPtr->varFramePtr;
 	iPtr->varFramePtr = framePtr;
 
-	/*
-	* Execute the residual arguments as a command.
-	*/
-
+	// Execute the residual arguments as a command.
 	if (argc == 1) {
 		result = Tcl_Eval(interp, argv[0], 0, (char **)NULL);
 	} else {
-		char *cmd;
-
-		cmd = Tcl_Concat(argc, argv);
+		char *cmd = Tcl_Concat(argc, argv);
 		result = Tcl_Eval(interp, cmd, 0, (char **)NULL);
 		_freeFast(cmd);
 	}
@@ -298,10 +228,7 @@ uplevelSyntax:
 		Tcl_AddErrorInfo(interp, msg);
 	}
 
-	/*
-	* Restore the variable frame, and return.
-	*/
-
+	// Restore the variable frame, and return.
 	iPtr->varFramePtr = savedVarFramePtr;
 	return result;
 }
@@ -310,47 +237,37 @@ uplevelSyntax:
 *----------------------------------------------------------------------
 *
 * TclFindProc --
-*
-*	Given the name of a procedure, return a pointer to the
-*	record describing the procedure.
+*	Given the name of a procedure, return a pointer to the record describing the procedure.
 *
 * Results:
-*	NULL is returned if the name doesn't correspond to any
-*	procedure.  Otherwise the return value is a pointer to
-*	the procedure's record.
+*	NULL is returned if the name doesn't correspond to any procedure.  Otherwise the return value is a pointer to the procedure's record.
 *
 * Side effects:
 *	None.
 *
 *----------------------------------------------------------------------
 */
-
 __device__ Proc *TclFindProc(Interp *iPtr, char *procName)
 {
-	Tcl_HashEntry *hPtr;
-	Command *cmdPtr;
-
-	hPtr = Tcl_FindHashEntry(&iPtr->commandTable, procName);
+	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->commandTable, procName);
 	if (hPtr == NULL) {
 		return NULL;
 	}
-	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+	Command *cmdPtr = (Command *)Tcl_GetHashValue(hPtr);
 	if (cmdPtr->proc != InterpProc) {
 		return NULL;
 	}
-	return (Proc *) cmdPtr->clientData;
+	return (Proc *)cmdPtr->clientData;
 }
 
 /*
 *----------------------------------------------------------------------
 *
 * TclIsProc --
-*
 *	Tells whether a command is a Tcl procedure or not.
 *
 * Results:
-*	If the given command is actuall a Tcl procedure, the
-*	return value is the address of the record describing
+*	If the given command is actuall a Tcl procedure, the return value is the address of the record describing
 *	the procedure.  Otherwise the return value is 0.
 *
 * Side effects:
@@ -358,22 +275,19 @@ __device__ Proc *TclFindProc(Interp *iPtr, char *procName)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ Proc *TclIsProc(Command *cmdPtr)
 {
 	if (cmdPtr->proc == InterpProc) {
-		return (Proc *) cmdPtr->clientData;
+		return (Proc *)cmdPtr->clientData;
 	}
-	return (Proc *) 0;
+	return (Proc *)0;
 }
 
 /*
 *----------------------------------------------------------------------
 *
 * InterpProc --
-*
-*	When a Tcl procedure gets invoked, this routine gets invoked
-*	to interpret the procedure.
+*	When a Tcl procedure gets invoked, this routine gets invoked to interpret the procedure.
 *
 * Results:
 *	A standard Tcl result value, usually TCL_OK.
@@ -383,21 +297,14 @@ __device__ Proc *TclIsProc(Command *cmdPtr)
 *
 *----------------------------------------------------------------------
 */
-
 __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
 {
-	register Proc *procPtr = (Proc *) clientData;
-	register Arg *argPtr;
-	register Interp *iPtr = (Interp *) interp;
-	char **args;
-	CallFrame frame;
-	char *value, *end;
+	register Proc *procPtr = (Proc *)clientData;
+	register Interp *iPtr = (Interp *)interp;
 	int result;
 
-	/*
-	* Set up a call frame for the new procedure invocation.
-	*/
-
+	// Set up a call frame for the new procedure invocation.
+	CallFrame frame;
 	Tcl_InitHashTable(&frame.varTable, TCL_STRING_KEYS);
 	if (iPtr->varFramePtr != NULL) {
 		frame.level = iPtr->varFramePtr->level + 1;
@@ -411,84 +318,59 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 	iPtr->framePtr = &frame;
 	iPtr->varFramePtr = &frame;
 
-	/*
-	* Match the actual arguments against the procedure's formal
-	* parameters to compute local variables.
-	*/
-
-	for (argPtr = procPtr->argPtr, args = argv+1, argc -= 1;
-		argPtr != NULL;
-		argPtr = argPtr->nextPtr, args++, argc--) {
-
-			/*
-			* Handle the special case of the last formal being "args".  When
-			* it occurs, assign it a list consisting of all the remaining
-			* actual arguments.
-			*/
-
-			if ((argPtr->nextPtr == NULL)
-				&& (_strcmp(argPtr->name, "args") == 0)) {
-					if (argc < 0) {
-						argc = 0;
-					}
-					value = Tcl_Merge(argc, args);
-					Tcl_SetVar(interp, argPtr->name, value, 0);
-					_freeFast(value);
-					argc = 0;
-					break;
-			} else if (argc > 0) {
-				value = *args;
-			} else if (argPtr->defValue != NULL) {
-				value = argPtr->defValue;
-			} else {
-				Tcl_AppendResult(interp, "no value given for parameter \"",
-					argPtr->name, "\" to \"", argv[0], "\"",
-					(char *)NULL);
-				result = TCL_ERROR;
-				goto procDone;
+	// Match the actual arguments against the procedure's formal parameters to compute local variables.
+	register Arg *argPtr;
+	char **args;
+	for (argPtr = procPtr->argPtr, args = argv+1, argc -= 1; argPtr != NULL; argPtr = argPtr->nextPtr, args++, argc--) {
+		// Handle the special case of the last formal being "args".  When it occurs, assign it a list consisting of all the remaining actual arguments.
+		char *value;
+		if (argPtr->nextPtr == NULL && !_strcmp(argPtr->name, "args") {
+			if (argc < 0) {
+				argc = 0;
 			}
+			value = Tcl_Merge(argc, args);
 			Tcl_SetVar(interp, argPtr->name, value, 0);
+			_freeFast(value);
+			argc = 0;
+			break;
+		} else if (argc > 0) {
+			value = *args;
+		} else if (argPtr->defValue != NULL) {
+			value = argPtr->defValue;
+		} else {
+			Tcl_AppendResult(interp, "no value given for parameter \"", argPtr->name, "\" to \"", argv[0], "\"", (char *)NULL);
+			result = TCL_ERROR;
+			goto procDone;
+		}
+		Tcl_SetVar(interp, argPtr->name, value, 0);
 	}
 	if (argc > 0) {
-		Tcl_AppendResult(interp, "called \"", argv[0],
-			"\" with too many arguments", (char *)NULL);
+		Tcl_AppendResult(interp, "called \"", argv[0], "\" with too many arguments", (char *)NULL);
 		result = TCL_ERROR;
 		goto procDone;
 	}
 
-	/* Increment the usage count */
+	// Increment the usage count
 	procPtr->uses++;
 
-	/*
-	* Invoke the commands in the procedure's body.
-	*/
-
+	// Invoke the commands in the procedure's body.
+	char *end;
 	result = Tcl_Eval(interp, procPtr->command, 0, &end);
 
 	if (procPtr->uses == 1) {
-		/* Now we "delete" the proc. This will decrement the reference
-		* count, and only delete the proc if the usage count reaches 0.
-		* This might happen if the proc was renamed/deleted while it was
-		* executing.
-		* We can't reference procPtr after this point.
-		*/
+		// Now we "delete" the proc. This will decrement the reference count, and only delete the proc if the usage count reaches 0.
+		// This might happen if the proc was renamed/deleted while it was executing. We can't reference procPtr after this point.
 		ProcDeleteProc((ClientData)procPtr);
 	} else {
 		procPtr->uses--;
 	}
 
-
 	if (result == TCL_RETURN) {
 		result = TCL_OK;
 	} else if (result == TCL_ERROR) {
+		// Record information telling where the error occurred.
 		char msg[100];
-
-		/*
-		* Record information telling where the error occurred.
-		*/
-
-		_sprintf(msg, "\n    (procedure \"%.50s\" line %d)", argv[0],
-			iPtr->errorLine);
+		_sprintf(msg, "\n    (procedure \"%.50s\" line %d)", argv[0], iPtr->errorLine);
 		Tcl_AddErrorInfo(interp, msg);
 	} else if (result == TCL_BREAK) {
 		iPtr->result = "invoked \"break\" outside of a loop";
@@ -498,13 +380,8 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 		result = TCL_ERROR;
 	}
 
-	/*
-	* Delete the call frame for this procedure invocation (it's
-	* important to remove the call frame from the interpreter
-	* before deleting it, so that traces invoked during the
-	* deletion don't see the partially-deleted frame).
-	*/
-
+	// Delete the call frame for this procedure invocation (it's important to remove the call frame from the interpreter
+	// before deleting it, so that traces invoked during the deletion don't see the partially-deleted frame).
 procDone:
 	iPtr->framePtr = frame.callerPtr;
 	iPtr->varFramePtr = frame.callerVarPtr;
@@ -516,11 +393,8 @@ procDone:
 *----------------------------------------------------------------------
 *
 * ProcDeleteProc --
-*
-*	This procedure is invoked just before a command procedure is
-*	removed from an interpreter.  Its job is to release all the
-*	resources allocated to the procedure.
-*	'uses' is decremented, but if it doesn't go to zero, it is not deleted.
+*	This procedure is invoked just before a command procedure is removed from an interpreter.  Its job is to release all the
+*	resources allocated to the procedure. 'uses' is decremented, but if it doesn't go to zero, it is not deleted.
 *
 * Results:
 *	None.
@@ -532,17 +406,14 @@ procDone:
 */
 __device__ static void ProcDeleteProc(ClientData clientData)
 {
-	register Proc *procPtr = (Proc *) clientData;
-	register Arg *argPtr;
-
+	register Proc *procPtr = (Proc *)clientData;
 	if (--procPtr->uses <= 0) {
-		_freeFast((char *) procPtr->command);
-		for (argPtr = procPtr->argPtr; argPtr != NULL; ) {
+		_freeFast((char *)procPtr->command);
+		for (register Arg *argPtr = procPtr->argPtr; argPtr != NULL;) {
 			Arg *nextPtr = argPtr->nextPtr;
-
-			_freeFast((char *) argPtr);
+			_freeFast((char *)argPtr);
 			argPtr = nextPtr;
 		}
-		_freeFast((char *) procPtr);
+		_freeFast((char *)procPtr);
 	}
 }

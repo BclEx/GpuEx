@@ -60,8 +60,7 @@ void TclSetupEnv(Tcl_Interp *interp)
 	eiPtr->nextPtr = _firstInterpPtr;
 	_firstInterpPtr = eiPtr;
 
-	// Store the environment variable values into the interpreter's "env" array, and arrange for us to be notified on future
-	// writes and unsets to that array.
+	// Store the environment variable values into the interpreter's "env" array, and arrange for us to be notified on future writes and unsets to that array.
 	Tcl_UnsetVar2(interp, "env", (char *)NULL, TCL_GLOBAL_ONLY);
 	for (int i = 0; ; i++) {
 		char *p = environ[i];

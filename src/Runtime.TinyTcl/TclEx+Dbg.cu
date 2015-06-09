@@ -16,7 +16,7 @@
 *-----------------------------------------------------------------------------
 */
 
-#include "tclExtdInt.h"
+#include "tclEx+Int.h"
 //#include <stdio.h>
 //#include <sys/time.h>
 
