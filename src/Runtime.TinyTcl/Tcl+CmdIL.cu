@@ -12,7 +12,7 @@
 #include "Tcl+Int.h"
 
 // Forward declarations for procedures defined in this file:
-__device__ static int SortCompareProc(const VOID *first, const VOID *second);
+__device__ static int SortCompareProc(const char *first, const char *second);
 
 /*
 *----------------------------------------------------------------------
@@ -551,7 +551,7 @@ __device__ int Tcl_LindexCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 		interp->freeProc = (Tcl_FreeProc *) _free;
 	}
 	if (parenthesized) {
-		_memcpy((VOID *)interp->result, (VOID *)element, size);
+		_memcpy(interp->result, element, size);
 		interp->result[size] = 0;
 	} else {
 		TclCopyAndCollapse(size, element, interp->result);
@@ -893,12 +893,12 @@ __device__ int Tcl_LsearchCmd(ClientData notUsed, Tcl_Interp *interp, int argc, 
 */
 
 // The procedure below is called back by qsort to determine the proper ordering between two elements.
-__device__ static int SortCompareProc(const VOID *first, const VOID *second)
+__device__ static int SortCompareProc(const char *first, const char *second)
 {
-	return _strcmp(*((char **) first), *((char **) second));
+	return _strcmp(*((char **)first), *((char **)second));
 }
 
-__device__ static int IntegerSortCompareProc(const VOID *first, const VOID *second)
+__device__ static int IntegerSortCompareProc(const char *first, const char *second)
 {
 	int firstint = _atoi(*((char **) first));
 	int secondint = _atoi(*((char **) second));
@@ -910,7 +910,7 @@ __device__ static char *_sort_command = 0;
 __device__ static int _sort_result = TCL_OK;
 __device__ static Tcl_Interp *_sort_interp = 0;
 
-__device__ static int CommandSortCompareProc(const VOID *first, const VOID *second)
+__device__ static int CommandSortCompareProc(const char *first, const char *second)
 {
 	// We have already had an error and we need to return something, so fallback to strcmp
 	if (_sort_result != TCL_OK) {
@@ -962,12 +962,12 @@ __device__ int Tcl_LsortCmd(ClientData notUsed, Tcl_Interp *interp, int argc, ch
 	if (Tcl_SplitList(interp, argv[1], &listArgc, &listArgv) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	_qsort((VOID *) listArgv, listArgc, sizeof (char *), compare);
+	_qsort(listArgv, listArgc, sizeof(char *), compare);
 	if (_sort_result != TCL_OK) {
 		return _sort_result;
 	}
 	interp->result = Tcl_Merge(listArgc, listArgv);
 	interp->freeProc = (Tcl_FreeProc *)_free;
-	_freeFast((char *) listArgv);
+	_freeFast((char *)listArgv);
 	return TCL_OK;
 }

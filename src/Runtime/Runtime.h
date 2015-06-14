@@ -44,19 +44,19 @@ typedef struct
 #include "Runtime.cpu.h"
 #endif
 
-// Macro to use instead of "void" for arguments that must have type "void *" in ANSI C;  maps them to type "char *" in non-ANSI systems.
-#ifndef VOID
-# ifdef __STDC__
-# define VOID void
-# else
-# define VOID char
-# endif
-#endif
-
-// Miscellaneous declarations (to allow Tcl to be used stand-alone, without the rest of Sprite).
-#ifndef NULL
-#define NULL 0
-#endif
+//// Macro to use instead of "void" for arguments that must have type "void *" in ANSI C;  maps them to type "char *" in non-ANSI systems.
+//#ifndef VOID
+//# ifdef __STDC__
+//# define VOID void
+//# else
+//# define VOID char
+//# endif
+//#endif
+//
+//// Miscellaneous declarations (to allow Tcl to be used stand-alone, without the rest of Sprite).
+//#ifndef NULL
+//#define NULL 0
+//#endif
 
 #ifndef _API
 #define _API extern
@@ -489,16 +489,13 @@ template <typename T> __device__ __forceinline void _strcpy(const T *__restrict_
 {
 	register unsigned char *d = (unsigned char *)dest;
 	register unsigned char *s = (unsigned char *)src;
-	do { *d++ = *s++; } while (*s);
-	//while (*s) { *d++ = *s++; } *d = *s;
+	while (*s) { *d++ = *s++; } *d = *s;
 }
 #else
-__device__ __forceinline char *_strcpy(register char *__restrict__ dest, register const char *__restrict__ src)
+__device__ __forceinline void _strcpy(register char *__restrict__ dest, register const char *__restrict__ src)
 {
 	register int i = 0;
-	do { dest[i] = src[i];}
-	while (src[i++] != 0);
-	return dest;
+	while (src[i]); { dest[i++] = src[i]; } dest[i] = src[i];
 }
 #endif
 
@@ -529,10 +526,10 @@ template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ des
 template <typename T> __device__ __forceinline void _strcat(T *__restrict__ dest, const T *__restrict__ src)
 {
 	register unsigned char *d = (unsigned char *)dest;
-	while (d++) { };
+	while (*d) d++;
 	//_strcpy<T>(d, src);
 	register unsigned char *s = (unsigned char *)src;
-	do { *d++ = *s++; } while (*s);
+	while (*s) { *d++ = *s++; } *d = *s;
 }
 #else
 __device__ char *_strcat(register char *__restrict__ dest, register const char *__restrict__ src)

@@ -1,9 +1,9 @@
 ﻿// os_win.c
-#define POWERSAFE_OVERWRITE 1
 #include <windows.h>
 #include <new.h>
 #include "Core.cu.h"
 #if OS_WIN // This file is used for Windows only
+#define POWERSAFE_OVERWRITE 1
 
 namespace CORE_NAME
 {

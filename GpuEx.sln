@@ -122,6 +122,7 @@ Global
 		{3A992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cpu|x64.Build.0 = Debug.cpu|x64
 		{3A992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
 		{3A992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
+		{3A992207-4EA5-4750-9401-AAD09DFDE7E5}.Debug.cu|x64.Build.0 = Debug.cu|x64
 		{3A992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{3A992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
 		{3A992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|x64.Build.0 = Release.cpu|x64
@@ -200,7 +201,6 @@ Global
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Debug.cpu|x64.ActiveCfg = Debug.cpu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Debug.cu|Any CPU.ActiveCfg = Debug.cu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Debug.cu|x64.ActiveCfg = Debug.cu|x64
-		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Debug.cu|x64.Build.0 = Debug.cu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cpu|x64.Build.0 = Release.cpu|x64

@@ -272,7 +272,7 @@ __device__ int Tcl_MemFree(char *ptr, char *file, int line)
 __device__ char *Tcl_MemRealloc(char *ptr, unsigned int size, char *file, int line)
 {
 	char *new_ = Tcl_MemAlloc(size, file, line);
-	memcpy((VOID *)new_, (VOID *)ptr, (int)size);
+	memcpy(new_, ptr, (int)size);
 	Tcl_MemFree(ptr, file, line);
 	return new_;
 }
@@ -387,7 +387,7 @@ __device__ void Tcl_InitMemory(Tcl_Interp *interp)
 //*
 //*----------------------------------------------------------------------
 //*/
-//__device__ VOID *Tcl_MemAlloc(unsigned int size)
+//__device__ charVOID *Tcl_MemAlloc(unsigned int size)
 //{
 //	char *result = malloc(size);
 //	if (result == NULL) 
@@ -404,7 +404,7 @@ __device__ void Tcl_InitMemory(Tcl_Interp *interp)
 //*
 //*----------------------------------------------------------------------
 //*/
-//__device__ void Tcl_MemFree(VOID *ptr)
+//__device__ void Tcl_MemFree(charVOID *ptr)
 //{
 //	free(ptr);
 //}

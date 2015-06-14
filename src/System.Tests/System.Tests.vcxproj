@@ -34,7 +34,7 @@
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="Program.2.cu" />
     <CudaCompile Include="TestSystem.cu" />
-    <CudaCompile Include="Tests/IOTestH.cpp" />
+    <ClCompile Include="Tests/IOTestH.cpp" />
     <CudaCompile Include="Tests/IOTest.cu" />
   </ItemGroup>
   <ItemGroup>

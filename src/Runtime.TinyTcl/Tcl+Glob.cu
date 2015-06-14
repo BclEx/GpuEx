@@ -305,7 +305,7 @@ __device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name)
 		if (length >= curSize) {
 			length = curSize-1;
 		}
-		_memcpy((VOID *)curBuf, (VOID *)(name+1), length);
+		_memcpy(curBuf, (name+1), length);
 		curBuf[length] = '\0';
 		pwPtr = getpwnam(curBuf);
 		if (pwPtr == NULL) {

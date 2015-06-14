@@ -126,17 +126,17 @@ __global__ static void runtime9(void *r)
 {
 	_runtimeSetHeap(r);
 	char buf[100];
-	_strcpy(buf, "Test"); int a0 = _memcmp(buf, "Test", 4); _assert(!a0);
-	_strncpy(buf, "Test", 4); int b0 = _memcmp(buf, "Test", 4); _assert(!b0);
-	_strcat(buf, "Cat"); int b1 = _memcmp(buf, "TestCat", 6); _assert(!b1);
+	_strcpy(buf, "Test"); int a0 = _memcmp(buf, "Test", 5); _assert(!a0);
+	_strncpy(buf, "Test", 5); int b0 = _memcmp(buf, "Test", 5); _assert(!b0);
+	_strcat(buf, "Cat"); int b1 = _memcmp(buf, "TestCat", 7); _assert(!b1);
 	const char *a1 = _strchr("Test", 'E'); _assert(a1);
 	int a2 = _strcmp("Test", "Test"); _assert(!a2);
 	int a3 = _strncmp("Tesa", "Tesb", 3); _assert(!a3);
-	_memcpy(buf, "Test", 4); int a4 = _memcmp(buf, "Test", 4); _assert(!a4);
+	_memcpy(buf, "Test", 5); int a4 = _memcmp(buf, "Test", 5); _assert(!a4);
 	_memset(buf, 0, sizeof(buf)); int a5 = _memcmp(buf, "\0\0\0\0", 4); _assert(!a5);
 	const char *a6 = _memchr("Test", 'e'); _assert(a6);
-	int a7 = _memcmp("Test", "Test", 4); _assert(!a7);
-	_memmove(buf, "Test", 4); int a8 = _memcmp(buf, "Test", 4); _assert(!a8);
+	int a7 = _memcmp("Test", "Test", 5); _assert(!a7);
+	_memmove(buf, "Test", 5); int a8 = _memcmp(buf, "Test", 5); _assert(!a8);
 	int a9 = _strlen("Test"); _assert(a9 == 4);
 	int a10 = _hextobyte('a'); _assert(a10 == 10);
 #ifndef OMIT_BLOB_LITERAL

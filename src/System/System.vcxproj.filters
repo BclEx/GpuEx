@@ -53,6 +53,9 @@
     <None Include="..\System.net\Core\VFile.cu">
       <Filter>Core</Filter>
     </None>
+    <None Include="..\System.net\Core\VSystem-gpu.cu">
+      <Filter>Core</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Program.cu" />

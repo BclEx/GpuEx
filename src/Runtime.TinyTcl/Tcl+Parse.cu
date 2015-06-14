@@ -611,7 +611,7 @@ __device__ void TclExpandParseValue(register ParseValue *pvPtr, int needed)
 	char *new_ = (char *)_allocFast((unsigned)newSpace);
 
 	// Copy from old buffer to new, free old buffer if needed, and mark new buffer as malloc-ed.
-	_memcpy((VOID *)new_, (VOID *)pvPtr->buffer, pvPtr->next - pvPtr->buffer);
+	_memcpy(new_, pvPtr->buffer, pvPtr->next - pvPtr->buffer);
 	pvPtr->next = new_ + (pvPtr->next - pvPtr->buffer);
 	if (pvPtr->clientData != 0) {
 		_freeFast(pvPtr->buffer);

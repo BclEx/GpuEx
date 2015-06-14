@@ -664,7 +664,7 @@ doField:
 			int newSpace = 2*(dstSize + size);
 			char *newDst = (char *)_allocFast((unsigned)newSpace+1);
 			if (dstSize != 0) {
-				_memcpy((VOID *)newDst, (VOID *)dst, dstSize);
+				_memcpy(newDst, dst, dstSize);
 			}
 			if (dstSpace != TCL_RESULT_SIZE) {
 				_freeFast(dst);
@@ -673,7 +673,7 @@ doField:
 			dstSpace = newSpace;
 		}
 		if (noPercent) {
-			_memcpy((VOID *)(dst+dstSize), (VOID *)oneWordValue, size);
+			_memcpy((dst+dstSize), oneWordValue, size);
 			dstSize += size;
 			dst[dstSize] = 0;
 		} else {

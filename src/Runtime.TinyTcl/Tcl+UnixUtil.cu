@@ -132,7 +132,7 @@ int Tcl_Fork()
 	if (waitTableUsed == waitTableSize) {
 		int newSize = waitTableSize + WAIT_TABLE_GROW_BY;
 		WaitInfo *newWaitTable = (WaitInfo *)_allocFast((unsigned)(newSize * sizeof(WaitInfo)));
-		memcpy((VOID *)newWaitTable, (VOID *)waitTable, (waitTableSize * sizeof(WaitInfo)));
+		memcpy(newWaitTable, waitTable, (waitTableSize * sizeof(WaitInfo)));
 		if (waitTable != NULL) {
 			_freeFast((char *) waitTable);
 		}
@@ -765,7 +765,7 @@ void TclMakeFileTable(Interp *iPtr, int index)
 		syslog(LOG_INFO, "TclMakeFileTable() increasing size from %d to %d", iPtr->numFiles, newSize);
 #endif
 		OpenFile **newPtrArray = (OpenFile **)_allocFast((unsigned)((newSize)*sizeof(OpenFile *)));
-		memcpy((VOID *)newPtrArray, (VOID *)iPtr->filePtrArray, iPtr->numFiles*sizeof(OpenFile *));
+		memcpy(newPtrArray, iPtr->filePtrArray, iPtr->numFiles*sizeof(OpenFile *));
 		for (i = iPtr->numFiles; i < newSize; i++) {
 			newPtrArray[i] = NULL;
 		}

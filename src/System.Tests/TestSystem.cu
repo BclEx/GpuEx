@@ -1,3 +1,4 @@
+#include <RuntimeHost.h>
 #include "..\System.net\Core\Core.cu.h"
 
 __device__ static void TestVFS()
