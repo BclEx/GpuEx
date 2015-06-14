@@ -128,6 +128,7 @@ __global__ static void runtime9(void *r)
 	char buf[100];
 	_strcpy(buf, "Test"); int a0 = _memcmp(buf, "Test", 4); _assert(!a0);
 	_strncpy(buf, "Test", 4); int b0 = _memcmp(buf, "Test", 4); _assert(!b0);
+	_strcat(buf, "Cat"); int b1 = _memcmp(buf, "TestCat", 6); _assert(!b1);
 	const char *a1 = _strchr("Test", 'E'); _assert(a1);
 	int a2 = _strcmp("Test", "Test"); _assert(!a2);
 	int a3 = _strncmp("Tesa", "Tesb", 3); _assert(!a3);

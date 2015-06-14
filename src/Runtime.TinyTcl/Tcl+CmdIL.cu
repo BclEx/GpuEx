@@ -604,7 +604,7 @@ __device__ int Tcl_LinsertCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 				end++;
 			}
 		}
-		char *savedChar = *end;
+		char savedChar = *end;
 		*end = 0;
 		Tcl_AppendResult(interp, argv[1], (char *)NULL);
 		*end = savedChar;
@@ -709,7 +709,7 @@ __device__ int Tcl_LrangeCmd(ClientData notUsed, Tcl_Interp *interp, int argc, c
 	if (first < 0) {
 		first = 0;
 	}
-	if (*argv[3] == 'e' && !_strncmp(argv[3], "end", _strlen(argv[3])) {
+	if (*argv[3] == 'e' && !_strncmp(argv[3], "end", _strlen(argv[3]))) {
 		last = 1000000;
 	} else {
 		if (Tcl_GetInt(interp, argv[3], &last) != TCL_OK) {

@@ -9,7 +9,7 @@
 // express or implied warranty.
 
 #include "Tcl+Int.h"
-#include "Tcl+OS.h"
+#include <sys/stat.h>
 
 // The structure below is used to keep track of a globbing result being built up (i.e. a partial list of file names).  The list grows dynamically to be as big as needed.
 typedef struct {
@@ -99,9 +99,9 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 	// Figure out whether we'll need to add a slash between the directory name and file names within the directory when concatenating them together.
 	char *separator;
 	if (dir[0] == 0 || (dir[0] == '/' && dir[1] == 0) ? "" : "/") {
-		separator = ;
+		separator = "";
 	} else {
-		separator = ;
+		separator = "/";
 	}
 
 	// First, find the end of the next element in rem, checking along the way for special globbing characters.
@@ -159,6 +159,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 	}
 
 	// If there were any pattern-matching characters, then scan through the directory to find all the matching names.
+	int result;
 	if (gotSpecial) {
 		// Be careful not to do any actual file system operations on a directory named "";  instead, use ".".  This is needed because
 		// some versions of UNIX don't treat "" like "." automatically.
@@ -189,7 +190,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		}
 		_strncpy(pattern, rem, l2);
 		pattern[l2] = '\0';
-		int result = TCL_OK;
+		result = TCL_OK;
 		while (true) {
 			struct dirent *entryPtr = _readdir(d);
 			if (entryPtr == NULL) {
@@ -366,7 +367,8 @@ notEnoughArgs:
 		noComplain = true;
 	}
 
-	for (int i = 1 + noComplain; i < argc; i++) {
+	int i;
+	for (i = 1 + noComplain; i < argc; i++) {
 		// Do special checks for names starting at the root and for names beginning with ~.  Then let DoGlob do the rest.
 		char *thisName = argv[i];
 #if TCL_GETWD
@@ -387,7 +389,7 @@ notEnoughArgs:
 			return result;
 		}
 	}
-	if ((*interp->result == 0) && !noComplain) {
+	if (!*interp->result && !noComplain) {
 		char *sep = "";
 		Tcl_AppendResult(interp, "no files matched glob pattern", (argc == 2 ? " \"" : "s \""), (char *)NULL);
 		for (i = 1; i < argc; i++) {

@@ -552,9 +552,7 @@ scalar:
 __device__ int Tcl_TraceVar2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 {
 	Interp *iPtr = (Interp *)interp;
-
-	// Locate the variable, making a new (undefined) one if necessary.
-	// If the name starts with ::, we lookup in the global scope
+	// Locate the variable, making a new (undefined) one if necessary. If the name starts with ::, we lookup in the global scope
 	if (part1[0] == ':' && part1[1] == ':') {
 		part1 += 2;
 		flags |= TCL_GLOBAL_ONLY;
@@ -674,8 +672,7 @@ scalar:
 __device__ void Tcl_UntraceVar2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 {
 	Interp *iPtr = (Interp *)interp;
-	// First, lookup the variable.
-	// If the name starts with ::, we lookup in the global scope
+	// First, lookup the variable. If the name starts with ::, we lookup in the global scope
 	if (part1[0] == ':' && part1[1] == ':') {
 		part1 += 2;
 		flags |= TCL_GLOBAL_ONLY;
@@ -751,10 +748,8 @@ __device__ void Tcl_UntraceVar2(Tcl_Interp *interp, char *part1, char *part2, in
 */
 __device__ ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, char *varName, int flags, Tcl_VarTraceProc *proc, ClientData prevClientData)
 {
-	register char *p;
-
 	// If varName refers to an array (it ends with a parenthesized element name), then handle it specially.
-	for (p = varName; *p != '\0'; p++) {
+	for (register char *p = varName; *p != '\0'; p++) {
 		if (*p == '(') {
 			char *open = p;
 			do {
@@ -793,8 +788,7 @@ scalar:
 __device__ ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *proc, ClientData prevClientData)
 {
 	Interp *iPtr = (Interp *)interp;
-	// First, lookup the variable.
-	// If the name starts with ::, we lookup in the global scope
+	// First, lookup the variable. If the name starts with ::, we lookup in the global scope
 	if (part1[0] == ':' && part1[1] == ':') {
 		part1 += 2;
 		flags |= TCL_GLOBAL_ONLY;
@@ -1047,7 +1041,6 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 		interp->result = "1";
 		return TCL_OK;
 	} else if (c == 'd' && !_strncmp(argv[1], "donesearch", length)) {
-		*prevPtr;
 		if (argc != 4) {
 			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " donesearch arrayName searchId\"", (char *)NULL);
 			return TCL_ERROR;
@@ -1257,7 +1250,7 @@ error:
 */
 __device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 {
-	register Interp *iPtr = (Interp *) interp;
+	register Interp *iPtr = (Interp *)interp;
 	if (argc < 2) {
 		Tcl_AppendResult((Tcl_Interp *)iPtr, "wrong # args: should be \"", argv[0], " varName ?varName ...?\"", (char *)NULL);
 		return TCL_ERROR;
@@ -1274,12 +1267,12 @@ __device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 			gVarPtr->flags |= VAR_UNDEFINED;
 			Tcl_SetHashValue(hPtr, gVarPtr);
 		} else {
-			gVarPtr = (Var *) Tcl_GetHashValue(hPtr);
+			gVarPtr = (Var *)Tcl_GetHashValue(hPtr);
 		}
 		Tcl_HashEntry *hPtr2 = Tcl_CreateHashEntry(&iPtr->varFramePtr->varTable, *argv, &new_);
 		Var *varPtr;
 		if (!new_) {
-			varPtr = (Var *) Tcl_GetHashValue(hPtr2);
+			varPtr = (Var *)Tcl_GetHashValue(hPtr2);
 			if (varPtr->flags & VAR_UPVAR) {
 				continue;
 			} else {
@@ -1349,7 +1342,7 @@ upvarSyntax:
 			upVarPtr->flags |= VAR_UNDEFINED;
 			Tcl_SetHashValue(hPtr, upVarPtr);
 		} else {
-			upVarPtr = (Var *) Tcl_GetHashValue(hPtr);
+			upVarPtr = (Var *)Tcl_GetHashValue(hPtr);
 			if (upVarPtr->flags & VAR_UPVAR) {
 				hPtr = upVarPtr->value.upvarPtr;
 				upVarPtr = (Var *)Tcl_GetHashValue(hPtr);
@@ -1533,12 +1526,13 @@ done:
 */
 __device__ static Var *NewVar(int space)
 {
+	register Var *varPtr;
 	int extra = space - sizeof(varPtr->value);
 	if (extra < 0) {
 		extra = 0;
 		space = sizeof(varPtr->value);
 	}
-	register Var *varPtr = (Var *)_allocFast((unsigned)(sizeof(Var) + extra));
+	varPtr = (Var *)_allocFast((unsigned)(sizeof(Var) + extra));
 	varPtr->valueLength = 0;
 	varPtr->valueSpace = space;
 	varPtr->upvarUses = 0;

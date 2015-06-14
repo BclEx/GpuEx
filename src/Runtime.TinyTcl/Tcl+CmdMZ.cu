@@ -269,7 +269,7 @@ wrongNumArgs:
 
 		// Copy the portion of the source string before the match to the result variable.
 		register char *src = p + pmatch[0].rm_so;
-		register char *c = *src;
+		register char c = *src;
 		*src = 0;
 
 		char *newValue = Tcl_SetVar(interp, argPtr[3], p, flags);
@@ -750,7 +750,7 @@ firstLast:
 				continue;
 			}
 			if (!_strncmp(argv[2], p, length)) {
-				match = p-argv[3];
+				match = (int)(p-argv[3]);
 				if (first) {
 					break;
 				}
@@ -824,7 +824,7 @@ firstLast:
 		}
 		if (last >= first) {
 			p = argv[2] + last + 1;
-			char *saved = *p;
+			char saved = *p;
 			*p = 0;
 			Tcl_SetResult(interp, argv[2] + first, TCL_VOLATILE);
 			*p = saved;

@@ -48,7 +48,6 @@
 #include <dirent.h>
 //#include <sys/file.h>
 #include <sys/stat.h>
-#include <sys/stat.h>
 #if TCL_SYS_TIME_H
 #include <sys/time.h> 
 #else

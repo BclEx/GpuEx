@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <LD>
@@ -131,7 +131,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="noextensions.cu" />
-    <ClCompile Include="readdir.cu" />
     <ClCompile Include="regex_compat.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -167,13 +166,13 @@
     <ClCompile Include="Tcl+Var.cu" />
     <ClCompile Include="TclEx+Dbg.cu" />
     <ClCompile Include="TclEx+Gen.cu" />
+    <ClCompile Include="TclEx+UnixReaddir.cu" />
     <ClCompile Include="TclMod.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RTcl.cu" />
     <None Include="dos.cu" />
     <None Include="noextensions.cu" />
-    <None Include="readdir.cu" />
     <None Include="regex_compat.cu" />
     <None Include="Tcl+Alloc.cu" />
     <None Include="Tcl+Assem.cu" />
@@ -201,6 +200,7 @@
     <None Include="Tcl+Var.cu" />
     <None Include="TclEx+Dbg.cu" />
     <None Include="TclEx+Gen.cu" />
+    <None Include="TclEx+UnixReaddir.cu" />
     <None Include="TclMod.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

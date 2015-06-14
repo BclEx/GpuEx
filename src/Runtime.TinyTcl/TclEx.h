@@ -1,27 +1,19 @@
-/* 
-* tclExtend.h
-*
-*    External declarations for the extended Tcl library.
-*-----------------------------------------------------------------------------
-* Copyright 1992 Karl Lehenbauer and Mark Diekhans.
-*
-* Permission to use, copy, modify, and distribute this software and its
-* documentation for any purpose and without fee is hereby granted, provided
-* that the above copyright notice appear in all copies.  Karl Lehenbauer and
-* Mark Diekhans make no representations about the suitability of this
-* software for any purpose.  It is provided "as is" without express or
-* implied warranty.
-*-----------------------------------------------------------------------------
-* $Id: tclExtend.h,v 1.1.1.1 2001/04/29 20:34:45 karll Exp $
-*-----------------------------------------------------------------------------
-*/
+// tclExtend.h
+//
+//    External declarations for the extended Tcl library.
+//-----------------------------------------------------------------------------
+// Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+//
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without fee is hereby granted, provided
+// that the above copyright notice appear in all copies.  Karl Lehenbauer and Mark Diekhans make no representations about the suitability of this
+// software for any purpose.  It is provided "as is" without express or implied warranty.
 
 #ifndef __TCLEX_H__
 #define __TCLEX_H__
 
 #include <stdio.h>
 #ifndef __TCL_H__
-#include <Tcl.h>
+#include "Tcl.h"
 #endif
 
 // Version suffix for extended Tcl, this is appended to the standard Tcl version to form the actual extended Tcl version.

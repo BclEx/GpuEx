@@ -109,7 +109,7 @@ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 		}
 	}
 #endif
-	_freeFast((char *) filePtr);
+	_freeFast((char *)filePtr);
 	return result;
 }
 
@@ -127,8 +127,6 @@ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 *
 *----------------------------------------------------------------------
 */
-
-/* ARGSUSED */
 int Tcl_EofCmd(ClientData notUsed, Tcl_Interp *interp, int argc, char **argv)
 {
 	if (argc != 2) {

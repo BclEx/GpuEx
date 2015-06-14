@@ -1,47 +1,36 @@
-/* 
- * tclUnixStr.c --
- *
- *	This file contains procedures that generate strings
- *	corresponding to various UNIX-related codes, such
- *	as errno and signals.
- *
- * Copyright 1991 Regents of the University of California
- * Permission to use, copy, modify, and distribute this
- * software and its documentation for any purpose and without
- * fee is hereby granted, provided that this copyright
- * notice appears in all copies.  The University of California
- * makes no representations about the suitability of this
- * software for any purpose.  It is provided "as is" without
- * express or implied warranty.
- *
- * $Id: tcluxstr.c,v 1.1.1.1 2001/04/29 20:35:43 karll Exp $
- */
+// tclUnixStr.c --
+//
+//	This file contains procedures that generate strings corresponding to various UNIX-related codes, such
+//	as errno and signals.
+//
+// Copyright 1991 Regents of the University of California
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without
+// fee is hereby granted, provided that this copyright notice appears in all copies.  The University of California
+// makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
+// express or implied warranty.
 
-#include "tclInt.h"
-#include "tclOS.h"
+#include "Tcl+Int.h"
+#if OS_UNIX
+#include "Tcl+Unix.h"
 
 /*
- *----------------------------------------------------------------------
- *
- * Tcl_ErrnoId --
- *
- *	Return a textual identifier for the current errno value.
- *
- * Results:
- *	This procedure returns a machine-readable textual identifier
- *	that corresponds to the current errno value (e.g. "EPERM").
- *	The identifier is the same as the #define name in errno.h.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Tcl_ErrnoId()
+*----------------------------------------------------------------------
+*
+* Tcl_ErrnoId --
+*	Return a textual identifier for the current errno value.
+*
+* Results:
+*	This procedure returns a machine-readable textual identifier that corresponds to the current errno value (e.g. "EPERM").
+*	The identifier is the same as the #define name in errno.h.
+*
+* Side effects:
+*	None.
+*
+*----------------------------------------------------------------------
+*/
+char *Tcl_ErrnoId()
 {
-    switch (errno) {
+	switch (errno) {
 #ifdef E2BIG
 	case E2BIG: return "E2BIG";
 #endif
@@ -120,11 +109,9 @@ Tcl_ErrnoId()
 #if defined(EDEADLK) && (!defined(EWOULDBLOCK) || (EDEADLK != EWOULDBLOCK))
 	case EDEADLK: return "EDEADLK";
 #endif
-/*
-#ifdef EDEADLOCK
-	case EDEADLOCK: return "EDEADLOCK";
-#endif
-*/
+		//#ifdef EDEADLOCK
+		//case EDEADLOCK: return "EDEADLOCK";
+		//#endif
 #ifdef EDESTADDRREQ
 	case EDESTADDRREQ: return "EDESTADDRREQ";
 #endif
@@ -455,33 +442,28 @@ Tcl_ErrnoId()
 #ifdef EXFULL
 	case EXFULL: return "EXFULL";
 #endif
-    }
-    return "unknown error";
+	}
+	return "unknown error";
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * Tcl_SignalId --
- *
- *	Return a textual identifier for a signal number.
- *
- * Results:
- *	This procedure returns a machine-readable textual identifier
- *	that corresponds to sig.  The identifier is the same as the
- *	#define name in signal.h.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Tcl_SignalId(sig)
-    int sig;			/* Number of signal. */
+*----------------------------------------------------------------------
+*
+* Tcl_SignalId --
+*	Return a textual identifier for a signal number.
+*
+* Results:
+*	This procedure returns a machine-readable textual identifier that corresponds to sig.  The identifier is the same as the
+*	#define name in signal.h.
+*
+* Side effects:
+*	None.
+*
+*----------------------------------------------------------------------
+*/
+char *Tcl_SignalId(int sig)
 {
-    switch (sig) {
+	switch (sig) {
 #ifdef SIGABRT
 	case SIGABRT: return "SIGABRT";
 #endif
@@ -587,33 +569,27 @@ Tcl_SignalId(sig)
 #ifdef SIGXFSZ
 	case SIGXFSZ: return "SIGXFSZ";
 #endif
-    }
-    return "unknown signal";
+	}
+	return "unknown signal";
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * Tcl_SignalMsg --
- *
- *	Return a human-readable message describing a signal.
- *
- * Results:
- *	This procedure returns a string describing sig that should
- *	make sense to a human.  It may not be easy for a machine
- *	to parse.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Tcl_SignalMsg(sig)
-    int sig;			/* Number of signal. */
+*----------------------------------------------------------------------
+*
+* Tcl_SignalMsg --
+*	Return a human-readable message describing a signal.
+*
+* Results:
+*	This procedure returns a string describing sig that should make sense to a human.  It may not be easy for a machine to parse.
+*
+* Side effects:
+*	None.
+*
+*----------------------------------------------------------------------
+*/
+char *Tcl_SignalMsg(int sig)
 {
-    switch (sig) {
+	switch (sig) {
 #ifdef SIGABRT
 	case SIGABRT: return "SIGABRT";
 #endif
@@ -719,6 +695,8 @@ Tcl_SignalMsg(sig)
 #ifdef SIGXFSZ
 	case SIGXFSZ: return "exceeded file size limit";
 #endif
-    }
-    return "unknown signal";
+	}
+	return "unknown signal";
 }
+
+#endif

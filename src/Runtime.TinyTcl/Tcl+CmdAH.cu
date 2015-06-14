@@ -506,7 +506,7 @@ __device__ int Tcl_FormatCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 					format++;
 				}
 			}
-			size = p - oneWordValue;
+			size = (int)(p - oneWordValue);
 			noPercent = 1;
 			goto doField;
 		}

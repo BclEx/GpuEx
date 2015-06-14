@@ -146,7 +146,7 @@ __device__ int Tcl_DumpActiveMemory(char *fileName)
 		return TCL_ERROR;
 	struct mem_header *memScanP;
 	for (memScanP = _allocHead; memScanP != NULL; memScanP = memScanP->flink) {
-		char *address = &memScanP->body [0];
+		char *address = &memScanP->body[0];
 		_fprintf(fileP, "%8lx - %8lx  %7ld @ %s %d", (unsigned long)address, (unsigned long)address + memScanP->length - 1, memScanP->length, memScanP->file, memScanP->line);
 		if (!_strcmp(memScanP->file, "Tcl+Hash.cpp") && memScanP->line == 515) {
 			_fprintf(fileP, "\t|%s|", ((Tcl_HashEntry *)address)->key.string);
@@ -342,7 +342,7 @@ __device__ static int MemoryCmd(char *clientData, Tcl_Interp *interp, int argc, 
 			Tcl_AppendResult(interp, "wrong # args:  should be \"", argv[0], " active file", (char *)NULL);
 			return TCL_ERROR;
 		}
-		fileName = argv [2];
+		fileName = argv[2];
 		if (fileName[0] == '~')
 			if ((fileName = Tcl_TildeSubst(interp, fileName)) == NULL)
 				return TCL_ERROR;

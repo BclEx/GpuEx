@@ -196,6 +196,7 @@ __device__ static int ExprLex(Tcl_Interp *interp, register ExprInfo *infoPtr, re
 		c = *p;
 	}
 	infoPtr->expr = p+1;
+	char *var;
 	switch (c) {
 	case '0':
 	case '1':
@@ -242,7 +243,7 @@ __device__ static int ExprLex(Tcl_Interp *interp, register ExprInfo *infoPtr, re
 	case '$':
 		// Variable.  Fetch its value, then see if it makes sense as an integer or floating-point number.
 		infoPtr->token = VALUE;
-		char *var = Tcl_ParseVar(interp, p, &infoPtr->expr);
+		var = Tcl_ParseVar(interp, p, &infoPtr->expr);
 		if (var == NULL) {
 			return TCL_ERROR;
 		}

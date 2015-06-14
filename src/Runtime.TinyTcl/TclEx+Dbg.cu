@@ -1,22 +1,14 @@
-/*
-* tclXdebug.c --
-*
-* Tcl command execution trace command.
-*-----------------------------------------------------------------------------
-* Copyright 1992 Karl Lehenbauer and Mark Diekhans.
-*
-* Permission to use, copy, modify, and distribute this software and its
-* documentation for any purpose and without fee is hereby granted, provided
-* that the above copyright notice appear in all copies.  Karl Lehenbauer and
-* Mark Diekhans make no representations about the suitability of this
-* software for any purpose.  It is provided "as is" without express or
-* implied warranty.
-*-----------------------------------------------------------------------------
-* $Id: tclXdbg.c,v 1.1.1.1 2001/04/29 20:35:20 karll Exp $
-*-----------------------------------------------------------------------------
-*/
+// tclXdebug.c --
+//
+// Tcl command execution trace command.
+//-----------------------------------------------------------------------------
+// Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+//
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without fee is hereby granted, provided
+// that the above copyright notice appear in all copies.  Karl Lehenbauer and Mark Diekhans make no representations about the suitability of this
+// software for any purpose.  It is provided "as is" without express or implied warranty.
 
-#include "tclEx+Int.h"
+#include "TclEx+Int.h"
 //#include <stdio.h>
 //#include <sys/time.h>
 
@@ -46,105 +38,88 @@ __device__ static void CleanUpDebug(ClientData clientData);
 *-----------------------------------------------------------------------------
 *
 * PrintStr --
-*     Print an string, truncating it to the specified number of characters.
-* If the string contains newlines, \n is substituted.
+*     Print an string, truncating it to the specified number of characters. If the string contains newlines, \n is substituted.
 *
 *-----------------------------------------------------------------------------
 */
 __device__ static void PrintStr(FILE *filePtr, char *string, int numChars)
 {
-	int idx;
-	for (idx = 0; idx < numChars; idx++) {
+	for (int idx = 0; idx < numChars; idx++) {
 		if (string[idx] == '\n') {
-			putc('\\', filePtr);
-			putc('n', filePtr);
+			_fputc('\\', filePtr);
+			_fputc('n', filePtr);
 		} else
-			putc(string [idx], filePtr);
+			_fputc(string[idx], filePtr);
 	}
-	if (numChars < strlen(string))
-		fprintf(filePtr, "...");
+	if (numChars < _strlen(string))
+		_fprintf(filePtr, "...");
 }
 
 /*
 *-----------------------------------------------------------------------------
 *
 * PrintArg --
-*     Print an argument string, truncating and adding "..." if its longer
-*     then ARG_TRUNCATE_SIZE.  If the string contains white spaces, quote
-*     it with angle brackets.
+*     Print an argument string, truncating and adding "..." if its longer then ARG_TRUNCATE_SIZE.  If the string contains white spaces, quote it with angle brackets.
 *
 *-----------------------------------------------------------------------------
 */
 __device__ static void PrintArg(FILE *filePtr, char *argStr, int noTruncate)
 {
-	int idx, argLen, printLen;
-	int quote_it;
-
-	argLen = _strlen(argStr);
-	printLen = argLen;
-	if ((!noTruncate) && (printLen > ARG_TRUNCATE_SIZE))
+	int argLen = _strlen(argStr);
+	int printLen = argLen;
+	if (!noTruncate && printLen > ARG_TRUNCATE_SIZE)
 		printLen = ARG_TRUNCATE_SIZE;
-
-	quote_it = (printLen == 0);
-
-	for (idx = 0; idx < printLen; idx++)
-		if (_isspace(argStr [idx])) {
+	bool quote_it = (printLen == 0);
+	for (int idx = 0; idx < printLen; idx++)
+		if (_isspace(argStr[idx])) {
 			quote_it = TRUE;
 			break;
 		}
-
 		if (quote_it) 
-			putc('{', filePtr);
+			_fputc('{', filePtr);
 		PrintStr(filePtr, argStr, printLen);
 		if (quote_it) 
-			putc('}', filePtr);
+			_fputc('}', filePtr);
 }
 
 /*
 *-----------------------------------------------------------------------------
 *
 * TraceCode --
-*    Print out a trace of a code line.  Level is used for indenting
-* and marking lines and may be eval or procedure level.
+*    Print out a trace of a code line.  Level is used for indenting and marking lines and may be eval or procedure level.
 * 
 *-----------------------------------------------------------------------------
 */
 __device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *command, int argc, char **argv)
 {
-	int idx, printLen;
 #if NOTSUP
 	static struct timeval last_time;
 	struct timeval this_time;
-
 	gettimeofday(&this_time, 0);
-
-	fprintf(traceInfoPtr->filePtr, "%2d:", level);
-
+	_fprintf(traceInfoPtr->filePtr, "%2d:", level);
 	if (last_time.tv_sec != 0) {
-		fprintf(traceInfoPtr->filePtr, " (%luus)", (this_time.tv_sec - last_time.tv_sec)*1000000 + (this_time.tv_usec - last_time.tv_usec));
+		_fprintf(traceInfoPtr->filePtr, " (%luus)", (this_time.tv_sec - last_time.tv_sec)*1000000 + (this_time.tv_usec - last_time.tv_usec));
 	}
 	last_time = this_time;
 #endif
 	if (level > 20)
 		level = 20;
+	int idx;
 	for (idx = 0; idx < level; idx++) 
-		fprintf(traceInfoPtr->filePtr, "  ");
-
+		_fprintf(traceInfoPtr->filePtr, "  ");
 	if (traceInfoPtr->noEval) {
-		printLen = _strlen(command);
-		if ((!traceInfoPtr->noTruncate) && (printLen > CMD_TRUNCATE_SIZE))
+		int printLen = _strlen(command);
+		if (!traceInfoPtr->noTruncate && printLen > CMD_TRUNCATE_SIZE)
 			printLen = CMD_TRUNCATE_SIZE;
-
 		PrintStr(traceInfoPtr->filePtr, command, printLen);
 	} else {
 		for (idx = 0; idx < argc; idx++) {
 			if (idx > 0)
-				putc(' ', traceInfoPtr->filePtr);
+				_fputc(' ', traceInfoPtr->filePtr);
 			PrintArg(traceInfoPtr->filePtr, argv[idx], traceInfoPtr->noTruncate);
 		}
 	}
-
-	putc('\n', traceInfoPtr->filePtr);
+	_fputc('\n', traceInfoPtr->filePtr);
 	if (traceInfoPtr->flush)
 		fflush(traceInfoPtr->filePtr);
 }
@@ -161,13 +136,11 @@ __device__  static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *inter
 {
 	Interp *iPtr = (Interp *)interp;
 	traceInfo_pt traceInfoPtr = (traceInfo_pt)clientData;
-	int procLevel;
-
 	if (!traceInfoPtr->procCalls) {
 		TraceCode(traceInfoPtr, level, command, argc, argv);
 	} else {
-		if (TclFindProc(iPtr, argv [0]) != NULL) {
-			procLevel = (iPtr->varFramePtr == NULL ? 0 : iPtr->varFramePtr->level);
+		if (TclFindProc(iPtr, argv[0]) != NULL) {
+			int procLevel = (iPtr->varFramePtr == NULL ? 0 : iPtr->varFramePtr->level);
 			TraceCode(traceInfoPtr, procLevel, command, argc, argv);
 		}
 	}
@@ -187,13 +160,12 @@ __device__  static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *inter
 *
 *-----------------------------------------------------------------------------
 */
-static int Tcl_CmdtraceCmd (ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
+static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
 {
-	/*Interp *iPtr = (Interp *)interp;*/
+	//Interp *iPtr = (Interp *)interp;
 	traceInfo_pt infoPtr = (traceInfo_pt)clientData;
 	int idx;
 	char *fileHandle;
-
 	if (argc < 2)
 		goto argumentError;
 
@@ -251,11 +223,11 @@ static int Tcl_CmdtraceCmd (ClientData clientData, Tcl_Interp *interp, int argc,
 			infoPtr->procCalls = TRUE;
 			continue;
 		}
-		if (STRNEQU(argv [idx], "std", 3) || STRNEQU(argv [idx], "file", 4)) {
-				if (fileHandle != NULL)
-					goto argumentError;
-				fileHandle = argv [idx];
-				continue;
+		if (STRNEQU(argv[idx], "std", 3) || STRNEQU(argv[idx], "file", 4)) {
+			if (fileHandle != NULL)
+				goto argumentError;
+			fileHandle = argv[idx];
+			continue;
 		}
 		goto invalidOption;
 	}
@@ -279,9 +251,11 @@ static int Tcl_CmdtraceCmd (ClientData clientData, Tcl_Interp *interp, int argc,
 
 	infoPtr->traceHolder = Tcl_CreateTrace(interp, infoPtr->depth, CmdTraceRoutine, (ClientData)infoPtr);
 	return TCL_OK;
+
 argumentError:
-	Tcl_AppendResult (interp, "wrong # args: ", argv [0], " level | on [noeval] [notruncate] [flush] [procs]", "[handle] | off | depth", (char *)NULL);
+	Tcl_AppendResult (interp, "wrong # args: ", argv[0], " level | on [noeval] [notruncate] [flush] [procs]", "[handle] | off | depth", (char *)NULL);
 	return TCL_ERROR;
+
 invalidOption:
 	Tcl_AppendResult (interp, "invalid option: expected ", "one of \"noeval\", \"notruncate\", \"procs\", ", "\"flush\" or a file handle", (char *)NULL);
 	return TCL_ERROR;

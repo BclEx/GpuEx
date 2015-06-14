@@ -484,46 +484,73 @@ template <typename TLength, typename T, size_t size> struct array_t3 { TLength l
 #define _lengthof(symbol) (sizeof(symbol) / sizeof(symbol[0]))
 
 // strcpy
+#if 1
 template <typename T> __device__ __forceinline void _strcpy(const T *__restrict__ dest, const T *__restrict__ src)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)dest;
-	b = (unsigned char *)src;
-	while (*b) { *a++ = *b++; } *a = *b;
+	register unsigned char *d = (unsigned char *)dest;
+	register unsigned char *s = (unsigned char *)src;
+	do { *d++ = *s++; } while (*s);
+	//while (*s) { *d++ = *s++; } *d = *s;
 }
+#else
+__device__ __forceinline char *_strcpy(register char *__restrict__ dest, register const char *__restrict__ src)
+{
+	register int i = 0;
+	do { dest[i] = src[i];}
+	while (src[i++] != 0);
+	return dest;
+}
+#endif
 
 // strncpy
 template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, const T *__restrict__ src, size_t length)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)dest;
-	b = (unsigned char *)src;
+	register unsigned char *d = (unsigned char *)dest;
+	register unsigned char *s = (unsigned char *)src;
 	size_t i = 0;
-	for (; i < length && *b; ++i, ++a, ++b)
-		*a = *b;
-	for (; i < length; ++i, ++a, ++b)
-		*a = 0;
+	for (; i < length && *s; ++i, ++d, ++s)
+		*d = *s;
+	for (; i < length; ++i, ++d, ++s)
+		*d = 0;
 }
 template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)dest;
-	b = (unsigned char *)src;
+	register unsigned char *d = (unsigned char *)dest;
+	register unsigned char *s = (unsigned char *)src;
 	size_t i = 0;
-	for (; i < length && *b; ++i, ++a, ++b)
-		*a = *b;
-	for (; i < length; ++i, ++a, ++b)
-		*a = 0;
+	for (; i < length && *s; ++i, ++d, ++s)
+		*d = *s;
+	for (; i < length; ++i, ++d, ++s)
+		*d = 0;
 }
+
+//strcat
+#if 1
+template <typename T> __device__ __forceinline void _strcat(T *__restrict__ dest, const T *__restrict__ src)
+{
+	register unsigned char *d = (unsigned char *)dest;
+	while (d++) { };
+	//_strcpy<T>(d, src);
+	register unsigned char *s = (unsigned char *)src;
+	do { *d++ = *s++; } while (*s);
+}
+#else
+__device__ char *_strcat(register char *__restrict__ dest, register const char *__restrict__ src)
+{
+	register int i = 0;
+	while (dest[i] != 0) i++;
+	_strcpy(dest + i, src);
+	return dest;
+}
+#endif
 
 // strchr
 template <typename T> __device__ __forceinline const T *_strchr(const T *src, char character)
 {
-	register unsigned char *a, b;
-	a = (unsigned char *)src;
-	b = (unsigned char)__curtUpperToLower[character];
-	while (*a != 0 && __curtUpperToLower[*a] != b) { a++; }
-	return (const T *)*a;
+	register unsigned char *s = (unsigned char *)src;
+	register unsigned char l = (unsigned char)__curtUpperToLower[character];
+	while (*s && __curtUpperToLower[*s] != l) { s++; }
+	return (const T *)*s;
 }
 
 // strstr
@@ -531,19 +558,13 @@ template <typename T> __device__ __forceinline const T *_strstr(const T *__restr
 {
 	return nullptr;
 	//http://articles.leetcode.com/2010/10/implement-strstr-to-find-substring-in.html
-	//register unsigned char *a, b;
-	//a = (unsigned char *)src;
-	//b = (unsigned char)__curtUpperToLower[character];
-	//while (*a != 0 && __curtUpperToLower[*a] != b) { a++; }
-	//return (const T *)*a;
 }
 
 // strcmp
 template <typename T> __device__ __forceinline int _strcmp(const T *__restrict__ left, const T *__restrict__ right)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)left;
-	b = (unsigned char *)right;
+	register unsigned char *a = (unsigned char *)left;
+	register unsigned char *b = (unsigned char *)right;
 	while (*a != 0 && __curtUpperToLower[*a] == __curtUpperToLower[*b]) { a++; b++; }
 	return __curtUpperToLower[*a] - __curtUpperToLower[*b];
 }
@@ -552,9 +573,8 @@ template <typename T> __device__ __forceinline int _strcmp(const T *__restrict__
 #undef _fstrncmp
 template <typename T> __device__ __forceinline int _strncmp(const T *__restrict__ left, const T *__restrict__ right, int n)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)left;
-	b = (unsigned char *)right;
+	register unsigned char *a = (unsigned char *)left;
+	register unsigned char *b = (unsigned char *)right;
 	while (n-- > 0 && *a != 0 && __curtUpperToLower[*a] == __curtUpperToLower[*b]) { a++; b++; }
 	return (n < 0 ? 0 : __curtUpperToLower[*a] - __curtUpperToLower[*b]);
 }
@@ -569,17 +589,16 @@ template <typename T> __device__ __forceinline int _strncmp(const T *__restrict_
 #if 0
 template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest, const T *__restrict__ src, size_t length)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)dest;
-	b = (unsigned char *)src;
+	a, *b;
+	register unsigned char *a = (unsigned char *)dest;
+	register unsigned char *b = (unsigned char *)src;
 	for (size_t i = 0; i < length; ++i, ++a, ++b)
 		*a = *b;
 }
 template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)dest;
-	b = (unsigned char *)src;
+	register unsigned char *a = (unsigned char *)dest;
+	register unsigned char *b = (unsigned char *)src;
 	for (size_t i = 0; i < length; ++i, ++a, ++b)
 		*a = *b;
 }
@@ -594,8 +613,7 @@ template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest
 #if 0
 template <typename T> __device__ __forceinline void _memset(T *dest, const char value, size_t length)
 {
-	register unsigned char *a;
-	a = (unsigned char *)dest;
+	register unsigned char *a = (unsigned char *)dest;
 	for (size_t i = 0; i < length; ++i, ++a)
 		*a = value;
 }
@@ -604,19 +622,17 @@ template <typename T> __device__ __forceinline void _memset(T *dest, const char 
 // memchr
 template <typename T> __device__ __forceinline const T *_memchr(const T *src, char character)
 {
-	register unsigned char *a, b;
-	a = (unsigned char *)src;
-	b = (unsigned char)character;
-	while (*a != 0 && *a != b) { a++; }
+	register unsigned char *a = (unsigned char *)src;
+	register unsigned char b = (unsigned char)character;
+	while (*a && *a != b) { a++; }
 	return (const T *)*a;
 }
 
 // memcmp
 template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__restrict__ left, Y *__restrict__ right, size_t length)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)left;
-	b = (unsigned char *)right;
+	register unsigned char *a = (unsigned char *)left;
+	register unsigned char *b = (unsigned char *)right;
 	while (--length > 0 && *a == *b) { a++; b++; }
 	return *a - *b;
 }
@@ -624,9 +640,8 @@ template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__rest
 // memmove
 template <typename T, typename Y> __device__ __forceinline void _memmove(T *__restrict__ left, Y *__restrict__ right, size_t length)
 {
-	register unsigned char *a, *b;
-	a = (unsigned char *)left;
-	b = (unsigned char *)right;
+	register unsigned char *a = (unsigned char *)left;
+	register unsigned char *b = (unsigned char *)right;
 	if (a == b) return; // No need to do that thing.
 	if (a < b && b < a + length) // Check for destructive overlap.
 	{

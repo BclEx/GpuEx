@@ -1,29 +1,20 @@
-/*
-* tclExtdInt.h
-*
-* Standard internal include file for Extended Tcl library..
-*-----------------------------------------------------------------------------
-* Copyright 1992 Karl Lehenbauer and Mark Diekhans.
-*
-* Permission to use, copy, modify, and distribute this software and its
-* documentation for any purpose and without fee is hereby granted, provided
-* that the above copyright notice appear in all copies.  Karl Lehenbauer and
-* Mark Diekhans make no representations about the suitability of this
-* software for any purpose.  It is provided "as is" without express or
-* implied warranty.
-*-----------------------------------------------------------------------------
-* $Id: tclExtdInt.h,v 1.1.1.1 2001/04/29 20:34:44 karll Exp $
-*-----------------------------------------------------------------------------
-*/
+// tclExtdInt.h
+//
+//    Standard internal include file for Extended Tcl library..
+//-----------------------------------------------------------------------------
+// Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+//
+// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without fee is hereby granted, provided
+// that the above copyright notice appear in all copies.  Karl Lehenbauer and Mark Diekhans make no representations about the suitability of this
+// software for any purpose.  It is provided "as is" without express or implied warranty.
 
-#ifndef TCLEXTDINT_H
-#define TCLEXTDINT_H
+
+#ifndef __TCLEX_INT_H__
+#define __TCLEX_INT_H__
 
 #include <time.h>
-#include "tclExtend.h"
-#include "tclInt.h"
-//#include "tcldos.h"
-/*#include <sys/param.h>*/
+#include "Tcl+Int.h"
+#include "TclEx.h"
 
 #ifdef TCL_NEED_SYS_SELECT_H
 #include "sys/select.h"
@@ -104,7 +95,7 @@ typedef regexp_t *regexp_pt;
 #define INIT_DYN_BUFFER_SIZE 256
 
 typedef struct dynamicBuf_t {
-	char  buf [INIT_DYN_BUFFER_SIZE];   // Initial buffer area.             
+	char  buf[INIT_DYN_BUFFER_SIZE];   // Initial buffer area.             
 	char *ptr;                          // Pointer to buffer area.          
 	int   size;                         // Current size of buffer.          
 	int   len;                          // Current string length (less '\0')
@@ -266,4 +257,4 @@ extern __device__ int Tcl_UnlinkCmd(ClientData, Tcl_Interp*, int, char**);
 extern __device__ int Tcl_MkdirCmd(ClientData, Tcl_Interp*, int, char**);
 extern __device__ int Tcl_RmdirCmd(ClientData, Tcl_Interp*, int, char**);
 
-#endif
+#endif /* __TCLEX_INT_H__ */

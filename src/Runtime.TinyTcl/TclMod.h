@@ -4,11 +4,12 @@
 //
 // Copyright (c) 2005 Snapgear
 // See the file "license.terms" for information on usage and redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 #ifndef __TCLMOD_H__
 #define __TCLMOD_H__
 
 #ifndef __TCL_H__
-#include <Tcl.h>
+#include "Tcl.h"
 #endif
 
 #define TCL_MODFLAG_HIDDEN  0x0001
@@ -27,15 +28,15 @@ typedef struct {
 	const char *description;		// Description of the subcommand
 } tclmod_command_type;
 
-/**
+/*
 * Often a command may be called with either multiple arguments, or a single argument which is a list.
 * This function detects a single argument which is a list and splits that list into separate arguments and updates *argc and *argv appropriately.
 *
 * Returns 1 if the list was split (in which case *argv will need to be freed) or 0 if no changes were made.
 */
-int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv);
+__device__ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv);
 
-/**
+/*
 * Looks up the appropriate subcommand in the given command table and return the command function which implements the subcommand.
 * 0 will be returned and an appropriate error will be set if the subcommand or arguments are invalid.
 *
@@ -48,6 +49,6 @@ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv);
 *    return TCL_ERROR;
 *  }
 */
-const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, char **argv);
+__device__ const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, char **argv);
 
 #endif /* __TCLMOD_H__ */

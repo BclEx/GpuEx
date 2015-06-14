@@ -474,7 +474,6 @@ __device__ int Tcl_ConvertElement(register const char *src, char *dst, int flags
 __device__ char *Tcl_Merge(int argc, char **argv)
 {
 #define LOCAL_SIZE 20
-	int i;
 	// Pass 1: estimate space, gather flags.
 	int localFlags[LOCAL_SIZE], *flagPtr;
 	if (argc <= LOCAL_SIZE) {
@@ -483,6 +482,7 @@ __device__ char *Tcl_Merge(int argc, char **argv)
 		flagPtr = (int *)_allocFast((unsigned)argc*sizeof(int));
 	}
 	int numChars = 1;
+	int i;
 	for (i = 0; i < argc; i++) {
 		numChars += Tcl_ScanElement(argv[i], &flagPtr[i]) + 1;
 	}
@@ -947,7 +947,8 @@ __device__ regex_t *TclCompileRegexp(Tcl_Interp *interp, char *string, int nocas
 	register Interp *iPtr = (Interp *)interp;
 	int length = _strlen(string);
 	regex_t *result;
-	for (int i = 0; i < iPtr->num_regexps; i++) {
+	int i;
+	for (i = 0; i < iPtr->num_regexps; i++) {
 		if (length == iPtr->regexps[i].length && nocase == iPtr->regexps[i].nocase && !_strcmp(string, iPtr->regexps[i].pattern)) {
 			// Move the matched pattern to the first slot in the cache and shift the other patterns down one position.
 			if (i != 0) {

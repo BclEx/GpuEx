@@ -447,7 +447,8 @@ __device__ int TclParseWords(Tcl_Interp *interp, char *string, int flags, int ma
 	register char *src = string;
 	char *oldBuffer = pvPtr->buffer; // Used to detect when pvPtr's buffer gets reallocated, so we can adjust all of the argv pointers.
 	register char *dst = pvPtr->next;
-	for (int argc = 0; argc < maxWords; argc++) {
+	int argc;
+	for (argc = 0; argc < maxWords; argc++) {
 		argv[argc] = dst;
 		// Skip leading space.
 skipSpace:
@@ -821,6 +822,7 @@ __device__ char *Tcl_ParseVar(Tcl_Interp *interp, register char *string, char **
 	*    the array element name, which can include any of the substitutions permissible between quotes.
 	* 3. The $ sign is followed by something that isn't a letter, digit, colon or underscore:  in this case, there is no variable name, and "$" is returned.
 	*/
+	ParseValue pv;
 	char *name1, *name1End, *result;
 	register char *name2 = NULL;
 	string++;
@@ -857,7 +859,6 @@ __device__ char *Tcl_ParseVar(Tcl_Interp *interp, register char *string, char **
 		name1End = string;
 		if (*string == '(') {
 			// Perform substitutions on the array element name, just as is done for quotes.
-			ParseValue pv;
 			pv.buffer = pv.next = copyStorage;
 			pv.end = copyStorage + NUM_CHARS - 1;
 			pv.expandProc = TclExpandParseValue;

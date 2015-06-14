@@ -46,7 +46,7 @@ int Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 	// There must be an init function $(package)_Init which initialises the package.
 	char *initname;
 	if (pkgname) {
-		initname = _allocFast(_strlen(pkgname) + 6);
+		initname = (char *)_allocFast(_strlen(pkgname) + 6);
 		_strcpy(initname, pkgname);
 		_strcat(initname, "_Init");
 	} else { // We determine the init function from the module name
@@ -61,10 +61,10 @@ int Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
 		if (!_strncmp(pkgname, "lib", 3)) {
 			pkgname += 3;
 		}
-		initname = _allocFast(_strlen(pkgname) + 6);
+		initname = (char *)_allocFast(_strlen(pkgname) + 6);
 		_strcpy(initname, pkgname);
 		// Now remove any extension
-		char *pt = _strchr(initname, '.');
+		char *pt = (char *)_strchr(initname, '.');
 		if (pt) {
 			*pt = 0;
 		}

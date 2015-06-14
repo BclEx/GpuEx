@@ -280,6 +280,7 @@ __device__ void Tcl_CreateCommand(Tcl_Interp *interp, char *cmdName, Tcl_CmdProc
 {
 	Interp *iPtr = (Interp *)interp;
 	register Command *cmdPtr;
+	int new_;
 	Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&iPtr->commandTable, cmdName, &new_);
 	if (!new_) {
 		// Command already exists:  delete the old one.
@@ -395,6 +396,9 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 	char *oldBuffer;
 
 	// There can be many sub-commands (separated by semi-colons or newlines) in one command string.  This outer loop iterates over individual commands.
+	int i;
+	char *(argStorage[NUM_ARGS]); // This procedure generates an (argv, argc) array for the command, It starts out with stack-allocated space but uses dynamically- allocated storage to increase it if needed.
+	char **argv;
 	char *ellipsis = ""; // Used in setting errorInfo variable; set to "..." to indicate that not all of offending command is included in errorInfo.  "" means that the command is all there.
 	while (*src != termChar) {
 		if (iPtr->catch_level && iPtr->signal) {
@@ -427,8 +431,7 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 		pv.next = oldBuffer = pv.buffer;
 		int argc = 0;
 		int argSize = NUM_ARGS;
-		char *(argStorage[NUM_ARGS]); // This procedure generates an (argv, argc) array for the command, It starts out with stack-allocated space but uses dynamically- allocated storage to increase it if needed.
-		char **argv = argStorage;
+		argv = argStorage;
 		while (true) {
 			// Note:  the "- 2" below guarantees that we won't use the last two argv slots here.  One is for a NULL pointer to
 			// mark the end of the list, and the other is to leave room for inserting the command name "unknown" as the first argument (see below).
@@ -565,11 +568,9 @@ done:
 
 	// If an error occurred, record information about what was being executed when the error occurred.
 	if (result == TCL_ERROR && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		int numChars;
-		register char *p;
-
 		// Compute the line number where the error occurred.
 		iPtr->errorLine = 1;
+		register char *p;
 		for (p = cmd; p != cmdStart; p++) {
 			if (*p == '\n') {
 				iPtr->errorLine++;
@@ -580,14 +581,12 @@ done:
 				iPtr->errorLine++;
 			}
 		}
-
 		// Figure out how much of the command to print in the error message (up to a certain number of characters, or up to the first new-line).
-		numChars = src - cmdStart;
+		int numChars = (int)(src - cmdStart);
 		if (numChars > (NUM_CHARS-50)) {
 			numChars = NUM_CHARS-50;
 			ellipsis = " ...";
 		}
-
 		if (!(iPtr->flags & ERR_IN_PROGRESS)) {
 			_sprintf(copyStorage, "\n    while executing\n\"%.*s%s\"", numChars, cmdStart, ellipsis);
 		} else {

@@ -324,7 +324,7 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 	for (argPtr = procPtr->argPtr, args = argv+1, argc -= 1; argPtr != NULL; argPtr = argPtr->nextPtr, args++, argc--) {
 		// Handle the special case of the last formal being "args".  When it occurs, assign it a list consisting of all the remaining actual arguments.
 		char *value;
-		if (argPtr->nextPtr == NULL && !_strcmp(argPtr->name, "args") {
+		if (argPtr->nextPtr == NULL && !_strcmp(argPtr->name, "args")) {
 			if (argc < 0) {
 				argc = 0;
 			}

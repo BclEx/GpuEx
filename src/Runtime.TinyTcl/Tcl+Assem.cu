@@ -98,7 +98,7 @@ __device__ char *Tcl_AssembleCmd(Tcl_CmdBuf buffer, char *string)
 
 	// Add the new information to the buffer.  If the current buffer isn't large enough, grow it by at least a factor of two, or enough to hold the new text.
 	length = _strlen(string);
-	int totalLength = cbPtr->bytesUsed + length + 1;
+	unsigned int totalLength = cbPtr->bytesUsed + length + 1;
 	if (totalLength > cbPtr->bufSize) {
 		unsigned int newSize = cbPtr->bufSize*2;
 		if (newSize < totalLength) {

@@ -88,15 +88,14 @@ __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr
 */
 __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr)
 {
-	char c;
-	// Convert the input string to all lower-case.
-	char lowerCase[10];
-	for (int i = 0; i < 9; i++) {
+	char c, lowerCase[10]; // Convert the input string to all lower-case.
+	int i;
+	for (i = 0; i < 9; i++) {
 		c = string[i];
 		if (c == 0) {
 			break;
 		}
-		if ((c >= 'A') && (c <= 'Z')) {
+		if (c >= 'A' && c <= 'Z') {
 			c += 'a' - 'A';
 		}
 		lowerCase[i] = c;
