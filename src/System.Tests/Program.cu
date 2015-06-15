@@ -1,5 +1,5 @@
-#include <string.h>
 #include <RuntimeHost.h>
+#include "..\System.net\Core\Core.cu.h"
 
 void __testSystem(cudaDeviceHeap &r);
 
@@ -8,7 +8,13 @@ void GMain(cudaDeviceHeap &r) {
 #else
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
-//__testSystem(r);
+#if OS_MAP
+	CoreS::VSystemSentinel::Initialize();
+#endif
+__testSystem(r);
+#if OS_MAP
+	CoreS::VSystemSentinel::Shutdown();
+#endif
 }
 
 #if __CUDACC__

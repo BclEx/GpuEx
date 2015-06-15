@@ -417,8 +417,8 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.Tclite;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
