@@ -124,10 +124,7 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">
-        "$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" -o "$(OutDir)System.$(LC)$(LD).lib"
-        "$(VCInstallDir)bin\x86_amd64\lib.exe" /Out:"$(OutDir)System+Sentinel.$(LC)$(LD)D.lib" "$(IntDir)VSystem+Sentinel.obj"
-      </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.cu.obj" "$(IntDir)VSystem+Sentinel.obj" -o "$(OutDir)System.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -64,22 +64,27 @@ typedef struct
 
 #define OMIT_AUTOINIT
 #if defined(_GPU) || defined(_SENTINEL)
+#pragma message("OS_MAP:HAS_HOSTSENTINEL")
 #define OS_MAP 1
 #define HAS_HOSTSENTINEL 1
 #else
+#pragma message("OS_MAP:HAS_HOSTSENTINEL")
 #define OS_MAP 1
 #define HAS_HOSTSENTINEL 1
 #endif
 
 #if __CUDACC__
+#pragma message("OS_GPU:")
 #define OS_WIN 0
 #define OS_UNIX 0
 #define OS_GPU 1
 #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#pragma message("OS_WIN:")
 #define OS_WIN 1
 #define OS_UNIX 0
 #define OS_GPU 0
 #else
+#pragma message("OS_UNIX:")
 #define OS_WIN 0
 #define OS_UNIX 1
 #define OS_GPU 0

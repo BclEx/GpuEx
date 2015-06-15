@@ -70,6 +70,8 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_LIB;_TEST;TCL_MEM_DEBUG;TCL_GENERIC_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -95,6 +97,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -128,10 +132,10 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <None Include="RTcl.cu" />
     <ClCompile Include="dos.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="regex_compat.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Tcl+Alloc.cu" />
     <ClCompile Include="Tcl+Assem.cu" />

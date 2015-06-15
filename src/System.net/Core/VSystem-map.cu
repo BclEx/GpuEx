@@ -282,23 +282,23 @@ namespace CORE_NAME
 	__device__ int MapVSystem::Randomness(int bufLength, char *buf)
 	{
 		int n = 0;
-#if _TEST
-		n = bufLength;
-		_memset(buf, 0, bufLength);
-#else
-		if (sizeof(DWORD) <= bufLength - n)
-		{
-			DWORD cnt = clock();
-			memcpy(&buf[n], &cnt, sizeof(cnt));
-			n += sizeof(cnt);
-		}
-		if (sizeof(DWORD) <= bufLength - n)
-		{
-			DWORD cnt = clock();
-			memcpy(&buf[n], &cnt, sizeof(cnt));
-			n += sizeof(cnt);
-		}
-#endif
+//#if _TEST
+//		n = bufLength;
+//		_memset(buf, 0, bufLength);
+//#else
+//		if (sizeof(DWORD) <= bufLength - n)
+//		{
+//			DWORD cnt = clock();
+//			memcpy(&buf[n], &cnt, sizeof(cnt));
+//			n += sizeof(cnt);
+//		}
+//		if (sizeof(DWORD) <= bufLength - n)
+//		{
+//			DWORD cnt = clock();
+//			memcpy(&buf[n], &cnt, sizeof(cnt));
+//			n += sizeof(cnt);
+//		}
+//#endif
 		return n;
 	}
 

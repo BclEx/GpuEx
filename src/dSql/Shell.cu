@@ -1770,6 +1770,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 	}
 #pragma endregion
 #pragma region .testctrl
+#if _TEST
 	else if (c == 't' && n >= 8 && !_strncmp(args[0], "testctrl", n) && argsLength >= 2)
 	{
 		Main::TESTCTRL testctrl = (Main::TESTCTRL)tag;
@@ -1844,6 +1845,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 			break;
 		}
 	}
+#endif
 #pragma endregion
 #pragma region .timeout
 	else if (c == 't' && n > 4 && !_strncmp(args[0], "timeout", n) && argsLength == 2)

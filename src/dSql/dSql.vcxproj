@@ -117,7 +117,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>WIN32;_TEST;OMIT_LOAD_EXTENSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;OMIT_LOAD_EXTENSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
