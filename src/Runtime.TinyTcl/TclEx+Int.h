@@ -150,10 +150,10 @@ extern __device__ int Tcl_ConvertclockCmd(ClientData, Tcl_Interp*, int, char**);
 extern __device__ int Tcl_CommandloopCmd(ClientData, Tcl_Interp*, int, char**);
 
 // from tclXdebug.c
-extern __device__ void Tcl_InitDebug(Tcl_Interp *interp);
+extern __device__ void TclEx_InitDebug(Tcl_Interp *interp);
 
 // from tclXgen.c
-extern __device__ void TclX_InitGeneral(Tcl_Interp *interp);
+extern __device__ void TclEx_InitGeneral(Tcl_Interp *interp);
 
 // from tclXdup.c
 extern __device__ int Tcl_DupCmd(ClientData, Tcl_Interp*, int, char**);

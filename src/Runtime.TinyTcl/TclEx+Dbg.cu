@@ -287,7 +287,7 @@ __device__ static void CleanUpDebug(ClientData clientData)
 *
 *-----------------------------------------------------------------------------
 */
-__device__ void Tcl_InitDebug(Tcl_Interp *interp)
+__device__ void TclEx_InitDebug(Tcl_Interp *interp)
 {
 	traceInfo_pt infoPtr;
 	infoPtr = (traceInfo_pt)_allocFast(sizeof(traceInfo_t));

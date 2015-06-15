@@ -78,7 +78,7 @@ __device__ static void ValidateMemory(struct mem_header *memHeaderP, char *file,
 		byte = *(memHeaderP->low_guard + idx);
 		if (byte != GUARD_VALUE) {
 			guard_failed = true;
-			fflush(stdout);
+			_fflush(stdout);
 			byte &= 0xff;
 			_fprintf(stderr, "low guard byte %d is 0x%x  \t%c\n", idx, byte, (_isprint(byte) ? byte : ' '));
 		}
@@ -125,7 +125,7 @@ void Tcl_ValidateAllMemory(char *file, int line)
 {
 	struct mem_header *memScanP;
 	for (memScanP = _allocHead; memScanP != NULL; memScanP = memScanP->flink)
-		ValidateMemory(memScanP, file, line, FALSE);
+		ValidateMemory(memScanP, file, line, false);
 }
 
 /*
@@ -172,7 +172,6 @@ __device__ int Tcl_DumpActiveMemory(char *fileName)
 */
 __device__ char *Tcl_MemAlloc(unsigned int size, char *file, int line)
 {
-	result;
 	if (_validate_memory)
 		Tcl_ValidateAllMemory(file, line);
 
@@ -210,7 +209,7 @@ __device__ char *Tcl_MemAlloc(unsigned int size, char *file, int line)
 		_fprintf(stderr, "reached malloc break limit (%d)\n", _total_mallocs);
 		_fprintf(stderr, "program will now enter C debugger\n");
 		_fflush(stderr);
-		_abort();
+		abort();
 	}
 	_current_malloc_packets++;
 	if (_current_malloc_packets > _maximum_malloc_packets)
@@ -238,8 +237,8 @@ __device__ char *Tcl_MemAlloc(unsigned int size, char *file, int line)
 */
 __device__ int Tcl_MemFree(char *ptr, char *file, int line)
 {
-	// Since header ptr is zero, body offset will be size
-	struct mem_header *memp = (struct mem_header *)(((char *)ptr) - (int)memp->body);
+	struct mem_header *memp = 0; // Must be zero for size calc
+	memp = (struct mem_header *)(((char *)ptr) - (int)memp->body); // Since header ptr is zero, body offset will be size
 	if (_alloc_tracing)
 		_fprintf(stderr, "_freeFast %lx %ld %s %d\n", (unsigned long)memp->body, memp->length, file, line);
 	if (_validate_memory)
@@ -294,7 +293,7 @@ __device__ char *Tcl_MemRealloc(char *ptr, unsigned int size, char *file, int li
 *
 *----------------------------------------------------------------------
 */
-__device__ static int MemoryCmd(char *clientData, Tcl_Interp *interp, int argc, char **argv)
+__device__ static int MemoryCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 {
 	char *fileName;
 	if (argc < 2) {
@@ -374,7 +373,7 @@ bad_suboption:
 */
 __device__ void Tcl_InitMemory(Tcl_Interp *interp)
 {
-	Tcl_CreateCommand(interp, "memory", MemoryCmd, (ClientData)NULL, (void (*)())NULL);
+	Tcl_CreateCommand(interp, "memory", MemoryCmd, (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 }
 
 #else

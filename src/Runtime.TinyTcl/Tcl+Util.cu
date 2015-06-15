@@ -715,13 +715,18 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 *
 *----------------------------------------------------------------------
 */
-void _Tcl_AppendResult(Tcl_Interp *interp, ...)
+#if __CUDACC__
+void _Tcl_AppendResult(Tcl_Interp *interp, _va_list *argList)
+{
+#else
+void Tcl_AppendResult(Tcl_Interp *interp, ...)
 {
 	_va_list argList;
+	_va_start(argList, interp);
+#endif
 	register Interp *iPtr = (Interp *)interp;
 	char *string;
 	// First, scan through all the arguments to see how much space is needed.
-	_va_start(argList, interp);
 	int newSpace = 0;
 	while (true) {
 		string = _va_arg(argList, char *);
@@ -730,15 +735,20 @@ void _Tcl_AppendResult(Tcl_Interp *interp, ...)
 		}
 		newSpace += _strlen(string);
 	}
-	_va_end(argList);
 
 	// If the append buffer isn't already setup and large enough to hold the new data, set it up.
 	if (iPtr->result != iPtr->appendResult || (newSpace + iPtr->appendUsed) >= iPtr->appendAvl) {
 		SetupAppendBuffer(iPtr, newSpace);
 	}
+
+#if __CUDACC__
+	_va_restart(argList);
+#else
 	_va_end(argList);
-	// Final step:  go through all the argument strings again, copying them into the buffer.
 	_va_start(argList, interp);
+#endif
+
+	// Final step:  go through all the argument strings again, copying them into the buffer.
 	while (true) {
 		string = _va_arg(argList, char *);
 		if (string == NULL) {
@@ -747,7 +757,9 @@ void _Tcl_AppendResult(Tcl_Interp *interp, ...)
 		_strcpy(iPtr->appendResult + iPtr->appendUsed, string);
 		iPtr->appendUsed += _strlen(string);
 	}
+#ifndef __CUDACC__
 	_va_end(argList);
+#endif
 }
 
 /*

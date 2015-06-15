@@ -1,5 +1,4 @@
 //#include "dos.cu"
-#include "noextensions.cu"
 //#include "regex_compat.cu"
 #include "Tcl+Alloc.cu"
 #include "Tcl+Assem.cu"
@@ -17,8 +16,7 @@
 #include "Tcl+Parse.cu"
 #include "Tcl+Proc.cu"
 //#include "Tcl+Main-embed.cu" -- Test Driver
-//#include "Tcl+Main-test.cu" -- Test Driver
-//#include "Tcl+Main-test2.cu" -- Test Driver
+//#include "Tcl+Main.cu" -- Test Driver
 #include "Tcl+UnixAZ.cu"
 #undef STATIC_SIZE
 #include "Tcl+UnixEnv.cu"
@@ -27,6 +25,8 @@
 #include "Tcl+Util.cu"
 #include "Tcl+Var.cu"
 #include "TclEx+Dbg.cu"
+#include "TclEx+Extensions.cu"
 #include "TclEx+Gen.cu"
+//#include "TclEx+Main.cu" -- Test Driver
 #include "TclEx+UnixReaddir.cu"
 #include "TclMod.cu"

@@ -69,7 +69,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;_TEST;TCL_GENERIC_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;_TEST;TCL_MEM_DEBUG;TCL_GENERIC_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -130,7 +130,6 @@
     <ClCompile Include="dos.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="noextensions.cu" />
     <ClCompile Include="regex_compat.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -147,15 +146,8 @@
     <ClCompile Include="Tcl+History.cu" />
     <ClCompile Include="Tcl+Load.cu" />
     <ClCompile Include="Tcl+Load-unix.cu" />
-    <ClCompile Include="Tcl+Main-embed.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Tcl+Main-test.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Tcl+Main-test2.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Tcl+Main-embed.cu" />
+    <ClCompile Include="Tcl+Main.cu" />
     <ClCompile Include="Tcl+Parse.cu" />
     <ClCompile Include="Tcl+Proc.cu" />
     <ClCompile Include="Tcl+UnixAZ.cu" />
@@ -165,14 +157,15 @@
     <ClCompile Include="Tcl+Util.cu" />
     <ClCompile Include="Tcl+Var.cu" />
     <ClCompile Include="TclEx+Dbg.cu" />
+    <ClCompile Include="TclEx+Extensions.cu" />
     <ClCompile Include="TclEx+Gen.cu" />
+    <ClCompile Include="TclEx+Main.cu" />
     <ClCompile Include="TclEx+UnixReaddir.cu" />
     <ClCompile Include="TclMod.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RTcl.cu" />
     <None Include="dos.cu" />
-    <None Include="noextensions.cu" />
     <None Include="regex_compat.cu" />
     <None Include="Tcl+Alloc.cu" />
     <None Include="Tcl+Assem.cu" />
@@ -188,8 +181,7 @@
     <None Include="Tcl+Load.cu" />
     <None Include="Tcl+Load-unix.cu" />
     <None Include="Tcl+Main-embed.cu" />
-    <None Include="Tcl+Main-test.cu" />
-    <None Include="Tcl+Main-test2.cu" />
+    <None Include="Tcl+Main.cu" />
     <None Include="Tcl+Parse.cu" />
     <None Include="Tcl+Proc.cu" />
     <None Include="Tcl+UnixAZ.cu" />
@@ -199,7 +191,9 @@
     <None Include="Tcl+Util.cu" />
     <None Include="Tcl+Var.cu" />
     <None Include="TclEx+Dbg.cu" />
+    <None Include="TclEx+Extensions.cu" />
     <None Include="TclEx+Gen.cu" />
+    <None Include="TclEx+Main.cu" />
     <None Include="TclEx+UnixReaddir.cu" />
     <None Include="TclMod.cu" />
   </ItemGroup>

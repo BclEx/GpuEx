@@ -3,6 +3,7 @@
 //http://thelegendofrandom.com/blog/archives/2231
 
 void __testRuntime(cudaDeviceHeap &r);
+void __testRuntimeEx(cudaDeviceHeap &r);
 //void __testRegex1(cudaDeviceHeap &r);
 
 #if __CUDACC__
@@ -11,6 +12,7 @@ void GMain(cudaDeviceHeap &r) {
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
 __testRuntime(r);
+__testRuntimeEx(r);
 //__testRegex1(r);
 }
 

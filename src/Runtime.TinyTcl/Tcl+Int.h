@@ -14,7 +14,7 @@
 // the three groups of #includes is important.  For example, stdio.h is needed by tcl.h, and the _ANSI_ARGS_ declaration in tcl.h is
 // needed by stdlib.h in some configurations.
 
-#include <Runtime.h>
+#include <RuntimeEx.h>
 //#include <stdio.h>
 
 #ifndef __TCL_H__
@@ -29,21 +29,12 @@
 #include "regex_compat.h"
 #endif
 
-#define _panic(fmt, ...) printf(fmt, __VA_ARGS__)
-
-//int _atoi(const char *str);
-__device__ long int _strtol(const char *str, char **endptr, int base);
-__device__ double _strtod(const char *str, char **endptr);
-__device__ unsigned long int _strtoul(const char *str, char **endptr, int base);
-__device__ char *_strrchr(char *str, int ch);
-__device__ void _qsort(void *base, size_t num, size_t size, int (*compar)(const void*,const void*));
-__device__ char *_getenv(const char *name);
-__device__ int _chdir(const char *path);
-#define	F_OK 0		// test for existence of file
-#define	X_OK 0x01	// test for execute or search permission
-#define	W_OK 0x02	// test for write permission
-#define	R_OK 0x04	// test for read permission
-__device__ int _access(const char *path, int amode);
+//__device__ int _chdir(const char *path);
+//#define	F_OK 0		// test for existence of file
+//#define	X_OK 0x01	// test for execute or search permission
+//#define	W_OK 0x02	// test for write permission
+//#define	R_OK 0x04	// test for read permission
+//__device__ int _access(const char *path, int amode);
 
 //#include <ctype.h>
 //#include <stdlib.h>

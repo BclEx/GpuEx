@@ -15,4 +15,5 @@
 #include "Runtime+Status.cu"
 #include "Runtime+TagBase.cu"
 #include "Runtime+Utf.cu"
+#include "RuntimeEx.cu"
 

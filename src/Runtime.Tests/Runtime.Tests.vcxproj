@@ -26,6 +26,7 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <ClCompile Include="Program.cu" />
     <ClCompile Include="TestRuntime.cu" />
+    <ClCompile Include="TestRuntimeEx.cu" />
     <ClCompile Include="TestRegex.1.cu" />
     <ClCompile Include="TestRegex.2.cu" />
     <ClCompile Include="Tests/RuntimeTest.cpp" />
@@ -34,6 +35,7 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="TestRuntime.cu" />
+    <CudaCompile Include="TestRuntimeEx.cu" />
     <CudaCompile Include="TestRegex.1.cu" />
     <CudaCompile Include="TestRegex.2.cu" />
     <ClCompile Include="Tests/RuntimeTest.cpp" />

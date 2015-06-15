@@ -472,10 +472,10 @@ RUNTIME_NAMEEND
 #define __tolower(x) (__curtUpperToLower[(unsigned char)(x)])
 #define _islower(x) (__curtUpperToLower[(unsigned char)(x)]==x)
 #define _ispoweroftwo(x) (((x)&((x)-1))==0)
-	__device__ inline static bool _isalpha2(unsigned char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+	__device__ inline static bool _isalpha2(unsigned char x) { return (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z'); }
 
-#define _isprint(x) ((unsigned char)c>0x1f&&(unsigned char)c!=0x7f)
-#define _iscntrl(x) ((unsigned char)c<=0x1f||(unsigned char)c==0x7f)
+#define _isprint(x) ((unsigned char)x>0x1f&&(unsigned char)x!=0x7f)
+#define _iscntrl(x) ((unsigned char)x<=0x1f||(unsigned char)x==0x7f)
 
 // array
 template <typename T> struct array_t { int length; T *data; __device__ __forceinline array_t() { data = nullptr; length = 0; } __device__ __forceinline array_t(T *a) { data = a; length = 0; } __device__ __forceinline array_t(T *a, int b) { data = a; length = b; } __device__ __forceinline void operator=(T *a) { data = a; } __device__ __forceinline operator T *() { return data; } };

@@ -69,7 +69,7 @@ __device__ static void AppendResult(Tcl_Interp *interp, char *dir, char *separat
 	Tcl_AppendElement(interp, p, 0);
 	_freeFast(p);
 }
-
+
 /*
 *----------------------------------------------------------------------
 *
@@ -169,8 +169,8 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		} else {
 			dirName = dir;
 		}
-		struct _stat statBuf;
-		if (_stat(dirName, &statBuf) != 0 || !S_ISDIR(statBuf.st_mode)) {
+		struct stat statBuf;
+		if (stat(dirName, &statBuf) != 0 || !S_ISDIR(statBuf.st_mode)) {
 			return TCL_OK;
 		}
 		DIR *d = _opendir(dirName);

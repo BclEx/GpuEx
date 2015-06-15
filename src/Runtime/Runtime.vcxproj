@@ -31,6 +31,7 @@
     <ClInclude Include="Runtime.cu.h" />
     <ClInclude Include="Runtime.cu+native.h" />
     <ClInclude Include="Runtime.h" />
+    <ClInclude Include="RuntimeEx.h" />
     <ClInclude Include="RuntimeGL.h" />
     <ClInclude Include="RuntimeHost.h" />
     <ClInclude Include="RuntimeOS.h" />
@@ -67,6 +68,7 @@
     <ClCompile Include="Runtime+Status.cu" />
     <ClCompile Include="Runtime+TagBase.cu" />
     <ClCompile Include="Runtime+Sentinel.cu" />
+    <ClCompile Include="RuntimeEx.cu" />
     <ClCompile Include="RuntimeOS.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
@@ -95,6 +97,7 @@
     <None Include="Runtime+Status.cu" />
     <None Include="Runtime+TagBase.cu" />
     <CudaCompile Include="Runtime+Sentinel.cu" />
+    <None Include="RuntimeEx.cu" />
     <None Include="RuntimeOS.cu" />
   </ItemGroup>
   <ItemGroup>

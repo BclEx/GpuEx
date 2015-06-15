@@ -324,7 +324,7 @@ __device__ int Tcl_KillCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	return TCL_ERROR;
 }
 
-__device__ void TclX_InitGeneral(Tcl_Interp *interp)
+__device__ void TclEx_InitGeneral(Tcl_Interp *interp)
 {
 	Tcl_CreateCommand(interp, "infox", Tcl_InfoxCmd, (ClientData)NULL, NULL);
 	Tcl_CreateCommand(interp, "loop", Tcl_LoopCmd, (ClientData)NULL, NULL);

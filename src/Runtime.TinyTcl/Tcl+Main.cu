@@ -9,48 +9,37 @@
 // express or implied warranty.
 
 #include <stdio.h>
-#include <errno.h>
-#include <string.h>
 #include <stdlib.h>
-#include "tcl.h"
+#include "Tcl.h"
 
-Tcl_Interp *interp;
-Tcl_CmdBuf buffer;
-char dumpFile[100];
-int quitFlag = 0;
+#if 1
 
-char initCmd[] =
-	"if [file exists [info library]/init.tcl] {source [info library]/init.tcl}";
+Tcl_Interp *_interp;
+Tcl_CmdBuf _buffer;
+bool _quitFlag = false;
+char _initCmd[] = "if [file exists [info library]/init.tcl] {source [info library]/init.tcl}";
 
-/* ARGSUSED */
+#ifdef TCL_MEM_DEBUG
+char _dumpFile[100];
 int cmdCheckmem(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 {
 	if (argc != 2) {
 		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileName\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	strcpy(dumpFile, argv[1]);
-	quitFlag = 1;
+	strcpy(_dumpFile, argv[1]);
+	_quitFlag = true;
 	return TCL_OK;
 }
+#endif
 
-/* ARGSUSED */
-int
-	cmdEcho(clientData, interp, argc, argv)
-	ClientData clientData;
-Tcl_Interp *interp;
-int argc;
-char *argv[];
+int cmdEcho(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 {
-	int i;
-
-	for (i = 1; ; i++) {
+	for (int i = 1; ; i++) {
 		if (argv[i] == NULL) {
 			if (i != argc) {
 echoError:
-				sprintf(interp->result,
-					"argument list wasn't properly NULL-terminated in \"%s\" command",
-					argv[0]);
+				sprintf(interp->result, "argument list wasn't properly NULL-terminated in \"%s\" command", argv[0]);
 			}
 			break;
 		}
@@ -66,59 +55,57 @@ echoError:
 	return TCL_OK;
 }
 
-int
-	main()
+int main()
 {
-	char line[1000], *cmd;
-	int result, gotPartial;
-
-	interp = Tcl_CreateInterp();
+	_interp = Tcl_CreateInterp();
 #ifdef TCL_MEM_DEBUG
-	Tcl_InitMemory(interp);
+	Tcl_InitMemory(_interp);
 #endif
-	Tcl_CreateCommand(interp, "echo", cmdEcho, (ClientData) "echo",
-		(Tcl_CmdDeleteProc *) NULL);
-	Tcl_CreateCommand(interp, "checkmem", cmdCheckmem, (ClientData) 0,
-		(Tcl_CmdDeleteProc *) NULL);
-	buffer = Tcl_CreateCmdBuf();
+	Tcl_CreateCommand(_interp, "echo", cmdEcho, (ClientData) "echo", (Tcl_CmdDeleteProc *)NULL);
+#ifdef TCL_MEM_DEBUG
+	Tcl_CreateCommand(_interp, "checkmem", cmdCheckmem, (ClientData) 0, (Tcl_CmdDeleteProc *)NULL);
+#endif
+	_buffer = Tcl_CreateCmdBuf();
+	int result;
 #ifndef TCL_GENERIC_ONLY
-	result = Tcl_Eval(interp, initCmd, 0, (char **)NULL);
+	result = Tcl_Eval(_interp, _initCmd, 0, (char **)NULL);
 	if (result != TCL_OK) {
-		printf("%s\n", interp->result);
+		printf("%s\n", _interp->result);
 		exit(1);
 	}
 #endif
 
-	gotPartial = 0;
-	while (1) {
+	bool gotPartial = false;
+	while (true) {
 		clearerr(stdin);
 		if (!gotPartial) {
 			fputs("% ", stdout);
 			fflush(stdout);
 		}
+		char line[1000];
 		if (fgets(line, 1000, stdin) == NULL) {
 			if (!gotPartial) {
 				exit(0);
 			}
 			line[0] = 0;
 		}
-		cmd = Tcl_AssembleCmd(buffer, line);
+		char *cmd = Tcl_AssembleCmd(_buffer, line);
 		if (cmd == NULL) {
-			gotPartial = 1;
+			gotPartial = true;
 			continue;
 		}
 
-		gotPartial = 0;
-		result = Tcl_Eval(interp, cmd, 0, (char **)NULL);
+		gotPartial = false;
+		result = Tcl_Eval(_interp, cmd, 0, (char **)NULL);
 		if (result == TCL_OK) {
-			if (*interp->result != 0) {
-				printf("%s\n", interp->result);
+			if (*_interp->result != 0) {
+				printf("%s\n", _interp->result);
 			}
-			if (quitFlag) {
-				Tcl_DeleteInterp(interp);
-				Tcl_DeleteCmdBuf(buffer);
+			if (_quitFlag) {
+				Tcl_DeleteInterp(_interp);
+				Tcl_DeleteCmdBuf(_buffer);
 #ifdef TCL_MEM_DEBUG
-				Tcl_DumpActiveMemory(dumpFile);
+				Tcl_DumpActiveMemory(_dumpFile);
 #endif
 				exit(0);
 			}
@@ -128,11 +115,13 @@ int
 			} else {
 				printf("Error %d", result);
 			}
-			if (*interp->result != 0) {
-				printf(": %s\n", interp->result);
+			if (*_interp->result != 0) {
+				printf(": %s\n", _interp->result);
 			} else {
 				printf("\n");
 			}
 		}
 	}
 }
+
+#endif
