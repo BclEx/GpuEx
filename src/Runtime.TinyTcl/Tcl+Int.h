@@ -170,15 +170,15 @@ typedef struct HistoryRev {
 */
 
 // The data structure below defines an open file (or connection to a process pipeline) as returned by the "open" command.
-typedef struct OpenFile {
+typedef struct OpenFile_ {
 	FILE *f;			// Stdio file to use for reading and/or writing.
 	FILE *f2;			// Normally NULL.  In the special case of a command pipeline with pipes for both input and output, this is a stdio file to use for writing to the pipeline.
 	int readable;		// Non-zero means file may be read.
 	int writable;		// Non-zero means file may be written.
 	int numPids;		// If this is a connection to a process pipeline, gives number of processes in pidPtr array below;  otherwise it is 0.
 	int *pidPtr;		// Pointer to malloc-ed array of child process ids (numPids of them), or NULL if this isn't a connection to a process pipeline.
-	int errorId;		// File id of file that receives error output from pipeline.  -1 means not used (i.e. this is a normal file).
-} OpenFile;
+	FILE *errorId;		// File id of file that receives error output from pipeline.  -1 means not used (i.e. this is a normal file).
+} OpenFile_;
 
 /*
 *----------------------------------------------------------------
@@ -235,7 +235,7 @@ typedef struct Interp {
 
 	// Information related to files.  See tclUnixAZ.c and tclUnixUtil.c for details.
 	int numFiles;			// Number of entries in filePtrArray below.  0 means array hasn't been created yet.
-	OpenFile **filePtrArray;// Pointer to malloc-ed array of pointers to information about open files.  Entry N corresponds to the file with fileno N. If an entry is NULL then the corresponding file isn't open.  If filePtrArray is NULL it means no files have been used, so even stdin/stdout/stderr entries haven't been setup yet.
+	OpenFile_ **filePtrArray;// Pointer to malloc-ed array of pointers to information about open files.  Entry N corresponds to the file with fileno N. If an entry is NULL then the corresponding file isn't open.  If filePtrArray is NULL it means no files have been used, so even stdin/stdout/stderr entries haven't been setup yet.
 
 	// A cache of compiled regular expressions.  See TclCompileRegexp in tclUtil.c for details.
 
@@ -318,7 +318,7 @@ extern __device__ int TclFindElement(Tcl_Interp *interp, char *list, char **elem
 extern __device__ Proc * TclFindProc(Interp *iPtr, char *procName);
 extern __device__ int TclGetFrame(Tcl_Interp *interp, char *string, CallFrame **framePtrPtr);
 extern __device__ int TclGetListIndex(Tcl_Interp *interp, char *string, int *indexPtr);
-extern __device__ int TclGetOpenFile(Tcl_Interp *interp, char *string, OpenFile **filePtrPtr);
+extern __device__ int TclGetOpenFile(Tcl_Interp *interp, char *string, OpenFile_ **filePtrPtr);
 extern __device__ Proc * TclIsProc(Command *cmdPtr);
 extern __device__ void TclMakeFileTable(Interp *iPtr, int index);
 extern __device__ int TclParseBraces(Tcl_Interp *interp, char *string, char **termPtr, ParseValue *pvPtr);

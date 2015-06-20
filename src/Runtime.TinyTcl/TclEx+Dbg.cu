@@ -239,7 +239,7 @@ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp, int argc, 
 			return TCL_ERROR;
 	}
 	if (fileHandle != NULL) {
-		OpenFile *tclFilePtr;
+		OpenFile_ *tclFilePtr;
 		if (TclGetOpenFile(interp, fileHandle, &tclFilePtr) != TCL_OK)
 			return TCL_ERROR;
 		if (!tclFilePtr->writable) {

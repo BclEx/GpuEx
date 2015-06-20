@@ -125,6 +125,7 @@
     <ClInclude Include="Tcl+Int.h" />
     <ClInclude Include="Tcl+Load.h" />
     <ClInclude Include="Tcl+Unix.h" />
+    <ClInclude Include="Tcl+Win.h" />
     <ClInclude Include="TclEx.h" />
     <ClInclude Include="TclEx+Int.h" />
     <ClInclude Include="TclMod.h" />
@@ -149,7 +150,9 @@
     <ClCompile Include="Tcl+Hash.cu" />
     <ClCompile Include="Tcl+History.cu" />
     <ClCompile Include="Tcl+Load.cu" />
+    <ClCompile Include="Tcl+Load-noop.cu" />
     <ClCompile Include="Tcl+Load-unix.cu" />
+    <ClCompile Include="Tcl+Load-win.cu" />
     <ClCompile Include="Tcl+Main-embed.cu" />
     <ClCompile Include="Tcl+Main.cu" />
     <ClCompile Include="Tcl+Parse.cu" />
@@ -158,6 +161,10 @@
     <ClCompile Include="Tcl+UnixEnv.cu" />
     <ClCompile Include="Tcl+UnixStr.cu" />
     <ClCompile Include="Tcl+UnixUtil.cu" />
+    <ClCompile Include="Tcl+WinAZ.cu" />
+    <ClCompile Include="Tcl+WinEnv.cu" />
+    <ClCompile Include="Tcl+WinStr.cu" />
+    <ClCompile Include="Tcl+WinUtil.cu" />
     <ClCompile Include="Tcl+Util.cu" />
     <ClCompile Include="Tcl+Var.cu" />
     <ClCompile Include="TclEx+Dbg.cu" />
@@ -183,7 +190,9 @@
     <None Include="Tcl+Hash.cu" />
     <None Include="Tcl+History.cu" />
     <None Include="Tcl+Load.cu" />
+    <None Include="Tcl+Load-noop.cu" />
     <None Include="Tcl+Load-unix.cu" />
+    <None Include="Tcl+Load-win.cu" />
     <None Include="Tcl+Main-embed.cu" />
     <None Include="Tcl+Main.cu" />
     <None Include="Tcl+Parse.cu" />
@@ -192,6 +201,10 @@
     <None Include="Tcl+UnixEnv.cu" />
     <None Include="Tcl+UnixStr.cu" />
     <None Include="Tcl+UnixUtil.cu" />
+    <None Include="Tcl+WinAZ.cu" />
+    <None Include="Tcl+WinEnv.cu" />
+    <None Include="Tcl+WinStr.cu" />
+    <None Include="Tcl+WinUtil.cu" />
     <None Include="Tcl+Util.cu" />
     <None Include="Tcl+Var.cu" />
     <None Include="TclEx+Dbg.cu" />

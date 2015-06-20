@@ -208,7 +208,7 @@ int cmddiskfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[
 	}
 	struct diskfree_t diskfree;
 	if (_dos_getdiskfree (drive, &diskfree) != 0) {
-		Tcl_AppendResult(interp, "Couldn't get disk space: ", Tcl_UnixError(interp), (char *)NULL);
+		Tcl_AppendResult(interp, "Couldn't get disk space: ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
 	long freeClusters = diskfree.avail_clusters;
@@ -449,7 +449,7 @@ int cmdmkdir(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return TCL_ERROR;
 	}
 	if (mkdir(argv[1]) < 0) {
-		Tcl_AppendResult(interp, "Couldn't make directory: ", argv[1], ": ", Tcl_UnixError(interp), (char *)NULL);
+		Tcl_AppendResult(interp, "Couldn't make directory: ", argv[1], ": ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -463,7 +463,7 @@ int cmdunlink(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return TCL_ERROR;
 	}
 	if (unlink(argv[1]) < 0) {
-		Tcl_AppendResult(interp, "Couldn't unlink file: ", argv[1], ": ", Tcl_UnixError(interp), (char *)NULL);
+		Tcl_AppendResult(interp, "Couldn't unlink file: ", argv[1], ": ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -477,7 +477,7 @@ int cmdexecvp(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return TCL_ERROR;
 	}
 	if (execvp (argv[1], &argv[1]) < 0) {
-		Tcl_AppendResult(interp, "Couldn't execvp: ", argv[1], ": ", Tcl_UnixError(interp), (char *)NULL);
+		Tcl_AppendResult(interp, "Couldn't execvp: ", argv[1], ": ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
 	// Actually we should not ever get here.  If the execvp succeeds, we terminate.

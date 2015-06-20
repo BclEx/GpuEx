@@ -92,8 +92,8 @@ extern __device__ int Tcl_MemFree(char *ptr, char *file, int line);
 extern __device__ char *Tcl_MemRealloc(char *ptr, unsigned int size, char *file, int line);
 extern __device__ int Tcl_DumpActiveMemory(char *fileName);
 extern __device__ void Tcl_ValidateAllMemory(char *file, int line);
-#define _allocFast(x) Tcl_MemAlloc(x, __FILE__, __LINE__)
-#define _freeFast(x) Tcl_MemFree(x, __FILE__, __LINE__)
+#define _allocFast(x) Tcl_MemAlloc((x), __FILE__, __LINE__)
+#define _freeFast(x) Tcl_MemFree((x), __FILE__, __LINE__)
 #define _reallocFast(x,y) Tcl_MemRealloc((x), (y), __FILE__, __LINE__)
 #else
 #define _allocFast(x) _alloc(x)
@@ -137,7 +137,7 @@ extern __device__ int Tcl_ConvertElement(const char *src, char *dst, int flags);
 extern __device__ Tcl_CmdBuf Tcl_CreateCmdBuf();
 extern __device__ void Tcl_CreateCommand(Tcl_Interp *interp, char *cmdName, Tcl_CmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc);
 extern __device__ Tcl_Interp *Tcl_CreateInterp();
-extern __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr);
+extern __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, FILE **inPipePtr, FILE **outPipePtr, FILE **errFilePtr);
 extern __device__ Tcl_Trace Tcl_CreateTrace(Tcl_Interp *interp, int level, Tcl_CmdTraceProc *proc, ClientData clientData);
 extern __device__ void Tcl_DeleteCmdBuf(Tcl_CmdBuf buffer);
 extern __device__ int Tcl_DeleteCommand(Tcl_Interp *interp, char *cmdName);
@@ -193,7 +193,7 @@ extern __device__ int Tcl_StringMatch(char *string, char *pattern);
 extern __device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name);
 extern __device__ int Tcl_TraceVar(Tcl_Interp *interp, char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData);
 extern __device__ int Tcl_TraceVar2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData);
-extern __device__ char *Tcl_UnixError(Tcl_Interp *interp);
+extern __device__ char *Tcl_OSError(Tcl_Interp *interp);
 extern __device__ int Tcl_UnsetVar(Tcl_Interp *interp, char *varName, int flags);
 extern __device__ int Tcl_UnsetVar2(Tcl_Interp *interp, char *part1, char *part2, int flags);
 extern __device__ void Tcl_UntraceVar(Tcl_Interp *interp, char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData);

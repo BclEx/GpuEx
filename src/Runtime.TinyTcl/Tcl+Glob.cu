@@ -176,7 +176,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		DIR *d = _opendir(dirName);
 		if (d == NULL) {
 			Tcl_ResetResult(interp);
-			Tcl_AppendResult(interp, "couldn't read directory \"", dirName, "\": ", Tcl_UnixError(interp), (char *)NULL);
+			Tcl_AppendResult(interp, "couldn't read directory \"", dirName, "\": ", Tcl_OSError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
 		int l1 = _strlen(dir);
@@ -335,6 +335,11 @@ __device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name)
 		endpwent();
 	}
 	return curBuf;
+}
+#else
+__device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name)
+{
+	return name;
 }
 #endif
 

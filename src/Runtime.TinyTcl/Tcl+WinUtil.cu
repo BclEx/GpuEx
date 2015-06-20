@@ -1,19 +1,7 @@
-// tclUnixUtil.c --
-//
-//	This file contains a collection of utility procedures that are present in the Tcl's UNIX core but not in the generic
-//	core.  For example, they do file manipulation and process manipulation.
-//
-// Copyright 1991 Regents of the University of California
-// Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without
-// fee is hereby granted, provided that this copyright notice appears in all copies.  The University of California
-// makes no representations about the suitability of this software for any purpose.  It is provided "as is" without
-// express or implied warranty.
-
 #include "Tcl+Int.h"
-#if OS_UNIX
-#include "Tcl+Unix.h"
-
-#ifndef NO_FORK
+#if OS_WIN
+#include "Tcl+Win.h"
+
 // Data structures of the following type are used by Tcl_Fork and Tcl_WaitPids to keep track of child processes.
 #define WAIT_STATUS_TYPE int
 
@@ -31,8 +19,7 @@ static WaitInfo *waitTable = NULL;
 static int waitTableSize = 0;	// Total number of entries available in waitTable.
 static int waitTableUsed = 0;	// Number of entries in waitTable that are actually in use right now.  Active entries are always at the beginning of the table.
 #define WAIT_TABLE_GROW_BY 4
-#endif /* NO_FORK */
-
+
 /*
 *----------------------------------------------------------------------
 *
@@ -57,30 +44,31 @@ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 	if (fileName == NULL) {
 		goto error;
 	}
-	int fileId = open(fileName, O_RDONLY, 0);
-	if (fileId < 0) {
+	FILE *file = fopen(fileName, "r");
+	if (!file) {
 		Tcl_AppendResult(interp, "couldn't read file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		goto error;
 	}
-	struct stat statBuf;
-	if (fstat(fileId, &statBuf) == -1) {
-		Tcl_AppendResult(interp, "couldn't stat file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
-		close(fileId);
-		goto error;
-	}
-	char *cmdBuffer = (char *)_allocFast((unsigned)statBuf.st_size+1);
-	if (read(fileId, cmdBuffer, (int) statBuf.st_size) != statBuf.st_size) {
+	int fileSize;
+	//struct stat statBuf;
+	//if (fstat(file, &statBuf) == -1) {
+	//	Tcl_AppendResult(interp, "couldn't stat file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
+	//	fclose(file);
+	//	goto error;
+	//}
+	char *cmdBuffer = (char *)_allocFast((unsigned)fileSize+1);
+	if (fread(cmdBuffer, fileSize, 1, file) != fileSize) {
 		Tcl_AppendResult(interp, "error in reading file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
-		close(fileId);
+		fclose(file);
 		_freeFast(cmdBuffer);
 		goto error;
 	}
-	if (close(fileId) != 0) {
+	if (fclose(file) != 0) {
 		Tcl_AppendResult(interp, "error closing file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		_freeFast(cmdBuffer);
 		goto error;
 	}
-	cmdBuffer[statBuf.st_size] = 0;
+	cmdBuffer[fileSize] = 0;
 	char *end;
 	result = Tcl_Eval(interp, cmdBuffer, 0, &end);
 	if (result == TCL_RETURN) {
@@ -100,136 +88,8 @@ error:
 	iPtr->scriptFile = oldScriptFile;
 	return TCL_ERROR;
 }
-
-#ifndef NO_FORK
-/*
-*----------------------------------------------------------------------
-*
-* Tcl_Fork --
-*	Create a new process using the vfork system call, and keep track of it for "safe" waiting with Tcl_WaitPids.
-*
-* Results:
-*	The return value is the value returned by the vfork system call (0 means child, > 0 means parent (value is child id), < 0 means error).
-*
-* Side effects:
-*	A new process is created, and an entry is added to an internal table of child processes if the process is created successfully.
-*
-*----------------------------------------------------------------------
-*/
-int Tcl_Fork()
-{
-	WaitInfo *waitPtr;
-	pid_t pid;
 
-	// Disable SIGPIPE signals:  if they were allowed, this process might go away unexpectedly if children misbehave.  This code
-	// can potentially interfere with other application code that expects to handle SIGPIPEs;  what's really needed is an
-	// arbiter for signals to allow them to be "shared".
-	if (waitTable == NULL) {
-		signal(SIGPIPE, SIG_IGN);
-	}
 
-	// Enlarge the wait table if there isn't enough space for a new entry.
-	if (waitTableUsed == waitTableSize) {
-		int newSize = waitTableSize + WAIT_TABLE_GROW_BY;
-		WaitInfo *newWaitTable = (WaitInfo *)_allocFast((unsigned)(newSize * sizeof(WaitInfo)));
-		memcpy(newWaitTable, waitTable, (waitTableSize * sizeof(WaitInfo)));
-		if (waitTable != NULL) {
-			_freeFast((char *) waitTable);
-		}
-		waitTable = newWaitTable;
-		waitTableSize = newSize;
-	}
-
-	// Make a new process and enter it into the table if the fork is successful.
-	waitPtr = &waitTable[waitTableUsed];
-	pid = fork();
-	if (pid > 0) {
-		waitPtr->pid = pid;
-		waitPtr->flags = 0;
-		waitTableUsed++;
-	}
-	return pid;
-}
-
-/*
-*----------------------------------------------------------------------
-*
-* Tcl_WaitPids --
-*	This procedure is used to wait for one or more processes created by Tcl_Fork to exit or suspend.  It records information about
-*	all processes that exit or suspend, even those not waited for, so that later waits for them will be able to get the status information.
-*
-* Results:
-*	-1 is returned if there is an error in the wait kernel call. Otherwise the pid of an exited/suspended process from *pidPtr
-*	is returned and *statusPtr is set to the status value returned by the wait kernel call.
-*
-* Side effects:
-*	Doesn't return until one of the pids at *pidPtr exits or suspends.
-*
-*----------------------------------------------------------------------
-*/
-int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr)
-{
-	int count, pid;
-	register WaitInfo *waitPtr;
-	while (true) {
-		// Scan the table of child processes to see if one of the specified children has already exited or suspended.  If so, remove it from the table and return its status.
-		bool anyProcesses = false;
-		for (waitPtr = waitTable, count = waitTableUsed; count > 0; waitPtr++, count--) {
-			for (int i = 0; i < numPids; i++) {
-				if (pidPtr[i] != waitPtr->pid) {
-					continue;
-				}
-				anyProcesses = true;
-				if (waitPtr->flags & WI_READY) {
-					*statusPtr = *((int *)&waitPtr->status);
-					pid = waitPtr->pid;
-					if (WIFEXITED(waitPtr->status) || WIFSIGNALED(waitPtr->status)) {
-						*waitPtr = waitTable[waitTableUsed-1];
-						waitTableUsed--;
-					} else {
-						waitPtr->flags &= ~WI_READY;
-					}
-					return pid;
-				}
-			}
-		}
-
-		// Make sure that the caller at least specified one valid process to wait for.
-		if (!anyProcesses) {
-			errno = ECHILD;
-			return -1;
-		}
-
-		// Wait for a process to exit or suspend, then update its entry in the table and go back to the beginning of the
-		// loop to see if it's one of the desired processes.
-		WAIT_STATUS_TYPE status;
-		pid = wait(&status);
-		if (pid < 0) {
-			return pid;
-		}
-		for (waitPtr = waitTable, count = waitTableUsed; ; waitPtr++, count--) {
-			if (count == 0) {
-				break;			// Ignore unknown processes.
-			}
-			if (pid != waitPtr->pid) {
-				continue;
-			}
-
-			// If the process has been detached, then ignore anything other than an exit, and drop the entry on exit.
-			if (waitPtr->flags & WI_DETACHED) {
-				if (WIFEXITED(status) || WIFSIGNALED(status)) {
-					*waitPtr = waitTable[waitTableUsed-1];
-					waitTableUsed--;
-				}
-			} else {
-				waitPtr->status = status;
-				waitPtr->flags |= WI_READY;
-			}
-			break;
-		}
-	}
-}
-
 /*
 *----------------------------------------------------------------------
 *
@@ -255,22 +115,32 @@ void Tcl_DetachPids(int numPids, int *pidPtr)
 			if (pid != waitPtr->pid) {
 				continue;
 			}
-
 			// If the process has already exited then destroy its table entry now.
-			if ((waitPtr->flags & WI_READY) && (WIFEXITED(waitPtr->status) || WIFSIGNALED(waitPtr->status))) {
-				*waitPtr = waitTable[waitTableUsed-1];
-				waitTableUsed--;
-			} else {
-				waitPtr->flags |= WI_DETACHED;
-			}
+			//if ((waitPtr->flags & WI_READY) && (WIFEXITED(waitPtr->status) || WIFSIGNALED(waitPtr->status))) {
+			//	*waitPtr = waitTable[waitTableUsed-1];
+			//	waitTableUsed--;
+			//} else {
+			//	waitPtr->flags |= WI_DETACHED;
+			//}
 			goto nextPid;
 		}
-		panic("Tcl_Detach couldn't find process");
+		_panic("Tcl_Detach couldn't find process");
 nextPid:
 		continue;
 	}
 }
 
+void mktemp(char *buf, int size)
+{
+	TCHAR lpTempPathBuffer[MAX_PATH];
+	DWORD dwRetVal = GetTempPath(MAX_PATH, lpTempPathBuffer); 
+	if (dwRetVal > MAX_PATH || (dwRetVal == 0))
+		_panic("mktemp failed");
+	UINT uRetVal = GetTempFileName(lpTempPathBuffer, TEXT("tmp"), 0, buf); 
+	if (uRetVal == 0)
+		_panic("mktemp failed");
+}
+
 /*
 *----------------------------------------------------------------------
 *
@@ -291,19 +161,19 @@ nextPid:
 *
 *----------------------------------------------------------------------
 */
-int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr)
+int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, FILE **inPipePtr, FILE **outPipePtr, FILE **errFilePtr)
 {
 	if (inPipePtr != NULL) {
-		*inPipePtr = -1;
+		*inPipePtr = NULL;
 	}
 	if (outPipePtr != NULL) {
-		*outPipePtr = -1;
+		*outPipePtr = NULL;
 	}
 	if (errFilePtr != NULL) {
-		*errFilePtr = -1;
+		*errFilePtr = NULL;
 	}
-	int pipeIds[2]; // File ids for pipe that's being created.
-	pipeIds[0] = pipeIds[1] = -1;
+	FILE *pipeIds[2]; // File ids for pipe that's being created.
+	pipeIds[0] = pipeIds[1] = NULL;
 	int numPids = 0; // Actual number of processes that exist at *pidPtr right now.
 
 	// First, scan through all the arguments to figure out the structure of the pipeline.  Count the number of distinct processes (it's the number of "|" arguments).
@@ -391,29 +261,23 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 	}
 
 	// Set up the redirected input source for the pipeline, if so requested.
-	int inputId = -1; // Readable file id input to current command in pipeline (could be file or pipe).  -1 means use stdin.
+	FILE *inputId = NULL; // Readable file id input to current command in pipeline (could be file or pipe).  -1 means use stdin.
 	if (input != NULL) {
 		if (inputFile == 0) {
 			// Immediate data in command.  Create temporary file and put data into file.
-#define TMP_STDIN_NAME "/tmp/tcl.in.XXXXXX"
-			char inName[sizeof(TMP_STDIN_NAME) + 1];
-			strcpy(inName, TMP_STDIN_NAME);
-#ifdef HAVE_MKSTEMP
-			inputId = mkstemp(inName);
-#else
-			mktemp(inName);
-			inputId = open(inName, O_RDWR|O_CREAT|O_TRUNC, 0600);
-#endif
+			char inName[MAX_PATH];
+			mktemp(inName, sizeof(inName));
+			inputId = fopen(inName, "rw");
 			if (inputId < 0) {
 				Tcl_AppendResult(interp, "couldn't create input file for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
 			int length = strlen(input);
-			if (write(inputId, input, length) != length) {
+			if (fwrite(input, length, 1, inputId) != length) {
 				Tcl_AppendResult(interp, "couldn't write file input for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
-			if (lseek(inputId, 0L, 0) == -1 || unlink(inName) == -1) {
+			if (fseek(inputId, 0L, 0) == -1 || !DeleteFile(inName)) {
 				Tcl_AppendResult(interp, "couldn't reset or remove input file for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
@@ -427,27 +291,27 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for reading", (char *)NULL);
 				goto error;
 			}
-			inputId = dup(fileno(filePtr->f2 ? : filePtr->f));
+			inputId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
 		} else {
 			// File redirection.  Just open the file.
-			inputId = open(input, O_RDONLY, 0);
-			if (inputId < 0) {
+			inputId = fopen(input, "r");
+			if (!inputId) {
 				Tcl_AppendResult(interp, "couldn't read file \"", input, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
 		}
-	} else if (inPipePtr != NULL) {
-		if (pipe(pipeIds) != 0) {
-			Tcl_AppendResult(interp, "couldn't create input pipe for command: ", Tcl_OSError(interp), (char *)NULL);
-			goto error;
-		}
-		inputId = pipeIds[0];
-		*inPipePtr = pipeIds[1];
-		pipeIds[0] = pipeIds[1] = -1;
+	//} else if (inPipePtr != NULL) {
+	//	if (pipe(pipeIds) != 0) {
+	//		Tcl_AppendResult(interp, "couldn't create input pipe for command: ", Tcl_OSError(interp), (char *)NULL);
+	//		goto error;
+	//	}
+	//	inputId = pipeIds[0];
+	//	*inPipePtr = pipeIds[1];
+	//	pipeIds[0] = pipeIds[1] = NULL;
 	}
 
 	// Set up the redirected output sink for the pipeline from one of two places, if requested.
-	int lastOutputId = -1;	// Write file id for output from last command in pipeline (could be file or pipe). -1 means use stdout.
+	FILE *lastOutputId = NULL; // Write file id for output from last command in pipeline (could be file or pipe). -1 means use stdout.
 	if (output != NULL) {
 		if (outputFile == 2) {
 			OpenFile_ *filePtr;
@@ -458,33 +322,33 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for writing", (char *)NULL);
 				goto error;
 			}
-			fflush(filePtr->f2 ?: filePtr->f);
-			lastOutputId = dup(fileno(filePtr->f2 ?: filePtr->f));
+			fflush(filePtr->f2 ? filePtr->f2 : filePtr->f);
+			lastOutputId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
 		}
 		else {
 			// Output is to go to a file.
-			int mode = O_WRONLY|O_CREAT|O_TRUNC;
+			char *mode = "w";
 			if (outputFile == 1) {
-				mode = O_WRONLY|O_CREAT|O_APPEND;
+				mode = "w+";
 			}
-			lastOutputId = open(output, mode, 0666);
+			lastOutputId = fopen(output, mode);
 			if (lastOutputId < 0) {
 				Tcl_AppendResult(interp, "couldn't write file \"", output, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
 		}
-	} else if (outPipePtr != NULL) {
-		// Output is to go to a pipe.
-		if (pipe(pipeIds) != 0) {
-			Tcl_AppendResult(interp, "couldn't create output pipe: ", Tcl_OSError(interp), (char *)NULL);
-			goto error;
-		}
-		lastOutputId = pipeIds[1];
-		*outPipePtr = pipeIds[0];
-		pipeIds[0] = pipeIds[1] = -1;
+	//} else if (outPipePtr != NULL) {
+	//	// Output is to go to a pipe.
+	//	if (pipe(pipeIds) != 0) {
+	//		Tcl_AppendResult(interp, "couldn't create output pipe: ", Tcl_OSError(interp), (char *)NULL);
+	//		goto error;
+	//	}
+	//	lastOutputId = pipeIds[1];
+	//	*outPipePtr = pipeIds[0];
+	//	pipeIds[0] = pipeIds[1] = NULL;
 	}
 	// If we are redirecting stderr with 2>filename or 2>@fileId, then we ignore errFilePtr
-	int errorId = -1; // Writable file id for all standard error output from all commands in pipeline.  -1 means use stderr.
+	FILE *errorId = NULL; // Writable file id for all standard error output from all commands in pipeline.  -1 means use stderr.
 	if (error != NULL) {
 		if (errorFile == 2) {
 			OpenFile_ *filePtr;
@@ -495,16 +359,16 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for writing", (char *)NULL);
 				goto error;
 			}
-			fflush(filePtr->f2 ?: filePtr->f);
-			errorId = dup(fileno(filePtr->f2 ?: filePtr->f));
+			fflush(filePtr->f2 ? filePtr->f2 : filePtr->f);
+			errorId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
 		}
 		else {
 			// Output is to go to a file.
-			int mode = O_WRONLY|O_CREAT|O_TRUNC;
+			char *mode = "w";
 			if (errorFile == 1) {
-				mode = O_WRONLY|O_CREAT|O_APPEND;
+				mode = "w+";
 			}
-			errorId = open(error, mode, 0666);
+			errorId = fopen(error, mode);
 			if (errorId < 0) {
 				Tcl_AppendResult(interp, "couldn't write file \"", error, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -514,25 +378,19 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 		// Set up the standard error output sink for the pipeline, if requested.  Use a temporary file which is opened, then deleted.
 		// Could potentially just use pipe, but if it filled up it could cause the pipeline to deadlock:  we'd be waiting for processes
 		// to complete before reading stderr, and processes couldn't complete because stderr was backed up.
-#define TMP_STDERR_NAME "/tmp/tcl.err.XXXXXX"
-		char errName[sizeof(TMP_STDERR_NAME) + 1];
-		strcpy(errName, TMP_STDERR_NAME);
-#ifdef HAVE_MKSTEMP
-		errorId = mkstemp(errName);
-#else
-		mktemp(errName);
-		errorId = open(errName, O_WRONLY|O_CREAT|O_TRUNC, 0600);
-#endif
+		char errName[MAX_PATH];
+		mktemp(errName, sizeof(errName));
+		errorId = fopen(errName, "w");
 		if (errorId < 0) {
 errFileError:
 			Tcl_AppendResult(interp, "couldn't create error file for command: ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
 		}
-		*errFilePtr = open(errName, O_RDONLY, 0);
+		*errFilePtr = fopen(errName, "r");
 		if (*errFilePtr < 0) {
 			goto errFileError;
 		}
-		if (unlink(errName) == -1) {
+		if (!DeleteFile(errName)) {
 			Tcl_AppendResult(interp, "couldn't remove error file for command: ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
 		}
@@ -543,7 +401,7 @@ errFileError:
 	for (i = 0; i < numPids; i++) {
 		pidPtr[i] = -1;
 	}
-	int outputId = -1; // Writable file id for output from current command in pipeline (could be file or pipe). -1 means use stdout.
+	FILE *outputId = NULL; // Writable file id for output from current command in pipeline (could be file or pipe). -1 means use stdout.
 	int lastArg;
 	for (int firstArg = 0; firstArg < argc; numPids++, firstArg = lastArg+1) {
 		for (lastArg = firstArg; lastArg < argc; lastArg++) {
@@ -554,80 +412,80 @@ errFileError:
 		argv[lastArg] = NULL;
 		if (lastArg == argc) {
 			outputId = lastOutputId;
-		} else {
-			if (pipe(pipeIds) != 0) {
-				Tcl_AppendResult(interp, "couldn't create pipe: ", Tcl_OSError(interp), (char *)NULL);
-				goto error;
-			}
-			outputId = pipeIds[1];
+		//} else {
+		//	if (pipe(pipeIds) != 0) {
+		//		Tcl_AppendResult(interp, "couldn't create pipe: ", Tcl_OSError(interp), (char *)NULL);
+		//		goto error;
+		//	}
+		//	outputId = pipeIds[1];
 		}
 		char *execName = Tcl_TildeSubst(interp, argv[firstArg]);
-		int pid = Tcl_Fork();
+		int pid = -1; //Tcl_Fork();
 		if (pid == -1) {
 			Tcl_AppendResult(interp, "couldn't fork child process: ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
 		}
 		if (pid == 0) {
 			char errSpace[200];
-			if ((inputId != -1 && dup2(inputId, 0) == -1) || (outputId != -1 && dup2(outputId, 1) == -1) || (errorId != -1 && dup2(errorId, 2) == -1)) {
-				char *err = "forked process couldn't set up input/output\n";
-				write(errorId < 0 ? 2 : errorId, err, strlen(err));
-				_exit(1);
-			}
-			for (i = 3; i <= outputId || i <= inputId || i <= errorId; i++) {
-				close(i);
-			}
-			execvp(execName, &argv[firstArg]);
+			//if ((inputId != -1 && dup2(inputId, 0) == -1) || (outputId != -1 && dup2(outputId, 1) == -1) || (errorId != -1 && dup2(errorId, 2) == -1)) {
+			//	char *err = "forked process couldn't set up input/output\n";
+			//	fwrite(err, strlen(err), 1, (!errorId ? 2 : errorId));
+			//	_exit(1);
+			//}
+			//for (i = 3; i <= outputId || i <= inputId || i <= errorId; i++) {
+			//	fclose(i);
+			//}
+			//execvp(execName, &argv[firstArg]);
 			sprintf(errSpace, "couldn't find \"%.150s\" to execute\n", argv[firstArg]);
-			write(2, errSpace, strlen(errSpace));
+			fwrite(errSpace, strlen(errSpace), 1, stderr);
 			_exit(1);
 		} else {
 			pidPtr[numPids] = pid;
 		}
 		// Close off our copies of file descriptors that were set up for this child, then set up the input for the next child.
-		if (inputId != -1) {
-			close(inputId);
+		if (inputId) {
+			fclose(inputId);
 		}
-		if (outputId != -1) {
-			close(outputId);
+		if (outputId) {
+			fclose(outputId);
 		}
 		inputId = pipeIds[0];
-		pipeIds[0] = pipeIds[1] = -1;
+		pipeIds[0] = pipeIds[1] = NULL;
 	}
 	*pidArrayPtr = pidPtr;
 
 	// All done.  Cleanup open files lying around and then return.
 cleanup:
-	if (inputId != -1) {
-		close(inputId);
+	if (inputId) {
+		fclose(inputId);
 	}
-	if (lastOutputId != -1) {
-		close(lastOutputId);
+	if (lastOutputId) {
+		fclose(lastOutputId);
 	}
-	if (errorId != -1) {
-		close(errorId);
+	if (errorId) {
+		fclose(errorId);
 	}
 	return numPids;
 
 	// An error occurred.  There could have been extra files open, such as pipes between children.  Clean them all up.  Detach any child processes that have been created.
 error:
-	if (inPipePtr != NULL && *inPipePtr != -1) {
-		close(*inPipePtr);
-		*inPipePtr = -1;
+	if (inPipePtr != NULL && *inPipePtr) {
+		fclose(*inPipePtr);
+		*inPipePtr = NULL;
 	}
-	if (outPipePtr != NULL && *outPipePtr != -1) {
-		close(*outPipePtr);
-		*outPipePtr = -1;
+	if (outPipePtr != NULL && *outPipePtr) {
+		fclose(*outPipePtr);
+		*outPipePtr = NULL;
 	}
-	if (errFilePtr != NULL && *errFilePtr != -1) {
-		close(*errFilePtr);
-		*errFilePtr = -1;
+	if (errFilePtr != NULL && *errFilePtr) {
+		fclose(*errFilePtr);
+		*errFilePtr = NULL;
 	}
-	if (pipeIds[0] != -1) {
-		close(pipeIds[0]);
+	if (pipeIds[0]) {
+		fclose(pipeIds[0]);
 	}
-	if (pipeIds[1] != -1) {
-		close(pipeIds[1]);
+	if (pipeIds[1]) {
+		fclose(pipeIds[1]);
 	}
 	if (pidPtr != NULL) {
 		for (i = 0; i < numPids; i++) {
@@ -640,7 +498,6 @@ error:
 	numPids = -1;
 	goto cleanup;
 }
-#endif /* NO_FORK */
 
 /*
 *----------------------------------------------------------------------
@@ -660,9 +517,8 @@ error:
 char *Tcl_OSError(Tcl_Interp *interp)
 {
 	char *id = Tcl_ErrnoId();
-	char *msg = strerror(errno);
-	Tcl_SetErrorCode(interp, "UNIX", id, msg, (char *)NULL);
-	return msg;
+	Tcl_SetErrorCode(interp, "UNIX", id, (char *)NULL);
+	return id;
 }
 
 /*
@@ -688,7 +544,6 @@ void TclMakeFileTable(Interp *iPtr, int index)
 	syslog(LOG_INFO, "TclMakeFileTable() numFiles=%d, index=%d", iPtr->numFiles, index);
 #endif
 	if (iPtr->numFiles == 0) {
-		long dummy;
 		if (index < 2) {
 			iPtr->numFiles = 3;
 		} else {
@@ -697,36 +552,15 @@ void TclMakeFileTable(Interp *iPtr, int index)
 #ifdef DEBUG_FDS
 		syslog(LOG_INFO, "TclMakeFileTable() allocating table of size %d", iPtr->numFiles);
 #endif
-		iPtr->filePtrArray = (OpenFile_ **)_allocFast((unsigned)(iPtr->numFiles*sizeof(OpenFile_ *)));
+		iPtr->filePtrArray = (OpenFile_ **)_allocFast(iPtr->numFiles*sizeof(OpenFile_ *));
 		for (i = iPtr->numFiles-1; i >= 0; i--) {
 			iPtr->filePtrArray[i] = NULL;
 		}
 #ifdef DEBUG_FDS
-		syslog(LOG_INFO, "TclMakeFileTable() stdin fd=%d, stdout fd=%d, stderr fd=%d", fileno(stdin), fileno(stdout), fileno(stderr));
-#endif
-		if (fcntl(fileno(stdout), F_GETFL, &dummy) == -1 && errno == EBADF) {
-#ifdef DEBUG_FDS
-			syslog(LOG_INFO, "TclMakeFileTable() reopening stdout");
-#endif
-			freopen("/dev/null", "w", stdout);
-		}
-		if (fcntl(fileno(stdin), F_GETFL, &dummy) == -1 && errno == EBADF) {
-#ifdef DEBUG_FDS
-			syslog(LOG_INFO, "TclMakeFileTable() reopening stdin");
-#endif
-			freopen("/dev/null", "r", stdin);
-		}
-		if (fcntl(fileno(stderr), F_GETFL, &dummy) == -1 && errno == EBADF) {
-#ifdef DEBUG_FDS
-			syslog(LOG_INFO, "TclMakeFileTable() reopening stderr");
-#endif
-			freopen("/dev/console", "w", stderr);
-		}
-#ifdef DEBUG_FDS
-		syslog(LOG_INFO, "TclMakeFileTable() after freopen(): stdin fd=%d, stdout fd=%d, stderr fd=%d", fileno(stdin), fileno(stdout), fileno(stderr));
+		syslog(LOG_INFO, "TclMakeFileTable() after freopen(): stdin fd=%d, stdout fd=%d, stderr fd=%d", _fileno(stdin), _fileno(stdout), _fileno(stderr));
 #endif
 		OpenFile_ *filePtr;
-		if (fileno(stdin) >= 0) {
+		if (_fileno(stdin) >= 0) {
 			filePtr = (OpenFile_ *)_allocFast(sizeof(OpenFile_));
 			filePtr->f = stdin;
 			filePtr->f2 = NULL;
@@ -734,10 +568,10 @@ void TclMakeFileTable(Interp *iPtr, int index)
 			filePtr->writable = 0;
 			filePtr->numPids = 0;
 			filePtr->pidPtr = NULL;
-			filePtr->errorId = -1;
-			iPtr->filePtrArray[fileno(stdin)] = filePtr;
+			filePtr->errorId = NULL;
+			iPtr->filePtrArray[_fileno(stdin)] = filePtr;
 		}
-		if (fileno(stdout) >= 0) {
+		if (_fileno(stdout) >= 0) {
 			filePtr = (OpenFile_ *)_allocFast(sizeof(OpenFile_));
 			filePtr->f = stdout;
 			filePtr->f2 = NULL;
@@ -745,10 +579,10 @@ void TclMakeFileTable(Interp *iPtr, int index)
 			filePtr->writable = 1;
 			filePtr->numPids = 0;
 			filePtr->pidPtr = NULL;
-			filePtr->errorId = -1;
-			iPtr->filePtrArray[fileno(stdout)] = filePtr;
+			filePtr->errorId = NULL;
+			iPtr->filePtrArray[_fileno(stdout)] = filePtr;
 		}
-		if (fileno(stderr) >= 0) {
+		if (_fileno(stderr) >= 0) {
 			filePtr = (OpenFile_ *)_allocFast(sizeof(OpenFile_));
 			filePtr->f = stderr;
 			filePtr->f2 = NULL;
@@ -756,15 +590,15 @@ void TclMakeFileTable(Interp *iPtr, int index)
 			filePtr->writable = 1;
 			filePtr->numPids = 0;
 			filePtr->pidPtr = NULL;
-			filePtr->errorId = -1;
-			iPtr->filePtrArray[fileno(stderr)] = filePtr;
+			filePtr->errorId = NULL;
+			iPtr->filePtrArray[_fileno(stderr)] = filePtr;
 		}
 	} else if (index >= iPtr->numFiles) {
 		int newSize = index+1;
 #ifdef DEBUG_FDS
 		syslog(LOG_INFO, "TclMakeFileTable() increasing size from %d to %d", iPtr->numFiles, newSize);
 #endif
-		OpenFile_ **newPtrArray = (OpenFile_ **)_allocFast((unsigned)(newSize*sizeof(OpenFile_ *)));
+		OpenFile_ **newPtrArray = (OpenFile_ **)_allocFast(newSize*sizeof(OpenFile_ *));
 		memcpy(newPtrArray, iPtr->filePtrArray, iPtr->numFiles*sizeof(OpenFile_ *));
 		for (i = iPtr->numFiles; i < newSize; i++) {
 			newPtrArray[i] = NULL;
@@ -802,11 +636,11 @@ int TclGetOpenFile(Tcl_Interp *interp, char *string, OpenFile_ **filePtrPtr)
 		}
 	} else if (string[0] == 's' && string[1] == 't' && string[2] == 'd') {
 		if (!strcmp(string+3, "in")) {
-			fd = fileno(stdin);
+			fd = _fileno(stdin);
 		} else if (!strcmp(string+3, "out") ) {
-			fd = fileno(stdout);
+			fd = _fileno(stdout);
 		} else if (!strcmp(string+3, "err")) {
-			fd = fileno(stderr);
+			fd = _fileno(stderr);
 		} else {
 			goto badId;
 		}

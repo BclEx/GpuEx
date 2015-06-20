@@ -223,7 +223,7 @@ __device__ void Tcl_DeleteInterp(Tcl_Interp *interp)
 #ifndef TCL_GENERIC_ONLY
 	if (iPtr->numFiles > 0) {
 		for (i = 0; i < iPtr->numFiles; i++) {
-			OpenFile *filePtr;
+			OpenFile_ *filePtr;
 			filePtr = iPtr->filePtrArray[i];
 			if (filePtr == NULL) {
 				continue;

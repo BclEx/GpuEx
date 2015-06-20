@@ -32,7 +32,7 @@ __device__ int Tcl_ReaddirCmd(ClientData clientData, Tcl_Interp *interp, int arg
 	char *dirPath = argv[1];
 	DIR *dirPtr = opendir(dirPath);
 	if (dirPtr == NULL)  {
-		Tcl_AppendResult(interp, dirPath, ": ", Tcl_UnixError(interp), (char *)NULL);
+		Tcl_AppendResult(interp, dirPath, ": ", Tcl_OSError(interp), (char *)NULL);
 		goto errorExit;
 	}
 	while (true) {
