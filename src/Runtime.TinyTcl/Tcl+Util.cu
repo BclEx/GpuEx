@@ -224,7 +224,7 @@ __device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, char 
 		}
 	}
 	size++; // Leave space for final NULL pointer.
-	char **argv = (char **)_allocFast((unsigned)((size * sizeof(char *)) + (p - list) + 1));
+	char **argv = (char **)_allocFast((unsigned)((size*sizeof(char *)) + (p - list) + 1));
 	for (i = 0, p = ((char *)argv) + size*sizeof(char *); *list != 0; i++) {
 		char *element;
 		int elSize, brace;
@@ -777,7 +777,7 @@ void Tcl_AppendResult(Tcl_Interp *interp, ...)
 *
 *----------------------------------------------------------------------
 */
-__device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, int noSep)
+__device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, bool noSep)
 {
 	register Interp *iPtr = (Interp *)interp;
 	int flags;

@@ -64,11 +64,11 @@ typedef struct
 
 #define OMIT_AUTOINIT
 #if defined(_GPU) || defined(_SENTINEL)
-#pragma message("OS_MAP:HAS_HOSTSENTINEL")
+//#pragma message("OS_MAP:HAS_HOSTSENTINEL")
 #define OS_MAP 1
 #define HAS_HOSTSENTINEL 1
 #else
-#pragma message("OS_MAP:HAS_HOSTSENTINEL")
+//#pragma message("OS_MAP:HAS_HOSTSENTINEL")
 #define OS_MAP 1
 #define HAS_HOSTSENTINEL 1
 #endif
@@ -222,6 +222,8 @@ extern "C" __device__ bool _atof(const char *z, double *out, int length, TEXTENC
 extern "C" __device__ int __atoi64(const char *z, int64 *out, int length, TEXTENCODE encode);
 extern "C" __device__ bool _atoi(const char *z, int *out);
 __device__ __forceinline int _atoi(const char *z) { int out = 0; if (z) _atoi(z, &out); return out; }
+#define _itoa(i, b) _itoa64((int64)i, b)
+extern "C" __device__ char *_itoa64(int i, char *b);
 #pragma endregion
 
 extern "C" __device__ inline uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }

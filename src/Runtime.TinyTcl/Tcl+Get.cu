@@ -37,7 +37,37 @@ __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr)
 		Tcl_AppendResult(interp, "expected integer but got \"", string, "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	*intPtr = (int) i;
+	*intPtr = (int)i;
+	return TCL_OK;
+}
+
+/*
+*----------------------------------------------------------------------
+*
+* Tcl_GetWideInt --
+*	Given a string, produce the corresponding long integer value.
+*
+* Results:
+*	The return value is normally TCL_OK;  in this case *intPtr will be set to the long integer value equivalent to string.  If
+*	string is improperly formed then TCL_ERROR is returned and an error message will be left in interp->result.
+*
+* Side effects:
+*	None.
+*
+*----------------------------------------------------------------------
+*/
+__device__ int Tcl_GetWideInt(Tcl_Interp *interp, char *string, int64 *intPtr)
+{
+	char *end;
+	int64 i = _strtol(string, &end, 0);
+	while (*end != '\0' && _isspace(*end)) {
+		end++;
+	}
+	if (end == string || *end != 0) {
+		Tcl_AppendResult(interp, "expected integer but got \"", string, "\"", (char *)NULL);
+		return TCL_ERROR;
+	}
+	*intPtr = (int64)i;
 	return TCL_OK;
 }
 
@@ -126,5 +156,25 @@ __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr)
 		Tcl_AppendResult(interp, "expected boolean value but got \"", string, "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
+	return TCL_OK;
+}
+
+/*
+*----------------------------------------------------------------------
+*
+* Tcl_GetByteArray --
+*	Given a string, return a byte array corresponding to the string.
+*
+* Results:
+*	The return value is normally TCL_OK;  in this case *arrayLength will be set to the length and byte array will be returned.  If
+*	string is improperly formed then TCL_ERROR is returned and an error message will be left in interp->result.
+*
+* Side effects:
+*	None.
+*
+*----------------------------------------------------------------------
+*/
+__device__ char *Tcl_GetByteArray(Tcl_Interp *interp, char *string, int *arrayLength)
+{
 	return TCL_OK;
 }

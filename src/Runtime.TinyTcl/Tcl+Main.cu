@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include "Tcl.h"
 
-#if 1
+#if 0
 
 Tcl_Interp *_interp;
 Tcl_CmdBuf _buffer;

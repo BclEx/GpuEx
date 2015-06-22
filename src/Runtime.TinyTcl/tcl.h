@@ -28,6 +28,7 @@ typedef struct Tcl_Interp {
 	int errorLine;		// When TCL_ERROR is returned, this gives the line number within the command where the error occurred (1 means first line).
 } Tcl_Interp;
 
+typedef char Tcl_Obj;
 typedef int *Tcl_Trace;
 typedef int *Tcl_CmdBuf;
 
@@ -101,7 +102,9 @@ extern __device__ void Tcl_ValidateAllMemory(char *file, int line);
 #define _reallocFast(x,y) _realloc(x,y)
 #define Tcl_DumpActiveMemory(x)
 #define Tcl_ValidateAllMemory(x,y)
-#endif /* TCL_MEM_DEBUG */
+#endif
+#define Tcl_Alloc(x) _allocFast(x)
+#define Tcl_Free(x) _freeFast(x)
 
 // Macro to free up result of interpreter.
 #define Tcl_FreeResult(interp) \
@@ -111,7 +114,7 @@ extern __device__ void Tcl_ValidateAllMemory(char *file, int line);
 	(interp)->freeProc = 0; }
 
 // Exported Tcl procedures:
-extern __device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, int noSep);
+extern __device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, bool noSep);
 #if __CUDACC__
 extern __device__ void _Tcl_AppendResult(Tcl_Interp *interp, _va_list *args);
 __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp) { _va_list args; _va_start(args); _Tcl_AppendResult(interp, &args); _va_end(args); }
@@ -152,9 +155,12 @@ extern __device__ int Tcl_ExprDouble(Tcl_Interp *interp, char *string, double *p
 extern __device__ int Tcl_ExprLong(Tcl_Interp *interp, char *string, long *ptr);
 extern __device__ int Tcl_ExprString(Tcl_Interp *interp, char *string);
 extern __device__ int Tcl_Fork();
+inline __device__ char *Tcl_GetString(Tcl_Interp *interp, char *string, int *stringLength) { *stringLength = _strlen(string); return string; }
 extern __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr);
 extern __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr);
 extern __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr);
+extern __device__ int Tcl_GetWideInt(Tcl_Interp *interp, char *string, int64 *intPtr);
+extern __device__ char *Tcl_GetByteArray(Tcl_Interp *interp, char *string, int *arrayLength);
 extern __device__ char *Tcl_GetVar(Tcl_Interp *interp, char *varName, int flags);
 extern __device__ char *Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2, int flags);
 extern __device__ int Tcl_GlobalEval(Tcl_Interp *interp, char *command);
@@ -217,6 +223,12 @@ __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, ...) { _va_list arg
 extern __device__ ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, char *varName, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData);
 extern __device__ ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData);
 extern __device__ int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr);
+
+// EXTRA
+inline __device__ Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *obj);
+extern __device__ void Tcl_IncrRefCount(Tcl_Obj *obj);
+extern __device__ void Tcl_DecrRefCount(Tcl_Obj *obj);
+
 
 #endif /* __TCL_H__ */
 

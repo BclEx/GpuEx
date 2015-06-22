@@ -70,7 +70,7 @@ __constant__ static CmdInfo _builtInCmds[] = {
 	// Commands in the UNIX core:
 	{"exec",		Tcl_ExecCmd},
 	{"time",		Tcl_TimeCmd},
-	{"pid",		Tcl_PidCmd},
+	{"pid",			Tcl_PidCmd},
 #ifdef HAVE_TCL_LOAD
 	{"load",		Tcl_LoadCmd},
 #endif

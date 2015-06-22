@@ -16,7 +16,7 @@
 #include "TclEx+Dbg.h"
 #endif
 
-#if 0
+#if 1
 
 // From generated load_extensions.c
 __device__ void TclEx_InitExtensions(Tcl_Interp *interp);
@@ -61,9 +61,9 @@ int main(int argc, char *argv[])
 	int result;
 	FILE *in;
 	FILE *out;
-	if (argc > 1 && strcmp(argv[1], "-") != 0)
+	if (argc > 1 && strcmp(argv[1], "-"))
 	{
-		char *filename = argv[1];
+		char *filename = argv[1]+1;
 
 		// Before we eval the file, create an argv global containing the remaining arguments
 		char *args = Tcl_Merge(argc - 2, argv + 2);
