@@ -47,7 +47,7 @@ static CHAR *getLastErrorText(CHAR *pBuf, ULONG bufSize)
 */
 char *Tcl_ErrnoId()
 {
-	CHAR msgText[256];
+	static CHAR msgText[256];
 	getLastErrorText(msgText, sizeof(msgText));
 	return msgText;
 }

@@ -155,6 +155,7 @@
     <ClCompile Include="Tcl+Load-win.cu" />
     <ClCompile Include="Tcl+Main-embed.cu" />
     <ClCompile Include="Tcl+Main.cu" />
+    <ClCompile Include="Tcl+Obj.cu" />
     <ClCompile Include="Tcl+Parse.cu" />
     <ClCompile Include="Tcl+Proc.cu" />
     <ClCompile Include="Tcl+UnixAZ.cu" />
@@ -195,6 +196,7 @@
     <None Include="Tcl+Load-win.cu" />
     <None Include="Tcl+Main-embed.cu" />
     <None Include="Tcl+Main.cu" />
+    <None Include="Tcl+Obj.cu" />
     <None Include="Tcl+Parse.cu" />
     <None Include="Tcl+Proc.cu" />
     <None Include="Tcl+UnixAZ.cu" />

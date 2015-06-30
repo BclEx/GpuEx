@@ -69,22 +69,22 @@ typedef struct
 #define HAS_HOSTSENTINEL 1
 #else
 //#pragma message("OS_MAP:HAS_HOSTSENTINEL")
-#define OS_MAP 1
+#define OS_MAP 0
 #define HAS_HOSTSENTINEL 1
 #endif
 
 #if __CUDACC__
-#pragma message("OS_GPU:")
+//#pragma message("OS_GPU:")
 #define OS_WIN 0
 #define OS_UNIX 0
 #define OS_GPU 1
 #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#pragma message("OS_WIN:")
+//#pragma message("OS_WIN:")
 #define OS_WIN 1
 #define OS_UNIX 0
 #define OS_GPU 0
 #else
-#pragma message("OS_UNIX:")
+//#pragma message("OS_UNIX:")
 #define OS_WIN 0
 #define OS_UNIX 1
 #define OS_GPU 0
@@ -223,7 +223,7 @@ extern "C" __device__ int __atoi64(const char *z, int64 *out, int length, TEXTEN
 extern "C" __device__ bool _atoi(const char *z, int *out);
 __device__ __forceinline int _atoi(const char *z) { int out = 0; if (z) _atoi(z, &out); return out; }
 #define _itoa(i, b) _itoa64((int64)i, b)
-extern "C" __device__ char *_itoa64(int i, char *b);
+extern "C" __device__ char *_itoa64(int64 i, char *b);
 #pragma endregion
 
 extern "C" __device__ inline uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }

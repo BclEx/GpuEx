@@ -108,7 +108,7 @@ __device__ char *Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2, int f
 	Var *varPtr = (Var *)Tcl_GetHashValue(hPtr);
 	if (varPtr->flags & VAR_UPVAR) {
 		hPtr = varPtr->value.upvarPtr;
-		varPtr = (Var *) Tcl_GetHashValue(hPtr);
+		varPtr = (Var *)Tcl_GetHashValue(hPtr);
 	}
 
 	// If this is an array reference, then remember the traces on the array and lookup the element within the array.

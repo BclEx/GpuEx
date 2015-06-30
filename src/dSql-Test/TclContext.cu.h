@@ -13,7 +13,7 @@ struct SqlFunc
 	Tcl_Interp *Interp;		// The TCL interpret to execute the function
 	Tcl_Obj *Script;		// The Tcl_Obj representation of the script
 	TclContext *Ctx;		// Database connection that owns this function
-	bool UseEvalObjv;	// True if it is safe to use Tcl_EvalObjv
+	//bool UseEvalObjv;	// True if it is safe to use Tcl_EvalObjv
 	char *Name;			// Name of this function
 	SqlFunc *Next;		// Next function on the list of them all
 };

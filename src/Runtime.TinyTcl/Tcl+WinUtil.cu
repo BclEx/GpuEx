@@ -49,13 +49,13 @@ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 		Tcl_AppendResult(interp, "couldn't read file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		goto error;
 	}
-	int fileSize;
-	//struct stat statBuf;
-	//if (fstat(file, &statBuf) == -1) {
-	//	Tcl_AppendResult(interp, "couldn't stat file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
-	//	fclose(file);
-	//	goto error;
-	//}
+	struct stat statBuf;
+	if (fstat(fileno(file), &statBuf) == -1) {
+		Tcl_AppendResult(interp, "couldn't stat file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
+		fclose(file);
+		goto error;
+	}
+	int fileSize = statBuf.st_size;
 	char *cmdBuffer = (char *)_allocFast((unsigned)fileSize+1);
 	if (fread(cmdBuffer, fileSize, 1, file) != fileSize) {
 		Tcl_AppendResult(interp, "error in reading file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
@@ -272,7 +272,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				Tcl_AppendResult(interp, "couldn't create input file for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
-			int length = strlen(input);
+			int length = (int)strlen(input);
 			if (fwrite(input, length, 1, inputId) != length) {
 				Tcl_AppendResult(interp, "couldn't write file input for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -300,14 +300,14 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				goto error;
 			}
 		}
-	//} else if (inPipePtr != NULL) {
-	//	if (pipe(pipeIds) != 0) {
-	//		Tcl_AppendResult(interp, "couldn't create input pipe for command: ", Tcl_OSError(interp), (char *)NULL);
-	//		goto error;
-	//	}
-	//	inputId = pipeIds[0];
-	//	*inPipePtr = pipeIds[1];
-	//	pipeIds[0] = pipeIds[1] = NULL;
+		//} else if (inPipePtr != NULL) {
+		//	if (pipe(pipeIds) != 0) {
+		//		Tcl_AppendResult(interp, "couldn't create input pipe for command: ", Tcl_OSError(interp), (char *)NULL);
+		//		goto error;
+		//	}
+		//	inputId = pipeIds[0];
+		//	*inPipePtr = pipeIds[1];
+		//	pipeIds[0] = pipeIds[1] = NULL;
 	}
 
 	// Set up the redirected output sink for the pipeline from one of two places, if requested.
@@ -337,15 +337,15 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				goto error;
 			}
 		}
-	//} else if (outPipePtr != NULL) {
-	//	// Output is to go to a pipe.
-	//	if (pipe(pipeIds) != 0) {
-	//		Tcl_AppendResult(interp, "couldn't create output pipe: ", Tcl_OSError(interp), (char *)NULL);
-	//		goto error;
-	//	}
-	//	lastOutputId = pipeIds[1];
-	//	*outPipePtr = pipeIds[0];
-	//	pipeIds[0] = pipeIds[1] = NULL;
+		//} else if (outPipePtr != NULL) {
+		//	// Output is to go to a pipe.
+		//	if (pipe(pipeIds) != 0) {
+		//		Tcl_AppendResult(interp, "couldn't create output pipe: ", Tcl_OSError(interp), (char *)NULL);
+		//		goto error;
+		//	}
+		//	lastOutputId = pipeIds[1];
+		//	*outPipePtr = pipeIds[0];
+		//	pipeIds[0] = pipeIds[1] = NULL;
 	}
 	// If we are redirecting stderr with 2>filename or 2>@fileId, then we ignore errFilePtr
 	FILE *errorId = NULL; // Writable file id for all standard error output from all commands in pipeline.  -1 means use stderr.
@@ -412,12 +412,12 @@ errFileError:
 		argv[lastArg] = NULL;
 		if (lastArg == argc) {
 			outputId = lastOutputId;
-		//} else {
-		//	if (pipe(pipeIds) != 0) {
-		//		Tcl_AppendResult(interp, "couldn't create pipe: ", Tcl_OSError(interp), (char *)NULL);
-		//		goto error;
-		//	}
-		//	outputId = pipeIds[1];
+			//} else {
+			//	if (pipe(pipeIds) != 0) {
+			//		Tcl_AppendResult(interp, "couldn't create pipe: ", Tcl_OSError(interp), (char *)NULL);
+			//		goto error;
+			//	}
+			//	outputId = pipeIds[1];
 		}
 		char *execName = Tcl_TildeSubst(interp, argv[firstArg]);
 		int pid = -1; //Tcl_Fork();

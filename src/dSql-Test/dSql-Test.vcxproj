@@ -23,26 +23,23 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TclContext.cu.h" />
+  </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <ClCompile Include="Program.cu" />
+    <ClCompile Include="TclContext.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
+    <CudaCompile Include="TclContext.cu" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="tclsqlite.c" />
     <None Include="all.test" />
     <None Include="full.test" />
     <None Include="tests\permutations.test" />
     <None Include="veryquick.test" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="tclsqlite.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="TclContext.cu" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="TclContext.cu.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6BEBE11A-7B56-4CA0-9E47-5C1638B1D311}</ProjectGuid>

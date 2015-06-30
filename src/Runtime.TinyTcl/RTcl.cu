@@ -13,6 +13,7 @@
 #include "Tcl+History.cu"
 #include "Tcl+Load-unix.cu"
 #include "Tcl+Load.cu"
+#include "Tcl+Obj.cu"
 #include "Tcl+Parse.cu"
 #include "Tcl+Proc.cu"
 //#include "Tcl+Main-embed.cu" -- Test Driver

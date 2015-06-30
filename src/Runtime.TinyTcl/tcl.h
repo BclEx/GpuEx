@@ -28,9 +28,20 @@ typedef struct Tcl_Interp {
 	int errorLine;		// When TCL_ERROR is returned, this gives the line number within the command where the error occurred (1 means first line).
 } Tcl_Interp;
 
-typedef char Tcl_Obj;
+typedef struct Tcl_Obj
+{
+	char *Value;	// This points to the first byte of the object's string representation. The array must be followed by a null byte (i.e., at offset length) but may also contain
+	int RefCount;	// When 0 the object will be freed.
+	int Bytes;		// The number of bytes at *value, not including the terminating null.
+	char *TypePtr;	// Denotes the object's type. Always corresponds to the type of the object's internal rep. NULL indicates the object has no internal rep (has no type).
+	__device__ __forceinline operator char *() { return Value; }
+} Tcl_Obj;
+
+
+
 typedef int *Tcl_Trace;
 typedef int *Tcl_CmdBuf;
+typedef void *Tcl_Channel;
 
 // When a TCL command returns, the string pointer interp->result points to a string containing return information from the command.  In addition,
 // the command procedure returns an integer value, which is one of the following:
@@ -155,8 +166,7 @@ extern __device__ int Tcl_ExprDouble(Tcl_Interp *interp, char *string, double *p
 extern __device__ int Tcl_ExprLong(Tcl_Interp *interp, char *string, long *ptr);
 extern __device__ int Tcl_ExprString(Tcl_Interp *interp, char *string);
 extern __device__ int Tcl_Fork();
-inline __device__ char *Tcl_GetString(Tcl_Interp *interp, char *string, int *stringLength) { *stringLength = _strlen(string); return string; }
-extern __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr);
+extern __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, bool *boolPtr);
 extern __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr);
 extern __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr);
 extern __device__ int Tcl_GetWideInt(Tcl_Interp *interp, char *string, int64 *intPtr);
@@ -225,10 +235,14 @@ extern __device__ ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1, 
 extern __device__ int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr);
 
 // EXTRA
-inline __device__ Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *obj);
+__device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, Tcl_Obj *objv[], const char *message);
+inline __device__ char *Tcl_GetString(Tcl_Interp *interp, Tcl_Obj *obj, int *length) { *length = obj->Bytes; return (char *)obj; }
+//inline __device__ Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *obj);
+extern __device__ Tcl_Obj *Tcl_NewObj(const char *value, int length, char *typeName = nullptr);
+//extern __device__ int Tcl_ObjAppendElement(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_Obj *appendObj);
 extern __device__ void Tcl_IncrRefCount(Tcl_Obj *obj);
 extern __device__ void Tcl_DecrRefCount(Tcl_Obj *obj);
-
+extern __device__ void Tcl_BackgroundError(Tcl_Interp *interp);
 
 #endif /* __TCL_H__ */
 
