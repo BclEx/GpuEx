@@ -12,6 +12,10 @@
 #include "Tcl+Get.cu"
 #include "Tcl+Glob.cu"
 #undef STATIC_SIZE
+#include "Tcl+GpuAZ.cu"
+#include "Tcl+GpuEnv.cu"
+#include "Tcl+GpuStr.cu"
+#include "Tcl+GpuUtil.cu"
 #include "Tcl+Hash.cu"
 #include "Tcl+History.cu"
 #include "Tcl+Load-unix.cu"

@@ -123,6 +123,7 @@
   <ItemGroup>
     <ClInclude Include="regex_compat.h" />
     <ClInclude Include="Tcl.h" />
+    <ClInclude Include="Tcl+Gpu.h" />
     <ClInclude Include="Tcl+Hash.h" />
     <ClInclude Include="Tcl+Int.h" />
     <ClInclude Include="Tcl+Load.h" />
@@ -149,6 +150,10 @@
     <ClCompile Include="Tcl+Expr.cu" />
     <ClCompile Include="Tcl+Get.cu" />
     <ClCompile Include="Tcl+Glob.cu" />
+    <ClCompile Include="Tcl+GpuAZ.cu" />
+    <ClCompile Include="Tcl+GpuEnv.cu" />
+    <ClCompile Include="Tcl+GpuStr.cu" />
+    <ClCompile Include="Tcl+GpuUtil.cu" />
     <ClCompile Include="Tcl+Hash.cu" />
     <ClCompile Include="Tcl+History.cu" />
     <ClCompile Include="Tcl+Load.cu" />
@@ -190,6 +195,10 @@
     <None Include="Tcl+Expr.cu" />
     <None Include="Tcl+Get.cu" />
     <None Include="Tcl+Glob.cu" />
+    <None Include="Tcl+GpuAZ.cu" />
+    <None Include="Tcl+GpuEnv.cu" />
+    <None Include="Tcl+GpuStr.cu" />
+    <None Include="Tcl+GpuUtil.cu" />
     <None Include="Tcl+Hash.cu" />
     <None Include="Tcl+History.cu" />
     <None Include="Tcl+Load.cu" />

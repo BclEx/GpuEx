@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <io.h> // _findfirst and _findnext set errno iff they return -1
 #endif
-//http://www.opensource.apple.com/source/Libc/Libc-167/stdlib.subproj/
+//http://www.opensource.apple.com/source/Libc/Libc-167/
 
 //////////////////////
 // FUNC
@@ -29,7 +29,7 @@ __device__ void __sleep(unsigned long milliseconds)
 __device__ int __errno;
 #endif
 
-// strtol_, strtod, strtoq_
+// strtol_, strtoq_
 #if __CUDACC__
 // Convert a string to a long integer.
 //
@@ -113,11 +113,6 @@ __device__ unsigned long _strtol_(const char *str, char **endptr, register int b
 	return acc;
 }
 
-__device__ double _strtod(const char *str, char **endptr)
-{
-	return 0;
-}
-
 // Convert a string to an unsigned quad integer.
 //
 // Ignores 'locale' stuff.  Assumes that the upper and lower case alphabets and digits are each contiguous.
@@ -198,7 +193,108 @@ __device__ u_quad_t _strtoq_(const char *str, char **endptr, register int base, 
 		*endptr = (char *)(any ? s - 1 : str);
 	return acc;
 }
+#endif
 
+// strtod
+#if __CUDACC__
+#define DBL_MAX_EXP 1024                    /* max binary exponent */
+#define DBL_MIN_EXP (-1021)                 /* min binary exponent */
+__device__ double _strtod(const char *str, char **endptr)
+{
+	// Skip leading whitespace
+	char *p = (char *)str;
+	while (_isspace(*p)) p++;
+
+	// Handle optional sign
+	int negative = 0;
+	switch (*p)
+	{
+	case '-': negative = 1; // Fall through to increment position
+	case '+': p++;
+	}
+
+	double number = 0.;
+	int exponent = 0;
+	int num_digits = 0;
+	int num_decimals = 0;
+
+	// Process string of digits
+	while (_isdigit(*p))
+	{
+		number = number * 10. + (*p - '0');
+		p++;
+		num_digits++;
+	}
+
+	// Process decimal part
+	if (*p == '.')
+	{
+		p++;
+		while (_isdigit(*p))
+		{
+			number = number * 10. + (*p - '0');
+			p++;
+			num_digits++;
+			num_decimals++;
+		}
+		exponent -= num_decimals;
+	}
+	if (num_digits == 0)
+	{
+		__errno = ERANGE;
+		return 0.0;
+	}
+
+	// Correct for sign
+	if (negative) number = -number;
+
+	// Process an exponent string
+	int n;
+	if (*p == 'e' || *p == 'E')
+	{
+		// Handle optional sign
+		negative = 0;
+		switch (*++p)
+		{
+		case '-': negative = 1;   // Fall through to increment pos
+		case '+': p++;
+		}
+		// Process string of digits
+		n = 0;
+		while (_isdigit(*p))
+		{
+			n = n * 10 + (*p - '0');
+			p++;
+		}
+		if (negative) exponent -= n;
+		else exponent += n;
+	}
+
+	if (exponent < DBL_MIN_EXP  || exponent > DBL_MAX_EXP)
+	{
+		__errno = ERANGE;
+		return _HUGE_VAL;
+	}
+
+	// Scale the result
+	double p10 = 10.;
+	n = exponent;
+	if (n < 0) n = -n;
+	while (n)
+	{
+		if (n & 1)
+		{
+			if (exponent < 0) number /= p10;
+			else number *= p10;
+		}
+		n >>= 1;
+		p10 *= p10;
+	}
+
+	if (number == _HUGE_VAL) __errno = ERANGE;
+	if (endptr) *endptr = p;
+	return number;
+}
 #endif
 
 // strrchr
@@ -671,11 +767,7 @@ doswitch:
 // qsort
 #if __CUDACC__
 
-//static inline char *med3 __P((char *, char *, char *, int (*)()));
-//static inline void swapfunc __P((char *, char *, int, int));
 #define min(a, b) ((a) < (b) ? a : b)
-
-// Qsort routine from Bentley & McIlroy's "Engineering a Sort Function".
 #define swapcode(TYPE, parmi, parmj, n) {\
 	long i = (n) / sizeof (TYPE);\
 	register TYPE *pi = (TYPE *)(parmi);\
@@ -697,9 +789,9 @@ __device__ static inline char *med3(char *a, char *b, char *c, int (*cmp)(const 
 	return (cmp(a, b)<0 ? (cmp(b, c)<0?b:(cmp(a, c)<0?c:a)) : (cmp(b, c)>0?b:(cmp(a, c)<0?a:c)));
 }
 
-//__device__ void _qsort(void *base, size_t num, size_t size, int (*compar)(const void*,const void*))
-__device__ void _qsort(char *a, size_t n, size_t es, int (*cmp)(const void*,const void*))
+__device__ void _qsort(void *base, size_t n, size_t es, int (*cmp)(const void*,const void*))
 {
+	char *a = (char *)base;
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	int d, r, swaptype, swap_cnt;
 loop:
@@ -800,15 +892,15 @@ __device__ char *_getenv(const char *name)
 #endif
 
 #if __CUDACC__
-__device__ int _chmod(const char *a, mode_t m)
+__device__ int __chmod(const char *a, mode_t m)
 {
 	return 0;
 }
-__device__ int _mkdir(const char *a, mode_t m)
+__device__ int __mkdir(const char *a, mode_t m)
 {
 	return 0;
 }
-__device__ int _mkfifo(const char *a, mode_t m)
+__device__ int __mkfifo(const char *a, mode_t m)
 {
 	return 0;
 }

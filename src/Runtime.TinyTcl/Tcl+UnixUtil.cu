@@ -69,7 +69,7 @@ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 		goto error;
 	}
 	char *cmdBuffer = (char *)_allocFast((unsigned)statBuf.st_size+1);
-	if (read(fileId, cmdBuffer, (int) statBuf.st_size) != statBuf.st_size) {
+	if (read(fileId, cmdBuffer, (int)statBuf.st_size) != statBuf.st_size) {
 		Tcl_AppendResult(interp, "error in reading file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		close(fileId);
 		_freeFast(cmdBuffer);
