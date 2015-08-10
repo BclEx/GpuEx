@@ -235,9 +235,9 @@ extern __device__ ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1, 
 extern __device__ int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr);
 
 // EXTRA
-__device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, char *objv[], const char *message);
 inline __device__ char *Tcl_GetString(Tcl_Interp *interp, Tcl_Obj *obj, int *length) { *length = obj->Bytes; return (char *)obj; }
 //inline __device__ Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *obj);
+extern __device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, char *objv[], const char *message);
 extern __device__ Tcl_Obj *Tcl_NewObj(const char *value, int length, char *typeName = nullptr);
 //extern __device__ int Tcl_ObjAppendElement(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_Obj *appendObj);
 extern __device__ void Tcl_IncrRefCount(Tcl_Obj *obj);

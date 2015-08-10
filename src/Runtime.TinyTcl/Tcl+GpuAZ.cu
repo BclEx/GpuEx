@@ -1,5 +1,5 @@
 #include "Tcl+Int.h"
-#if OS_GPU
+#if 0 && OS_GPU
 #include "Tcl+Gpu.h"
 
 // The variable below caches the name of the current working directory in order to avoid repeated calls to getwd.  The string is malloc-ed. NULL means the cache needs to be refreshed.

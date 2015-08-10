@@ -1,6 +1,10 @@
 // sky:added
 #include "Tcl+Int.h"
 
+__device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, char *objv[], const char *message)
+{
+}
+
 __device__ Tcl_Obj *Tcl_NewObj(char *value, int length, char *typeName)
 {
 	return nullptr;
