@@ -29,15 +29,15 @@
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
     <ClCompile Include="Program.cu" />
     <ClCompile Include="TclContext.cu" />
+    <ClCompile Include="TclContext+Test.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="TclContext.cu" />
+    <CudaCompile Include="TclContext+Test.cu" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="tclsqlite.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </None>
+    <None Include="tclsqlite.c" />
     <None Include="all.test" />
     <None Include="full.test" />
     <None Include="tests\permutations.test" />
@@ -53,7 +53,6 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <CLRSupport>true</CLRSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -61,7 +60,6 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <CLRSupport>true</CLRSupport>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

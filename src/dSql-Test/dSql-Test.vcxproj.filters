@@ -3,6 +3,7 @@
   <ItemGroup>
     <ClCompile Include="Program.cu" />
     <ClCompile Include="TclContext.cu" />
+    <ClCompile Include="TclContext+Test.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="test">
