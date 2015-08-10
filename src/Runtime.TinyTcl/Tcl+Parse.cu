@@ -257,7 +257,7 @@ copy:
 				(*pvPtr->expandProc)(pvPtr, length);
 				dst = pvPtr->next;
 			}
-			strcpy(dst, value);
+			_strcpy(dst, value);
 			dst += length;
 			continue;
 		} else if (c == '[') {

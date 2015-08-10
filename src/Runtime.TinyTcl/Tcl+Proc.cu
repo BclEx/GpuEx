@@ -87,7 +87,7 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		_strcpy(argPtr->name, fieldValues[0]);
 		if (fieldCount == 2) {
 			argPtr->defValue = argPtr->name + nameLength;
-			strcpy(argPtr->defValue, fieldValues[1]);
+			_strcpy(argPtr->defValue, fieldValues[1]);
 		} else {
 			argPtr->defValue = NULL;
 		}

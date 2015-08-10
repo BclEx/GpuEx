@@ -121,7 +121,7 @@ __device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *com
 	}
 	_fputc('\n', traceInfoPtr->filePtr);
 	if (traceInfoPtr->flush)
-		fflush(traceInfoPtr->filePtr);
+		_fflush(traceInfoPtr->filePtr);
 }
 
 /*
@@ -160,7 +160,7 @@ __device__  static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *inter
 *
 *-----------------------------------------------------------------------------
 */
-static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
+__device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
 {
 	//Interp *iPtr = (Interp *)interp;
 	traceInfo_pt infoPtr = (traceInfo_pt)clientData;
@@ -173,7 +173,7 @@ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp, int argc, 
 	if (STREQU(argv[1], "depth")) {
 		if (argc != 2)
 			goto argumentError;
-		sprintf(interp->result, "%d", infoPtr->depth);
+		_sprintf(interp->result, "%d", infoPtr->depth);
 		return TCL_OK;
 	}
 

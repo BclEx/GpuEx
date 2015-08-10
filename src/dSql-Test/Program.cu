@@ -3,7 +3,7 @@
 #if __CUDACC__
 void GMain(cudaDeviceHeap &r) {
 #else
-void main(int argc, char **argv) { cudaDeviceHeap r;
+void main(int argc, char **argv) { //cudaDeviceHeap r;
 #endif
 }
 

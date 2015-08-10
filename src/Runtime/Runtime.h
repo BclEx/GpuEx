@@ -36,12 +36,18 @@ typedef struct
 #define __host_constant__
 #endif
 #include "Runtime.cu.h"
+// panic
+#define _abort() asm("trap;")
+#define _panic(fmt, ...) printf(fmt, __VA_ARGS__)
 #else
 #define __host_device__
 #define __host_constant__
 #include <string.h>
 #include <malloc.h>
 #include "Runtime.cpu.h"
+// panic
+#define _abort() abort()
+#define _panic(fmt, ...) printf(fmt, __VA_ARGS__)
 #endif
 
 //// Macro to use instead of "void" for arguments that must have type "void *" in ANSI C;  maps them to type "char *" in non-ANSI systems.

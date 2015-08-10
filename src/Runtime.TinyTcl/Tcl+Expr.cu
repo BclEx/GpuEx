@@ -131,16 +131,16 @@ __device__ static int ExprParseString(Tcl_Interp *interp, char *string, Value *v
 	if ((c >= '0' && c <= '9') || c == '-' || c == '.') {
 		char *term;
 		valuePtr->type = TYPE_INT;
-		errno = 0;
+		__errno = 0;
 		valuePtr->intValue = (int)_strtol(string, &term, 0);
 		c = *term;
-		if (c == '\0' && errno != ERANGE) {
+		if (c == '\0' && __errno != ERANGE) {
 			return TCL_OK;
 		}
-		if (c == '.' || c == 'e' || c == 'E' || errno == ERANGE) {
-			errno = 0;
+		if (c == '.' || c == 'e' || c == 'E' || __errno == ERANGE) {
+			__errno = 0;
 			valuePtr->doubleValue = _strtod(string, &term);
-			if (errno == ERANGE) {
+			if (__errno == ERANGE) {
 				Tcl_ResetResult(interp);
 				if (valuePtr->doubleValue == 0.0) {
 					Tcl_AppendResult(interp, "floating-point value \"", string, "\" too small to represent", (char *)NULL);
@@ -213,15 +213,15 @@ __device__ static int ExprLex(Tcl_Interp *interp, register ExprInfo *infoPtr, re
 		// number to fit in an integer), parse it as a floating-point number.
 		infoPtr->token = VALUE;
 		valuePtr->type = TYPE_INT;
-		errno = 0;
+		__errno = 0;
 		char *term;
 		valuePtr->intValue = _strtoul(p, &term, 0);
 		c = *term;
-		if (c == '.' || c == 'e' || c == 'E' || errno == ERANGE) {
+		if (c == '.' || c == 'e' || c == 'E' || __errno == ERANGE) {
 			char *term2;
-			errno = 0;
+			__errno = 0;
 			valuePtr->doubleValue = _strtod(p, &term2);
-			if (errno == ERANGE) {
+			if (__errno == ERANGE) {
 				Tcl_ResetResult(interp);
 				if (valuePtr->doubleValue == 0.0) {
 					interp->result = "floating-point value too small to represent";
@@ -478,7 +478,7 @@ __device__ static int ExprGetValue(Tcl_Interp *interp, register ExprInfo *infoPt
 				if (valuePtr->type == TYPE_INT) {
 					valuePtr->intValue = ~valuePtr->intValue;
 				} else {
-					badType  = valuePtr->type;
+					badType = valuePtr->type;
 					goto illegalType;
 				}
 				break;
@@ -803,7 +803,7 @@ syntaxError:
 	goto done;
 
 illegalType:
-	Tcl_AppendResult(interp, "can't use ", (badType == TYPE_DOUBLE ? "floating-point value" : "non-numeric string", " as operand of \"", _operatorStrings[operator_], "\"", (char *)NULL));
+	Tcl_AppendResult(interp, "can't use ", (badType == TYPE_DOUBLE ? "floating-point value" : "non-numeric string"), " as operand of \"", _operatorStrings[operator_], "\"", (char *)NULL);
 	result = TCL_ERROR;
 	goto done;
 }

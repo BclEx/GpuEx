@@ -21,26 +21,26 @@ struct mem_header {
 	char body[1];
 };
 
-static struct mem_header *_allocHead = NULL;  // List of allocated structures
+__device__ static struct mem_header *_allocHead = NULL;  // List of allocated structures
 
 #define GUARD_VALUE 0341
 
 /* static char high_guard[] = {0x89, 0xab, 0xcd, 0xef}; */
 
-static int _total_mallocs = 0;
-static int _total_frees = 0;
-static long _current_bytes_malloced = 0;
-static long _maximum_bytes_malloced = 0;
-static int _current_malloc_packets = 0;
-static int _maximum_malloc_packets = 0;
-static int _break_on_malloc = 0;
-static int _trace_on_at_malloc = 0;
-static bool _alloc_tracing = false;
-static bool _init_malloced_bodies = false;
+__device__ static int _total_mallocs = 0;
+__device__ static int _total_frees = 0;
+__device__ static long _current_bytes_malloced = 0;
+__device__ static long _maximum_bytes_malloced = 0;
+__device__ static int _current_malloc_packets = 0;
+__device__ static int _maximum_malloc_packets = 0;
+__device__ static int _break_on_malloc = 0;
+__device__ static int _trace_on_at_malloc = 0;
+__device__ static bool _alloc_tracing = false;
+__device__ static bool _init_malloced_bodies = false;
 #ifdef MEM_VALIDATE
-bool _validate_memory = true;
+__device__ bool _validate_memory = true;
 #else
-bool _validate_memory = false;
+__device__ bool _validate_memory = false;
 #endif
 
 /*
@@ -85,7 +85,7 @@ __device__ static void ValidateMemory(struct mem_header *memHeaderP, char *file,
 	}
 	if (guard_failed) {
 		dump_memory_info(stderr);
-		_fprintf(stderr, "low guard failed at %lx, %s %d\n", (unsigned long)memHeaderP->body, file, line);
+		_fprintf(stderr, "low guard failed at %lx, %s %d\n", memHeaderP->body, file, line);
 		_fflush(stderr); // In case name pointer is bad.
 		_fprintf(stderr, "%ld bytes allocated at (%s %d)\n", memHeaderP->length, memHeaderP->file, memHeaderP->line);
 		_panic("Memory validation failure");
@@ -102,7 +102,7 @@ __device__ static void ValidateMemory(struct mem_header *memHeaderP, char *file,
 	}
 	if (guard_failed) {
 		dump_memory_info (stderr);
-		_fprintf(stderr, "high guard failed at %lx, %s %d\n", (unsigned long)memHeaderP->body, file, line);
+		_fprintf(stderr, "high guard failed at %lx, %s %d\n", memHeaderP->body, file, line);
 		_fflush(stderr); // In case name pointer is bad.
 		_fprintf(stderr, "%ld bytes allocated at (%s %d)\n", memHeaderP->length, memHeaderP->file, memHeaderP->line);
 		_panic("Memory validation failure");
@@ -121,7 +121,7 @@ __device__ static void ValidateMemory(struct mem_header *memHeaderP, char *file,
 *
 *----------------------------------------------------------------------
 */
-void Tcl_ValidateAllMemory(char *file, int line)
+__device__ void Tcl_ValidateAllMemory(char *file, int line)
 {
 	struct mem_header *memScanP;
 	for (memScanP = _allocHead; memScanP != NULL; memScanP = memScanP->flink)
@@ -147,7 +147,7 @@ __device__ int Tcl_DumpActiveMemory(char *fileName)
 	struct mem_header *memScanP;
 	for (memScanP = _allocHead; memScanP != NULL; memScanP = memScanP->flink) {
 		char *address = &memScanP->body[0];
-		_fprintf(fileP, "%8lx - %8lx  %7ld @ %s %d", (unsigned long)address, (unsigned long)address + memScanP->length - 1, memScanP->length, memScanP->file, memScanP->line);
+		_fprintf(fileP, "%8lx - %8lx  %7ld @ %s %d", address, address + memScanP->length - 1, memScanP->length, memScanP->file, memScanP->line);
 		if (!_strcmp(memScanP->file, "Tcl+Hash.cpp") && memScanP->line == 515) {
 			_fprintf(fileP, "\t|%s|", ((Tcl_HashEntry *)address)->key.string);
 		}
@@ -202,14 +202,14 @@ __device__ char *Tcl_MemAlloc(unsigned int size, char *file, int line)
 		_trace_on_at_malloc = 0;
 	}
 	if (_alloc_tracing)
-		_fprintf(stderr,"_allocFast %lx %d %s %d\n", (unsigned long)result->body, size, file, line);
+		_fprintf(stderr,"_allocFast %lx %d %s %d\n", result->body, size, file, line);
 	if (_break_on_malloc && (_total_mallocs >= _break_on_malloc)) {
 		_break_on_malloc = 0;
 		_fflush(stdout);
 		_fprintf(stderr, "reached malloc break limit (%d)\n", _total_mallocs);
 		_fprintf(stderr, "program will now enter C debugger\n");
 		_fflush(stderr);
-		abort();
+		_abort();
 	}
 	_current_malloc_packets++;
 	if (_current_malloc_packets > _maximum_malloc_packets)
@@ -238,9 +238,9 @@ __device__ char *Tcl_MemAlloc(unsigned int size, char *file, int line)
 __device__ int Tcl_MemFree(char *ptr, char *file, int line)
 {
 	struct mem_header *memp = 0; // Must be zero for size calc
-	memp = (struct mem_header *)(((char *)ptr) - (int)memp->body); // Since header ptr is zero, body offset will be size
+	memp = (struct mem_header *)(((char *)ptr) - memp->body); // Since header ptr is zero, body offset will be size
 	if (_alloc_tracing)
-		_fprintf(stderr, "_freeFast %lx %ld %s %d\n", (unsigned long)memp->body, memp->length, file, line);
+		_fprintf(stderr, "_freeFast %lx %ld %s %d\n", memp->body, memp->length, file, line);
 	if (_validate_memory)
 		Tcl_ValidateAllMemory(file, line);
 	ValidateMemory(memp, file, line, true);
@@ -255,7 +255,7 @@ __device__ int Tcl_MemFree(char *ptr, char *file, int line)
 		memp->blink->flink = memp->flink;
 	if (_allocHead == memp)
 		_allocHead = memp->flink;
-	free((char *)memp);
+	_free((char *)memp);
 	return 0;
 }
 

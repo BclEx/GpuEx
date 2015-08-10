@@ -715,7 +715,7 @@ __device__ void Tcl_AddErrorInfo(Tcl_Interp *interp, char *message)
 *
 *----------------------------------------------------------------------
 */
-__device__ int _Tcl_VarEval(Tcl_Interp *interp, _va_list *argList)
+__device__ int _Tcl_VarEval(Tcl_Interp *interp, _va_list &argList)
 {
 #define FIXED_SIZE 200
 	// Copy the strings one after the other into a single larger string.  Use stack-allocated space for small commands, but if

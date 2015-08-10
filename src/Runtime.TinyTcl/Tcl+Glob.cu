@@ -10,6 +10,7 @@
 
 #include "Tcl+Int.h"
 #include <sys/stat.h>
+#include <RuntimeOS.h>
 
 // The structure below is used to keep track of a globbing result being built up (i.e. a partial list of file names).  The list grows dynamically to be as big as needed.
 typedef struct {
@@ -170,7 +171,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 			dirName = dir;
 		}
 		struct stat statBuf;
-		if (stat(dirName, &statBuf) != 0 || !S_ISDIR(statBuf.st_mode)) {
+		if (__stat(dirName, &statBuf) != 0 || !S_ISDIR(statBuf.st_mode)) {
 			return TCL_OK;
 		}
 		DIR *d = _opendir(dirName);

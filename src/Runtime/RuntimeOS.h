@@ -1,6 +1,8 @@
 #ifndef __RUNTIMEOS_H__
 #define __RUNTIMEOS_H__
+//#include <sys/stat.h>
 
+/*
 //////////////////////
 // OPERATING SYSTEM
 #pragma region OPERATING SYSTEM
@@ -147,5 +149,6 @@ __device__ struct dirent *_readdir(DIR *);
 __device__ void _rewinddir(DIR *);
 
 #pragma endregion
+*/
 
 #endif // __RUNTIMEOS_H__

@@ -673,7 +673,7 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 	Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
 	char *oldResult = iPtr->result;
 	iPtr->freeProc = freeProc;
-	if (string == NULL) {
+	if (!string) {
 		iPtr->resultSpace[0] = 0;
 		iPtr->result = iPtr->resultSpace;
 		iPtr->freeProc = 0;
@@ -716,10 +716,10 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 *----------------------------------------------------------------------
 */
 #if __CUDACC__
-void _Tcl_AppendResult(Tcl_Interp *interp, _va_list *argList)
+__device__ void _Tcl_AppendResult(Tcl_Interp *interp, _va_list &argList)
 {
 #else
-void Tcl_AppendResult(Tcl_Interp *interp, ...)
+__device__ void Tcl_AppendResult(Tcl_Interp *interp, ...)
 {
 	_va_list argList;
 	_va_start(argList, interp);
@@ -730,7 +730,7 @@ void Tcl_AppendResult(Tcl_Interp *interp, ...)
 	int newSpace = 0;
 	while (true) {
 		string = _va_arg(argList, char *);
-		if (string == NULL) {
+		if (!string) {
 			break;
 		}
 		newSpace += _strlen(string);
@@ -886,7 +886,7 @@ __device__ void Tcl_ResetResult(Tcl_Interp *interp)
 *
 *----------------------------------------------------------------------
 */
-__device__ void _Tcl_SetErrorCode(Tcl_Interp *interp, _va_list *argList)
+__device__ void _Tcl_SetErrorCode(Tcl_Interp *interp, _va_list &argList)
 {
 	register Interp *iPtr = (Interp *)interp;
 	// Scan through the arguments one at a time, appending them to $errorCode as list elements.

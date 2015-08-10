@@ -492,15 +492,15 @@ badStat:
 		return TCL_OK;
 	}
 	switch (statOp) {
-		//case 0:
+	case 0:
 		//	mode = (geteuid() == statBuf.st_uid);
-		//	break;
-		//case 1:
+		break;
+	case 1:
 		//	mode = S_ISREG(statBuf.st_mode);
-		//	break;
-		//case 2:
+		break;
+	case 2:
 		//	mode = S_ISDIR(statBuf.st_mode);
-		//	break;
+		break;
 	}
 	if (mode) {
 		interp->result = "1";

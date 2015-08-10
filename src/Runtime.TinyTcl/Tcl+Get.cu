@@ -116,7 +116,7 @@ __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr)
+__device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, bool *boolPtr)
 {
 	char c, lowerCase[10]; // Convert the input string to all lower-case.
 	int i;
@@ -135,22 +135,22 @@ __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, int *boolPtr)
 	int length = _strlen(lowerCase);
 	c = lowerCase[0];
 	if (c == '0' && lowerCase[1] == '\0') {
-		*boolPtr = 0;
+		*boolPtr = false;
 	} else if (c == '1' && lowerCase[1] == '\0') {
-		*boolPtr = 1;
+		*boolPtr = true;
 	} else if (c == 'y' && !_strncmp(lowerCase, "yes", length)) {
-		*boolPtr = 1;
+		*boolPtr = true;
 	} else if (c == 'n' && !_strncmp(lowerCase, "no", length)) {
-		*boolPtr = 0;
+		*boolPtr = false;
 	} else if (c == 't' && !_strncmp(lowerCase, "true", length)) {
-		*boolPtr = 1;
+		*boolPtr = true;
 	} else if (c == 'f' && !_strncmp(lowerCase, "false", length)) {
-		*boolPtr = 0;
+		*boolPtr = false;
 	} else if (c == 'o' && length >= 2) {
 		if (!_strncmp(lowerCase, "on", length)) {
-			*boolPtr = 1;
+			*boolPtr = true;
 		} else if (!_strncmp(lowerCase, "off", length)) {
-			*boolPtr = 0;
+			*boolPtr = false;
 		}
 	} else {
 		Tcl_AppendResult(interp, "expected boolean value but got \"", string, "\"", (char *)NULL);

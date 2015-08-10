@@ -16,7 +16,7 @@
 // The following macro takes a preliminary integer hash value and produces an index into a hash tables bucket list.  The idea is
 // to make it so that preliminary values that are arbitrarily similar will end up in different buckets.  The hash function was taken
 // from a random-number generator.
-#define RANDOM_INDEX(tablePtr, i) (((((long) (i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
+#define RANDOM_INDEX(tablePtr, i) (int)(((((long)(i))*1103515245) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 // Procedure prototypes for static procedures in this file:
 __device__ static Tcl_HashEntry *ArrayFind(Tcl_HashTable *tablePtr, char *key);
@@ -616,6 +616,6 @@ __device__ static void RebuildTable(register Tcl_HashTable *tablePtr)
 	}
 	// Free up the old bucket array, if it was dynamically allocated.
 	if (oldBuckets != tablePtr->staticBuckets) {
-		_freeFast((char *) oldBuckets);
+		_freeFast((char *)oldBuckets);
 	}
 }

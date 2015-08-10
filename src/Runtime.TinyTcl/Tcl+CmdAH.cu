@@ -92,7 +92,7 @@ __device__ int Tcl_CaseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			}
 		}
 		if (*p == 0) {
-			if (*caseArgv[i] == 'd' && !strcmp(caseArgv[i], "default")) {
+			if (*caseArgv[i] == 'd' && !_strcmp(caseArgv[i], "default")) {
 				body = i+1;
 			}
 			if (Tcl_StringMatch(string, caseArgv[i])) {
@@ -191,7 +191,7 @@ __device__ int Tcl_ConcatCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 {
 	if (argc >= 2) {
 		interp->result = Tcl_Concat(argc-1, argv+1);
-		interp->freeProc = (Tcl_FreeProc *)free;
+		interp->freeProc = (Tcl_FreeProc *)_free;
 	}
 	return TCL_OK;
 }
@@ -283,7 +283,7 @@ __device__ int Tcl_EvalCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	}
 	if (result == TCL_ERROR) {
 		char msg[60];
-		sprintf(msg, "\n    (\"eval\" body line %d)", interp->errorLine);
+		_sprintf(msg, "\n    (\"eval\" body line %d)", interp->errorLine);
 		Tcl_AddErrorInfo(interp, msg);
 	}
 	return result;

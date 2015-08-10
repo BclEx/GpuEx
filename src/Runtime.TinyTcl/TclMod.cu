@@ -45,8 +45,8 @@ __constant__ static const tclmod_command_type tclmod_command_entry = {
 */
 __device__ static int check_match_command(Tcl_Interp *interp, const tclmod_command_type *ct, int argc, char *argv[])
 {
-	if (strcmp(ct->cmd, argv[1]) == 0) {
-		if (argc == 3 && strcmp(argv[2], "?") == 0) {
+	if (!_strcmp(ct->cmd, argv[1])) {
+		if (argc == 3 && !_strcmp(argv[2], "?")) {
 			Tcl_AppendResult (interp, "Usage: ", argv[0], " ", ct->cmd, " ", ct->args, "\n\n", ct->description, (char *)NULL);
 			return -1;
 		}

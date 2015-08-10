@@ -73,7 +73,7 @@ __device__ int Tcl_SleepCmd(ClientData clientData, Tcl_Interp *interp, int argc,
 		Tcl_AppendResult(interp, "bad # args: ", argv[0], " seconds", (char *)NULL);
 		return TCL_ERROR;
 	}
-	_sleep(_atoi(argv[1]));
+	__sleep(_atoi(argv[1]));
 	return TCL_OK;
 }
 

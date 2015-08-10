@@ -80,7 +80,7 @@ typedef char *(Tcl_VarTraceProc)(ClientData clientData, Tcl_Interp *interp, char
 // Specil freeProc values that may be passed to Tcl_SetResult (see the man page for details):
 #define TCL_VOLATILE ((Tcl_FreeProc *)-1)
 #define TCL_STATIC	((Tcl_FreeProc *)0)
-#define TCL_DYNAMIC	((Tcl_FreeProc *)free)
+#define TCL_DYNAMIC	((Tcl_FreeProc *)_free)
 
 // Flag values passed to variable-related procedures.
 #define TCL_GLOBAL_ONLY		1
@@ -120,27 +120,27 @@ extern __device__ void Tcl_ValidateAllMemory(char *file, int line);
 // Macro to free up result of interpreter.
 #define Tcl_FreeResult(interp) \
 	if ((interp)->freeProc != 0) { \
-	if ((interp)->freeProc == (Tcl_FreeProc *)free) { _freeFast((interp)->result); } \
+	if ((interp)->freeProc == (Tcl_FreeProc *)_free) { _freeFast((interp)->result); } \
 	else { (*(interp)->freeProc)((interp)->result); } \
 	(interp)->freeProc = 0; }
 
 // Exported Tcl procedures:
 extern __device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, bool noSep);
 #if __CUDACC__
-extern __device__ void _Tcl_AppendResult(Tcl_Interp *interp, _va_list *args);
-__device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp) { _va_list args; _va_start(args); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); _Tcl_AppendResult(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); _Tcl_AppendResult(interp, &args); _va_end(args); }
+extern __device__ void _Tcl_AppendResult(Tcl_Interp *interp, _va_list &args);
+__device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp) { _va_list args; _va_start(args); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); _Tcl_AppendResult(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); _Tcl_AppendResult(interp, args); _va_end(args); }
 #else
-__device__ void Tcl_AppendResult(Tcl_Interp *interp, ...); // { _va_list args; _va_start(args, interp); _Tcl_AppendResult(interp, &args); _va_end(args); }
+extern __device__ void Tcl_AppendResult(Tcl_Interp *interp, ...);
 #endif
 extern __device__ char *Tcl_AssembleCmd(Tcl_CmdBuf buffer, char *string);
 extern __device__ void Tcl_AddErrorInfo(Tcl_Interp *interp, char *message);
@@ -183,21 +183,21 @@ extern __device__ int Tcl_RecordAndEval(Tcl_Interp *interp, char *cmd, int flags
 extern __device__ void Tcl_ResetResult(Tcl_Interp *interp);
 #define Tcl_Return Tcl_SetResult
 extern __device__ int Tcl_ScanElement(const char *string, int *flagPtr);
-extern __device__ void _Tcl_SetErrorCode(Tcl_Interp *interp, _va_list *args);
+extern __device__ void _Tcl_SetErrorCode(Tcl_Interp *interp, _va_list &args);
 #if __CUDACC__
-__device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp) { _va_list args; _va_start(args); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
+__device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp) { _va_list args; _va_start(args); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); _Tcl_SetErrorCode(interp, args); _va_end(args); }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); _Tcl_SetErrorCode(interp, args); _va_end(args); }
 #else
-__device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, ...) { _va_list args; _va_start(args, interp); _Tcl_SetErrorCode(interp, &args); _va_end(args); }
+__device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, ...) { _va_list args; _va_start(args, interp); _Tcl_SetErrorCode(interp, args); _va_end(args); }
 #endif
 extern __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *freeProc);
 extern __device__ char *Tcl_SetVar(Tcl_Interp *interp, char *varName, char *newValue, int flags);
@@ -214,28 +214,28 @@ extern __device__ int Tcl_UnsetVar(Tcl_Interp *interp, char *varName, int flags)
 extern __device__ int Tcl_UnsetVar2(Tcl_Interp *interp, char *part1, char *part2, int flags);
 extern __device__ void Tcl_UntraceVar(Tcl_Interp *interp, char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData);
 extern __device__ void Tcl_UntraceVar2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData);
-extern __device__ int _Tcl_VarEval(Tcl_Interp *interp, _va_list *args);
+extern __device__ int _Tcl_VarEval(Tcl_Interp *interp, _va_list &args);
 #if __CUDACC__
-__device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp) { _va_list args; _va_start(args); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3, typename T4> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
-template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
+__device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp) { _va_list args; _va_start(args); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3, typename T4> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
 #else
-__device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, ...) { _va_list args; _va_start(args, interp); int r = _Tcl_VarEval(interp, &args); _va_end(args); return r; }
+__device__ __forceinline int Tcl_VarEval(Tcl_Interp *interp, ...) { _va_list args; _va_start(args, interp); int r = _Tcl_VarEval(interp, args); _va_end(args); return r; }
 #endif
 extern __device__ ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, char *varName, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData);
 extern __device__ ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData);
 extern __device__ int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr);
 
 // EXTRA
-__device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, Tcl_Obj *objv[], const char *message);
+__device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, char *objv[], const char *message);
 inline __device__ char *Tcl_GetString(Tcl_Interp *interp, Tcl_Obj *obj, int *length) { *length = obj->Bytes; return (char *)obj; }
 //inline __device__ Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *obj);
 extern __device__ Tcl_Obj *Tcl_NewObj(const char *value, int length, char *typeName = nullptr);

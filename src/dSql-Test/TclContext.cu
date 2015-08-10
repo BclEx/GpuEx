@@ -262,7 +262,7 @@ __device__ static void FlushStmtCache(TclContext *tctx)
 }
 
 // TCL calls this procedure when an sqlite3 database command is deleted.
-__device__ static void DbDeleteCmd(void *db)
+__device__ static void DbDeleteCmd(ClientData db)
 {
 	TclContext *tctx = (TclContext *)db;
 	FlushStmtCache(tctx);
@@ -2271,7 +2271,7 @@ __device__ RC DB_VERSION()
 // DBNAME that is used to control that connection.  The database connection is deleted when the DBNAME command is deleted.
 //
 // The second argument is the name of the database file.
-__device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> objv)
+__device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[])
 {
 	// In normal use, each TCL interpreter runs in a single thread.  So by default, we can turn of mutexing on SQLite database connections.
 	// However, for testing purposes it is useful to have mutexes turned on.  So, by default, mutexes default off.  But if compiled with
@@ -2283,9 +2283,9 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 #endif
 
 	const char *arg;
-	if (objv.length == 2)
+	if (argc == 2)
 	{
-		arg = *objv[1];
+		arg = args[1];
 		if (!_strcmp(arg, "-version"))
 		{
 			Tcl_AppendResult(interp, CORE_VERSION, 0);
@@ -2306,21 +2306,21 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 	int keyLength = 0;
 #endif
 	const char *vfsName = nullptr;
-	for (int i = 3; i + 1 < objv.length; i += 2)
+	for (int i = 3; i + 1 < argc; i += 2)
 	{
-		arg = *objv[i];
+		arg = args[i];
 		bool b;
 		if (!_strcmp(arg, "-key"))
 		{
 #ifdef HAS_CODEC
-			key = Tcl_GetString(objv[i+1], &keyLength);
+			key = Tcl_GetString(args[i+1], &keyLength);
 #endif
 		}
 		else if (!_strcmp(arg, "-vfs"))
-			vfsName = *objv[i+1];
+			vfsName = args[i+1];
 		else if (!_strcmp(arg, "-readonly"))
 		{
-			if (Tcl_GetBoolean(interp, *objv[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
 			if (b)
 			{
 				flags &= ~(VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE);
@@ -2334,7 +2334,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 		}
 		else if (!_strcmp(arg, "-create"))
 		{
-			if (Tcl_GetBoolean(interp, *objv[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
 			if (b && (flags & VSystem::OPEN_READONLY) == 0)
 				flags |= VSystem::OPEN_CREATE;
 			else
@@ -2342,7 +2342,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 		}
 		else if (!_strcmp(arg, "-nomutex"))
 		{
-			if (Tcl_GetBoolean(interp, *objv[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
 			if (b)
 			{
 				flags |= VSystem::OPEN_NOMUTEX;
@@ -2353,7 +2353,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 		}
 		else if (!_strcmp(arg, "-fullmutex"))
 		{
-			if (Tcl_GetBoolean(interp, *objv[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
 			if (b)
 			{
 				flags |= VSystem::OPEN_FULLMUTEX;
@@ -2364,7 +2364,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 		}
 		else if (!_strcmp(arg, "-uri"))
 		{
-			if (Tcl_GetBoolean(interp, *objv[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
 			if (b)
 				flags |= VSystem::OPEN_URI;
 			else
@@ -2376,9 +2376,9 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 			return RC_ERROR;
 		}
 	}
-	if (objv.length < 3 || (objv.length & 1) != 1)
+	if (argc < 3 || (argc & 1) != 1)
 	{
-		Tcl_WrongNumArgs(interp, 1, objv, "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
+		Tcl_WrongNumArgs(interp, 1, args, "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
 			" ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
 #ifdef HAS_CODEC
 			" ?-key CODECKEY?"
@@ -2394,7 +2394,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 		return RC_ERROR;
 	}
 	_memset(p, 0, sizeof(*p));
-	char *fileName = *objv[2];
+	char *fileName = args[2];
 	//fileName = Tcl_TranslateFileName(interp, fileName, &translatedFilename);
 	RC rc = Main::Open_v2(fileName, &p->Ctx, flags, vfsName);
 	if (p->Ctx)
@@ -2421,12 +2421,11 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 	}
 	p->MaxStmt = NUM_PREPARED_STMTS;
 	p->Interp = interp;
-	arg = *objv[1];
-	Tcl_CreateObjCommand(interp, arg, nullptr, (ClientData)p, DbDeleteCmd);
+	arg = args[1];
+	Tcl_CreateCommand(interp, (char *)arg, nullptr, (ClientData)p, DbDeleteCmd);
 	return TCL_OK;
 }
 #pragma endregion
-
 
 // Initialize this module.
 //
@@ -2435,7 +2434,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, array_t<Tcl_Obj *> ob
 // for additional information.
 __device__ int Sqlite3_Init(Tcl_Interp *interp)
 {
-	Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc *)DbMain, 0, 0);
+	Tcl_CreateCommand(interp, "sqlite3", (Tcl_CmdProc *)DbMain, 0, 0);
 	return TCL_OK;
 }
 __device__ int Sqlite3_Unload(Tcl_Interp *interp, int flags) { return TCL_OK; }
