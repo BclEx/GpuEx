@@ -37,8 +37,6 @@ typedef struct Tcl_Obj
 	__device__ __forceinline operator char *() { return Value; }
 } Tcl_Obj;
 
-
-
 typedef int *Tcl_Trace;
 typedef int *Tcl_CmdBuf;
 typedef void *Tcl_Channel;
@@ -151,7 +149,11 @@ extern __device__ int Tcl_ConvertElement(const char *src, char *dst, int flags);
 extern __device__ Tcl_CmdBuf Tcl_CreateCmdBuf();
 extern __device__ void Tcl_CreateCommand(Tcl_Interp *interp, char *cmdName, Tcl_CmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc);
 extern __device__ Tcl_Interp *Tcl_CreateInterp();
+#if !OS_UNIX
 extern __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, FILE **inPipePtr, FILE **outPipePtr, FILE **errFilePtr);
+#else
+extern __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr);
+#endif
 extern __device__ Tcl_Trace Tcl_CreateTrace(Tcl_Interp *interp, int level, Tcl_CmdTraceProc *proc, ClientData clientData);
 extern __device__ void Tcl_DeleteCmdBuf(Tcl_CmdBuf buffer);
 extern __device__ int Tcl_DeleteCommand(Tcl_Interp *interp, char *cmdName);
@@ -166,6 +168,7 @@ extern __device__ int Tcl_ExprDouble(Tcl_Interp *interp, char *string, double *p
 extern __device__ int Tcl_ExprLong(Tcl_Interp *interp, char *string, long *ptr);
 extern __device__ int Tcl_ExprString(Tcl_Interp *interp, char *string);
 extern __device__ int Tcl_Fork();
+extern __device__ int Tcl_GetIndex(Tcl_Interp *interp, char *string, const char *table[], char *msg, int flags, int *indexPtr);
 extern __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, bool *boolPtr);
 extern __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr);
 extern __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr);
@@ -236,6 +239,7 @@ extern __device__ int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr);
 
 // EXTRA
 inline __device__ char *Tcl_GetString(Tcl_Interp *interp, Tcl_Obj *obj, int *length) { *length = obj->Bytes; return (char *)obj; }
+inline __device__ char *Tcl_GetString(Tcl_Interp *interp, char *obj, int *length) { *length = _strlen(obj); return (char *)obj; }
 //inline __device__ Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *obj);
 extern __device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, char *objv[], const char *message);
 extern __device__ Tcl_Obj *Tcl_NewObj(const char *value, int length, char *typeName = nullptr);

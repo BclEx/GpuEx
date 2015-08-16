@@ -1822,7 +1822,7 @@ namespace CORE_NAME {
 		__device__ static void *Profile(Context *ctx, void (*profile)(void*,const char*,uint64), void *arg);
 #endif
 		__device__ static void *CommitHook(Context *ctx, RC (*callback)(void*), void *arg);
-		__device__ static void *UpdateHook(Context *ctx, void (*callback)(void*,int,char const*,char const*,int64), void *arg);
+		__device__ static void *UpdateHook(Context *ctx, void (*callback)(void*,TK,char const*,char const*,int64), void *arg);
 		__device__ static void *RollbackHook(Context *ctx, void (*callback)(void*), void *arg);
 #ifndef OMIT_WAL
 		__device__ static RC WalDefaultHook(void *clientData, Context *ctx, const char *dbName, int frames);

@@ -873,7 +873,7 @@ _out:
 		return oldArg;
 	}
 
-	__device__ void *Main::UpdateHook(Context *ctx, void (*callback)(void*,int,char const*,char const*,int64), void *arg)
+	__device__ void *Main::UpdateHook(Context *ctx, void (*callback)(void*,TK,char const*,char const*,int64), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		void *oldArg = ctx->UpdateArg;

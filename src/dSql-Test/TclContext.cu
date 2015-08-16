@@ -321,14 +321,14 @@ __device__ static int DbBusyHandler(void *cd, int tries)
 
 #ifndef OMIT_PROGRESS_CALLBACK
 // This routine is invoked as the 'progress callback' for the database.
-__device__ static bool DbProgressHandler(void *cd)
+__device__ static ::RC DbProgressHandler(void *cd)
 {
 	TclContext *tctx = (TclContext *)cd;
 	_assert(tctx->Progress);
 	int rc = Tcl_Eval(tctx->Interp, tctx->Progress, 0, nullptr);
 	if (rc != TCL_OK || _atoi(tctx->Interp->result))
-		return true;
-	return false;
+		return RC_ERROR;
+	return RC_OK;
 }
 #endif
 
@@ -358,13 +358,13 @@ __device__ static void DbProfileHandler(void *cd, const char *sql, uint64 tm)
 
 // This routine is called when a transaction is committed.  The TCL script in pDb->zCommit is executed.  If it returns non-zero or
 // if it throws an exception, the transaction is rolled back instead of being committed.
-__device__ static bool DbCommitHandler(void *cd)
+__device__ static ::RC DbCommitHandler(void *cd)
 {
 	TclContext *tctx = (TclContext *)cd;
 	int rc = Tcl_Eval(tctx->Interp, tctx->Commit, 0, nullptr);
 	if (rc != TCL_OK || _atoi(tctx->Interp->result))
-		return true;
-	return false;
+		return RC_ERROR;
+	return RC_OK;
 }
 
 __device__ static void DbRollbackHandler(void *clientData)
@@ -422,7 +422,7 @@ __device__ static void DbUnlockNotify(void **args, int argsLength)
 }
 #endif
 
-__device__ static void DbUpdateHandler(void *p, TK op, const char *dbName, const char *tableName,  int64 rowid)
+__device__ static void DbUpdateHandler(void *p, TK op, const char *dbName, const char *tableName, int64 rowid)
 {
 	TclContext *tctx = (TclContext *)p;
 	Tcl_Interp *interp = tctx->Interp;
@@ -632,6 +632,47 @@ __device__ static ARC AuthCallback(void *arg, int code, const char *arg1, const 
 	return rc;
 }
 #endif
+
+#pragma endregion
+
+#pragma region GetLine
+
+__device__ static char *LocalGetLine(char *prompt, FILE *in)
+{
+	int lineLength = 100;
+	char *line = (char *)_alloc(lineLength);
+	if (!line) return nullptr;
+
+	int n = 0;
+	while (true)
+	{
+		if (n+100 > lineLength)
+		{
+			lineLength = lineLength*2 + 100;
+			line = (char *)_realloc(line, lineLength);
+			if (!line) return nullptr;
+		}
+		if (!_fgets(&line[n], lineLength - n, in))
+		{
+			if (n == 0)
+			{
+				_free(line);
+				return 0;
+			}
+			line[n] = 0;
+			break;
+		}
+		while (line[n]) { n++; }
+		if (n > 0 && line[n-1] == '\n')
+		{
+			n--;
+			line[n] = 0;
+			break;
+		}
+	}
+	line = (char *)_realloc(line, n + 1);
+	return line;
+}
 
 #pragma endregion
 
@@ -1102,1166 +1143,1170 @@ __device__ static int DbEvalNextCmd(ClientData data[], Tcl_Interp *interp, int r
 
 #pragma endregion
 
-#if 0
 #pragma region DbObjCmd
 
-//    $db authorizer ?CALLBACK?
+__constant__ static const char *DB_strs[] = {
+	"authorizer",         "backup",            "busy",
+	"cache",              "changes",           "close",
+	"collate",            "collation_needed",  "commit_hook",
+	"complete",           "copy",              "enable_load_extension",
+	"errorcode",          "eval",              "exists",
+	"function",           "incrblob",          "interrupt",
+	"last_insert_rowid",  "nullvalue",         "onecolumn",
+	"profile",            "progress",          "rekey",
+	"restore",            "rollback_hook",     "status",
+	"timeout",            "total_changes",     "trace",
+	"transaction",        "unlock_notify",     "update_hook",
+	"version",            "wal_hook",          0
+};
+// don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler
+enum DB_enum {
+	DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
+	DB_CACHE,             DB_CHANGES,          DB_CLOSE,
+	DB_COLLATE,           DB_COLLATION_NEEDED, DB_COMMIT_HOOK,
+	DB_COMPLETE,          DB_COPY,             DB_ENABLE_LOAD_EXTENSION,
+	DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
+	DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
+	DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
+	DB_PROFILE,           DB_PROGRESS,         DB_REKEY,
+	DB_RESTORE,           DB_ROLLBACK_HOOK,    DB_STATUS,
+	DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
+	DB_TRANSACTION,       DB_UNLOCK_NOTIFY,    DB_UPDATE_HOOK,
+	DB_VERSION,           DB_WAL_HOOK
+};
+
+__constant__ static const char *TTYPE_strs[] = { "deferred",   "exclusive",  "immediate", nullptr };
+enum TTYPE_enum { TTYPE_DEFERRED, TTYPE_EXCLUSIVE, TTYPE_IMMEDIATE };
+
+
+// The "sqlite" command below creates a new Tcl command for each connection it opens to an SQLite database.  This routine is invoked
+// whenever one of those connection-specific commands is executed in Tcl.  For example, if you run Tcl code like this:
 //
-// Invoke the given callback to authorize each SQL operation as it is compiled.  5 arguments are appended to the callback before it is invoked:
+//       sqlite3 db1  "my_database"
+//       db1 close
 //
-//   (1) The authorization type (ex: SQLITE_CREATE_TABLE, SQLITE_INSERT, ...)
-//   (2) First descriptive name (depends on authorization type)
-//   (3) Second descriptive name
-//   (4) Name of the database (ex: "main", "temp")
-//   (5) Name of trigger that is doing the access
-//
-// The callback should return on of the following strings: SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
-//
-// If this method is invoked with no arguments, the current authorization callback string is returned.
-__device__ RC TclContext::AUTHORIZER(array_t<Tcl_Obj *> objv)
+// The first command opens a connection to the "my_database" database and calls that connection "db1".  The second command causes this subroutine to be invoked.
+__device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *args[])
 {
+	if (argc < 2)
+	{
+		Tcl_WrongNumArgs(interp, 1, args, "SUBCOMMAND ...");
+		return TCL_ERROR;
+	}
+	int choice;
+	if (Tcl_GetIndex(interp, args[1], DB_strs, "option", 0, &choice))
+		return TCL_ERROR;
+
+	char b[50];
+	TclContext *p = (TclContext *)cd;
+	::RC rc2;
+	int rc = TCL_OK;
+	switch ((DB_enum)choice)
+	{
+/*
+	case DB_AUTHORIZER: {
+		//    $db authorizer ?CALLBACK?
+		//
+		// Invoke the given callback to authorize each SQL operation as it is compiled.  5 arguments are appended to the callback before it is invoked:
+		//
+		//   (1) The authorization type (ex: SQLITE_CREATE_TABLE, SQLITE_INSERT, ...)
+		//   (2) First descriptive name (depends on authorization type)
+		//   (3) Second descriptive name
+		//   (4) Name of the database (ex: "main", "temp")
+		//   (5) Name of trigger that is doing the access
+		//
+		// The callback should return on of the following strings: SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
+		//
+		// If this method is invoked with no arguments, the current authorization callback string is returned.
 #ifdef OMIT_AUTHORIZATION
-	interp->AppendResult("authorization not available in this build", 0);
-	return RC_ERROR;
+		Tcl_AppendResult("authorization not available in this build", 0);
+		return TCL_ERROR;
 #else
-	if (objv.length > 3)
-	{
-		Interp->WrongNumArgs(2, objv, "?CALLBACK?");
-		return RC_ERROR;
-	}
-	else if (objv.length == 2)
-	{
-		if (Auth)
-			Interp->AppendResult(Auth, nullptr);
-	}
-	else
-	{
-		if (Auth)
-			_free(Auth);
-		int len;
-		char *auth = objv[2]->GetStringFromObj(&len);
-		if (auth && len > 0)
+		if (argc > 3)
 		{
-			Auth = (char *)_alloc(len + 1);
-			_memcpy(Auth, auth, len + 1);
+			Tcl_WrongNumArgs(interp, 2, args, "?CALLBACK?");
+			return TCL_ERROR;
 		}
-		else
-			Auth = nullptr;
-		if (Auth)
-			Auth::SetAuthorizer(Ctx, AuthCallback, this);
-		else
-			Auth::SetAuthorizer(Ctx, nullptr, nullptr);
-	}
-#endif
-	return RC_OK;
-}
-
-//    $db backup ?DATABASE? FILENAME
-//
-// Open or create a database file named FILENAME.  Transfer the content of local database DATABASE (default: "main") into the FILENAME database.
-__device__ RC TclContext::BACKUP(array_t<Tcl_Obj *> objv)
-{
-	const char *srcDb;
-	const char *destFile;
-	if (objv.length == 3)
-	{
-		srcDb = "main";
-		destFile = objv[2]->GetString();
-	}
-	else if (objv.length == 4)
-	{
-		srcDb = objv[2]->GetString();
-		destFile = objv[3]->GetString();
-	}
-	else
-	{
-		Interp->WrongNumArgs(2, objv, "?DATABASE? FILENAME");
-		return RC_ERROR;
-	}
-
-	Context *destCtx;
-	::RC rc = Main::Open(destFile, &destCtx);
-	if (rc != RC_OK)
-	{
-		Interp->AppendResult("cannot open target database: ", Main::ErrMsg(destCtx), (char *)nullptr);
-		Main::Close(destCtx);
-		return RC_ERROR;
-	}
-	Backup *backup = Backup::Init(destCtx, "main", Ctx, srcDb);
-	if (!backup)
-	{
-		Interp->AppendResult("backup failed: ", Main::ErrMsg(destCtx), (char *)nullptr);
-		Main::Close(destCtx);
-		return RC_ERROR;
-	}
-	while ((rc = backup->Step(100)) == RC_OK ) { }
-	Backup::Finish(backup);
-	if (rc == RC_DONE)
-		rc = RC_OK;
-	else
-	{
-		Interp->AppendResult("backup failed: ", Main::ErrMsg(destCtx), (char *)nullptr);
-		rc = RC_ERROR;
-	}
-	Main::Close(destCtx);
-	return RC_OK;
-}
-
-//    $db busy ?CALLBACK?
-//
-// Invoke the given callback if an SQL statement attempts to open a locked database file.
-__device__ RC TclContext::BUSY(array_t<Tcl_Obj *> objv)
-{
-	if (objv.length > 3)
-	{
-		Interp->WrongNumArgs(2, objv, "CALLBACK");
-		return RC_ERROR;
-	}
-	else if (objv.length == 2)
-	{
-		if (Busy)
-			Interp->AppendResult(Busy, 0);
-	}
-	else
-	{
-		int len;
-		if (Busy)
-			_free(Busy);
-		char *busy = objv[2]->GetStringFromObj(&len);
-		if (busy && len > 0)
+		else if (argc == 2)
 		{
-			Busy = (char *)_alloc(len + 1);
-			_memcpy(Busy, busy, len + 1);
-		}
-		else
-			Busy = nullptr;
-		if (Busy)
-			Main::BusyHandler(Ctx, DbBusyHandler, this);
-		else
-			Main::BusyHandler(Ctx, nullptr, nullptr);
-	}
-	return RC_OK;
-}
-
-//     $db cache flush
-//     $db cache size n
-//
-// Flush the prepared statement cache, or set the maximum number of cached statements.
-__device__ RC TclContext::CACHE(array_t<Tcl_Obj *> objv)
-{
-	if (objv.length <= 2)
-	{
-		Interp->WrongNumArgs(1, objv, "cache option ?arg?");
-		return RC_ERROR;
-	}
-	char *subCmd = objv[2]->GetStringFromObj(nullptr);
-	if (subCmd[0] == 'f' && !_strcmp(subCmd,"flush"))
-	{
-		if (objv.length != 3)
-		{
-			Interp->WrongNumArgs(2, objv, "flush");
-			return RC_ERROR;
-		}
-		else
-			FlushStmtCache(this);
-	}
-	else if (subCmd[0] == 's' && !_strcmp(subCmd, "size"))
-	{
-		if (objv.length != 4)
-		{
-			Interp->WrongNumArgs(2, objv, "size n");
-			return RC_ERROR;
+			if (p->Auth)
+				Tcl_AppendResult(interp, p->Auth, nullptr);
 		}
 		else
 		{
-			int n;
-			if (objv[3]->GetIntFromObj(Interp, &n) == RC_ERROR)
+			if (p->Auth)
+				Tcl_Free(p->Auth);
+			int len;
+			char *auth = Tcl_GetString(interp, args[2], &len);
+			if (auth && len > 0)
 			{
-				Interp->AppendResult("cannot convert \"", objv[3]->GetStringFromObj(nullptr), "\" to integer", nullptr);
-				return RC_ERROR;
+				p->Auth = (char *)Tcl_Alloc(len + 1);
+				_memcpy(p->Auth, auth, len + 1);
+			}
+			else
+				p->Auth = nullptr;
+			if (p->Auth)
+			{
+				p->Interp = interp;
+				Auth::SetAuthorizer(p->Ctx, AuthCallback, p);
+			}
+			else
+				Auth::SetAuthorizer(p->Ctx, nullptr, nullptr);
+		}
+#endif
+		return RC_OK; }
+
+	case DB_BACKUP: {
+		//    $db backup ?DATABASE? FILENAME
+		//
+		// Open or create a database file named FILENAME.  Transfer the content of local database DATABASE (default: "main") into the FILENAME database.
+		const char *srcDb;
+		const char *destFile;
+		if (argc == 3)
+		{
+			srcDb = "main";
+			destFile = args[2];
+		}
+		else if (argc == 4)
+		{
+			srcDb = args[2];
+			destFile = args[3];
+		}
+		else
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?DATABASE? FILENAME");
+			return TCL_ERROR;
+		}
+
+		Context *destCtx;
+		rc2 = Main::Open(destFile, &destCtx);
+		if (rc2 != RC_OK)
+		{
+			Tcl_AppendResult(interp, "cannot open target database: ", Main::ErrMsg(destCtx), nullptr);
+			Main::Close(destCtx);
+			return TCL_ERROR;
+		}
+		Backup *backup = Backup::Init(destCtx, "main", p->Ctx, srcDb);
+		if (!backup)
+		{
+			Tcl_AppendResult(interp, "backup failed: ", Main::ErrMsg(destCtx), nullptr);
+			Main::Close(destCtx);
+			return TCL_ERROR;
+		}
+		while ((rc2 = backup->Step(100)) == RC_OK) { }
+		Backup::Finish(backup);
+		if (rc == RC_DONE)
+			rc = TCL_OK;
+		else
+		{
+			Tcl_AppendResult(interp, "backup failed: ", Main::ErrMsg(destCtx), nullptr);
+			rc = TCL_ERROR;
+		}
+		Main::Close(destCtx);
+		return rc; }
+
+	case DB_BUSY: {
+		//    $db busy ?CALLBACK?
+		//
+		// Invoke the given callback if an SQL statement attempts to open a locked database file.
+		if (argc > 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "CALLBACK");
+			return TCL_ERROR;
+		}
+		else if (argc == 2)
+		{
+			if (p->Busy)
+				Tcl_AppendResult(interp, p->Busy, nullptr);
+		}
+		else
+		{
+			if (p->Busy)
+				Tcl_Free(p->Busy);
+			int len;
+			char *busy = Tcl_GetString(interp, args[2], &len);
+			if (busy && len > 0)
+			{
+				p->Busy = (char *)Tcl_Alloc(len + 1);
+				_memcpy(p->Busy, busy, len + 1);
+			}
+			else
+				p->Busy = nullptr;
+			if (p->Busy)
+			{
+				p->Interp = interp;
+				Main::BusyHandler(p->Ctx, DbBusyHandler, p);
+			}
+			else
+				Main::BusyHandler(p->Ctx, nullptr, nullptr);
+		}
+		return rc; }
+
+	case DB_CACHE: {
+		//     $db cache flush
+		//     $db cache size n
+		//
+		// Flush the prepared statement cache, or set the maximum number of cached statements.
+		if (argc <= 2)
+		{
+			Tcl_WrongNumArgs(interp, 1, args, "cache option ?arg?");
+			return TCL_ERROR;
+		}
+		char *subCmd = args[2];
+		if (subCmd[0] == 'f' && !_strcmp(subCmd,"flush"))
+		{
+			if (argc != 3)
+			{
+				Tcl_WrongNumArgs(interp, 2, args, "flush");
+				return TCL_ERROR;
+			}
+			else
+				FlushStmtCache(p);
+		}
+		else if (subCmd[0] == 's' && !_strcmp(subCmd, "size"))
+		{
+			if (argc != 4)
+			{
+				Tcl_WrongNumArgs(interp, 2, args, "size n");
+				return TCL_ERROR;
 			}
 			else
 			{
-				if (n < 0)
+				int n;
+				if (Tcl_GetInt(interp, args[3], &n) == TCL_ERROR)
 				{
-					FlushStmtCache(this);
-					n = 0;
+					Tcl_AppendResult(interp, "cannot convert \"", args[3], "\" to integer", nullptr);
+					return TCL_ERROR;
 				}
-				else if (n > MAX_PREPARED_STMTS)
-					n = MAX_PREPARED_STMTS;
-				MaxStmt = n;
+				else
+				{
+					if (n < 0)
+					{
+						FlushStmtCache(p);
+						n = 0;
+					}
+					else if (n > MAX_PREPARED_STMTS)
+						n = MAX_PREPARED_STMTS;
+					p->MaxStmt = n;
+				}
 			}
 		}
-	}
-	else
-	{
-		Interp->AppendResult("bad option \"", objv[2]->GetStringFromObj(nullptr), "\": must be flush or size", nullptr);
-		return RC_ERROR;
-	}
-	return RC_OK;
-}
-
-//     $db changes
-//
-// Return the number of rows that were modified, inserted, or deleted by the most recent INSERT, UPDATE or DELETE statement, not including 
-// any changes made by trigger programs.
-__device__ RC TclContext::CHANGES(array_t<Tcl_Obj *> objv)
-{
-	if (objv.length != 2){
-		Interp->WrongNumArgs(2, objv, "");
-		return RC_ERROR;
-	}
-	Tcl_Obj *result = Interp->GetObjResult();
-	result->SetIntObj(Main::CtxChanges(Ctx));
-	return RC_OK;
-}
-
-//    $db close
-//
-// Shutdown the database
-__device__ RC TclContext::CLOSE(array_t<Tcl_Obj *> objv)
-{
-	Interp->DeleteCommand(objv[0]->GetStringFromObj(nullptr));
-	return RC_OK;
-}
-
-#if 0
-//     $db collate NAME SCRIPT
-//
-// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
-__device__ RC DB_COLLATE()
-{
-	SqlCollate *pCollate;
-	char *zName;
-	char *zScript;
-	int nScript;
-	if( objc!=4 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "NAME SCRIPT");
-		return TCL_ERROR;
-	}
-	zName = Tcl_GetStringFromObj(objv[2], 0);
-	zScript = Tcl_GetStringFromObj(objv[3], &nScript);
-	pCollate = (SqlCollate*)Tcl_Alloc( sizeof(*pCollate) + nScript + 1 );
-	if( pCollate==0 ) return TCL_ERROR;
-	pCollate->interp = interp;
-	pCollate->pNext = pDb->pCollate;
-	pCollate->zScript = (char*)&pCollate[1];
-	pDb->pCollate = pCollate;
-	memcpy(pCollate->zScript, zScript, nScript+1);
-	if( sqlite3_create_collation(pDb->db, zName, SQLITE_UTF8, 
-		pCollate, tclSqlCollate) ){
-			Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_VOLATILE);
+		else
+		{
+			Tcl_AppendResult(interp, "bad option \"", args[2], "\": must be flush or size", nullptr);
 			return TCL_ERROR;
-	}
-}
+		}
+		return rc; }
 
-//     $db collation_needed SCRIPT
-//
-// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
-__device__ RC DB_COLLATION_NEEDED()
-{
-	if( objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "SCRIPT");
-		return TCL_ERROR;
-	}
-	if( pDb->pCollateNeeded ){
-		Tcl_DecrRefCount(pDb->pCollateNeeded);
-	}
-	pDb->pCollateNeeded = Tcl_DuplicateObj(objv[2]);
-	Tcl_IncrRefCount(pDb->pCollateNeeded);
-	sqlite3_collation_needed(pDb->db, pDb, tclCollateNeeded);
-}
+	case DB_CHANGES: {
+		//     $db changes
+		//
+		// Return the number of rows that were modified, inserted, or deleted by the most recent INSERT, UPDATE or DELETE statement, not including 
+		// any changes made by trigger programs.
+		if (argc != 2)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "");
+			return TCL_ERROR;
+		}
+		char b[100];
+		Tcl_SetResult(interp, _itoa(Main::CtxChanges(p->Ctx), b), TCL_VOLATILE);
+		return rc; }
 
-//    $db commit_hook ?CALLBACK?
-//
-// Invoke the given callback just before committing every SQL transaction. If the callback throws an exception or returns non-zero, then the
-// transaction is aborted.  If CALLBACK is an empty string, the callback is disabled.
-__device__ RC DB_COMMIT_HOOK()
-{
-	if( objc>3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
-		return TCL_ERROR;
-	}else if( objc==2 ){
-		if( pDb->zCommit ){
-			Tcl_AppendResult(interp, pDb->zCommit, 0);
-		}
-	}else{
-		char *zCommit;
-		int len;
-		if( pDb->zCommit ){
-			Tcl_Free(pDb->zCommit);
-		}
-		zCommit = Tcl_GetStringFromObj(objv[2], &len);
-		if( zCommit && len>0 ){
-			pDb->zCommit = Tcl_Alloc( len + 1 );
-			memcpy(pDb->zCommit, zCommit, len+1);
-		}else{
-			pDb->zCommit = 0;
-		}
-		if( pDb->zCommit ){
-			pDb->interp = interp;
-			sqlite3_commit_hook(pDb->db, DbCommitHandler, pDb);
-		}else{
-			sqlite3_commit_hook(pDb->db, 0, 0);
-		}
-	}
-}
+	case DB_CLOSE: {
+		//    $db close
+		//
+		// Shutdown the database
+		Tcl_DeleteCommand(interp, args[0]);
+		return rc; }
 
-//    $db complete SQL
-//
-// Return TRUE if SQL is a complete SQL statement.  Return FALSE if additional lines of input are needed.  This is similar to the
-// built-in "info complete" command of Tcl.
-__device__ RC DB_COMPLETE()
-{
+	case DB_COLLATE: {
+		//     $db collate NAME SCRIPT
+		//
+		// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
+		if (argc != 4)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "NAME SCRIPT");
+			return TCL_ERROR;
+		}
+		char *name = args[2];
+		int scriptLength;
+		char *script = Tcl_GetString(interp, args[3], &scriptLength);
+		SqlCollate *collate = (SqlCollate *)Tcl_Alloc(sizeof(*collate) + scriptLength + 1);
+		if (!collate) return TCL_ERROR;
+		collate->Interp = interp;
+		collate->Next = p->Collates;
+		collate->Script = (char *)&collate[1];
+		p->Collates = collate;
+		_memcpy(collate->Script, script, scriptLength+1);
+		if (Main::CreateCollation(p->Ctx, name, TEXTENCODE_UTF8, collate, TclSqlCollate))
+		{
+			Tcl_SetResult(interp, (char *)Main::ErrMsg(p->Ctx), TCL_VOLATILE);
+			return TCL_ERROR;
+		}
+		return rc; }
+
+	case DB_COLLATION_NEEDED: {
+		//     $db collation_needed SCRIPT
+		//
+		// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
+		if (argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "SCRIPT");
+			return TCL_ERROR;
+		}
+		if (p->CollateNeeded)
+			Tcl_DecrRefCount(p->CollateNeeded);
+		p->CollateNeeded = Tcl_DuplicateObj(args[2]);
+		Tcl_IncrRefCount(p->CollateNeeded);
+		Main::CollationNeeded(p->Ctx, p, TclCollateNeeded);
+		return rc; }
+
+	case DB_COMMIT_HOOK: {
+		//    $db commit_hook ?CALLBACK?
+		//
+		// Invoke the given callback just before committing every SQL transaction. If the callback throws an exception or returns non-zero, then the
+		// transaction is aborted.  If CALLBACK is an empty string, the callback is disabled.
+		if (argc > 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?CALLBACK?");
+			return TCL_ERROR;
+		} else if (argc == 2)
+		{
+			if (p->Commit)
+				Tcl_AppendResult(interp, p->Commit, nullptr);
+		}
+		else
+		{
+			if (p->Commit)
+				Tcl_Free(p->Commit);
+			int len;
+			char *commit = Tcl_GetString(interp, args[2], &len);
+			if (commit && len > 0)
+			{
+				p->Commit = (char *)Tcl_Alloc(len + 1);
+				_memcpy(p->Commit, commit, len+1);
+			}
+			else
+				p->Commit = nullptr;
+			if (p->Commit)
+			{
+				p->Interp = interp;
+				Main::CommitHook(p->Ctx, DbCommitHandler, p);
+			}
+			else
+				Main::CommitHook(p->Ctx, nullptr, nullptr);
+		}
+		return rc; }
+
+	case DB_COMPLETE: {
+		//    $db complete SQL
+		//
+		// Return TRUE if SQL is a complete SQL statement.  Return FALSE if additional lines of input are needed.  This is similar to the
+		// built-in "info complete" command of Tcl.
 #ifndef OMIT_COMPLETE
-	Tcl_Obj *pResult;
-	int isComplete;
-	if( objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "SQL");
-		return TCL_ERROR;
-	}
-	isComplete = sqlite3_complete( Tcl_GetStringFromObj(objv[2], 0) );
-	pResult = Tcl_GetObjResult(interp);
-	Tcl_SetBooleanObj(pResult, isComplete);
-#endif
-}
-
-//    $db copy conflict-algorithm table filename ?SEPARATOR? ?NULLINDICATOR?
-//
-// Copy data into table from filename, optionally using SEPARATOR as column separators.  If a column contains a null string, or the
-// value of NULLINDICATOR, a NULL is inserted for the column. conflict-algorithm is one of the sqlite conflict algorithms:
-//    rollback, abort, fail, ignore, replace
-// On success, return the number of lines processed, not necessarily same as 'db changes' due to conflict-algorithm selected.
-//
-// This code is basically an implementation/enhancement of the sqlite3 shell.c ".import" command.
-//
-// This command usage is equivalent to the sqlite2.x COPY statement, which imports file data into a table using the PostgreSQL COPY file format:
-//   $db copy $conflit_algo $table_name $filename \t \\N
-__device__ RC DB_COPY()
-{
-	char *zTable;               /* Insert data into this table */
-	char *zFile;                /* The file from which to extract data */
-	char *zConflict;            /* The conflict algorithm to use */
-	sqlite3_stmt *pStmt;        /* A statement */
-	int nCol;                   /* Number of columns in the table */
-	int nByte;                  /* Number of bytes in an SQL string */
-	int i, j;                   /* Loop counters */
-	int nSep;                   /* Number of bytes in zSep[] */
-	int nNull;                  /* Number of bytes in zNull[] */
-	char *zSql;                 /* An SQL statement */
-	char *zLine;                /* A single line of input from the file */
-	char **azCol;               /* zLine[] broken up into columns */
-	char *zCommit;              /* How to commit changes */
-	FILE *in;                   /* The input file */
-	int lineno = 0;             /* Line number of input file */
-	char zLineNum[80];          /* Line number print buffer */
-	Tcl_Obj *pResult;           /* interp result */
-
-	char *zSep;
-	char *zNull;
-	if( objc<5 || objc>7 ){
-		Tcl_WrongNumArgs(interp, 2, objv, 
-			"CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?");
-		return TCL_ERROR;
-	}
-	if( objc>=6 ){
-		zSep = Tcl_GetStringFromObj(objv[5], 0);
-	}else{
-		zSep = "\t";
-	}
-	if( objc>=7 ){
-		zNull = Tcl_GetStringFromObj(objv[6], 0);
-	}else{
-		zNull = "";
-	}
-	zConflict = Tcl_GetStringFromObj(objv[2], 0);
-	zTable = Tcl_GetStringFromObj(objv[3], 0);
-	zFile = Tcl_GetStringFromObj(objv[4], 0);
-	nSep = strlen30(zSep);
-	nNull = strlen30(zNull);
-	if( nSep==0 ){
-		Tcl_AppendResult(interp,"Error: non-null separator required for copy",0);
-		return TCL_ERROR;
-	}
-	if(strcmp(zConflict, "rollback") != 0 &&
-		strcmp(zConflict, "abort"   ) != 0 &&
-		strcmp(zConflict, "fail"    ) != 0 &&
-		strcmp(zConflict, "ignore"  ) != 0 &&
-		strcmp(zConflict, "replace" ) != 0 ) {
-			Tcl_AppendResult(interp, "Error: \"", zConflict, 
-				"\", conflict-algorithm must be one of: rollback, "
-				"abort, fail, ignore, or replace", 0);
+		if (argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "SQL");
 			return TCL_ERROR;
-	}
-	zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
-	if( zSql==0 ){
-		Tcl_AppendResult(interp, "Error: no such table: ", zTable, 0);
-		return TCL_ERROR;
-	}
-	nByte = strlen30(zSql);
-	rc = sqlite3_prepare(pDb->db, zSql, -1, &pStmt, 0);
-	sqlite3_free(zSql);
-	if( rc ){
-		Tcl_AppendResult(interp, "Error: ", sqlite3_errmsg(pDb->db), 0);
-		nCol = 0;
-	}else{
-		nCol = sqlite3_column_count(pStmt);
-	}
-	sqlite3_finalize(pStmt);
-	if( nCol==0 ) {
-		return TCL_ERROR;
-	}
-	zSql = malloc( nByte + 50 + nCol*2 );
-	if( zSql==0 ) {
-		Tcl_AppendResult(interp, "Error: can't malloc()", 0);
-		return TCL_ERROR;
-	}
-	sqlite3_snprintf(nByte+50, zSql, "INSERT OR %q INTO '%q' VALUES(?",
-		zConflict, zTable);
-	j = strlen30(zSql);
-	for(i=1; i<nCol; i++){
-		zSql[j++] = ',';
-		zSql[j++] = '?';
-	}
-	zSql[j++] = ')';
-	zSql[j] = 0;
-	rc = sqlite3_prepare(pDb->db, zSql, -1, &pStmt, 0);
-	free(zSql);
-	if( rc ){
-		Tcl_AppendResult(interp, "Error: ", sqlite3_errmsg(pDb->db), 0);
-		sqlite3_finalize(pStmt);
-		return TCL_ERROR;
-	}
-	in = fopen(zFile, "rb");
-	if( in==0 ){
-		Tcl_AppendResult(interp, "Error: cannot open file: ", zFile, NULL);
-		sqlite3_finalize(pStmt);
-		return TCL_ERROR;
-	}
-	azCol = malloc( sizeof(azCol[0])*(nCol+1) );
-	if( azCol==0 ) {
-		Tcl_AppendResult(interp, "Error: can't malloc()", 0);
-		fclose(in);
-		return TCL_ERROR;
-	}
-	(void)sqlite3_exec(pDb->db, "BEGIN", 0, 0, 0);
-	zCommit = "COMMIT";
-	while( (zLine = local_getline(0, in))!=0 ){
-		char *z;
-		lineno++;
-		azCol[0] = zLine;
-		for(i=0, z=zLine; *z; z++){
-			if( *z==zSep[0] && strncmp(z, zSep, nSep)==0 ){
-				*z = 0;
-				i++;
-				if( i<nCol ){
-					azCol[i] = &z[nSep];
-					z += nSep-1;
+		}
+		bool isComplete = Parse::Complete(args[2]);
+		Tcl_SetResult(interp, (isComplete?"1":"0"), TCL_VOLATILE);
+#endif
+		return rc; }
+
+	case DB_COPY: {
+		//    $db copy conflict-algorithm table filename ?SEPARATOR? ?NULLINDICATOR?
+		//
+		// Copy data into table from filename, optionally using SEPARATOR as column separators.  If a column contains a null string, or the
+		// value of NULLINDICATOR, a NULL is inserted for the column. conflict-algorithm is one of the sqlite conflict algorithms:
+		//    rollback, abort, fail, ignore, replace
+		// On success, return the number of lines processed, not necessarily same as 'db changes' due to conflict-algorithm selected.
+		//
+		// This code is basically an implementation/enhancement of the sqlite3 shell.c ".import" command.
+		//
+		// This command usage is equivalent to the sqlite2.x COPY statement, which imports file data into a table using the PostgreSQL COPY file format:
+		//   $db copy $conflit_algo $table_name $filename \t \\N
+		if (argc < 5 || argc > 7)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?");
+			return TCL_ERROR;
+		}
+		int i;
+		char *sep = (argc >= 6 ? args[5] : "\t");
+		char *null = (argc >= 7 ? args[6] : "");
+		char *conflict = args[2]; // The conflict algorithm to use
+		char *table = args[3]; // Insert data into this table
+		char *file = args[4]; // The file from which to extract data
+		int sepLength = _strlen(sep); // Number of bytes in zSep[]
+		int nullLength = _strlen(null); // Number of bytes in zNull[]
+		if (sepLength == 0)
+		{
+			Tcl_AppendResult(interp, "Error: non-null separator required for copy", 0);
+			return TCL_ERROR;
+		}
+		if (_strcmp(conflict, "rollback") && _strcmp(conflict, "abort") && _strcmp(conflict, "fail") && _strcmp(conflict, "ignore") && _strcmp(conflict, "replace"))
+		{
+			Tcl_AppendResult(interp, "Error: \"", conflict, "\", conflict-algorithm must be one of: rollback, abort, fail, ignore, or replace", 0);
+			return TCL_ERROR;
+		}
+		char *sql = _mprintf("SELECT * FROM '%q'", table); // An SQL statement
+		if (!sql)
+		{
+			Tcl_AppendResult(interp, "Error: no such table: ", table, nullptr);
+			return TCL_ERROR;
+		}
+		int bytes = _strlen(sql); // Number of bytes in an SQL string
+		Vdbe *stmt; // A statement
+		rc2 = Prepare::Prepare_(p->Ctx, sql, -1, &stmt, 0);
+		_free(sql);
+		int cols;// Number of columns in the table
+		if (rc2)
+		{
+			Tcl_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), 0);
+			cols = 0;
+		}
+		else
+			cols = Vdbe::Column_Count(stmt);
+		Vdbe::Finalize(stmt);
+		if (cols == 0)
+			return TCL_ERROR;
+		sql = (char *)_alloc(bytes + 50 + cols*2);
+		if (!sql)
+		{
+			Tcl_AppendResult(interp, "Error: can't malloc()", nullptr);
+			return TCL_ERROR;
+		}
+		__snprintf(sql, bytes+50, "INSERT OR %q INTO '%q' VALUES(?", conflict, table);
+		int j = _strlen(sql);
+		for (i = 1; i < cols; i++)
+		{
+			sql[j++] = ',';
+			sql[j++] = '?';
+		}
+		sql[j++] = ')';
+		sql[j] = 0;
+		rc2 = Prepare::Prepare_(p->Ctx, sql, -1, &stmt, 0);
+		_free(sql);
+		if (rc2)
+		{
+			Tcl_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), nullptr);
+			Vdbe::Finalize(stmt);
+			return TCL_ERROR;
+		}
+		FILE *in = _fopen(file, "rb"); // The input file
+		if (!in)
+		{
+			Tcl_AppendResult(interp, "Error: cannot open file: ", file, nullptr);
+			Vdbe::Finalize(stmt);
+			return TCL_ERROR;
+		}
+		char **colNames = (char **)malloc(sizeof(colNames[0]) * (cols+1)); // zLine[] broken up into columns
+		if (!colNames)
+		{
+			Tcl_AppendResult(interp, "Error: can't malloc()", 0);
+			_fclose(in);
+			return TCL_ERROR;
+		}
+		Main::Exec(p->Ctx, "BEGIN", 0, 0, 0);
+		char *commit = "COMMIT"; // How to commit changes
+		char *line; // A single line of input from the file
+		int lineno = 0; // Line number of input file
+		char lineNum[80]; // Line number print buffer
+		//Tcl_Obj *result; // interp result
+		while ((line = LocalGetLine(0, in)) != 0)
+		{
+			char *z;
+			lineno++;
+			colNames[0] = line;
+			for (i = 0, z = line; *z; z++)
+			{
+				if (*z == sep[0] && !_strncmp(z, sep, sepLength))
+				{
+					*z = 0;
+					i++;
+					if (i < cols)
+					{
+						colNames[i] = &z[sepLength];
+						z += sepLength-1;
+					}
 				}
 			}
-		}
-		if( i+1!=nCol ){
-			char *zErr;
-			int nErr = strlen30(zFile) + 200;
-			zErr = malloc(nErr);
-			if( zErr ){
-				sqlite3_snprintf(nErr, zErr,
-					"Error: %s line %d: expected %d columns of data but found %d",
-					zFile, lineno, nCol, i+1);
-				Tcl_AppendResult(interp, zErr, 0);
-				free(zErr);
+			if (i+1 != cols)
+			{
+				int errLength = _strlen(file) + 200;
+				char *err = (char *)malloc(errLength);
+				if (err)
+				{
+					__snprintf(err, errLength, "Error: %s line %d: expected %d columns of data but found %d", file, lineno, cols, i+1);
+					Tcl_AppendResult(interp, err, nullptr);
+					free(err);
+				}
+				commit = "ROLLBACK";
+				break;
 			}
-			zCommit = "ROLLBACK";
-			break;
-		}
-		for(i=0; i<nCol; i++){
-			/* check for null data, if so, bind as null */
-			if( (nNull>0 && strcmp(azCol[i], zNull)==0)
-				|| strlen30(azCol[i])==0 
-				){
-					sqlite3_bind_null(pStmt, i+1);
-			}else{
-				sqlite3_bind_text(pStmt, i+1, azCol[i], -1, SQLITE_STATIC);
+			for (i = 0; i < cols; i++)
+			{
+				// check for null data, if so, bind as null
+				if ((nullLength > 0 && !_strcmp(colNames[i], null)) || !_strlen(colNames[i]))
+					Vdbe::Bind_Null(stmt, i+1);
+				else
+					Vdbe::Bind_Text(stmt, i+1, colNames[i], -1, DESTRUCTOR_STATIC);
+			}
+			stmt->Step();
+			rc2 = Vdbe::Reset(stmt);
+			free(line);
+			if (rc2 != RC_OK)
+			{
+				Tcl_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), 0);
+				commit = "ROLLBACK";
+				break;
 			}
 		}
-		sqlite3_step(pStmt);
-		rc = sqlite3_reset(pStmt);
-		free(zLine);
-		if( rc!=SQLITE_OK ){
-			Tcl_AppendResult(interp,"Error: ", sqlite3_errmsg(pDb->db), 0);
-			zCommit = "ROLLBACK";
-			break;
-		}
-	}
-	free(azCol);
-	fclose(in);
-	sqlite3_finalize(pStmt);
-	(void)sqlite3_exec(pDb->db, zCommit, 0, 0, 0);
+		free(colNames);
+		_fclose(in);
+		Vdbe::Finalize(stmt);
+		Main::Exec(p->Ctx, commit, 0, 0, 0);
 
-	if( zCommit[0] == 'C' ){
-		/* success, set result as number of lines processed */
-		pResult = Tcl_GetObjResult(interp);
-		Tcl_SetIntObj(pResult, lineno);
-		rc = TCL_OK;
-	}else{
-		/* failure, append lineno where failed */
-		sqlite3_snprintf(sizeof(zLineNum), zLineNum,"%d",lineno);
-		Tcl_AppendResult(interp,", failed while processing line: ",zLineNum,0);
-		rc = TCL_ERROR;
-	}
-}
-
-//    $db enable_load_extension BOOLEAN
-//
-// Turn the extension loading feature on or off.  It if off by default.
-__device__ RC DB_ENABLE_LOAD_EXTENSION()
-{
-#ifndef OMIT_LOAD_EXTENSION
-	int onoff;
-	if( objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "BOOLEAN");
-		return TCL_ERROR;
-	}
-	if( Tcl_GetBooleanFromObj(interp, objv[2], &onoff) ){
-		return TCL_ERROR;
-	}
-	sqlite3_enable_load_extension(pDb->db, onoff);
-#else
-	interp-AppendResult("extension loading is turned off at compile-time", 0);
-	return RC_ERROR;
-#endif
-}
-
-//    $db errorcode
-//
-// Return the numeric error code that was returned by the most recent call to sqlite3_exec().
-__device__ RC DB_ERRORCODE()
-{
-	interp->SetObjResult(Tcl_Obj::NewIntObj(Main::ErrCode(tctx->Ctx)));
-}
-
-//    $db exists $sql
-//    $db onecolumn $sql
-//
-// The onecolumn method is the equivalent of:
-//     lindex [$db eval $sql] 0
-__device__ RC DB_EXISTS() { return DB_ONECOLUMN(); }
-__device__ RC DB_ONECOLUMN()
-{
-	DbEvalContext sEval;
-	if( objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "SQL");
-		return TCL_ERROR;
-	}
-
-	dbEvalInit(&sEval, pDb, objv[2], 0);
-	rc = dbEvalStep(&sEval);
-	if( choice==DB_ONECOLUMN ){
-		if( rc==TCL_OK ){
-			Tcl_SetObjResult(interp, dbEvalColumnValue(&sEval, 0));
-		}else if( rc==TCL_BREAK ){
-			Tcl_ResetResult(interp);
-		}
-	}else if( rc==TCL_BREAK || rc==TCL_OK ){
-		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(rc==TCL_OK));
-	}
-	dbEvalFinalize(&sEval);
-
-	if( rc==TCL_BREAK ){
-		rc = TCL_OK;
-	}
-}
-
-#endif
-
-//    $db eval $sql ?array? ?{  ...code... }?
-//
-// The SQL statement in $sql is evaluated.  For each row, the values are placed in elements of the array named "array" and ...code... is executed.
-// If "array" and "code" are omitted, then no callback is every invoked. If "array" is an empty string, then the values are placed in variables
-// that have the same name as the fields extracted by the query.
-__device__ RC TclContext::EVAL(array_t<Tcl_Obj *> objv)
-{
-	if (objv.length < 3 || objv.length > 5)
-	{
-		Interp->WrongNumArgs(2, objv, "SQL ?ARRAY-NAME? ?SCRIPT?");
-		return RC_ERROR;
-	}
-
-	::RC rc;
-	if (objv.length == 3)
-	{
-		DbEvalContext sEval;
-		Tcl_Obj *ret = Tcl_Obj::NewObj();
-		ret->IncrRefCount();
-		DbEvalInit(&sEval, this, objv[2], nullptr);
-
-		while ((rc = DbEvalStep(&sEval)) == RC_OK)
+		if (commit[0] == 'C')
 		{
-			int cols;
-			DbEvalRowInfo(&sEval, &cols, nullptr);
-			for (int i = 0; i < cols; i++)
-				ret->ListObjAppendElement(Interp, DbEvalColumnValue(&sEval, i));
+			// success, set result as number of lines processed
+			Tcl_SetResult(interp, _itoa(lineno, b), TCL_VOLATILE);
+			rc = TCL_OK;
 		}
-		DbEvalFinalize(&sEval);
-		if (rc == RC_DONE)
+		else
 		{
-			Interp->SetObjResult(ret);
-			rc = RC_OK;
-		}
-		ret->DecrRefCount();
-	}
-	else
-	{
-		ClientData cd[2];
-		Tcl_Obj *array = (objv.length == 5 && *(char *)objv[3]->GetString() ? objv[3] : nullptr);
-		Tcl_Obj *script = objv[objv.length-1];
-		script->IncrRefCount();
-
-		DbEvalContext *p = (DbEvalContext *)_alloc(sizeof(DbEvalContext));
-		DbEvalInit(p, this, objv[2], array);
-
-		cd[0] = (void *)p;
-		cd[1] = (void *)script;
-		rc = DbEvalNextCmd(cd, Interp, RC_OK);
-	}
-	return RC_OK;
-}
-
-#if 0
-
-//     $db function NAME [-argcount N] SCRIPT
-//
-// Create a new SQL function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
-__device__ RC DB_FUNCTION()
-{
-	SqlFunc *pFunc;
-	Tcl_Obj *pScript;
-	char *zName;
-	int nArg = -1;
-	if( objc==6 ){
-		const char *z = Tcl_GetString(objv[3]);
-		int n = strlen30(z);
-		if( n>2 && strncmp(z, "-argcount",n)==0 ){
-			if( Tcl_GetIntFromObj(interp, objv[4], &nArg) ) return TCL_ERROR;
-			if( nArg<0 ){
-				Tcl_AppendResult(interp, "number of arguments must be non-negative",
-					(char*)0);
-				return TCL_ERROR;
-			}
-		}
-		pScript = objv[5];
-	}else if( objc!=4 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "NAME [-argcount N] SCRIPT");
-		return TCL_ERROR;
-	}else{
-		pScript = objv[3];
-	}
-	zName = Tcl_GetStringFromObj(objv[2], 0);
-	pFunc = findSqlFunc(pDb, zName);
-	if( pFunc==0 ) return TCL_ERROR;
-	if( pFunc->pScript ){
-		Tcl_DecrRefCount(pFunc->pScript);
-	}
-	pFunc->pScript = pScript;
-	Tcl_IncrRefCount(pScript);
-	pFunc->useEvalObjv = safeToUseEvalObjv(interp, pScript);
-	rc = sqlite3_create_function(pDb->db, zName, nArg, SQLITE_UTF8,
-		pFunc, tclSqlFunc, 0, 0);
-	if( rc!=SQLITE_OK ){
-		rc = TCL_ERROR;
-		Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_VOLATILE);
-	}
-}
-
-//     $db incrblob ?-readonly? ?DB? TABLE COLUMN ROWID
-__device__ RC DB_INCRBLOB()
-{
-#ifdef OMIT_INCRBLOB
-	interp->AppendResult("incrblob not available in this build", 0);
-	return RC_ERROR;
-#else
-	int isReadonly = 0;
-	const char *zDb = "main";
-	const char *zTable;
-	const char *zColumn;
-	Tcl_WideInt iRow;
-
-	/* Check for the -readonly option */
-	if( objc>3 && strcmp(Tcl_GetString(objv[2]), "-readonly")==0 ){
-		isReadonly = 1;
-	}
-
-	if( objc!=(5+isReadonly) && objc!=(6+isReadonly) ){
-		Tcl_WrongNumArgs(interp, 2, objv, "?-readonly? ?DB? TABLE COLUMN ROWID");
-		return TCL_ERROR;
-	}
-
-	if( objc==(6+isReadonly) ){
-		zDb = Tcl_GetString(objv[2]);
-	}
-	zTable = Tcl_GetString(objv[objc-3]);
-	zColumn = Tcl_GetString(objv[objc-2]);
-	rc = Tcl_GetWideIntFromObj(interp, objv[objc-1], &iRow);
-
-	if( rc==TCL_OK ){
-		rc = createIncrblobChannel(
-			interp, pDb, zDb, zTable, zColumn, iRow, isReadonly
-			);
-	}
-#endif
-}
-
-//     $db interrupt
-//
-// Interrupt the execution of the inner-most SQL interpreter.  This causes the SQL statement to return an error of SQLITE_INTERRUPT.
-__device__ RC DB_INTERRUPT()
-{
-	Main::Interrupt(tctx->Ctx);
-}
-
-//     $db nullvalue ?STRING?
-//
-// Change text used when a NULL comes back from the database. If ?STRING? is not present, then the current string used for NULL is returned.
-// If STRING is present, then STRING is returned.
-__device__ RC DB_NULLVALUE()
-{
-	if( objc!=2 && objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "NULLVALUE");
-		return TCL_ERROR;
-	}
-	if( objc==3 ){
-		int len;
-		char *zNull = Tcl_GetStringFromObj(objv[2], &len);
-		if( pDb->zNull ){
-			Tcl_Free(pDb->zNull);
-		}
-		if( zNull && len>0 ){
-			pDb->zNull = Tcl_Alloc( len + 1 );
-			memcpy(pDb->zNull, zNull, len);
-			pDb->zNull[len] = '\0';
-		}else{
-			pDb->zNull = 0;
-		}
-	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(pDb->zNull, -1));
-}
-
-//     $db last_insert_rowid 
-//
-// Return an integer which is the ROWID for the most recent insert.
-__device__ RC DB_LAST_INSERT_ROWID()
-{
-	Tcl_Obj *pResult;
-	Tcl_WideInt rowid;
-	if( objc!=2 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "");
-		return TCL_ERROR;
-	}
-	rowid = sqlite3_last_insert_rowid(pDb->db);
-	pResult = Tcl_GetObjResult(interp);
-	Tcl_SetWideIntObj(pResult, rowid);
-}
-
-// The DB_ONECOLUMN method is implemented together with DB_EXISTS.
-
-//    $db progress ?N CALLBACK?
-// 
-// Invoke the given callback every N virtual machine opcodes while executing queries.
-__device__ RC DB_PROGRESS()
-{
-	if( objc==2 ){
-		if( pDb->zProgress ){
-			Tcl_AppendResult(interp, pDb->zProgress, 0);
-		}
-	}else if( objc==4 ){
-		char *zProgress;
-		int len;
-		int N;
-		if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &N) ){
-			return TCL_ERROR;
-		};
-		if( pDb->zProgress ){
-			Tcl_Free(pDb->zProgress);
-		}
-		zProgress = Tcl_GetStringFromObj(objv[3], &len);
-		if( zProgress && len>0 ){
-			pDb->zProgress = Tcl_Alloc( len + 1 );
-			memcpy(pDb->zProgress, zProgress, len+1);
-		}else{
-			pDb->zProgress = 0;
-		}
-#ifndef OMIT_PROGRESS_CALLBACK
-		if( pDb->zProgress ){
-			pDb->interp = interp;
-			sqlite3_progress_handler(pDb->db, N, DbProgressHandler, pDb);
-		}else{
-			sqlite3_progress_handler(pDb->db, 0, 0, 0);
-		}
-#endif
-	}else{
-		Tcl_WrongNumArgs(interp, 2, objv, "N CALLBACK");
-		return TCL_ERROR;
-	}
-}
-
-//    $db profile ?CALLBACK?
-//
-// Make arrangements to invoke the CALLBACK routine after each SQL statement that has run.  The text of the SQL and the amount of elapse time are
-// appended to CALLBACK before the script is run.
-__device__ RC DB_PROFILE()
-{
-	if( objc>3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
-		return TCL_ERROR;
-	}else if( objc==2 ){
-		if( pDb->zProfile ){
-			Tcl_AppendResult(interp, pDb->zProfile, 0);
-		}
-	}else{
-		char *zProfile;
-		int len;
-		if( pDb->zProfile ){
-			Tcl_Free(pDb->zProfile);
-		}
-		zProfile = Tcl_GetStringFromObj(objv[2], &len);
-		if( zProfile && len>0 ){
-			pDb->zProfile = Tcl_Alloc( len + 1 );
-			memcpy(pDb->zProfile, zProfile, len+1);
-		}else{
-			pDb->zProfile = 0;
-		}
-#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
-		if( pDb->zProfile ){
-			pDb->interp = interp;
-			sqlite3_profile(pDb->db, DbProfileHandler, pDb);
-		}else{
-			sqlite3_profile(pDb->db, 0, 0);
-		}
-#endif
-	}
-}
-
-//     $db rekey KEY
-//
-// Change the encryption key on the currently open database.
-__device__ RC DB_REKEY()
-{
-	if( objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "KEY");
-		return TCL_ERROR;
-	}
-#ifdef HAS_CODEC
-	int nKey;
-	void *pKey;
-	pKey = Tcl_GetByteArrayFromObj(objv[2], &nKey);
-	rc = sqlite3_rekey(pDb->db, pKey, nKey);
-	if( rc ){
-		Tcl_AppendResult(interp, sqlite3_errstr(rc), 0);
-		rc = TCL_ERROR;
-	}
-#endif
-}
-
-//    $db restore ?DATABASE? FILENAME
-//
-// Open a database file named FILENAME.  Transfer the content  of FILENAME into the local database DATABASE (default: "main").
-__device__ RC DB_RESTORE()
-{
-	const char *zSrcFile;
-	const char *zDestDb;
-	sqlite3 *pSrc;
-	sqlite3_backup *pBackup;
-	int nTimeout = 0;
-
-	if( objc==3 ){
-		zDestDb = "main";
-		zSrcFile = Tcl_GetString(objv[2]);
-	}else if( objc==4 ){
-		zDestDb = Tcl_GetString(objv[2]);
-		zSrcFile = Tcl_GetString(objv[3]);
-	}else{
-		Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? FILENAME");
-		return TCL_ERROR;
-	}
-	rc = sqlite3_open_v2(zSrcFile, &pSrc, SQLITE_OPEN_READONLY, 0);
-	if( rc!=SQLITE_OK ){
-		Tcl_AppendResult(interp, "cannot open source database: ",
-			sqlite3_errmsg(pSrc), (char*)0);
-		sqlite3_close(pSrc);
-		return TCL_ERROR;
-	}
-	pBackup = sqlite3_backup_init(pDb->db, zDestDb, pSrc, "main");
-	if( pBackup==0 ){
-		Tcl_AppendResult(interp, "restore failed: ",
-			sqlite3_errmsg(pDb->db), (char*)0);
-		sqlite3_close(pSrc);
-		return TCL_ERROR;
-	}
-	while( (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK
-		|| rc==SQLITE_BUSY ){
-			if( rc==SQLITE_BUSY ){
-				if( nTimeout++ >= 3 ) break;
-				sqlite3_sleep(100);
-			}
-	}
-	sqlite3_backup_finish(pBackup);
-	if( rc==SQLITE_DONE ){
-		rc = TCL_OK;
-	}else if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ){
-		Tcl_AppendResult(interp, "restore failed: source database busy",
-			(char*)0);
-		rc = TCL_ERROR;
-	}else{
-		Tcl_AppendResult(interp, "restore failed: ",
-			sqlite3_errmsg(pDb->db), (char*)0);
-		rc = TCL_ERROR;
-	}
-	sqlite3_close(pSrc);
-}
-
-//     $db status (step|sort|autoindex)
-//
-// Display SQLITE_STMTSTATUS_FULLSCAN_STEP or SQLITE_STMTSTATUS_SORT for the most recent eval.
-__device__ RC DB_STATUS()
-{
-	int v;
-	const char *zOp;
-	if( objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "(step|sort|autoindex)");
-		return TCL_ERROR;
-	}
-	zOp = Tcl_GetString(objv[2]);
-	if( strcmp(zOp, "step")==0 ){
-		v = pDb->nStep;
-	}else if( strcmp(zOp, "sort")==0 ){
-		v = pDb->nSort;
-	}else if( strcmp(zOp, "autoindex")==0 ){
-		v = pDb->nIndex;
-	}else{
-		Tcl_AppendResult(interp, 
-			"bad argument: should be autoindex, step, or sort", 
-			(char*)0);
-		return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(v));
-}
-
-//     $db timeout MILLESECONDS
-//
-// Delay for the number of milliseconds specified when a file is locked.
-__device__ RC DB_TIMEOUT()
-{
-	int ms;
-	if( objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "MILLISECONDS");
-		return TCL_ERROR;
-	}
-	if( Tcl_GetIntFromObj(interp, objv[2], &ms) ) return TCL_ERROR;
-	sqlite3_busy_timeout(pDb->db, ms);
-}
-
-//     $db total_changes
-//
-// Return the number of rows that were modified, inserted, or deleted since the database handle was created.
-__device__ RC DB_TOTAL_CHANGES()
-{
-	Tcl_Obj *pResult;
-	if( objc!=2 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "");
-		return TCL_ERROR;
-	}
-	pResult = Tcl_GetObjResult(interp);
-	Tcl_SetIntObj(pResult, sqlite3_total_changes(pDb->db));
-}
-
-//    $db trace ?CALLBACK?
-//
-// Make arrangements to invoke the CALLBACK routine for each SQL statement that is executed.  The text of the SQL is appended to CALLBACK before
-// it is executed.
-__device__ RC DB_TRACE()
-{
-	if( objc>3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
-		return TCL_ERROR;
-	}else if( objc==2 ){
-		if( pDb->zTrace ){
-			Tcl_AppendResult(interp, pDb->zTrace, 0);
-		}
-	}else{
-		char *zTrace;
-		int len;
-		if( pDb->zTrace ){
-			Tcl_Free(pDb->zTrace);
-		}
-		zTrace = Tcl_GetStringFromObj(objv[2], &len);
-		if( zTrace && len>0 ){
-			pDb->zTrace = Tcl_Alloc( len + 1 );
-			memcpy(pDb->zTrace, zTrace, len+1);
-		}else{
-			pDb->zTrace = 0;
-		}
-#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
-		if( pDb->zTrace ){
-			pDb->interp = interp;
-			sqlite3_trace(pDb->db, DbTraceHandler, pDb);
-		}else{
-			sqlite3_trace(pDb->db, 0, 0);
-		}
-#endif
-	}
-}
-
-//    $db transaction [-deferred|-immediate|-exclusive] SCRIPT
-//
-// Start a new transaction (if we are not already in the midst of a transaction) and execute the TCL script SCRIPT.  After SCRIPT
-// completes, either commit the transaction or roll it back if SCRIPT throws an exception.  Or if no new transation was started, do nothing.
-// pass the exception on up the stack.
-//
-// This command was inspired by Dave Thomas's talk on Ruby at the 2005 O'Reilly Open Source Convention (OSCON).
-__device__ RC DB_TRANSACTION()
-{
-	Tcl_Obj *pScript;
-	const char *zBegin = "SAVEPOINT _tcl_transaction";
-	if( objc!=3 && objc!=4 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "[TYPE] SCRIPT");
-		return TCL_ERROR;
-	}
-
-	if( pDb->nTransaction==0 && objc==4 ){
-		static const char *TTYPE_strs[] = {
-			"deferred",   "exclusive",  "immediate", 0
-		};
-		enum TTYPE_enum {
-			TTYPE_DEFERRED, TTYPE_EXCLUSIVE, TTYPE_IMMEDIATE
-		};
-		int ttype;
-		if( Tcl_GetIndexFromObj(interp, objv[2], TTYPE_strs, "transaction type",
-			0, &ttype) ){
-				return TCL_ERROR;
-		}
-		switch( (enum TTYPE_enum)ttype ){
-		case TTYPE_DEFERRED:    /* no-op */;                 break;
-		case TTYPE_EXCLUSIVE:   zBegin = "BEGIN EXCLUSIVE";  break;
-		case TTYPE_IMMEDIATE:   zBegin = "BEGIN IMMEDIATE";  break;
-		}
-	}
-	pScript = objv[objc-1];
-
-	/* Run the SQLite BEGIN command to open a transaction or savepoint. */
-	pDb->disableAuth++;
-	rc = sqlite3_exec(pDb->db, zBegin, 0, 0, 0);
-	pDb->disableAuth--;
-	if( rc!=SQLITE_OK ){
-		Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), 0);
-		return TCL_ERROR;
-	}
-	pDb->nTransaction++;
-
-	/* If using NRE, schedule a callback to invoke the script pScript, then
-	** a second callback to commit (or rollback) the transaction or savepoint
-	** opened above. If not using NRE, evaluate the script directly, then
-	** call function DbTransPostCmd() to commit (or rollback) the transaction 
-	** or savepoint.  */
-	if( DbUseNre() ){
-		Tcl_NRAddCallback(interp, DbTransPostCmd, cd, 0, 0, 0);
-		Tcl_NREvalObj(interp, pScript, 0);
-	}else{
-		rc = DbTransPostCmd(&cd, interp, Tcl_EvalObjEx(interp, pScript, 0));
-	}
-}
-
-//    $db unlock_notify ?script?
-__device__ RC DB_UNLOCK_NOTIFY()
-{
-#ifndef ENABLE_UNLOCK_NOTIFY
-	interp->AppendResult("unlock_notify not available in this build", 0);
-	rc = RC_ERROR;
-#else
-	if( objc!=2 && objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "?SCRIPT?");
-		rc = TCL_ERROR;
-	}else{
-		void (*xNotify)(void **, int) = 0;
-		void *pNotifyArg = 0;
-
-		if( pDb->pUnlockNotify ){
-			Tcl_DecrRefCount(pDb->pUnlockNotify);
-			pDb->pUnlockNotify = 0;
-		}
-
-		if( objc==3 ){
-			xNotify = DbUnlockNotify;
-			pNotifyArg = (void *)pDb;
-			pDb->pUnlockNotify = objv[2];
-			Tcl_IncrRefCount(pDb->pUnlockNotify);
-		}
-
-		if( sqlite3_unlock_notify(pDb->db, xNotify, pNotifyArg) ){
-			Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), 0);
+			// failure, append lineno where failed
+			__snprintf(lineNum, sizeof(lineNum), "%d", lineno);
+			Tcl_AppendResult(interp, ", failed while processing line: ", lineNum, nullptr);
 			rc = TCL_ERROR;
 		}
-	}
-#endif
-}
+		return rc; }
 
-//    $db wal_hook ?script?
-//    $db update_hook ?script?
-//    $db rollback_hook ?script?
-__device__ RC DB_WAL_HOOK() { return DB_ROLLBACK_HOOK(); }
-__device__ RC DB_UPDATE_HOOK() { return DB_ROLLBACK_HOOK(); }
-__device__ RC DB_ROLLBACK_HOOK()
-{
-	/* set ppHook to point at pUpdateHook or pRollbackHook, depending on 
-	** whether [$db update_hook] or [$db rollback_hook] was invoked.
-	*/
-	Tcl_Obj **ppHook; 
-	if( choice==DB_UPDATE_HOOK ){
-		ppHook = &pDb->pUpdateHook;
-	}else if( choice==DB_WAL_HOOK ){
-		ppHook = &pDb->pWalHook;
-	}else{
-		ppHook = &pDb->pRollbackHook;
-	}
-
-	if( objc!=2 && objc!=3 ){
-		Tcl_WrongNumArgs(interp, 2, objv, "?SCRIPT?");
+	case DB_ENABLE_LOAD_EXTENSION: {
+		//    $db enable_load_extension BOOLEAN
+		//
+		// Turn the extension loading feature on or off.  It if off by default.
+#ifndef OMIT_LOAD_EXTENSION
+		if (argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "BOOLEAN");
+			return TCL_ERROR;
+		}
+		bool onoff;
+		if (Tcl_GetBoolean(interp, args[2], &onoff))
+			return TCL_ERROR;
+		Main::EnableLoadExtension(p->Ctx, onoff);
+#else
+		Tcl_AppendResult(interp, "extension loading is turned off at compile-time", 0);
 		return TCL_ERROR;
-	}
-	if( *ppHook ){
-		Tcl_SetObjResult(interp, *ppHook);
-		if( objc==3 ){
-			Tcl_DecrRefCount(*ppHook);
-			*ppHook = 0;
-		}
-	}
-	if( objc==3 ){
-		assert( !(*ppHook) );
-		if( Tcl_GetCharLength(objv[2])>0 ){
-			*ppHook = objv[2];
-			Tcl_IncrRefCount(*ppHook);
-		}
-	}
-
-	sqlite3_update_hook(pDb->db, (pDb->pUpdateHook?DbUpdateHandler:0), pDb);
-	sqlite3_rollback_hook(pDb->db,(pDb->pRollbackHook?DbRollbackHandler:0),pDb);
-	sqlite3_wal_hook(pDb->db,(pDb->pWalHook?DbWalHandler:0),pDb);
-
-	break;
-}
-
-//    $db version
-//
-// Return the version string for this database.
-__device__ RC DB_VERSION()
-{
-	Tcl_SetResult(interp, (char *)sqlite3_libversion(), TCL_STATIC);
-}
-
 #endif
+		return rc; }
+
+	case DB_ERRORCODE: {
+		//    $db errorcode
+		//
+		// Return the numeric error code that was returned by the most recent call to sqlite3_exec().
+		char b[100];
+		Tcl_SetResult(interp, _itoa(Main::ErrCode(p->Ctx), b), TCL_VOLATILE);
+		return rc; }
+
+	case DB_EXISTS: 
+	case DB_ONECOLUMN: {
+		//    $db exists $sql
+		//    $db onecolumn $sql
+		//
+		// The onecolumn method is the equivalent of:
+		//     lindex [$db eval $sql] 0
+		DbEvalContext sEval;
+		if (argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "SQL");
+			return TCL_ERROR;
+		}
+
+		DbEvalInit(&sEval, p, args[2], nullptr);
+		rc = DbEvalStep(&sEval);
+		if (choice == DB_ONECOLUMN)
+		{
+			if (rc == TCL_OK)
+				Tcl_SetResult(interp, DbEvalColumnValue(&sEval, 0));
+			else if (rc == TCL_BREAK)
+				Tcl_ResetResult(interp);
+		}
+		else if (rc == TCL_BREAK || rc == TCL_OK)
+			Tcl_SetResult(interp, (rc == TCL_OK?"1":"0"), TCL_VOLATILE);
+		DbEvalFinalize(&sEval);
+
+		if (rc == TCL_BREAK)
+			rc = TCL_OK;
+		return rc; }
+
+	case DB_EVAL: {
+		//    $db eval $sql ?array? ?{  ...code... }?
+		//
+		// The SQL statement in $sql is evaluated.  For each row, the values are placed in elements of the array named "array" and ...code... is executed.
+		// If "array" and "code" are omitted, then no callback is every invoked. If "array" is an empty string, then the values are placed in variables
+		// that have the same name as the fields extracted by the query.
+		if (argc < 3 || argc > 5)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "SQL ?ARRAY-NAME? ?SCRIPT?");
+			return TCL_ERROR;
+		}
+
+		if (argc == 3)
+		{
+			DbEvalContext sEval;
+			Tcl_Obj *ret = Tcl_NewObj();
+			Tcl_IncrRefCount(ret);
+			DbEvalInit(&sEval, p, args[2], nullptr);
+
+			while ((rc2 = DbEvalStep(&sEval)) == RC_OK)
+			{
+				int cols;
+				DbEvalRowInfo(&sEval, &cols, nullptr);
+				for (int i = 0; i < cols; i++)
+					Tcl_ListObjAppendElement(interp, ret, DbEvalColumnValue(&sEval, i));
+			}
+			DbEvalFinalize(&sEval);
+			if (rc2 == RC_DONE)
+			{
+				Tcl_SetObjResult(interp, ret);
+				rc2 = RC_OK;
+			}
+			Tcl_DecrRefCount(ret);
+		}
+		else
+		{
+			ClientData cd[2];
+			Tcl_Obj *array = (argc == 5 && *args[3] ? args[3] : nullptr);
+			Tcl_Obj *script = args[argc-1];
+			Tcl_IncrRefCount(script);
+
+			DbEvalContext *p2 = (DbEvalContext *)Tcl_Alloc(sizeof(DbEvalContext));
+			DbEvalInit(p2, p, args[2], array);
+
+			cd[0] = (ClientData)p2;
+			cd[1] = (ClientData)script;
+			rc2 = DbEvalNextCmd(cd, interp, RC_OK);
+		}
+		return rc; }
+
+	case DB_FUNCTION: {
+		//     $db function NAME [-argcount N] SCRIPT
+		//
+		// Create a new SQL function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
+		Tcl_Obj *script;
+		int args4 = -1;
+		if (argc == 6)
+		{
+			const char *z = args[3];
+			int n = _strlen(z);
+			if (n > 2 && !_strncmp(z, "-argcount",n))
+			{
+				if (Tcl_GetInt(interp, args[4], &args4)) return TCL_ERROR;
+				if (args4 < 0)
+				{
+					Tcl_AppendResult(interp, "number of arguments must be non-negative", nullptr);
+					return TCL_ERROR;
+				}
+			}
+			script = args[5];
+		}
+		else if (argc != 4)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "NAME [-argcount N] SCRIPT");
+			return TCL_ERROR;
+		}
+		else
+			script = args[3];
+		char *name = args[2];
+		SqlFunc *func = FindSqlFunc(p, name);
+		if (!func) return TCL_ERROR;
+		if (func->Script)
+			Tcl_DecrRefCount(func->Script);
+		func->Script = script;
+		Tcl_IncrRefCount(script);
+		func->UseEvalObjv = SafeToUseEvalObjv(interp, script);
+		rc2 = Main::CreateFunction(p->Ctx, name, args4, TEXTENCODE_UTF8, func, TclSqlFunc, 0, 0);
+		if (rc2 != RC_OK)
+		{
+			rc = TCL_ERROR;
+			Tcl_SetResult(interp, (char *)Main::ErrMsg(p->Ctx), TCL_VOLATILE);
+		}
+		return rc; }
+
+	case DB_INCRBLOB: {
+		//     $db incrblob ?-readonly? ?DB? TABLE COLUMN ROWID
+#ifdef OMIT_INCRBLOB
+		Tcl_AppendResult(interp, "incrblob not available in this build", nullptr);
+		return TCL_ERROR;
+#else
+		// Check for the -readonly option
+		int isReadonly = (argc > 3 && !_strcmp(args[2], "-readonly") ? 1 : 0);
+		if (argc != (5+isReadonly) && argc != (6+isReadonly))
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?-readonly? ?DB? TABLE COLUMN ROWID");
+			return TCL_ERROR;
+		}
+
+		const char *db = (argc == (6+isReadonly) ? args[2] : "main");
+		const char *table = args[argc-3];
+		const char *column = args[argc-2];
+		int64 rows;
+		rc = Tcl_GetWideInt(interp, args[argc-1], &rows);
+
+		if (rc == TCL_OK)
+			rc = CreateIncrblobChannel(interp, p, db, table, column, rows, isReadonly);
+#endif
+		return rc; }
+
+	case DB_INTERRUPT: {
+		//     $db interrupt
+		//
+		// Interrupt the execution of the inner-most SQL interpreter.  This causes the SQL statement to return an error of SQLITE_INTERRUPT.
+		Main::Interrupt(p->Ctx);
+		return rc; }
+
+	case DB_NULLVALUE: {
+		//     $db nullvalue ?STRING?
+		//
+		// Change text used when a NULL comes back from the database. If ?STRING? is not present, then the current string used for NULL is returned.
+		// If STRING is present, then STRING is returned.
+		if (argc != 2 && argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "NULLVALUE");
+			return TCL_ERROR;
+		}
+		if (argc == 3)
+		{
+			int len;
+			char *null = Tcl_GetString(interp, args[2], &len);
+			if (p->NullText)
+				Tcl_Free(p->NullText);
+			if (null && len > 0)
+			{
+				p->NullText = (char *)Tcl_Alloc(len + 1);
+				_memcpy(p->NullText, null, len);
+				p->NullText[len] = '\0';
+			}
+			else
+				p->NullText = nullptr;
+		}
+		Tcl_SetResult(interp, p->NullText, TCL_VOLATILE);
+		return rc; }
+
+	case DB_LAST_INSERT_ROWID: {
+		//     $db last_insert_rowid 
+		//
+		// Return an integer which is the ROWID for the most recent insert.
+		if (argc != 2)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "");
+			return TCL_ERROR;
+		}
+		int64 rowid = Main::CtxLastInsertRowid(p->Ctx);
+		Tcl_SetResult(interpt, _itoa64(rowid, b), TCL_VOLATILE);
+		return rc; }
+
+							   // The DB_ONECOLUMN method is implemented together with DB_EXISTS.
+
+	case DB_PROGRESS: {
+		//    $db progress ?N CALLBACK?
+		// 
+		// Invoke the given callback every N virtual machine opcodes while executing queries.
+		if (argc == 2)
+		{
+			if (p->Progress)
+				Tcl_AppendResult(interp, p->Progress, 0);
+		}
+		else if (argc == 4)
+		{
+			int N;
+			if (Tcl_GetInt(interp, args[2], &N) != TCL_OK)
+				return TCL_ERROR;
+			if (p->Progress)
+				Tcl_Free(p->Progress);
+			int len;
+			char *progress = Tcl_GetString(interp, args[3], &len);
+			if (progress && len > 0)
+			{
+				p->Progress = Tcl_Alloc(len + 1);
+				_memcpy(p->Progress, progress, len+1);
+			}
+			else
+				p->Progress = nullptr;
+#ifndef OMIT_PROGRESS_CALLBACK
+			if (p->Progress)
+			{
+				p->Interp = interp;
+				Main::ProgressHandler(p->Ctx, N, DbProgressHandler, p);
+			}
+			else
+				Main::ProgressHandler(p->Ctx, 0, nullptr, nullptr);
+#endif
+		}
+		else
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "N CALLBACK");
+			return TCL_ERROR;
+		}
+		return rc; }
+
+	case DB_PROFILE: {
+		//    $db profile ?CALLBACK?
+		//
+		// Make arrangements to invoke the CALLBACK routine after each SQL statement that has run.  The text of the SQL and the amount of elapse time are
+		// appended to CALLBACK before the script is run.
+		if (argc > 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?CALLBACK?");
+			return TCL_ERROR;
+		}
+		else if (argc == 2)
+		{
+			if (p->Profile)
+				Tcl_AppendResult(interp, p->Profile, nullptr);
+		}
+		else
+		{
+			if (p->Profile)
+				Tcl_Free(p->Profile);
+			int len;
+			char *profile = Tcl_GetString(interp, args[2], &len);
+			if (profile && len > 0)
+			{
+				p->Profile = (char *)Tcl_Alloc(len + 1);
+				_memcpy(p->Profile, profile, len+1);
+			}
+			else
+				p->Profile = nullptr;
+#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
+			if (p->Profile)
+			{
+				p->Interp = interp;
+				Main::Profile(p->Ctx, DbProfileHandler, p);
+			}
+			else
+				Main::Profile(p->Ctx, nullptr, nullptr);
+#endif
+		}
+		return rc; }
+
+	case DB_REKEY: {
+		//     $db rekey KEY
+		//
+		// Change the encryption key on the currently open database.
+		if (argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "KEY");
+			return TCL_ERROR;
+		}
+#ifdef HAS_CODEC
+		int nKey;
+		void *pKey = Tcl_GetByteArray(interp, args[2], &nKey);
+		rc2 = sqlite3_rekey(p->Ctx, pKey, nKey);
+		if (rc2)
+		{
+			Tcl_AppendResult(interp, Main::ErrStr(rc2), 0);
+			rc = TCL_ERROR;
+		}
+#endif
+		return rc; }
+
+	case DB_RESTORE: {
+		//    $db restore ?DATABASE? FILENAME
+		//
+		// Open a database file named FILENAME.  Transfer the content  of FILENAME into the local database DATABASE (default: "main").
+		const char *srcFile;
+		const char *destDb;
+		if (argc == 3)
+		{
+			destDb = "main";
+			srcFile = args[2];
+		}
+		else if (argc == 4)
+		{
+			destDb = args[2];
+			srcFile = args[3];
+		}
+		else
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?DATABASE? FILENAME");
+			return TCL_ERROR;
+		}
+		Context *src;
+		rc2 = Main::Open_v2(srcFile, &src, VSystem::OPEN::OPEN_READONLY, 0);
+		if (rc2 != RC_OK)
+		{
+			Tcl_AppendResult(interp, "cannot open source database: ", Main::ErrMsg(src), nullptr);
+			Main::Close(src);
+			return TCL_ERROR;
+		}
+		Backup *backup = Backup::Init(p->Ctx, destDb, src, "main");
+		if (!backup)
+		{
+			Tcl_AppendResult(interp, "restore failed: ", Main::ErrMsg(p->Ctx), nullptr);
+			Main::Close(src);
+			return TCL_ERROR;
+		}
+		int timeout = 0;
+		while ((rc2 = backup->Step(100)) == RC_OK || rc2 == RC_BUSY)
+		{
+			if (rc2 == RC_BUSY)
+			{
+				if (timeout++ >= 3) break;
+				Main::Sleep(100);
+			}
+		}
+		Backup::Finish(backup);
+		if (rc2 == RC_DONE)
+			rc = TCL_OK;
+		else if (rc2 == RC_BUSY || rc2 == RC_LOCKED)
+		{
+			Tcl_AppendResult(interp, "restore failed: source database busy", nullptr);
+			rc = TCL_ERROR;
+		}
+		else
+		{
+			Tcl_AppendResult(interp, "restore failed: ", Main::ErrMsg(p->Ctx), nullptr);
+			rc = TCL_ERROR;
+		}
+		Main::Close(src);
+		return rc; }
+
+	case DB_STATUS: {
+		//     $db status (step|sort|autoindex)
+		//
+		// Display SQLITE_STMTSTATUS_FULLSCAN_STEP or SQLITE_STMTSTATUS_SORT for the most recent eval.
+		if (argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "(step|sort|autoindex)");
+			return TCL_ERROR;
+		}
+		const char *op = args[2];
+		int v;
+		if (!_strcmp(op, "step")) v = p->Steps;
+		else if (!_strcmp(op, "sort")) v = p->Sorts;
+		else if (!_strcmp(op, "autoindex")) v = p->Indexs;
+		else
+		{
+			Tcl_AppendResult(interp, "bad argument: should be autoindex, step, or sort", nullptr);
+			return TCL_ERROR;
+		}
+		Tcl_SetResult(interp, _itoa(v, b), TCL_VOLATILE);
+		return rc; }
+
+	case DB_TIMEOUT: {
+		//     $db timeout MILLESECONDS
+		//
+		// Delay for the number of milliseconds specified when a file is locked.
+		if (argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "MILLISECONDS");
+			return TCL_ERROR;
+		}
+		int ms;
+		if (Tcl_GetInt(interp, args[2], &ms)) return TCL_ERROR;
+		Main::BusyTimeout(p->Ctx, ms);
+		return rc; }
+
+	case DB_TOTAL_CHANGES: {
+		//     $db total_changes
+		//
+		// Return the number of rows that were modified, inserted, or deleted since the database handle was created.
+		if (argc != 2)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "");
+			return TCL_ERROR;
+		}
+		Tcl_SetResult(interp, _itoa(Main::CtxTotalChanges(p->Ctx), b), TCL_VOLATILE);
+		return rc; }
+
+	case DB_TRACE: {
+		//    $db trace ?CALLBACK?
+		//
+		// Make arrangements to invoke the CALLBACK routine for each SQL statement that is executed.  The text of the SQL is appended to CALLBACK before
+		// it is executed.
+		if (argc > 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?CALLBACK?");
+			return TCL_ERROR;
+		}
+		else if (argc == 2)
+		{
+			if (p->Trace)
+				Tcl_AppendResult(interp, p->Trace, nullptr);
+		}
+		else
+		{
+			if (p->Trace)
+				Tcl_Free(p->Trace);
+			int len;
+			char *trace = Tcl_GetString(interp, args[2], &len);
+			if (trace && len > 0)
+			{
+				p->Trace = (char *)Tcl_Alloc(len + 1);
+				_memcpy(p->Trace, trace, len+1);
+			}
+			else
+				p->Trace = nullptr;
+#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
+			if (p->Trace)
+			{
+				p->Interp = interp;
+				Main::Trace(p->Ctx, DbTraceHandler, p);
+			}
+			else
+				Main::Trace(p->Ctx, nullptr, nullptr);
+#endif
+		}
+		return rc; }
+
+	case DB_TRANSACTION: {
+		//    $db transaction [-deferred|-immediate|-exclusive] SCRIPT
+		//
+		// Start a new transaction (if we are not already in the midst of a transaction) and execute the TCL script SCRIPT.  After SCRIPT
+		// completes, either commit the transaction or roll it back if SCRIPT throws an exception.  Or if no new transation was started, do nothing.
+		// pass the exception on up the stack.
+		//
+		// This command was inspired by Dave Thomas's talk on Ruby at the 2005 O'Reilly Open Source Convention (OSCON).
+		if (argc != 3 && argc != 4)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "[TYPE] SCRIPT");
+			return TCL_ERROR;
+		}
+
+		const char *begin = "SAVEPOINT _tcl_transaction";
+		if (p->Transactions == 0 && argc == 4)
+		{
+			int ttype;
+			if (Tcl_GetIndex(interp, args[2], TTYPE_strs, "transaction type", 0, &ttype))
+				return TCL_ERROR;
+			switch ((TTYPE_enum)ttype)
+			{
+			case TTYPE_DEFERRED: break; // no-op
+			case TTYPE_EXCLUSIVE: begin = "BEGIN EXCLUSIVE"; break;
+			case TTYPE_IMMEDIATE: begin = "BEGIN IMMEDIATE"; break;
+			}
+		}
+		char *script = args[argc-1];
+
+		// Run the SQLite BEGIN command to open a transaction or savepoint.
+		p->DisableAuth++;
+		rc2 = Main::Exec(p->Ctx, begin, 0, 0, 0);
+		p->DisableAuth--;
+		if (rc2 != RC_OK)
+		{
+			Tcl_AppendResult(interp, Main::ErrMsg(p->Ctx), nullptr);
+			return TCL_ERROR;
+		}
+		p->Transactions++;
+
+		// If using NRE, schedule a callback to invoke the script pScript, then a second callback to commit (or rollback) the transaction or savepoint
+		// opened above. If not using NRE, evaluate the script directly, then call function DbTransPostCmd() to commit (or rollback) the transaction 
+		// or savepoint.
+		//if (DbUseNre())
+		//{
+		//	Tcl_NRAddCallback(interp, DbTransPostCmd, cd, 0, 0, 0);
+		//	Tcl_NREvalObj(interp, pScript, 0);
+		//} else
+		rc2 = DbTransPostCmd(&cd, interp, Tcl_EvalObj(interp, script, 0));
+		return rc; }
+
+	case DB_UNLOCK_NOTIFY: {
+		//    $db unlock_notify ?script?
+#ifndef ENABLE_UNLOCK_NOTIFY
+		Tcl_AppendResult(interp, "unlock_notify not available in this build", nullptr);
+		rc = TCL_ERROR;
+#else
+		if (argc != 2 && argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?SCRIPT?");
+			rc = TCL_ERROR;
+		}
+		else
+		{
+			if (p->UnlockNotify)
+			{
+				Tcl_DecrRefCount(p->UnlockNotify);
+				p->UnlockNotify = nullptr;
+			}
+
+			void (*notify)(void **, int) = nullptr;
+			void *notifyArg = nullptr;
+			if (argc == 3)
+			{
+				notify = DbUnlockNotify;
+				notifyArg = (void *)p;
+				p->UnlockNotify = args[2];
+				Tcl_IncrRefCount(p->UnlockNotify);
+			}
+
+			if (Main::UnlockNotify(p->Ctx, notify, notifyArg))
+			{
+				Tcl_AppendResult(interp, Main::ErrMsg(p->Ctx), nullptr);
+				rc = TCL_ERROR;
+			}
+		}
+#endif
+		return rc; }
+
+	case DB_WAL_HOOK: 
+	case DB_UPDATE_HOOK: 
+	case DB_ROLLBACK_HOOK: {
+		//    $db wal_hook ?script?
+		//    $db update_hook ?script?
+		//    $db rollback_hook ?script?
+		// set ppHook to point at pUpdateHook or pRollbackHook, depending on whether [$db update_hook] or [$db rollback_hook] was invoked.
+		Tcl_Obj **hook; 
+		if (choice == DB_UPDATE_HOOK) hook = &p->UpdateHook;
+		else if (choice == DB_WAL_HOOK) hook = &p->WalHook;
+		else hook = &p->RollbackHook;
+
+		if (argc != 2 && argc != 3)
+		{
+			Tcl_WrongNumArgs(interp, 2, args, "?SCRIPT?");
+			return TCL_ERROR;
+		}
+		if (*hook)
+		{
+			Tcl_SetObjResult(interp, *hook);
+			if (argc == 3)
+			{
+				Tcl_DecrRefCount(*hook);
+				*hook = nullptr;
+			}
+		}
+		if (argc == 3)
+		{
+			_assert(!(*hook));
+			if (_strlen(args[2]) > 0)
+			{
+				*hook = (Tcl_Obj *)args[2];
+				Tcl_IncrRefCount(*hook);
+			}
+		}
+		Main::UpdateHook(p->Ctx, (p->UpdateHook?DbUpdateHandler:0), p);
+		Main::RollbackHook(p->Ctx, (p->RollbackHook?DbRollbackHandler:0), p);
+		Main::WalHook(p->Ctx, (p->WalHook?DbWalHandler:0), p);
+		return rc; }
+*/
+
+	case DB_VERSION: {
+		//    $db version
+		//
+		// Return the version string for this database.
+		Tcl_SetResult(interp, CORE_VERSION, TCL_STATIC);
+		return rc; }
+
+	} // End of the SWITCH statement
+	return rc;
+}
+
 #pragma endregion
-#endif
 
 #pragma region DbMain
+
 //   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
 //                           ?-create BOOLEAN? ?-nomutex BOOLEAN?
 //
@@ -2288,17 +2333,17 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		arg = args[1];
 		if (!_strcmp(arg, "-version"))
 		{
-			Tcl_AppendResult(interp, CORE_VERSION, 0);
-			return RC_OK;
+			Tcl_AppendResult(interp, CORE_VERSION, nullptr);
+			return TCL_OK;
 		}
 		if (!_strcmp(arg, "-has-codec"))
 		{
 #ifdef HAS_CODEC
-			Tcl_AppendResult(interp, "1", 0);
+			Tcl_AppendResult(interp, "1", nullptr);
 #else
-			Tcl_AppendResult(interp, "0", 0);
+			Tcl_AppendResult(interp, "0", nullptr);
 #endif
-			return RC_OK;
+			return TCL_OK;
 		}
 	}
 #ifdef HAS_CODEC
@@ -2313,14 +2358,14 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		if (!_strcmp(arg, "-key"))
 		{
 #ifdef HAS_CODEC
-			key = Tcl_GetString(args[i+1], &keyLength);
+			key = Tcl_GetByteArray(args[i+1], &keyLength);
 #endif
 		}
 		else if (!_strcmp(arg, "-vfs"))
 			vfsName = args[i+1];
 		else if (!_strcmp(arg, "-readonly"))
 		{
-			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return TCL_ERROR;
 			if (b)
 			{
 				flags &= ~(VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE);
@@ -2334,7 +2379,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		}
 		else if (!_strcmp(arg, "-create"))
 		{
-			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return TCL_ERROR;
 			if (b && (flags & VSystem::OPEN_READONLY) == 0)
 				flags |= VSystem::OPEN_CREATE;
 			else
@@ -2342,7 +2387,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		}
 		else if (!_strcmp(arg, "-nomutex"))
 		{
-			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return TCL_ERROR;
 			if (b)
 			{
 				flags |= VSystem::OPEN_NOMUTEX;
@@ -2353,7 +2398,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		}
 		else if (!_strcmp(arg, "-fullmutex"))
 		{
-			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return TCL_ERROR;
 			if (b)
 			{
 				flags |= VSystem::OPEN_FULLMUTEX;
@@ -2364,7 +2409,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		}
 		else if (!_strcmp(arg, "-uri"))
 		{
-			if (Tcl_GetBoolean(interp, args[i+1], &b)) return RC_ERROR;
+			if (Tcl_GetBoolean(interp, args[i+1], &b)) return TCL_ERROR;
 			if (b)
 				flags |= VSystem::OPEN_URI;
 			else
@@ -2373,7 +2418,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		else
 		{
 			Tcl_AppendResult(interp, "unknown option: ", arg, 0);
-			return RC_ERROR;
+			return TCL_ERROR;
 		}
 	}
 	if (argc < 3 || (argc & 1) != 1)
@@ -2391,7 +2436,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 	if (!p)
 	{
 		Tcl_SetResult(interp, "malloc failed", TCL_STATIC);
-		return RC_ERROR;
+		return TCL_ERROR;
 	}
 	_memset(p, 0, sizeof(*p));
 	char *fileName = args[2];
@@ -2422,7 +2467,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 	p->MaxStmt = NUM_PREPARED_STMTS;
 	p->Interp = interp;
 	arg = args[1];
-	Tcl_CreateCommand(interp, (char *)arg, nullptr, (ClientData)p, DbDeleteCmd);
+	Tcl_CreateCommand(interp, (char *)arg, (Tcl_CmdProc *)DbObjCmd, (ClientData)p, DbDeleteCmd);
 	return TCL_OK;
 }
 #pragma endregion
@@ -2434,16 +2479,16 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 // for additional information.
 __device__ int Sqlite3_Init(Tcl_Interp *interp)
 {
-	Tcl_CreateCommand(interp, "sqlite3", (Tcl_CmdProc *)DbMain, 0, 0);
+	Tcl_CreateCommand(interp, "sqlite3", (Tcl_CmdProc *)DbMain, nullptr, nullptr);
 	return TCL_OK;
 }
 __device__ int Sqlite3_Unload(Tcl_Interp *interp, int flags) { return TCL_OK; }
 
-// Because it accesses the file-system and uses persistent state, SQLite is not considered appropriate for safe interpreters.  Hence, we deliberately omit the _SafeInit() interfaces.
-#ifndef SQLITE_3_SUFFIX_ONLY
-int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
-int Tclsqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
-int Sqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
-#endif
- 
+//// Because it accesses the file-system and uses persistent state, SQLite is not considered appropriate for safe interpreters.  Hence, we deliberately omit the _SafeInit() interfaces.
+//#ifndef SQLITE_3_SUFFIX_ONLY
+//int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
+//int Tclsqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
+//int Sqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+//int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+//#endif
+

@@ -108,11 +108,17 @@ __device__ int __chmod(const char *a, mode_t m);
 __device__ int __mkdir(const char *a, mode_t m);
 __device__ int __mkfifo(const char *a, mode_t m);
 __device__ int __stat(const char *a, struct stat *b);
+__device__ char *__getcwd(char *b, int l);
+__device__ int __chdir(const char *p);
+__device__ int __access(const char *p, int flags);
 #else
 #define __chmod(a, m) chmod(a, m)
 #define __mkdir(a, m) mkdir(a, m)
 #define __mkfifo(a, m) mkfifo(a, m)
 #define __stat(a, b) stat(a, b)
+#define __getcwd(b, l) getcwd(b, l)
+#define __chdir(p) chdir(p, f)
+#define __access(p, f) access(p, f)
 #endif
 
 #if OS_GPU
@@ -134,6 +140,29 @@ __device__ struct dirent *_readdir(DIR *);
 __device__ void _rewinddir(DIR *);
 #endif
 
+//#ifndef STDIN_FILENO
+//# define STDIN_FILENO 0
+//#endif
+//
+//#ifndef STDOUT_FILENO
+//# define STDOUT_FILENO 1
+//#endif
+//
+//#ifndef STDERR_FILENO
+//# define STDERR_FILENO 2
+//#endif
+
+#if !defined SEEK_SET
+# define SEEK_SET 0
+# define SEEK_CUR 1
+# define SEEK_END 2
+#endif
+#ifndef F_OK
+# define F_OK 0
+# define X_OK 1
+# define W_OK 2
+# define R_OK 4
+#endif
 
 // Define macros to query file type bits, if they're not already defined.
 #ifndef S_ISREG

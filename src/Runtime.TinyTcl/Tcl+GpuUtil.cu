@@ -161,19 +161,19 @@ void mktemp(char *buf, int size)
 *
 *----------------------------------------------------------------------
 */
-int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, FILE **inPipePtr, FILE **outPipePtr, FILE **errFilePtr)
+int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, int **inPipePtr, int **outPipePtr, int **errFilePtr)
 {
 	if (inPipePtr != NULL) {
-		*inPipePtr = NULL;
+		*inPipePtr = -1;
 	}
 	if (outPipePtr != NULL) {
-		*outPipePtr = NULL;
+		*outPipePtr = -1;
 	}
 	if (errFilePtr != NULL) {
-		*errFilePtr = NULL;
+		*errFilePtr = -1;
 	}
-	FILE *pipeIds[2]; // File ids for pipe that's being created.
-	pipeIds[0] = pipeIds[1] = NULL;
+	int *pipeIds[2]; // File ids for pipe that's being created.
+	pipeIds[0] = pipeIds[1] = -1;
 	int numPids = 0; // Actual number of processes that exist at *pidPtr right now.
 
 	// First, scan through all the arguments to figure out the structure of the pipeline.  Count the number of distinct processes (it's the number of "|" arguments).

@@ -908,6 +908,18 @@ __device__ int __stat(const char *a, struct stat *b)
 {
 	return 0;
 }
+__device__ char *__getcwd(char *b, int l)
+{
+	return nullptr;
+}
+__device__ int __chdir(const char *p)
+{
+	return 0;
+}
+__device__ int __access(const char *p, int flags)
+{
+	return 0;
+}
 #endif
 
 #if OS_GPU

@@ -4,7 +4,6 @@
 
 //////////////////////
 // NATIVE
-
 #pragma region NATIVE
 
 #include <stdio.h>
@@ -37,8 +36,9 @@ typedef struct
 #endif
 #include "Runtime.cu.h"
 // panic
+#define _exit(v) asm("trap;")
 #define _abort() asm("trap;")
-#define _panic(fmt, ...) printf(fmt, __VA_ARGS__)
+#define _panic(fmt, ...) printf(fmt, __VA_ARGS__); asm("trap;")
 #else
 #define __host_device__
 #define __host_constant__
@@ -46,6 +46,7 @@ typedef struct
 #include <malloc.h>
 #include "Runtime.cpu.h"
 // panic
+#define _exit(v) exit(v)
 #define _abort() abort()
 #define _panic(fmt, ...) printf(fmt, __VA_ARGS__)
 #endif
@@ -1228,10 +1229,11 @@ extern __constant__ FILE _stderr_file;
 #endif
 
 #if 0 && OS_MAP
-#define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
-#define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
-extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
-extern "C" __device__ inline int __fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
+extern "C" __device__ inline int __fileno(FILE *f) { return -1; }
+//#define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
+//#define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
+extern "C" __device__ inline void _fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
+extern "C" __device__ inline int _fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
 extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }
 extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(true, f); }
 extern "C" __device__ inline int _fflushR(FILE *f) { Messages::Stdio_fflush msg(false, f); return msg.RC; }
@@ -1245,6 +1247,13 @@ extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Std
 extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Stdio_fputs msg(false, s, f); return msg.RC; }
 extern "C" __device__ inline size_t _fread(void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fread msg(false, s, n, f); memcpy(p, msg.Ptr, msg.RC); return msg.RC; }
 extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fwrite msg(false, p, s, n, f); return msg.RC; }
+extern "C" __device__ inline int _fseek(FILE *f, long int o, int s) { }
+extern "C" __device__ inline int _ftell(FILE *f) { }
+extern "C" __device__ inline int _feof(FILE *f) { }
+extern "C" __device__ inline int _ferror(FILE *f) { }
+extern "C" __device__ inline void _clearerr(FILE *f) { }
+extern "C" __device__ inline int _rename(const char *a, const char *b) { }
+extern "C" __device__ inline int _unlink(const char *a) { }
 #else
 #define _fprintfR _fprintf
 #define _fflushR _fflush
@@ -1252,17 +1261,27 @@ extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, F
 #define _fputcR _fputc
 #define _fputsR _fputs
 #if __CUDACC__
+#define __fileno(f) (int)-1
 #define _fprintf(f, ...) printf(__VA_ARGS__)
-#define _fopen(f, m) 0
-#define _fflush(f)
-#define _fclose(f)
-#define _fgetc(c, f)
-#define _fgets(s, f)
+#define _fprintf(f, ...) printf(__VA_ARGS__)
+#define _fopen(f, m) (FILE *)0
+#define _fflush(f) (int)0
+#define _fclose(f) (int)0
+#define _fgetc(f) (int)0
+#define _fgets(s, n, f) (int)0
 #define _fputc(c, f) printf("%c", c)
-#define _fputs(s, f) printf("%s\n", c)
-#define _fread(p, s, n, f)
-#define _fwrite(p, s, n, f)
+#define _fputs(s, f) printf("%s\n", s)
+#define _fread(p, s, n, f) (size_t)0
+#define _fwrite(p, s, n, f) (size_t)0
+#define _fseek(f, o, s) (int)0
+#define _ftell(f) (int)0
+#define _feof(f) (int)0
+#define _ferror(f) (int)0
+#define _clearerr(f) (void)0
+#define _rename(a, b) (int)0
+#define _unlink(a) (int)0
 #else
+#define __fileno(f) fileno(f)
 #define _fprintf(f, ...) fprintf(f, __VA_ARGS__)
 #define _fopen(f, m) fopen(f, m)
 #define _fflush(f) fflush(f)
@@ -1273,6 +1292,13 @@ extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, F
 #define _fputs(s, f) fputs(s, f)
 #define _fread(p, s, n, f) fread(p, s, n, f)
 #define _fwrite(p, s, n, f) fread(p, s, n, f)
+#define _fseek(f, o, s) fseek(f, o, s)
+#define _ftell(f) ftell(f)
+#define _feoff(f) feoff(f)
+#define _ferror(f) ferror(f)
+#define _clearerr(f) clearerr(f)
+#define _rename(a, b) rename(a, b)
+#define _unlink(a) remove(a)
 #endif
 #endif
 

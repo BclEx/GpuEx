@@ -11,6 +11,11 @@
 
 #include "Tcl+Int.h"
 
+__device__ int Tcl_GetIndex(Tcl_Interp *interp, char *string, const char *table[], char *msg, int flags, int *indexPtr)
+{
+	return TCL_OK;
+}
+
 /*
 *----------------------------------------------------------------------
 *

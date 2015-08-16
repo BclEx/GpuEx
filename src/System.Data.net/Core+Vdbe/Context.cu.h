@@ -179,7 +179,7 @@ namespace CORE_NAME
 		void *RollbackArg;					// Argument to xRollbackCallback()
 		void (*RollbackCallback)(void*);	// Invoked at every commit.
 		void *UpdateArg;
-		void (*UpdateCallback)(void*,int, const char*,const char*,int64);
+		void (*UpdateCallback)(void*,TK,const char*,const char*,int64);
 #ifndef OMIT_WAL
 		int (*WalCallback)(void*,Context*,const char*,int);
 		void *WalArg;

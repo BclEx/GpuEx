@@ -1,5 +1,6 @@
 #include "Tcl+Int.h"
-#if 0 && OS_GPU
+#include <errno.h>
+#if OS_GPU
 #include "Tcl+Gpu.h"
 
 // The variable below caches the name of the current working directory in order to avoid repeated calls to getwd.  The string is malloc-ed. NULL means the cache needs to be refreshed.
@@ -44,7 +45,7 @@ __device__ int Tcl_CdCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **
 		_freeFast(currentDir);
 		currentDir = NULL;
 	}
-	if (_chdir(dirName) != 0) {
+	if (__chdir(dirName) != 0) {
 		Tcl_AppendResult(interp, "couldn't change working directory to \"", dirName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
@@ -75,7 +76,7 @@ __device__ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char
 	if (TclGetOpenFile(interp, argv[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	((Interp *)interp)->filePtrArray[fileno(filePtr->f)] = NULL;
+	((Interp *)interp)->filePtrArray[__fileno(filePtr->f)] = NULL;
 	// First close the file (in the case of a process pipeline, there may be two files, one for the pipe at each end of the pipeline).
 	int result = TCL_OK;
 	if (filePtr->f2 != NULL) {
@@ -122,7 +123,7 @@ __device__ int Tcl_EofCmd(ClientData notUsed, Tcl_Interp *interp, int argc, char
 	if (TclGetOpenFile(interp, argv[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	if (feof(filePtr->f)) {
+	if (_feof(filePtr->f)) {
 		interp->result = "1";
 	} else {
 		interp->result = "0";
@@ -175,7 +176,7 @@ __device__ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		while (true) {
 #define BUFFER_SIZE 1000
 			char buffer[BUFFER_SIZE+1];
-			int count = fread(buffer, BUFFER_SIZE, 1, outputId);
+			int count = _fread(buffer, BUFFER_SIZE, 1, outputId);
 			if (count == 0) {
 				break;
 			}
@@ -218,13 +219,13 @@ __device__ int Tcl_ExitCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		return TCL_ERROR;
 	}
 	if (argc == 1) {
-		exit(0);
+		_exit(0);
 	}
 	int value;
 	if (Tcl_GetInt(interp, argv[1], &value) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	exit(value);
+	_exit(value);
 	return TCL_OK; // Better not ever reach this!
 }
 
@@ -327,7 +328,7 @@ not3Args:
 		}
 		mode = R_OK;
 checkAccess:
-		if (_access(fileName, mode) == -1) {
+		if (__access(fileName, mode) == -1) {
 			interp->result = "0";
 		} else {
 			interp->result = "1";
@@ -474,7 +475,7 @@ badStat:
 			argv[1] = "type";
 			goto not3Args;
 		}
-		if (stat(fileName, &statBuf) == -1) {
+		if (__stat(fileName, &statBuf) == -1) {
 			goto badStat;
 		}
 		interp->result = GetFileType((int)statBuf.st_mode);
@@ -633,7 +634,7 @@ __device__ int Tcl_FlushCmd(ClientData notUsed, Tcl_Interp *interp, int argc, ch
 	}
 	if (_fflush(f) == EOF) {
 		Tcl_AppendResult(interp, "error flushing \"", argv[1], "\": ", Tcl_OSError(interp), (char *)NULL);
-		clearerr(f);
+		_clearerr(f);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -679,12 +680,12 @@ __device__ int Tcl_GetsCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 		register int c, count;
 		register char *p;
 		for (p = buffer, count = 0; count < BUF_SIZE-1; count++, p++) {
-			c = _getc(f);
+			c = _fgetc(f);
 			if (c == EOF) {
 				if (_ferror(filePtr->f)) {
 					Tcl_ResetResult(interp);
 					Tcl_AppendResult(interp, "error reading \"", argv[1], "\": ", Tcl_OSError(interp), (char *)NULL);
-					clearerr(filePtr->f);
+					_clearerr(filePtr->f);
 					return TCL_ERROR;
 				} else if (_feof(filePtr->f)) {
 					if (totalCount == 0 && count == 0) {
@@ -799,7 +800,7 @@ badAccess:
 				goto error;
 			}
 		}
-		filePtr->f = fopen(fileName, access);
+		filePtr->f = _fopen(fileName, access);
 		if (filePtr->f == NULL) {
 			Tcl_AppendResult(interp, "couldn't open \"", argv[1], "\": ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
@@ -814,9 +815,9 @@ badAccess:
 		if (Tcl_SplitList(interp, argv[1]+1, &cmdArgc, &cmdArgv) != TCL_OK) {
 			goto error;
 		}
-		int *inPipePtr = (filePtr->writable ? &inPipe : NULL);
-		int *outPipePtr = (filePtr->readable ? &outPipe : NULL);
-		int inPipe = -1, int outPipe = -1;
+		FILE *inPipe = NULL, *outPipe = NULL;
+		FILE **inPipePtr = (filePtr->writable ? &inPipe : NULL);
+		FILE **outPipePtr = (filePtr->readable ? &outPipe : NULL);
 		filePtr->numPids = Tcl_CreatePipeline(interp, cmdArgc, cmdArgv, &filePtr->pidPtr, inPipePtr, outPipePtr, &filePtr->errorId);
 		_freeFast((char *)cmdArgv);
 		if (filePtr->numPids < 0) {
@@ -825,7 +826,7 @@ badAccess:
 		//if (filePtr->readable) {
 		//	if (outPipe == -1) {
 		//		if (inPipe != -1) {
-		//			_close(inPipe);
+		//			_fclose(inPipe);
 		//		}
 		//		Tcl_AppendResult(interp, "can't read output from command:", " standard output was redirected", (char *)NULL);
 		//		goto error;
@@ -846,7 +847,7 @@ badAccess:
 	}
 
 	// Enter this new OpenFile_ structure in the table for the interpreter.  May have to expand the table to do this.
-	int fd = _fileno(filePtr->f);
+	int fd = __fileno(filePtr->f);
 	TclMakeFileTable(iPtr, fd);
 	if (iPtr->filePtrArray[fd] != NULL) {
 		_panic("Tcl_OpenCmd found file already open");
@@ -869,7 +870,7 @@ error:
 	}
 #endif
 	if (filePtr->errorId) {
-		fclose(filePtr->errorId);
+		_fclose(filePtr->errorId);
 	}
 	_freeFast((char *)filePtr);
 	return TCL_ERROR;
@@ -902,7 +903,7 @@ __device__ int Tcl_PwdCmd(ClientData dummy, Tcl_Interp *interp, int argc, char *
 			Tcl_AppendResult(interp, "error getting working directory name: ", Tcl_OSError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
-		currentDir = (char *)_allocFast((unsigned)(strlen(buffer) + 1));
+		currentDir = (char *)_allocFast((unsigned)(_strlen(buffer) + 1));
 		_strcpy(currentDir, buffer);
 	}
 	interp->result = currentDir;
@@ -965,13 +966,13 @@ __device__ int Tcl_PutsCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		f = filePtr->f;
 	}
 
-	fputs(argv[i], f);
+	_fputs(argv[i], f);
 	if (newline) {
-		fputc('\n', f);
+		_fputc('\n', f);
 	}
-	if (ferror(f)) {
+	if (_ferror(f)) {
 		Tcl_AppendResult(interp, "error writing \"", fileId, "\": ", Tcl_OSError(interp), (char *)NULL);
-		clearerr(f);
+		_clearerr(f);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -1042,11 +1043,11 @@ __device__ int Tcl_ReadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 			count = bytesLeft;
 		}
 		char buffer[READ_BUF_SIZE+1];
-		count = fread(buffer, 1, count, filePtr->f);
-		if (ferror(filePtr->f)) {
+		count = _fread(buffer, 1, count, filePtr->f);
+		if (_ferror(filePtr->f)) {
 			Tcl_ResetResult(interp);
 			Tcl_AppendResult(interp, "error reading \"", argv[i], "\": ", Tcl_OSError(interp), (char *)NULL);
-			clearerr(filePtr->f);
+			_clearerr(filePtr->f);
 			return TCL_ERROR;
 		}
 		if (count == 0) {
@@ -1106,9 +1107,9 @@ __device__ int Tcl_SeekCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 			return TCL_ERROR;
 		}
 	}
-	if (fseek(filePtr->f, (long)offset, mode) == -1) {
+	if (_fseek(filePtr->f, (long)offset, mode) == -1) {
 		Tcl_AppendResult(interp, "error during seek: ", Tcl_OSError(interp), (char *)NULL);
-		clearerr(filePtr->f);
+		_clearerr(filePtr->f);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -1161,7 +1162,7 @@ __device__ int Tcl_TellCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cha
 	if (TclGetOpenFile(interp, argv[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	_sprintf(interp->result, "%ld", ftell(filePtr->f));
+	_sprintf(interp->result, "%ld", _ftell(filePtr->f));
 	return TCL_OK;
 }
 
