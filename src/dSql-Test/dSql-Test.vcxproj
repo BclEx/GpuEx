@@ -27,21 +27,35 @@
     <ClInclude Include="TclContext.cu.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
-    <ClCompile Include="Program.cu" />
     <ClCompile Include="TclContext.cu" />
     <ClCompile Include="TclContext+Test.cu" />
+    <ClCompile Include="Test1.cu" />
+    <ClCompile Include="Test2.cu" />
+    <ClCompile Include="Test3.cu" />
+    <ClCompile Include="Test4.cu" />
+    <ClCompile Include="Test5.cu" />
+    <ClCompile Include="Test6.cu" />
+    <ClCompile Include="Test7.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="TclContext.cu" />
     <CudaCompile Include="TclContext+Test.cu" />
+    <CudaCompile Include="Test1.cu" />
+    <CudaCompile Include="Test2.cu" />
+    <CudaCompile Include="Test3.cu" />
+    <CudaCompile Include="Test4.cu" />
+    <CudaCompile Include="Test5.cu" />
+    <CudaCompile Include="Test6.cu" />
+    <CudaCompile Include="Test7.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="tclsqlite.c" />
-    <None Include="all.test" />
-    <None Include="full.test" />
-    <None Include="tests\permutations.test" />
-    <None Include="veryquick.test" />
+    <None Include="test\all.test" />
+    <None Include="test\full.test" />
+    <None Include="test\permutations.test" />
+    <None Include="test\tester.tcl" />
+    <None Include="test\veryquick.test" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6BEBE11A-7B56-4CA0-9E47-5C1638B1D311}</ProjectGuid>

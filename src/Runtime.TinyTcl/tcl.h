@@ -123,7 +123,7 @@ extern __device__ void Tcl_ValidateAllMemory(char *file, int line);
 	(interp)->freeProc = 0; }
 
 // Exported Tcl procedures:
-extern __device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, bool noSep);
+extern __device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, bool noSep = false);
 #if __CUDACC__
 extern __device__ void _Tcl_AppendResult(Tcl_Interp *interp, _va_list &args);
 __device__ __forceinline void Tcl_AppendResult(Tcl_Interp *interp) { _va_list args; _va_start(args); _Tcl_AppendResult(interp, args); _va_end(args); }

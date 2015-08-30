@@ -1,5 +1,5 @@
 #include "Tcl+Int.h"
-#if 0 && OS_WIN
+#if OS_WIN
 #include "Tcl+Win.h"
 
 // The structure below is used to keep track of all of the interpereters for which we're managing the "env" array.  It's needed so that they
@@ -9,8 +9,7 @@ typedef struct EnvInterp {
 	struct EnvInterp *nextPtr;	// Next in list of all such interpreters, or zero.
 } EnvInterp;
 
-static EnvInterp *_firstInterpPtr;
-// First in list of all managed interpreters, or NULL if none.
+static EnvInterp *_firstInterpPtr; // First in list of all managed interpreters, or NULL if none.
 
 // Declarations for local procedures defined in this file:
 static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags);
@@ -34,15 +33,12 @@ static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1
 void TclSetupEnv(Tcl_Interp *interp)
 {
 	// Next, verify that file descriptors 0, 1 and 2 are connected to something. If not, we open them connected to /dev/null since Tcl assumes that a normal open() will never return 0, 1 or 2
-	if (fcntl(0, F_GETFL, 0) < 0 && errno == EBADF) {
-		open("/dev/null", O_RDONLY);
-	}
-	if (fcntl(1, F_GETFL, 0) < 0 && errno == EBADF) {
-		open("/dev/null", O_WRONLY);
-	}
-	if (fcntl(2, F_GETFL, 0) < 0 && errno == EBADF) {
-		open("/dev/null", O_WRONLY);
-	}
+	//if (fcntl(0, F_GETFL, 0) < 0 && errno == EBADF)
+	//	open("/dev/null", O_RDONLY);
+	//if (fcntl(1, F_GETFL, 0) < 0 && errno == EBADF)
+	//	open("/dev/null", O_WRONLY);
+	//if (fcntl(2, F_GETFL, 0) < 0 && errno == EBADF)
+	//	open("/dev/null", O_WRONLY);
 
 	// Next, add the interpreter to the list of those that we manage.
 	EnvInterp *eiPtr = (EnvInterp *)_allocFast(sizeof(EnvInterp));
@@ -86,18 +82,16 @@ static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1
 {
 	// First see if the whole "env" variable is being deleted.  If so, just forget about this interpreter.
 	if (name2 == NULL) {
-		if ((flags & (TCL_TRACE_UNSETS|TCL_TRACE_DESTROYED)) != (TCL_TRACE_UNSETS|TCL_TRACE_DESTROYED)) {
+		if ((flags & (TCL_TRACE_UNSETS|TCL_TRACE_DESTROYED)) != (TCL_TRACE_UNSETS|TCL_TRACE_DESTROYED))
 			_panic("EnvTraceProc called with confusing arguments");
-		}
 		register EnvInterp *eiPtr = _firstInterpPtr;
-		if (eiPtr->interp == interp) {
+		if (eiPtr->interp == interp)
 			_firstInterpPtr = eiPtr->nextPtr;
-		} else {
+		else {
 			register EnvInterp *prevPtr;
 			for (prevPtr = eiPtr, eiPtr = eiPtr->nextPtr; ; prevPtr = eiPtr, eiPtr = eiPtr->nextPtr) {
-				if (eiPtr == NULL) {
+				if (eiPtr == NULL)
 					_panic("EnvTraceProc couldn't find interpreter");
-				}
 				if (eiPtr->interp == interp) {
 					prevPtr->nextPtr = eiPtr->nextPtr;
 					break;
@@ -108,12 +102,10 @@ static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1
 		return NULL;
 	}
 	// If a value is being set, call setenv to do all of the work.
-	if (flags & TCL_TRACE_WRITES) {
-		setenv(name2, Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY), 1);
-	}
-	if (flags & TCL_TRACE_UNSETS) {
-		unsetenv(name2);
-	}
+	if (flags & TCL_TRACE_WRITES)
+		_putenv_s(name2, Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY));
+	if (flags & TCL_TRACE_UNSETS)
+		_putenv_s(name2, "");
 	return NULL;
 }
 

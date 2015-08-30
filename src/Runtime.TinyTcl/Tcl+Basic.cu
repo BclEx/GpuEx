@@ -769,7 +769,7 @@ __device__ int _Tcl_VarEval(Tcl_Interp *interp, _va_list &argList)
 */
 __device__ int Tcl_GlobalEval(Tcl_Interp *interp, char *command)
 {
-	register Interp *iPtr = (Interp *) interp;
+	register Interp *iPtr = (Interp *)interp;
 	CallFrame *savedVarFramePtr = iPtr->varFramePtr;
 	iPtr->varFramePtr = NULL;
 	int result = Tcl_Eval(interp, command, 0, (char **)NULL);

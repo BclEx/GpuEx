@@ -57,7 +57,7 @@ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 	}
 	int fileSize = statBuf.st_size;
 	char *cmdBuffer = (char *)_allocFast((unsigned)fileSize+1);
-	if (fread(cmdBuffer, fileSize, 1, file) != fileSize) {
+	if (fread(cmdBuffer, 1, fileSize, file) != fileSize) {
 		Tcl_AppendResult(interp, "error in reading file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		fclose(file);
 		_freeFast(cmdBuffer);

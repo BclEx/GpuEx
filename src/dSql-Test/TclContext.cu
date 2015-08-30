@@ -1,14 +1,13 @@
-
 // A TCL Interface to SQLite.  Append this file to sqlite3.c and compile the whole thing to build a TCL-enabled version of SQLite.
 //
 // Compile-time options:
 //
 //  -DTCLSH=1             Add a "main()" routine that works as a tclsh.
 //
-//  -DSQLITE_TCLMD5       When used in conjuction with -DTCLSH=1, add four new commands to the TCL interpreter for
+//  -D_TCLMD5       When used in conjuction with -DTCLSH=1, add four new commands to the TCL interpreter for
 //                        generating MD5 checksums:  md5, md5file, md5-10x8, and md5file-10x8.
 //
-//  -DSQLITE_TEST         When used in conjuction with -DTCLSH=1, add hundreds of new commands used for testing
+//  -D_TEST         When used in conjuction with -DTCLSH=1, add hundreds of new commands used for testing
 //                        SQLite.  This option implies -DSQLITE_TCLMD5.
 //#include <errno.h>
 
@@ -2477,12 +2476,12 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 // This Tcl module contains only a single new Tcl command named "sqlite". (Hence there is no namespace.  There is no point in using a namespace
 // if the extension only supplies one new name!)  The "sqlite" command is used to open a new SQLite database.  See the DbMain() routine above
 // for additional information.
-__device__ int Sqlite3_Init(Tcl_Interp *interp)
+__device__ int Main_Init(Tcl_Interp *interp)
 {
 	Tcl_CreateCommand(interp, "sqlite3", (Tcl_CmdProc *)DbMain, nullptr, nullptr);
 	return TCL_OK;
 }
-__device__ int Sqlite3_Unload(Tcl_Interp *interp, int flags) { return TCL_OK; }
+__device__ int Main_Shutdown(Tcl_Interp *interp, int flags) { return TCL_OK; }
 
 //// Because it accesses the file-system and uses persistent state, SQLite is not considered appropriate for safe interpreters.  Hence, we deliberately omit the _SafeInit() interfaces.
 //#ifndef SQLITE_3_SUFFIX_ONLY

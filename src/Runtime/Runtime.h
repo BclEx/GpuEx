@@ -1146,9 +1146,10 @@ public:
 	__device__ void AppendSpace(int length);
 	__device__ void AppendFormat_(bool useExtended, const char *fmt, _va_list &args);
 	__device__ void Append(const char *z, int length);
+	__device__ inline void AppendElement(const char *z) { Append(", ", 2); Append(z, _strlen(z)); }
 	__device__ char *ToString();
 	__device__ void Reset();
-	__device__ static void Init(TextBuilder *b, char *text, int capacity, int maxAlloc);
+	__device__ static void Init(TextBuilder *b, char *text = nullptr, int capacity = -1, int maxAlloc = -1);
 	//
 #if __CUDACC__
 	__device__ __forceinline void AppendFormat(const char *fmt) { _va_list args; _va_start(args); AppendFormat_(true, fmt, args); _va_end(args); }
