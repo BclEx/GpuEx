@@ -66,11 +66,11 @@ __device__ static int get_sqlite_pointer(void *clientData, Tcl_Interp *interp, i
 		Tcl_AppendResult(interp, "command not found: ", args[1], nullptr);
 		return TCL_ERROR;
 	}
-	struct SqliteDb *p = (struct SqliteDb*)cmdInfo.objClientData;
+	struct TclContext *p = (struct TclContext *)cmdInfo.objClientData;
 	char b[100];
-	_sprintf(b, "%p", p->db);
+	_sprintf(b, "%p", p->Ctx);
 	if (_strncmp(b, "0x", 2))
-		_sprintf(b, "0x%p", p->db);
+		_sprintf(b, "0x%p", p->Ctx);
 	Tcl_AppendResult(interp, b, 0);
 	return TCL_OK;
 }
@@ -78,11 +78,11 @@ __device__ static int get_sqlite_pointer(void *clientData, Tcl_Interp *interp, i
 // Decode a pointer to an sqlite3 object.
 __device__ int getDbPointer(Tcl_Interp *interp, const char *zA, Context **ctx)
 {
-	struct SqliteDb *p;
+	struct TclContext *p;
 	Tcl_CmdInfo cmdInfo;
 	if (Tcl_GetCommandInfo(interp, zA, &cmdInfo))
 	{
-		p = (struct SqliteDb *)cmdInfo.objClientData;
+		p = (struct TclContext *)cmdInfo.objClientData;
 		*ctx = p->db;
 	}
 	else
@@ -857,246 +857,173 @@ __device__ static void t1CountFinalize(FuncContext *fctx)
 //}
 //#endif
 
-/*
-** Usage:  sqlite3_create_aggregate DB
-**
-** Call the sqlite3_create_function API on the given database in order
-** to create a function named "x_count".  This function is similar
-** to the built-in count() function, with a few special quirks
-** for testing the sqlite3_result_error() APIs.
-**
-** The original motivation for this routine was to be able to call the
-** sqlite3_create_aggregate function while a query is in progress in order
-** to test the SQLITE_MISUSE detection logic.  See misuse.test.
-**
-** This routine was later extended to test the use of sqlite3_result_error()
-** within aggregate functions.
-**
-** Later: It is now also extended to register the aggregate function
-** "legacy_count()" with the supplied database handle. This is used
-** to test the deprecated sqlite3_aggregate_count() API.
-*/
-static int test_create_aggregate(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
-		sqlite3 *db;
-		int rc;
-		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" FILENAME\"", 0);
-			return TCL_ERROR;
-		}
-		if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-		rc = sqlite3_create_function(db, "x_count", 0, SQLITE_UTF8, 0, 0,
-			t1CountStep,t1CountFinalize);
-		if( rc==SQLITE_OK ){
-			rc = sqlite3_create_function(db, "x_count", 1, SQLITE_UTF8, 0, 0,
-				t1CountStep,t1CountFinalize);
-		}
-#ifndef SQLITE_OMIT_DEPRECATED
-		if( rc==SQLITE_OK ){
-			rc = sqlite3_create_function(db, "legacy_count", 0, SQLITE_ANY, 0, 0,
-				legacyCountStep, legacyCountFinalize
-				);
-		}
-#endif
-		if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
-		Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
-		return TCL_OK;
+// Usage:  sqlite3_create_aggregate DB
+//
+// Call the sqlite3_create_function API on the given database in order to create a function named "x_count".  This function is similar
+// to the built-in count() function, with a few special quirks for testing the sqlite3_result_error() APIs.
+//
+// The original motivation for this routine was to be able to call the sqlite3_create_aggregate function while a query is in progress in order
+// to test the SQLITE_MISUSE detection logic.  See misuse.test.
+//
+// This routine was later extended to test the use of sqlite3_result_error() within aggregate functions.
+//
+// Later: It is now also extended to register the aggregate function "legacy_count()" with the supplied database handle. This is used
+// to test the deprecated sqlite3_aggregate_count() API.
+__device__ static int test_create_aggregate(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME\"", nullptr);
+		return TCL_ERROR;
+	}
+	Context *ctx;
+	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
+	RC rc = Main::CreateFunction(ctx, "x_count", 0, TEXTENCODE_UTF8, 0, 0, t1CountStep, t1CountFinalize);
+	if (rc == RC_OK)
+		rc = Main::CreateFunction(ctx, "x_count", 1, TEXTENCODE_UTF8, 0, 0, t1CountStep, t1CountFinalize);
+	//#ifndef OMIT_DEPRECATED
+	//	if (rc == RC_OK)
+	//		rc = Main::CreateFunction(ctx, "legacy_count", 0, TEXTENCODE_ANY, 0, 0, legacyCountStep, legacyCountFinalize);
+	//#endif
+	if (sqlite3TestErrCode(interp, ctx, rc)) return TCL_ERROR;
+	Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
+	return TCL_OK;
 }
 
-
-/*
-** Usage:  printf TEXT
-**
-** Send output to printf.  Use this rather than puts to merge the output
-** in the correct sequence with debugging printfs inserted into C code.
-** Puts uses a separate buffer and debugging statements will be out of
-** sequence if it is used.
-*/
-static int test_printf(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
-		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" TEXT\"", 0);
-			return TCL_ERROR;
-		}
-		printf("%s\n", argv[1]);
-		return TCL_OK;
+// Usage:  printf TEXT
+//
+// Send output to printf.  Use this rather than puts to merge the output in the correct sequence with debugging printfs inserted into C code.
+// Puts uses a separate buffer and debugging statements will be out of sequence if it is used.
+__device__ static int test_printf(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " TEXT\"", nullptr);
+		return TCL_ERROR;
+	}
+	_printf("%s\n", args[1]);
+	return TCL_OK;
 }
 
+// Usage:  sqlite3_mprintf_int FORMAT INTEGER INTEGER INTEGER
+//
+// Call mprintf with three integer arguments
+__device__ static int sqlite3_mprintf_int(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
+	if (argc != 5)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT INT\"", nullptr);
+		return TCL_ERROR;
+	}
+	int a[3];
+	for (int i = 2; i < 5; i++)
+		if (Tcl_GetInt(interp, args[i], &a[i-2])) return TCL_ERROR;
+	char *z = _mprintf(args[1], a[0], a[1], a[2]);
+	Tcl_AppendResult(interp, z, 0);
+	_free(z);
+	return TCL_OK;
+}
 
-
-/*
-** Usage:  sqlite3_mprintf_int FORMAT INTEGER INTEGER INTEGER
-**
-** Call mprintf with three integer arguments
-*/
-static int sqlite3_mprintf_int(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
-		int a[3], i;
-		char *z;
-		if( argc!=5 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" FORMAT INT INT INT\"", 0);
+// Usage:  sqlite3_mprintf_int64 FORMAT INTEGER INTEGER INTEGER
+//
+// Call mprintf with three 64-bit integer arguments
+__device__ static int sqlite3_mprintf_int64(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
+	if (argc != 5)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT INT\"", nullptr);
+		return TCL_ERROR;
+	}
+	int64 a[3];
+	for (int i = 2; i < 5; i++)
+		if (__atoi64(args[i], &a[i-2], 1000000, TEXTENCODE_UTF8))
+		{
+			Tcl_AppendResult(interp, "argument is not a valid 64-bit integer", 0);
 			return TCL_ERROR;
 		}
-		for(i=2; i<5; i++){
-			if( Tcl_GetInt(interp, argv[i], &a[i-2]) ) return TCL_ERROR;
-		}
-		z = sqlite3_mprintf(argv[1], a[0], a[1], a[2]);
+		char *z = _mprintf(args[1], a[0], a[1], a[2]);
 		Tcl_AppendResult(interp, z, 0);
-		sqlite3_free(z);
+		_free(z);
 		return TCL_OK;
 }
 
-/*
-** Usage:  sqlite3_mprintf_int64 FORMAT INTEGER INTEGER INTEGER
-**
-** Call mprintf with three 64-bit integer arguments
-*/
-static int sqlite3_mprintf_int64(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
-		int i;
-		sqlite_int64 a[3];
-		char *z;
-		if( argc!=5 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" FORMAT INT INT INT\"", 0);
-			return TCL_ERROR;
-		}
-		for(i=2; i<5; i++){
-			if( sqlite3Atoi64(argv[i], &a[i-2], 1000000, SQLITE_UTF8) ){
-				Tcl_AppendResult(interp, "argument is not a valid 64-bit integer", 0);
-				return TCL_ERROR;
-			}
-		}
-		z = sqlite3_mprintf(argv[1], a[0], a[1], a[2]);
-		Tcl_AppendResult(interp, z, 0);
-		sqlite3_free(z);
-		return TCL_OK;
+// Usage:  sqlite3_mprintf_long FORMAT INTEGER INTEGER INTEGER
+//
+// Call mprintf with three long integer arguments.   This might be the same as sqlite3_mprintf_int or sqlite3_mprintf_int64, depending on platform.
+__device__ static int sqlite3_mprintf_long(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
+	if (argc != 5)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT INT\"", nullptr);
+		return TCL_ERROR;
+	}
+	long int a[3];
+	int b[3];
+	for (int i = 2; i < 5; i++)
+	{
+		if (Tcl_GetInt(interp, args[i], &b[i-2])) return TCL_ERROR;
+		a[i-2] = (long int)b[i-2];
+		a[i-2] &= (((uint64)1)<<(sizeof(int)*8))-1;
+	}
+	char *z = _mprintf(args[1], a[0], a[1], a[2]);
+	Tcl_AppendResult(interp, z, 0);
+	_free(z);
+	return TCL_OK;
 }
 
-/*
-** Usage:  sqlite3_mprintf_long FORMAT INTEGER INTEGER INTEGER
-**
-** Call mprintf with three long integer arguments.   This might be the
-** same as sqlite3_mprintf_int or sqlite3_mprintf_int64, depending on
-** platform.
-*/
-static int sqlite3_mprintf_long(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
-		int i;
-		long int a[3];
-		int b[3];
-		char *z;
-		if( argc!=5 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" FORMAT INT INT INT\"", 0);
-			return TCL_ERROR;
-		}
-		for(i=2; i<5; i++){
-			if( Tcl_GetInt(interp, argv[i], &b[i-2]) ) return TCL_ERROR;
-			a[i-2] = (long int)b[i-2];
-			a[i-2] &= (((u64)1)<<(sizeof(int)*8))-1;
-		}
-		z = sqlite3_mprintf(argv[1], a[0], a[1], a[2]);
-		Tcl_AppendResult(interp, z, 0);
-		sqlite3_free(z);
-		return TCL_OK;
+// Usage:  sqlite3_mprintf_str FORMAT INTEGER INTEGER STRING
+//
+// Call mprintf with two integer arguments and one string argument
+__device__ static int sqlite3_mprintf_str(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
+	if (argc < 4 || argc > 5)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT ?STRING?\"", nullptr);
+		return TCL_ERROR;
+	}
+	for (int i = 2; i < 4; i++)
+		if (Tcl_GetInt(interp, args[i], &a[i-2])) return TCL_ERROR;
+	int a[3];
+	char *z = _mprintf(args[1], a[0], a[1], argc > 4 ? args[4] : NULL);
+	Tcl_AppendResult(interp, z, 0);
+	_free(z);
+	return TCL_OK;
 }
 
-/*
-** Usage:  sqlite3_mprintf_str FORMAT INTEGER INTEGER STRING
-**
-** Call mprintf with two integer arguments and one string argument
-*/
-static int sqlite3_mprintf_str(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
-		int a[3], i;
-		char *z;
-		if( argc<4 || argc>5 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" FORMAT INT INT ?STRING?\"", 0);
-			return TCL_ERROR;
-		}
-		for(i=2; i<4; i++){
-			if( Tcl_GetInt(interp, argv[i], &a[i-2]) ) return TCL_ERROR;
-		}
-		z = sqlite3_mprintf(argv[1], a[0], a[1], argc>4 ? argv[4] : NULL);
-		Tcl_AppendResult(interp, z, 0);
-		sqlite3_free(z);
-		return TCL_OK;
+// Usage:  sqlite3_snprintf_str INTEGER FORMAT INTEGER INTEGER STRING
+//
+// Call mprintf with two integer arguments and one string argument
+__device__ static int sqlite3_snprintf_str(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
+	if (argc < 5 || argc > 6)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " INT FORMAT INT INT ?STRING?\"", nullptr);
+		return TCL_ERROR;
+	}
+	int n;
+	if (Tcl_GetInt(interp, args[1], &n)) return TCL_ERROR;
+	if (n < 0)
+	{
+		Tcl_AppendResult(interp, "N must be non-negative", 0);
+		return TCL_ERROR;
+	}
+	int a[3];
+	for (i = 3; i < 5; i++)
+	{
+		if (Tcl_GetInt(interp, args[i], &a[i-3])) return TCL_ERROR;
+	}
+	char *z = (char *)_alloc(n+1);
+	__snprintf(z, n, argv[2], a[0], a[1], argc > 4 ? argv[5] : NULL);
+	Tcl_AppendResult(interp, z, 0);
+	_free(z);
+	return TCL_OK;
 }
 
-/*
-** Usage:  sqlite3_snprintf_str INTEGER FORMAT INTEGER INTEGER STRING
-**
-** Call mprintf with two integer arguments and one string argument
-*/
-static int sqlite3_snprintf_str(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
-		int a[3], i;
-		int n;
-		char *z;
-		if( argc<5 || argc>6 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-				" INT FORMAT INT INT ?STRING?\"", 0);
-			return TCL_ERROR;
-		}
-		if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
-		if( n<0 ){
-			Tcl_AppendResult(interp, "N must be non-negative", 0);
-			return TCL_ERROR;
-		}
-		for(i=3; i<5; i++){
-			if( Tcl_GetInt(interp, argv[i], &a[i-3]) ) return TCL_ERROR;
-		}
-		z = sqlite3_malloc( n+1 );
-		sqlite3_snprintf(n, z, argv[2], a[0], a[1], argc>4 ? argv[5] : NULL);
-		Tcl_AppendResult(interp, z, 0);
-		sqlite3_free(z);
-		return TCL_OK;
-}
-
-/*
-** Usage:  sqlite3_mprintf_double FORMAT INTEGER INTEGER DOUBLE
-**
-** Call mprintf with two integer arguments and one double argument
-*/
-static int sqlite3_mprintf_double(
-	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-	int argc,              /* Number of arguments */
-	char **argv            /* Text of each argument */
-	){
+// Usage:  sqlite3_mprintf_double FORMAT INTEGER INTEGER DOUBLE
+//
+// Call mprintf with two integer arguments and one double argument
+__device__ static int sqlite3_mprintf_double(void *notUsed, Tcl_Interp *interp, int argc, char **args)
+{
 		int a[3], i;
 		double r;
 		char *z;
