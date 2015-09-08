@@ -671,6 +671,14 @@ __device__ __forceinline int _strlen(const char *z)
 	while (*z2) { z2++; }
 	return 0x3fffffff & (int)(z2 - z);
 }
+__device__ __forceinline int _strlen16(const void *z)
+{
+	register const char *z2 = (const char *)z;
+	if (z == nullptr) return 0;
+	int n;
+	for (n = 0; z2[n] || z2[n+1]; n += 2) { }
+	return n;
+}
 
 // hextobyte
 __device__ __forceinline unsigned char _hextobyte(char h)

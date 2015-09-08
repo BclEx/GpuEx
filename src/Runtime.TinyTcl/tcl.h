@@ -97,7 +97,7 @@ typedef char *(Tcl_VarTraceProc)(ClientData clientData, Tcl_Interp *interp, char
 
 // The following declarations either map _allocFast and _freeFast to malloc and free, or they map them to procedures with all sorts of debugging hooks defined in tclCkalloc.c.
 #ifdef TCL_MEM_DEBUG
-extern __device__ char *Tcl_MemAlloc (unsigned int size, char *file, int line);
+extern __device__ char *Tcl_MemAlloc(unsigned int size, char *file, int line);
 extern __device__ int Tcl_MemFree(char *ptr, char *file, int line);
 extern __device__ char *Tcl_MemRealloc(char *ptr, unsigned int size, char *file, int line);
 extern __device__ int Tcl_DumpActiveMemory(char *fileName);
@@ -202,6 +202,11 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 #else
 __device__ __forceinline void Tcl_SetErrorCode(Tcl_Interp *interp, ...) { _va_list args; _va_start(args, interp); _Tcl_SetErrorCode(interp, args); _va_end(args); }
 #endif
+__device__ inline void Tcl_SetObjResult(Tcl_Interp *interp, char *obj) { }
+__device__ inline void Tcl_SetObjResult(Tcl_Interp *interp, int obj) { }
+__device__ inline void Tcl_SetObjResult(Tcl_Interp *interp, int64 obj) { }
+__device__ inline void Tcl_SetObjResult(Tcl_Interp *interp, double obj) { }
+__device__ inline void Tcl_SetObjResult(Tcl_Interp *interp, array_t<const void> obj) { }
 extern __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *freeProc);
 extern __device__ char *Tcl_SetVar(Tcl_Interp *interp, char *varName, char *newValue, int flags);
 extern __device__ char *Tcl_SetVar2(Tcl_Interp *interp, char *part1, char *part2, char *newValue, int flags);

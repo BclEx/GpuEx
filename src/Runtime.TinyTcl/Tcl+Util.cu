@@ -487,7 +487,7 @@ __device__ char *Tcl_Merge(int argc, char **argv)
 		numChars += Tcl_ScanElement(argv[i], &flagPtr[i]) + 1;
 	}
 	// Pass two: copy into the result area.
-	char *result = (char *)_allocFast((unsigned) numChars);
+	char *result = (char *)_allocFast((unsigned)numChars);
 	register char *dst = result;
 	for (i = 0; i < argc; i++) {
 		numChars = Tcl_ConvertElement(argv[i], dst, flagPtr[i]);
@@ -676,7 +676,7 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 	if (!string) {
 		iPtr->resultSpace[0] = 0;
 		iPtr->result = iPtr->resultSpace;
-		iPtr->freeProc = 0;
+		iPtr->freeProc = nullptr;
 	} else if (freeProc == TCL_VOLATILE) {
 		int length = _strlen(string);
 		if (length > TCL_RESULT_SIZE) {
@@ -684,7 +684,7 @@ __device__ void Tcl_SetResult(Tcl_Interp *interp, char *string, Tcl_FreeProc *fr
 			iPtr->freeProc = (Tcl_FreeProc *)_free;
 		} else {
 			iPtr->result = iPtr->resultSpace;
-			iPtr->freeProc = 0;
+			iPtr->freeProc = nullptr;
 		}
 		_strcpy(iPtr->result, string);
 	} else {

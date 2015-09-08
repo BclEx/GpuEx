@@ -514,7 +514,7 @@ __device__ int Tcl_LindexCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 	if (!_strcmp(argv[2], "end")) {
 		// Find the length of the list
 		for (index = 0, p = argv[1]; *p != 0 ; index++) {
-			result = TclFindElement(interp, p, &element, &p, (int *) NULL, (int *) NULL);
+			result = TclFindElement(interp, p, &element, &p, (int *)NULL, (int *) NULL);
 			if (result != TCL_OK) {
 				return result;
 			}
@@ -640,7 +640,7 @@ __device__ int Tcl_ListCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 {
 	if (argc >= 2) {
 		interp->result = Tcl_Merge(argc-1, argv+1);
-		interp->freeProc = (Tcl_FreeProc *) _free;
+		interp->freeProc = (Tcl_FreeProc *)_free;
 	}
 	return TCL_OK;
 }

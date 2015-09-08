@@ -23,7 +23,7 @@
 
 typedef struct {
 	long intValue;			// Integer value, if any.
-	double  doubleValue;	// Floating-point value, if any.
+	double doubleValue;	// Floating-point value, if any.
 	ParseValue pv;			// Used to hold a string value, if any.
 	char staticSpace[STATIC_STRING_SPACE];
 	// Storage for small strings;  large ones are malloc-ed.
