@@ -1,652 +1,500 @@
-/*
-** 2001 September 15
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** Code for testing the btree.c module in SQLite.  This code
-** is not included in the SQLite library.  It is used for automated
-** testing of the SQLite library.
-*/
-#include "sqliteInt.h"
-#include "btreeInt.h"
-#include "tcl.h"
+#include "TclContext.cu.h"
+#include "..\System.Data.net\Core+Btree\BtreeInt.cu.h"
 #include <stdlib.h>
 #include <string.h>
 
-/*
-** Interpret an SQLite error number
-*/
-static char *errorName(int rc){
-  char *zName;
-  switch( rc ){
-    case SQLITE_OK:         zName = "SQLITE_OK";          break;
-    case SQLITE_ERROR:      zName = "SQLITE_ERROR";       break;
-    case SQLITE_PERM:       zName = "SQLITE_PERM";        break;
-    case SQLITE_ABORT:      zName = "SQLITE_ABORT";       break;
-    case SQLITE_BUSY:       zName = "SQLITE_BUSY";        break;
-    case SQLITE_NOMEM:      zName = "SQLITE_NOMEM";       break;
-    case SQLITE_READONLY:   zName = "SQLITE_READONLY";    break;
-    case SQLITE_INTERRUPT:  zName = "SQLITE_INTERRUPT";   break;
-    case SQLITE_IOERR:      zName = "SQLITE_IOERR";       break;
-    case SQLITE_CORRUPT:    zName = "SQLITE_CORRUPT";     break;
-    case SQLITE_FULL:       zName = "SQLITE_FULL";        break;
-    case SQLITE_CANTOPEN:   zName = "SQLITE_CANTOPEN";    break;
-    case SQLITE_PROTOCOL:   zName = "SQLITE_PROTOCOL";    break;
-    case SQLITE_EMPTY:      zName = "SQLITE_EMPTY";       break;
-    case SQLITE_LOCKED:     zName = "SQLITE_LOCKED";      break;
-    default:                zName = "SQLITE_Unknown";     break;
-  }
-  return zName;
+// Interpret an SQLite error number
+__device__ static char *errorName(int rc)
+{
+	char *name;
+	switch (rc)
+	{
+	case RC_OK:         name = "SQLITE_OK";          break;
+	case RC_ERROR:      name = "SQLITE_ERROR";       break;
+	case RC_PERM:       name = "SQLITE_PERM";        break;
+	case RC_ABORT:      name = "SQLITE_ABORT";       break;
+	case RC_BUSY:       name = "SQLITE_BUSY";        break;
+	case RC_NOMEM:      name = "SQLITE_NOMEM";       break;
+	case RC_READONLY:   name = "SQLITE_READONLY";    break;
+	case RC_INTERRUPT:  name = "SQLITE_INTERRUPT";   break;
+	case RC_IOERR:      name = "SQLITE_IOERR";       break;
+	case RC_CORRUPT:    name = "SQLITE_CORRUPT";     break;
+	case RC_FULL:       name = "SQLITE_FULL";        break;
+	case RC_CANTOPEN:   name = "SQLITE_CANTOPEN";    break;
+	case RC_PROTOCOL:   name = "SQLITE_PROTOCOL";    break;
+	case RC_EMPTY:      name = "SQLITE_EMPTY";       break;
+	case RC_LOCKED:     name = "SQLITE_LOCKED";      break;
+	default:            name = "SQLITE_Unknown";     break;
+	}
+	return name;
 }
 
-/*
-** A bogus sqlite3 connection structure for use in the btree
-** tests.
-*/
-static sqlite3 sDb;
-static int nRefSqlite3 = 0;
+// A bogus sqlite3 connection structure for use in the btree tests.
+__device__ static Context _sCtx;
+__device__ static int _refsSqlite3 = 0;
 
-/*
-** Usage:   btree_open FILENAME NCACHE
-**
-** Open a new database
-*/
-static int btree_open(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int rc, nCache;
-  char zBuf[100];
-  int n;
-  char *zFilename;
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME NCACHE FLAGS\"", 0);
-    return TCL_ERROR;
-  }
-  if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
-  nRefSqlite3++;
-  if( nRefSqlite3==1 ){
-    sDb.pVfs = sqlite3_vfs_find(0);
-    sDb.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
-    sqlite3_mutex_enter(sDb.mutex);
-  }
-  n = (int)strlen(argv[1]);
-  zFilename = sqlite3_malloc( n+2 );
-  if( zFilename==0 ) return TCL_ERROR;
-  memcpy(zFilename, argv[1], n+1);
-  zFilename[n+1] = 0;
-  rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0, 
-     SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
-  sqlite3_free(zFilename);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  sqlite3BtreeSetCacheSize(pBt, nCache);
-  sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pBt);
-  Tcl_AppendResult(interp, zBuf, 0);
-  return TCL_OK;
+// Usage:   btree_open FILENAME NCACHE
+//
+// Open a new database
+__device__ static int btree_open(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 3)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME NCACHE FLAGS\"", nullptr);
+		return TCL_ERROR;
+	}
+	int cacheSize;
+	if (Tcl_GetInt(interp, (char *)args[2], &cacheSize)) return TCL_ERROR;
+	_refsSqlite3++;
+	if (_refsSqlite3 == 1)
+	{
+		_sCtx.Vfs = VSystem::FindVfs(nullptr);
+		_sCtx.Mutex = _mutex_alloc(MUTEX_RECURSIVE);
+		_mutex_enter(_sCtx.Mutex);
+	}
+	int n = (int)_strlen(args[1]);
+	char *filename = (char *)_alloc(n+2);
+	if (!filename) return TCL_ERROR;
+	_memcpy(filename, args[1], n+1);
+	filename[n+1] = 0;
+	Btree *bt;
+	RC rc = Btree::Open(_sCtx.Vfs, filename, &_sCtx, &bt, (Btree::OPEN)0, (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_MAIN_DB));
+	_free(filename);
+	if (rc != RC_OK)
+	{
+		Tcl_AppendResult(interp, errorName(rc), nullptr);
+		return TCL_ERROR;
+	}
+	bt->SetCacheSize(cacheSize);
+	char buf[100];
+	__snprintf(buf, sizeof(buf), "%p", bt);
+	Tcl_AppendResult(interp, buf, nullptr);
+	return TCL_OK;
 }
 
-/*
-** Usage:   btree_close ID
-**
-** Close the given database.
-*/
-static int btree_close(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int rc;
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TestTextToPtr(argv[1]);
-  rc = sqlite3BtreeClose(pBt);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  nRefSqlite3--;
-  if( nRefSqlite3==0 ){
-    sqlite3_mutex_leave(sDb.mutex);
-    sqlite3_mutex_free(sDb.mutex);
-    sDb.mutex = 0;
-    sDb.pVfs = 0;
-  }
-  return TCL_OK;
+// Usage:   btree_close ID
+//
+// Close the given database.
+__device__ static int btree_close(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	RC rc = bt->Close();
+	if (rc != RC_OK)
+	{
+		Tcl_AppendResult(interp, errorName(rc), nullptr);
+		return TCL_ERROR;
+	}
+	_refsSqlite3--;
+	if (_refsSqlite3 == 0)
+	{
+		_mutex_leave(_sCtx.Mutex);
+		_mutex_free(_sCtx.Mutex);
+		_sCtx.Mutex = 0;
+		_sCtx.Vfs = 0;
+	}
+	return TCL_OK;
 }
 
-
-/*
-** Usage:   btree_begin_transaction ID
-**
-** Start a new transaction
-*/
-static int btree_begin_transaction(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int rc;
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TestTextToPtr(argv[1]);
-  sqlite3BtreeEnter(pBt);
-  rc = sqlite3BtreeBeginTrans(pBt, 1);
-  sqlite3BtreeLeave(pBt);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  return TCL_OK;
+// Usage:   btree_begin_transaction ID
+//
+// Start a new transaction
+__device__ static int btree_begin_transaction(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	bt->Enter();
+	RC rc = bt->BeginTrans(1);
+	bt->Leave();
+	if (rc != RC_OK)
+	{
+		Tcl_AppendResult(interp, errorName(rc), nullptr);
+		return TCL_ERROR;
+	}
+	return TCL_OK;
 }
 
-/*
-** Usage:   btree_pager_stats ID
-**
-** Returns pager statistics
-*/
-static int btree_pager_stats(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int i;
-  int *a;
+// Usage:   btree_pager_stats ID
+//
+// Returns pager statistics
+__constant__ static char *_names[] = {
+	"ref", "page", "max", "size", "state", "err",
+	"hit", "miss", "ovfl", "read", "write"
+};
+__device__ static int btree_pager_stats(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	Btree *bt = sqlite3TestTextToPtr(args[1]);
 
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TestTextToPtr(argv[1]);
- 
-  /* Normally in this file, with a b-tree handle opened using the 
-  ** [btree_open] command it is safe to call sqlite3BtreeEnter() directly.
-  ** But this function is sometimes called with a btree handle obtained
-  ** from an open SQLite connection (using [btree_from_db]). In this case
-  ** we need to obtain the mutex for the controlling SQLite handle before
-  ** it is safe to call sqlite3BtreeEnter().
-  */
-  sqlite3_mutex_enter(pBt->db->mutex);
+	// Normally in this file, with a b-tree handle opened using the [btree_open] command it is safe to call sqlite3BtreeEnter() directly.
+	// But this function is sometimes called with a btree handle obtained from an open SQLite connection (using [btree_from_db]). In this case
+	// we need to obtain the mutex for the controlling SQLite handle before it is safe to call sqlite3BtreeEnter().
+	_mutex_enter(bt->Ctx->Mutex);
 
-  sqlite3BtreeEnter(pBt);
-  a = sqlite3PagerStats(sqlite3BtreePager(pBt));
-  for(i=0; i<11; i++){
-    static char *zName[] = {
-      "ref", "page", "max", "size", "state", "err",
-      "hit", "miss", "ovfl", "read", "write"
-    };
-    char zBuf[100];
-    Tcl_AppendElement(interp, zName[i]);
-    sqlite3_snprintf(sizeof(zBuf), zBuf,"%d",a[i]);
-    Tcl_AppendElement(interp, zBuf);
-  }
-  sqlite3BtreeLeave(pBt);
+	bt->Enter();
+	int *a = bt->get_Pager()->Stats;
+	for (int i = 0; i < 11; i++)
+	{
+		char buf[100];
+		Tcl_AppendElement(interp, _names[i]);
+		__snprintf(buf, sizeof(buf), "%d", a[i]);
+		Tcl_AppendElement(interp, buf);
+	}
+	bt->Leave();
 
-  /* Release the mutex on the SQLite handle that controls this b-tree */
-  sqlite3_mutex_leave(pBt->db->mutex);
-  return TCL_OK;
+	// Release the mutex on the SQLite handle that controls this b-tree
+	_mutex_leave(bt->Ctx->Mutex);
+	return TCL_OK;
 }
 
-/*
-** Usage:   btree_cursor ID TABLENUM WRITEABLE
-**
-** Create a new cursor.  Return the ID for the cursor.
-*/
-static int btree_cursor(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int iTable;
-  BtCursor *pCur;
-  int rc = SQLITE_OK;
-  int wrFlag;
-  char zBuf[30];
-
-  if( argc!=4 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID TABLENUM WRITEABLE\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TestTextToPtr(argv[1]);
-  if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
-  if( Tcl_GetBoolean(interp, argv[3], &wrFlag) ) return TCL_ERROR;
-  pCur = (BtCursor *)ckalloc(sqlite3BtreeCursorSize());
-  memset(pCur, 0, sqlite3BtreeCursorSize());
-  sqlite3BtreeEnter(pBt);
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  rc = sqlite3BtreeLockTable(pBt, iTable, wrFlag);
+// Usage:   btree_cursor ID TABLENUM WRITEABLE
+//
+// Create a new cursor.  Return the ID for the cursor.
+__device__ static int btree_cursor(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 4)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID TABLENUM WRITEABLE\"", nullptr);
+		return TCL_ERROR;
+	}
+	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	int tableId;
+	if (Tcl_GetInt(interp, (char *)args[2], &tableId)) return TCL_ERROR;
+	bool wrFlag;
+	if (Tcl_GetBoolean(interp, (char *)args[3], &wrFlag)) return TCL_ERROR;
+	BtCursor *cur = (BtCursor *)ckalloc(Btree::CursorSize());
+	_memset(cur, 0, Btree::CursorSize());
+	bt->Enter();
+	RC rc = RC_OK;
+#ifndef OMIT_SHARED_CACHE
+	rc = bt->LockTable(tableId, wrFlag);
 #endif
-  if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeCursor(pBt, iTable, wrFlag, 0, pCur);
-  }
-  sqlite3BtreeLeave(pBt);
-  if( rc ){
-    ckfree((char *)pCur);
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pCur);
-  Tcl_AppendResult(interp, zBuf, 0);
-  return SQLITE_OK;
+	if (rc == RC_OK)
+		rc = bt->Cursor(tableId, wrFlag, 0, cur);
+	bt->Leave();
+	if (rc)
+	{
+		ckfree((char *)cur);
+		Tcl_AppendResult(interp, errorName(rc), nullptr);
+		return TCL_ERROR;
+	}
+	char buf[30];
+	__snprintf(buf, sizeof(buf), "%p", cur);
+	Tcl_AppendResult(interp, buf, nullptr);
+	return RC_OK;
 }
 
-/*
-** Usage:   btree_close_cursor ID
-**
-** Close a cursor opened using btree_cursor.
-*/
-static int btree_close_cursor(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  BtCursor *pCur;
-  Btree *pBt;
-  int rc;
-
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pCur = sqlite3TestTextToPtr(argv[1]);
-  pBt = pCur->pBtree;
-  sqlite3BtreeEnter(pBt);
-  rc = sqlite3BtreeCloseCursor(pCur);
-  sqlite3BtreeLeave(pBt);
-  ckfree((char *)pCur);
-  if( rc ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  return SQLITE_OK;
+// Usage:   btree_close_cursor ID
+//
+// Close a cursor opened using btree_cursor.
+__device__ static int btree_close_cursor(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	Btree *bt = cur->Btree;
+	bt->Enter();
+	RC rc = Btree::CloseCursor(cur);
+	bt->Leave();
+	ckfree((char *)cur);
+	if (rc)
+	{
+		Tcl_AppendResult(interp, errorName(rc), nullptr);
+		return TCL_ERROR;
+	}
+	return RC_OK;
 }
 
-/*
-** Usage:   btree_next ID
-**
-** Move the cursor to the next entry in the table.  Return 0 on success
-** or 1 if the cursor was already on the last entry in the table or if
-** the table is empty.
-*/
-static int btree_next(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  BtCursor *pCur;
-  int rc;
-  int res = 0;
-  char zBuf[100];
-
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pCur = sqlite3TestTextToPtr(argv[1]);
-  sqlite3BtreeEnter(pCur->pBtree);
-  rc = sqlite3BtreeNext(pCur, &res);
-  sqlite3BtreeLeave(pCur->pBtree);
-  if( rc ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
-  Tcl_AppendResult(interp, zBuf, 0);
-  return SQLITE_OK;
+// Usage:   btree_next ID
+//
+// Move the cursor to the next entry in the table.  Return 0 on success or 1 if the cursor was already on the last entry in the table or if
+// the table is empty.
+__device__ static int btree_next(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	cur->Btree->Enter();
+	int res = 0;
+	RC rc = Btree::Next_(cur->Next, &res);
+	cur->Btree->Leave();
+	if (rc)
+	{
+		Tcl_AppendResult(interp, errorName(rc), nullptr);
+		return TCL_ERROR;
+	}
+	char buf[100];
+	__snprintf(buf, sizeof(buf), "%d", res);
+	Tcl_AppendResult(interp, buf, 0);
+	return RC_OK;
 }
 
-/*
-** Usage:   btree_first ID
-**
-** Move the cursor to the first entry in the table.  Return 0 if the
-** cursor was left point to something and 1 if the table is empty.
-*/
-static int btree_first(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  BtCursor *pCur;
-  int rc;
-  int res = 0;
-  char zBuf[100];
-
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pCur = sqlite3TestTextToPtr(argv[1]);
-  sqlite3BtreeEnter(pCur->pBtree);
-  rc = sqlite3BtreeFirst(pCur, &res);
-  sqlite3BtreeLeave(pCur->pBtree);
-  if( rc ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
-  Tcl_AppendResult(interp, zBuf, 0);
-  return SQLITE_OK;
+// Usage:   btree_first ID
+//
+// Move the cursor to the first entry in the table.  Return 0 if the cursor was left point to something and 1 if the table is empty.
+__device__ static int btree_first(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	cur->Btree->Enter();
+	int res = 0;
+	RC rc = Btree::First(cur, &res);
+	cur->Btree->Leave();
+	if (rc)
+	{
+		Tcl_AppendResult(interp, errorName(rc), nullptr);
+		return TCL_ERROR;
+	}
+	char buf[100];
+	__snprintf(buf, sizeof(buf), "%d", res);
+	Tcl_AppendResult(interp, buf, nullptr);
+	return RC_OK;
 }
 
-/*
-** Usage:   btree_eof ID
-**
-** Return TRUE if the given cursor is not pointing at a valid entry.
-** Return FALSE if the cursor does point to a valid entry.
-*/
-static int btree_eof(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  BtCursor *pCur;
-  int rc;
-  char zBuf[50];
-
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pCur = sqlite3TestTextToPtr(argv[1]);
-  sqlite3BtreeEnter(pCur->pBtree);
-  rc = sqlite3BtreeEof(pCur);
-  sqlite3BtreeLeave(pCur->pBtree);
-  sqlite3_snprintf(sizeof(zBuf),zBuf, "%d", rc);
-  Tcl_AppendResult(interp, zBuf, 0);
-  return SQLITE_OK;
+// Usage:   btree_eof ID
+//
+// Return TRUE if the given cursor is not pointing at a valid entry.
+// Return FALSE if the cursor does point to a valid entry.
+__device__ static int btree_eof(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	cur->Btree->Enter();
+	bool rc = Btree::Eof(cur);
+	cur->Btree->Leave();
+	char buf[50];
+	__snprintf(buf, sizeof(buf), "%d", rc);
+	Tcl_AppendResult(interp, buf, nullptr);
+	return RC_OK;
 }
 
-/*
-** Usage:   btree_payload_size ID
-**
-** Return the number of bytes of payload
-*/
-static int btree_payload_size(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  BtCursor *pCur;
-  int n2;
-  u64 n1;
-  char zBuf[50];
+// Usage:   btree_payload_size ID
+//
+// Return the number of bytes of payload
+__device__ static int btree_payload_size(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	cur->Btree->Enter();
 
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pCur = sqlite3TestTextToPtr(argv[1]);
-  sqlite3BtreeEnter(pCur->pBtree);
-
-  /* The cursor may be in "require-seek" state. If this is the case, the
-  ** call to BtreeDataSize() will fix it. */
-  sqlite3BtreeDataSize(pCur, (u32*)&n2);
-  if( pCur->apPage[pCur->iPage]->intKey ){
-    n1 = 0;
-  }else{
-    sqlite3BtreeKeySize(pCur, (i64*)&n1);
-  }
-  sqlite3BtreeLeave(pCur->pBtree);
-  sqlite3_snprintf(sizeof(zBuf),zBuf, "%d", (int)(n1+n2));
-  Tcl_AppendResult(interp, zBuf, 0);
-  return SQLITE_OK;
+	// The cursor may be in "require-seek" state. If this is the case, the call to BtreeDataSize() will fix it.
+	uint64 n1;
+	int n2;
+	Btree::DataSize(cur, (uint32 *)&n2);
+	if (cur->Pages[cur->ID]->IntKey)
+		n1 = 0;
+	else
+		Btree::KeySize(cur, (int64 *)&n1);
+	cur->Btree->Leave();
+	char buf[50];
+	__snprintf(buf, sizeof(buf), "%d", (int)(n1+n2));
+	Tcl_AppendResult(interp, buf, nullptr);
+	return RC_OK;
 }
 
-/*
-** usage:   varint_test  START  MULTIPLIER  COUNT  INCREMENT
-**
-** This command tests the putVarint() and getVarint()
-** routines, both for accuracy and for speed.
-**
-** An integer is written using putVarint() and read back with
-** getVarint() and varified to be unchanged.  This repeats COUNT
-** times.  The first integer is START*MULTIPLIER.  Each iteration
-** increases the integer by INCREMENT.
-**
-** This command returns nothing if it works.  It returns an error message
-** if something goes wrong.
-*/
-static int btree_varint_test(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  u32 start, mult, count, incr;
-  u64 in, out;
-  int n1, n2, i, j;
-  unsigned char zBuf[100];
-  if( argc!=5 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " START MULTIPLIER COUNT INCREMENT\"", 0);
-    return TCL_ERROR;
-  }
-  if( Tcl_GetInt(interp, argv[1], (int*)&start) ) return TCL_ERROR;
-  if( Tcl_GetInt(interp, argv[2], (int*)&mult) ) return TCL_ERROR;
-  if( Tcl_GetInt(interp, argv[3], (int*)&count) ) return TCL_ERROR;
-  if( Tcl_GetInt(interp, argv[4], (int*)&incr) ) return TCL_ERROR;
-  in = start;
-  in *= mult;
-  for(i=0; i<(int)count; i++){
-    char zErr[200];
-    n1 = putVarint(zBuf, in);
-    if( n1>9 || n1<1 ){
-      sprintf(zErr, "putVarint returned %d - should be between 1 and 9", n1);
-      Tcl_AppendResult(interp, zErr, 0);
-      return TCL_ERROR;
-    }
-    n2 = getVarint(zBuf, &out);
-    if( n1!=n2 ){
-      sprintf(zErr, "putVarint returned %d and getVarint returned %d", n1, n2);
-      Tcl_AppendResult(interp, zErr, 0);
-      return TCL_ERROR;
-    }
-    if( in!=out ){
-      sprintf(zErr, "Wrote 0x%016llx and got back 0x%016llx", in, out);
-      Tcl_AppendResult(interp, zErr, 0);
-      return TCL_ERROR;
-    }
-    if( (in & 0xffffffff)==in ){
-      u32 out32;
-      n2 = getVarint32(zBuf, out32);
-      out = out32;
-      if( n1!=n2 ){
-        sprintf(zErr, "putVarint returned %d and GetVarint32 returned %d", 
-                  n1, n2);
-        Tcl_AppendResult(interp, zErr, 0);
-        return TCL_ERROR;
-      }
-      if( in!=out ){
-        sprintf(zErr, "Wrote 0x%016llx and got back 0x%016llx from GetVarint32",
-            in, out);
-        Tcl_AppendResult(interp, zErr, 0);
-        return TCL_ERROR;
-      }
-    }
+// usage:   varint_test  START  MULTIPLIER  COUNT  INCREMENT
+//
+// This command tests the putVarint() and getVarint() routines, both for accuracy and for speed.
+//
+// An integer is written using putVarint() and read back with getVarint() and varified to be unchanged.  This repeats COUNT
+// times.  The first integer is START*MULTIPLIER.  Each iteration increases the integer by INCREMENT.
+//
+// This command returns nothing if it works.  It returns an error message if something goes wrong.
+__device__ static int btree_varint_test(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	int n1, n2, i, j;
+	if (argc != 5)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " START MULTIPLIER COUNT INCREMENT\"", nullptr);
+		return TCL_ERROR;
+	}
+	uint32 start, mult, count, incr;
+	if (Tcl_GetInt(interp, (char *)args[1], (int *)&start)) return TCL_ERROR;
+	if (Tcl_GetInt(interp, (char *)args[2], (int *)&mult)) return TCL_ERROR;
+	if (Tcl_GetInt(interp, (char *)args[3], (int *)&count)) return TCL_ERROR;
+	if (Tcl_GetInt(interp, (char *)args[4], (int *)&incr)) return TCL_ERROR;
+	uint64 in = start;
+	in *= mult;
+	uint64 out;
+	unsigned char buf[100];
+	for (int i = 0; i < (int)count; i++)
+	{
+		char err[200];
+		n1 = _convert_putvarint(buf, in);
+		if (n1 > 9 || n1 < 1)
+		{
+			_sprintf(err, "putVarint returned %d - should be between 1 and 9", n1);
+			Tcl_AppendResult(interp, err, nullptr);
+			return TCL_ERROR;
+		}
+		n2 = _convert_getvarint(buf, &out);
+		if (n1 != n2)
+		{
+			_sprintf(err, "putVarint returned %d and getVarint returned %d", n1, n2);
+			Tcl_AppendResult(interp, err, nullptr);
+			return TCL_ERROR;
+		}
+		if (in != out)
+		{
+			_sprintf(err, "Wrote 0x%016llx and got back 0x%016llx", in, out);
+			Tcl_AppendResult(interp, err, nullptr);
+			return TCL_ERROR;
+		}
+		if ((in & 0xffffffff) == in)
+		{
+			uint32 out32;
+			n2 = _convert_getvarint32(buf, out32);
+			out = out32;
+			if (n1 != n2)
+			{
+				_sprintf(err, "putVarint returned %d and GetVarint32 returned %d", n1, n2);
+				Tcl_AppendResult(interp, err, nullptr);
+				return TCL_ERROR;
+			}
+			if (in != out)
+			{
+				_sprintf(err, "Wrote 0x%016llx and got back 0x%016llx from GetVarint32", in, out);
+				Tcl_AppendResult(interp, err, nullptr);
+				return TCL_ERROR;
+			}
+		}
 
-    /* In order to get realistic timings, run getVarint 19 more times.
-    ** This is because getVarint is called about 20 times more often
-    ** than putVarint.
-    */
-    for(j=0; j<19; j++){
-      getVarint(zBuf, &out);
-    }
-    in += incr;
-  }
-  return TCL_OK;
+		// In order to get realistic timings, run getVarint 19 more times. This is because getVarint is called about 20 times more often than putVarint.
+		for (int j = 0; j < 19; j++)
+			_convert_getvarint(buf, &out);
+		in += incr;
+	}
+	return TCL_OK;
 }
 
-/*
-** usage:   btree_from_db  DB-HANDLE
-**
-** This command returns the btree handle for the main database associated
-** with the database-handle passed as the argument. Example usage:
-**
-** sqlite3 db test.db
-** set bt [btree_from_db db]
-*/
-static int btree_from_db(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  char zBuf[100];
-  Tcl_CmdInfo info;
-  sqlite3 *db;
-  Btree *pBt;
-  int iDb = 0;
+// usage:   btree_from_db  DB-HANDLE
+//
+// This command returns the btree handle for the main database associated
+// with the database-handle passed as the argument. Example usage:
+//
+// sqlite3 db test.db
+// set bt [btree_from_db db]
+__device__ static int btree_from_db(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2 && argc != 3)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " DB-HANDLE ?N?\"", nullptr);
+		return TCL_ERROR;
+	}
+	Tcl_CmdInfo info;
+	if (Tcl_GetCommandInfo(interp, args[1], &info) != 1)
+	{
+		Tcl_AppendResult(interp, "No such db-handle: \"", args[1], "\"", nullptr);
+		return TCL_ERROR;
+	}
+	int db = (argc == 3 ? _atoi(args[2]) : 0);
 
-  if( argc!=2 && argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " DB-HANDLE ?N?\"", 0);
-    return TCL_ERROR;
-  }
+	Context *ctx = *((Context **)info.objClientData);
+	_assert(ctx);
 
-  if( 1!=Tcl_GetCommandInfo(interp, argv[1], &info) ){
-    Tcl_AppendResult(interp, "No such db-handle: \"", argv[1], "\"", 0);
-    return TCL_ERROR;
-  }
-  if( argc==3 ){
-    iDb = atoi(argv[2]);
-  }
-
-  db = *((sqlite3 **)info.objClientData);
-  assert( db );
-
-  pBt = db->aDb[iDb].pBt;
-  sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", pBt);
-  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
-  return TCL_OK;
+	Btree *bt = ctx->DBs[db].Bt;
+	char buf[100];
+	__snprintf(buf, sizeof(buf), "%p", bt);
+	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	return TCL_OK;
 }
 
-/*
-** Usage:   btree_ismemdb ID
-**
-** Return true if the B-Tree is in-memory.
-*/
-static int btree_ismemdb(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int res;
-
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TestTextToPtr(argv[1]);
-  sqlite3_mutex_enter(pBt->db->mutex);
-  sqlite3BtreeEnter(pBt);
-  res = sqlite3PagerIsMemdb(sqlite3BtreePager(pBt));
-  sqlite3BtreeLeave(pBt);
-  sqlite3_mutex_leave(pBt->db->mutex);
-  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(res));
-  return SQLITE_OK;
+// Usage:   btree_ismemdb ID
+//
+// Return true if the B-Tree is in-memory.
+__device__ static int btree_ismemdb(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 2)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
+		return TCL_ERROR;
+	}
+	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	_mutex_enter(bt->Ctx->Mutex);
+	bt->Enter();
+	bool res = bt->get_Pager()->MemoryDB;
+	bt->Leave();
+	_mutex_leave(bt->Ctx->Mutex);
+	Tcl_SetObjResult(interp, res);
+	return RC_OK;
 }
 
-/*
-** usage:   btree_set_cache_size ID NCACHE
-**
-** Set the size of the cache used by btree $ID.
-*/
-static int btree_set_cache_size(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  int nCache;
-  Btree *pBt;
-  
-  if( argc!=3 ){
-    Tcl_AppendResult(
-        interp, "wrong # args: should be \"", argv[0], " BT NCACHE\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TestTextToPtr(argv[1]);
-  if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
+// usage:   btree_set_cache_size ID NCACHE
+//
+// Set the size of the cache used by btree $ID.
+__device__ static int btree_set_cache_size(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+{
+	if (argc != 3)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " BT NCACHE\"", nullptr);
+		return TCL_ERROR;
+	}
+	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	int cacheSize;
+	if (Tcl_GetInt(interp, (char *)args[2], &cacheSize)) return TCL_ERROR;
 
-  sqlite3_mutex_enter(pBt->db->mutex);
-  sqlite3BtreeEnter(pBt);
-  sqlite3BtreeSetCacheSize(pBt, nCache);
-  sqlite3BtreeLeave(pBt);
-  sqlite3_mutex_leave(pBt->db->mutex);
-  return TCL_OK;
+	_mutex_enter(bt->Ctx->Mutex);
+	bt->Enter();
+	bt->SetCacheSize(cacheSize);
+	bt->Leave();
+	_mutex_leave(bt->Ctx->Mutex);
+	return TCL_OK;
 }      
 
 
-
-/*
-** Register commands with the TCL interpreter.
-*/
-int Sqlitetest3_Init(Tcl_Interp *interp){
-  static struct {
-     char *zName;
-     Tcl_CmdProc *xProc;
-  } aCmd[] = {
-     { "btree_open",               (Tcl_CmdProc*)btree_open               },
-     { "btree_close",              (Tcl_CmdProc*)btree_close              },
-     { "btree_begin_transaction",  (Tcl_CmdProc*)btree_begin_transaction  },
-     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats        },
-     { "btree_cursor",             (Tcl_CmdProc*)btree_cursor             },
-     { "btree_close_cursor",       (Tcl_CmdProc*)btree_close_cursor       },
-     { "btree_next",               (Tcl_CmdProc*)btree_next               },
-     { "btree_eof",                (Tcl_CmdProc*)btree_eof                },
-     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
-     { "btree_first",              (Tcl_CmdProc*)btree_first              },
-     { "btree_varint_test",        (Tcl_CmdProc*)btree_varint_test        },
-     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
-     { "btree_ismemdb",            (Tcl_CmdProc*)btree_ismemdb            },
-     { "btree_set_cache_size",     (Tcl_CmdProc*)btree_set_cache_size     }
-  };
-  int i;
-
-  for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
-    Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
-  }
-
-  return TCL_OK;
+// Register commands with the TCL interpreter.
+__constant__ static struct {
+	char *Name;
+	Tcl_CmdProc *Proc;
+} _cmds[] = {
+	{ "btree_open",               (Tcl_CmdProc *)btree_open               },
+	{ "btree_close",              (Tcl_CmdProc *)btree_close              },
+	{ "btree_begin_transaction",  (Tcl_CmdProc *)btree_begin_transaction  },
+	{ "btree_pager_stats",        (Tcl_CmdProc *)btree_pager_stats        },
+	{ "btree_cursor",             (Tcl_CmdProc *)btree_cursor             },
+	{ "btree_close_cursor",       (Tcl_CmdProc *)btree_close_cursor       },
+	{ "btree_next",               (Tcl_CmdProc *)btree_next               },
+	{ "btree_eof",                (Tcl_CmdProc *)btree_eof                },
+	{ "btree_payload_size",       (Tcl_CmdProc *)btree_payload_size       },
+	{ "btree_first",              (Tcl_CmdProc *)btree_first              },
+	{ "btree_varint_test",        (Tcl_CmdProc *)btree_varint_test        },
+	{ "btree_from_db",            (Tcl_CmdProc *)btree_from_db            },
+	{ "btree_ismemdb",            (Tcl_CmdProc *)btree_ismemdb            },
+	{ "btree_set_cache_size",     (Tcl_CmdProc *)btree_set_cache_size     }
+};
+__device__ int Sqlitetest3_Init(Tcl_Interp *interp)
+{
+	for (int i = 0; i < _lengthof(_cmds); i++)
+		Tcl_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
+	return TCL_OK;
 }

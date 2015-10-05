@@ -1,6 +1,6 @@
 // Code for testing all sorts of SQLite interfaces.
-#include <Core+Vdbe\Core+Vdbe.cu.h>
-#include <Tcl.h>
+#include <RuntimeEx.h>
+#include "TclContext.cu.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -80,10 +80,10 @@ __device__ int getDbPointer(Tcl_Interp *interp, const char *zA, Context **ctx)
 {
 	struct TclContext *p;
 	Tcl_CmdInfo cmdInfo;
-	if (Tcl_GetCommandInfo(interp, zA, &cmdInfo))
+	if (Tcl_GetCommandInfo(interp, (char *)zA, &cmdInfo))
 	{
 		p = (struct TclContext *)cmdInfo.objClientData;
-		*ctx = p->db;
+		*ctx = p->Ctx;
 	}
 	else
 		*ctx = (Context *)sqlite3TestTextToPtr(zA);
@@ -160,7 +160,7 @@ __device__ const char *sqlite3TestErrorName(int rc)
 #define t1ErrorName sqlite3TestErrorName
 
 // Convert an sqlite3_stmt* into an sqlite3*.  This depends on the fact that the sqlite3* is the first field in the Vdbe structure.
-#define StmtToDb(X)   sqlite3_db_handle(X)
+#define StmtToDb(X) sqlite3_db_handle(X)
 
 // Check a return value to make sure it agrees with the results from sqlite3_errcode.
 int sqlite3TestErrCode(Tcl_Interp *interp, Context *ctx, int rc)
@@ -425,7 +425,7 @@ __device__ static int test_mprintf_n(void *notUsed, Tcl_Interp *interp, int argc
 	int n = 0;
 	char *str = _mprintf("%s%n", args[1], &n);
 	_free(str);
-	Tcl_SetObjResult(interp, Tcl_NewObjInt(n));
+	Tcl_SetObjResult(interp, n);
 	return TCL_OK;
 }
 
@@ -436,9 +436,9 @@ __device__ static int test_mprintf_n(void *notUsed, Tcl_Interp *interp, int argc
 // You pass in a format string that requires more than one argument, bad things will happen.
 __device__ static int test_snprintf_int(void *notUsed, Tcl_Interp *interp, int argc, char **args)
 {
-	int n = _atoi(argv[1]);
+	int n = _atoi(args[1]);
 	const char *format = args[2];
-	int a1 = _atoi(argv[3]);
+	int a1 = _atoi(args[3]);
 	char str[100];
 	if (n > sizeof(str)) n = sizeof(str);
 	__snprintf(str, sizeof(str), "abcdefghijklmnopqrstuvwxyz");
@@ -656,7 +656,7 @@ __device__ static bool execFuncCallback(void *p, int argc, char **args, char **n
 	for (int i = 0; i < argc; i++)
 	{
 		if (args[i] == 0) dstrAppend(p2, "NULL", ' ');
-		else dstrAppend(p2, argv[i], ' ');
+		else dstrAppend(p2, args[i], ' ');
 	}
 	return false;
 }
@@ -700,7 +700,7 @@ __device__ static void tkt2213Function(FuncContext *fctx, int argc, Mem **args)
 	{
 		char *copy = (char *)_alloc(textLength);
 		_memcpy(copy, text1, textLength);
-		Vdbe::Result_Error(fctx, copy, textLength, _free);
+		Vdbe::Result_Text(fctx, copy, textLength, _free);
 	}
 }
 
@@ -981,9 +981,9 @@ __device__ static int sqlite3_mprintf_str(void *notUsed, Tcl_Interp *interp, int
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT ?STRING?\"", nullptr);
 		return TCL_ERROR;
 	}
+	int a[3];
 	for (int i = 2; i < 4; i++)
 		if (Tcl_GetInt(interp, args[i], &a[i-2])) return TCL_ERROR;
-	int a[3];
 	char *z = _mprintf(args[1], a[0], a[1], argc > 4 ? args[4] : NULL);
 	Tcl_AppendResult(interp, z, 0);
 	_free(z);
@@ -1008,10 +1008,10 @@ __device__ static int sqlite3_snprintf_str(void *notUsed, Tcl_Interp *interp, in
 		return TCL_ERROR;
 	}
 	int a[3];
-	for (i = 3; i < 5; i++)
+	for (int i = 3; i < 5; i++)
 		if (Tcl_GetInt(interp, args[i], &a[i-3])) return TCL_ERROR;
 	char *z = (char *)_alloc(n+1);
-	__snprintf(z, n, argv[2], a[0], a[1], argc > 4 ? argv[5] : NULL);
+	__snprintf(z, n, args[2], a[0], a[1], argc > 4 ? args[5] : NULL);
 	Tcl_AppendResult(interp, z, 0);
 	_free(z);
 	return TCL_OK;
@@ -1024,15 +1024,15 @@ __device__ static int sqlite3_mprintf_double(void *notUsed, Tcl_Interp *interp, 
 {
 	if (argc != 5)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " FORMAT INT INT DOUBLE\"", 0);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT DOUBLE\"", 0);
 		return TCL_ERROR;
 	}
 	int a[3];
 	for (int i = 2; i < 4; i++)
-		if (Tcl_GetInt(interp, argv[i], &a[i-2])) return TCL_ERROR;
+		if (Tcl_GetInt(interp, args[i], &a[i-2])) return TCL_ERROR;
 	double r;
-	if (Tcl_GetDouble(interp, argv[4], &r)) return TCL_ERROR;
-	char *z = _mprintf(argv[1], a[0], a[1], r);
+	if (Tcl_GetDouble(interp, args[4], &r)) return TCL_ERROR;
+	char *z = _mprintf(args[1], a[0], a[1], r);
 	Tcl_AppendResult(interp, z, 0);
 	_free(z);
 	return TCL_OK;
@@ -1046,13 +1046,13 @@ __device__ static int sqlite3_mprintf_scaled(void *notUsed, Tcl_Interp *interp, 
 {
 	if (argc != 4)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " FORMAT DOUBLE DOUBLE\"", 0);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT DOUBLE DOUBLE\"", 0);
 		return TCL_ERROR;
 	}
 	double r[2];
 	for (int i = 2; i < 4; i++)
-		if (Tcl_GetDouble(interp, argv[i], &r[i-2])) return TCL_ERROR;
-	char *z = _mprintf(argv[1], r[0]*r[1]);
+		if (Tcl_GetDouble(interp, args[i], &r[i-2])) return TCL_ERROR;
+	char *z = _mprintf(args[1], r[0]*r[1]);
 	Tcl_AppendResult(interp, z, 0);
 	_free(z);
 	return TCL_OK;
@@ -1066,10 +1066,10 @@ __device__ static int sqlite3_mprintf_stronly(void *notUsed, Tcl_Interp *interp,
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " FORMAT STRING\"", 0);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT STRING\"", 0);
 		return TCL_ERROR;
 	}
-	char *z = _mprintf(argv[1], argv[2]);
+	char *z = _mprintf(args[1], args[2]);
 	Tcl_AppendResult(interp, z, 0);
 	_free(z);
 	return TCL_OK;
@@ -1082,11 +1082,11 @@ __device__ static int sqlite3_mprintf_hexdouble(void *notUsed, Tcl_Interp *inter
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " FORMAT STRING\"", 0);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT STRING\"", 0);
 		return TCL_ERROR;
 	}
 	unsigned int x1, x2;
-	if (_sscanf(argv[2], "%08x%08x", &x2, &x1) != 2)
+	if (__sscanf(args[2], "%08x%08x", &x2, &x1) != 2)
 	{
 		Tcl_AppendResult(interp, "2nd argument should be 16-characters of hex", 0);
 		return TCL_ERROR;
@@ -1095,7 +1095,7 @@ __device__ static int sqlite3_mprintf_hexdouble(void *notUsed, Tcl_Interp *inter
 	d = (d<<32) + x1;
 	double r;
 	_memcpy(&r, &d, sizeof(r));
-	char *z = _mprintf(argv[1], r);
+	char *z = _mprintf(args[1], r);
 	Tcl_AppendResult(interp, z, 0);
 	_free(z);
 	return TCL_OK;
@@ -1111,11 +1111,11 @@ __device__ static int test_enable_shared(ClientData clientData, Tcl_Interp *inte
 		return TCL_ERROR;
 	}
 	bool ret = SysEx_GlobalStatics.SharedCacheEnabled;
-	if (objc == 2)
+	if (argc == 2)
 	{
 		bool enable;
 		if (Tcl_GetBoolean(interp, args[1], &enable)) return TCL_ERROR;
-		RC rc = sqlite3_enable_shared_cache(enable);
+		RC rc = core_enable_shared_cache(enable);
 		if (rc != RC_OK)
 		{
 			Tcl_SetResult(interp, (char *)Main::ErrStr(rc), TCL_STATIC);
@@ -1139,7 +1139,7 @@ __device__ static int test_extended_result_codes(ClientData clientData, Tcl_Inte
 	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
 	bool enable;
 	if (Tcl_GetBoolean(interp, args[2], &enable) ) return TCL_ERROR;
-	sqlite3_extended_result_codes(ctx, enable);
+	core_extended_result_codes(ctx, enable);
 	return TCL_OK;
 }
 
@@ -1263,7 +1263,7 @@ __device__ static int test_blob_read(ClientData clientData, Tcl_Interp *interp, 
 		buf = (unsigned char *)Tcl_Alloc(bytes);
 	RC rc = Vdbe::Blob_Read(blob, buf, bytes, offset);
 	if (rc == RC_OK)
-		Tcl_SetResult(interp, Tcl_NewByteArrayObj(buf, bytes));
+		Tcl_SetObjResult(interp, array_t<const void>(buf, bytes));
 	else
 		Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
 	Tcl_Free((char *)buf);
@@ -1290,7 +1290,7 @@ __device__ static int test_blob_write(ClientData clientData, Tcl_Interp *interp,
 	int offset;
 	if (Tcl_GetInt(interp, args[2], &offset) != TCL_OK) return TCL_ERROR;
 	int bufLength;
-	unsigned char *buf = Tcl_GetByteArrayFromObj(args[3], &bufLength);
+	char *buf = Tcl_GetByteArray(interp, args[3], &bufLength);
 	if (argc == 5 && Tcl_GetInt(interp, args[4], &bufLength)) return TCL_ERROR;
 	RC rc = Vdbe::Blob_Write(blob, buf, bufLength, offset);
 	if (rc != RC_OK)
@@ -1307,7 +1307,7 @@ __device__ static int test_blob_reopen(ClientData clientData, Tcl_Interp *interp
 	}
 	Blob *blob;
 	if (blobHandleFromObj(interp, args[1], &blob)) return TCL_ERROR;
-	int64 iRowid;
+	int64 rowid;
 	if (Tcl_GetWideInt(interp, args[2], &rowid)) return TCL_ERROR;
 	RC rc = Vdbe::Blob_Reopen(blob, rowid);
 	if (rc != RC_OK)
@@ -1329,7 +1329,7 @@ typedef struct TestCollationX TestCollationX;
 __device__ static void testCreateCollationDel(void *ctx)
 {
 	TestCollationX *p = (TestCollationX *)ctx;
-	int rc = Tcl_EvalObj(p->Interp, p->Del, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
+	int rc = Tcl_Eval(p->Interp, p->Del);
 	if (rc != TCL_OK)
 		Tcl_BackgroundError(p->Interp);
 	Tcl_DecrRefCount(p->Cmp);
@@ -1344,7 +1344,7 @@ __device__ static int testCreateCollationCmp(void *ctx, int leftLength, const vo
 	Tcl_ListObjAppendElement(0, script, Tcl_NewStringObj((char *)left, leftLength));
 	Tcl_ListObjAppendElement(0, script, Tcl_NewStringObj((char *)right, rightLength));
 	int res = 0;
-	if (Tcl_EvalObj(p->Interp, script, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL) != TCL_OK || Tcl_GetInt(p->Interp, p->Interp->result, &res) != TCL_OK)
+	if (Tcl_Eval(p->Interp, script) != TCL_OK || Tcl_GetInt(p->Interp, p->Interp->result, &res) != TCL_OK)
 		Tcl_BackgroundError(p->Interp);
 	Tcl_DecrRefCount(script);
 	return res;
@@ -1399,7 +1399,7 @@ __device__ static void cf2Destroy(void *user)
 	CreateFunctionV2 *p = (CreateFunctionV2 *)user;
 	if (p->Interp && p->Destroy)
 	{
-		int rc = Tcl_EvalObj(p->Interp, p->Destroy, 0);
+		int rc = Tcl_Eval(p->Interp, p->Destroy);
 		if (rc != TCL_OK) Tcl_BackgroundError(p->Interp);
 	}
 	if (p->Func) Tcl_DecrRefCount(p->Func); 
@@ -1497,7 +1497,7 @@ __device__ static int test_load_extension(ClientData clientData, Tcl_Interp *int
 		Tcl_AppendResult(interp, "command not found: ", dbName, nullptr);
 		return TCL_ERROR;
 	}
-	Context *ctx = ((struct TestContext*)cmdInfo.objClientData)->Ctx;
+	Context *ctx = ((struct TclContext *)cmdInfo.objClientData)->Ctx;
 	_assert(ctx);
 
 	// Call the underlying C function. If an error occurs, set rc to TCL_ERROR and load any error string into the interpreter. If no  error occurs, set rc to TCL_OK.
@@ -1532,12 +1532,12 @@ __device__ static int test_enable_load(ClientData clientData, Tcl_Interp *interp
 
 	// Extract the C database handle from the Tcl command name
 	Tcl_CmdInfo cmdInfo;
-	if (!Tcl_GetCommandInfo(interp, dbaName, &cmdInfo))
+	if (!Tcl_GetCommandInfo(interp, dbName, &cmdInfo))
 	{
 		Tcl_AppendResult(interp, "command not found: ", dbName, nullptr);
 		return TCL_ERROR;
 	}
-	Context *ctx = ((struct TestContext *)cmdInfo.objClientData)->Ctx;
+	Context *ctx = ((struct TclContext *)cmdInfo.objClientData)->Ctx;
 	_assert(ctx);
 
 	// Get the onoff parameter
@@ -1743,16 +1743,15 @@ __device__ static int uses_stmt_journal(void *clientData, Tcl_Interp *interp, in
 	Vdbe *stmt;
 	if (getStmtPointer(interp, args[1], &stmt)) return TCL_ERROR;
 	Vdbe::Stmt_Readonly(stmt);
-	Tcl_SetObjResult(interp, ((Vdbe *)stmt)->UsesStmtJournal);
+	Tcl_SetObjResult(interp, (bool)((Vdbe *)stmt)->UsesStmtJournal);
 	return TCL_OK;
 }
 
 // Usage:  sqlite3_reset  STMT 
 //
 // Reset a statement handle.
-static int test_reset(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int test_reset(void *clientData, Tcl_Interp *interp, int argc, char *args[])
 {
-	int rc;
 	if (argc != 2)
 	{
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " <STMT>", nullptr);
@@ -1799,7 +1798,7 @@ __device__ static int test_transfer_bind(void *clientData, Tcl_Interp *interp, i
 	Vdbe *stmt1, *stmt2;
 	if (getStmtPointer(interp, args[1], &stmt1)) return TCL_ERROR;
 	if (getStmtPointer(interp, args[2], &stmt2)) return TCL_ERROR;
-	Tcl_SetObjResult(interp, Vdbe::TransferBindings(stmt1, stmt2)));
+	Tcl_SetObjResult(interp, Vdbe::TransferBindings(stmt1, stmt2));
 #endif
 	return TCL_OK;
 }

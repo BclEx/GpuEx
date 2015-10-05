@@ -39,7 +39,30 @@ typedef struct Tcl_Obj
 
 typedef int *Tcl_Trace;
 typedef int *Tcl_CmdBuf;
+
+// CHANNEL
+// https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man3/Tcl_GetChannel.3tcl.html
 typedef void *Tcl_Channel;
+
+extern __device__ Tcl_Channel Tcl_GetChannel(Tcl_Interp *interp, const char *channelName, int *modePtr);
+extern __device__ int Tcl_Flush(Tcl_Channel channel);
+extern __device__ int64 Tcl_Seek(Tcl_Channel channel, int64 offset, int seekMode);
+extern __device__ ClientData Tcl_GetChannelInstanceData(Tcl_Channel channel);
+
+// CMD INFO
+typedef struct Tcl_CmdInfo
+{
+    //int isNativeObjectProc;
+    //Tcl_ObjCmdProc *objProc;
+    ClientData objClientData;
+    //Tcl_CmdProc *proc;
+    //ClientData clientData;
+    //Tcl_CmdDeleteProc *deleteProc;
+    //ClientData deleteData;
+    //Tcl_Namespace *namespacePtr;
+} Tcl_CmdInfo;
+
+extern __device__ int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName, Tcl_CmdInfo *info);
 
 // When a TCL command returns, the string pointer interp->result points to a string containing return information from the command.  In addition,
 // the command procedure returns an integer value, which is one of the following:

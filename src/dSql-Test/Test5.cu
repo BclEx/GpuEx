@@ -1,217 +1,141 @@
-/*
-** 2001 September 15
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** Code for testing the utf.c module in SQLite.  This code
-** is not included in the SQLite library.  It is used for automated
-** testing of the SQLite library. Specifically, the code in this file
-** is used for testing the SQLite routines for converting between
-** the various supported unicode encodings.
-*/
-#include "sqliteInt.h"
-#include "vdbeInt.h"
-#include "tcl.h"
+#include "TclContext.cu.h"
+#include "..\System.Data.net\Core+Vdbe\VdbeInt.cu.h"
 #include <stdlib.h>
 #include <string.h>
 
-/*
-** The first argument is a TCL UTF-8 string. Return the byte array
-** object with the encoded representation of the string, including
-** the NULL terminator.
-*/
-static int binarize(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int len;
-  char *bytes;
-  Tcl_Obj *pRet;
-  assert(objc==2);
-
-  bytes = Tcl_GetStringFromObj(objv[1], &len);
-  pRet = Tcl_NewByteArrayObj((u8*)bytes, len+1);
-  Tcl_SetObjResult(interp, pRet);
-  return TCL_OK;
+// The first argument is a TCL UTF-8 string. Return the byte array object with the encoded representation of the string, including the NULL terminator.
+__device__ static int binarize(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	_assert(argc == 2);
+	int len;
+	char *bytes = Tcl_GetString(interp, args[1], &len);
+	Tcl_SetObjResult(interp, new array_t<const void>((uint8 *)bytes, len+1));
+	return TCL_OK;
 }
 
-/*
-** Usage: test_value_overhead <repeat-count> <do-calls>.
-**
-** This routine is used to test the overhead of calls to
-** sqlite3_value_text(), on a value that contains a UTF-8 string. The idea
-** is to figure out whether or not it is a problem to use sqlite3_value
-** structures with collation sequence functions.
-**
-** If <do-calls> is 0, then the calls to sqlite3_value_text() are not
-** actually made.
-*/
-static int test_value_overhead(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int do_calls;
-  int repeat_count;
-  int i;
-  Mem val;
+// Usage: test_value_overhead <repeat-count> <do-calls>.
+//
+// This routine is used to test the overhead of calls to sqlite3_value_text(), on a value that contains a UTF-8 string. The idea
+// is to figure out whether or not it is a problem to use sqlite3_value structures with collation sequence functions.
+//
+// If <do-calls> is 0, then the calls to sqlite3_value_text() are not actually made.
+__device__ static int test_value_overhead(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	if (argc != 3)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " <repeat-count> <do-calls>", nullptr);
+		return TCL_ERROR;
+	}
 
-  if( objc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <repeat-count> <do-calls>", 0);
-    return TCL_ERROR;
-  }
+	int repeat_count;
+	if (Tcl_GetInt(interp, args[1], &repeat_count)) return TCL_ERROR;
+	int do_calls;
+	if (Tcl_GetInt(interp, args[2], &do_calls)) return TCL_ERROR;
 
-  if( Tcl_GetIntFromObj(interp, objv[1], &repeat_count) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &do_calls) ) return TCL_ERROR;
+	Mem val;
+	val.Flags = (MEM)(MEM_Str|MEM_Term|MEM_Static);
+	val.Z = "hello world";
+	val.Type = TYPE_TEXT;
+	val.Encode = TEXTENCODE_UTF8;
 
-  val.flags = MEM_Str|MEM_Term|MEM_Static;
-  val.z = "hello world";
-  val.type = SQLITE_TEXT;
-  val.enc = SQLITE_UTF8;
-
-  for(i=0; i<repeat_count; i++){
-    if( do_calls ){
-      sqlite3_value_text(&val);
-    }
-  }
-
-  return TCL_OK;
+	for (int i = 0; i < repeat_count; i++)
+		if (do_calls)
+			Vdbe::Value_Text(&val);
+	return TCL_OK;
 }
 
-static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
-  struct EncName {
-    char *zName;
-    u8 enc;
-  } encnames[] = {
-    { "UTF8", SQLITE_UTF8 },
-    { "UTF16LE", SQLITE_UTF16LE },
-    { "UTF16BE", SQLITE_UTF16BE },
-    { "UTF16", SQLITE_UTF16 },
-    { 0, 0 }
-  };
-  struct EncName *pEnc;
-  char *z = Tcl_GetString(pObj);
-  for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
-    if( 0==sqlite3StrICmp(z, pEnc->zName) ){
-      break;
-    }
-  }
-  if( !pEnc->enc ){
-    Tcl_AppendResult(interp, "No such encoding: ", z, 0);
-  }
-  if( pEnc->enc==SQLITE_UTF16 ){
-    return SQLITE_UTF16NATIVE;
-  }
-  return pEnc->enc;
+__constant__ struct EncName {
+	char *Name;
+	TEXTENCODE Encode;
+} _encodeNames[] = {
+	{ "UTF8", TEXTENCODE_UTF8 },
+	{ "UTF16LE", TEXTENCODE_UTF16LE },
+	{ "UTF16BE", TEXTENCODE_UTF16BE },
+	{ "UTF16", TEXTENCODE_UTF16 },
+	{ nullptr, (TEXTENCODE)0 }
+};
+__device__ static TEXTENCODE name_to_enc(Tcl_Interp *interp, char *obj)
+{
+	char *z = obj;
+	struct EncName *encode;
+	for (encode = &_encodeNames[0]; encode->Name; encode++)
+		if (!_strcmp(z, encode->Name))
+			break;
+	if (!encode->Encode)
+		Tcl_AppendResult(interp, "No such encoding: ", z, nullptr);
+	return (encode->Encode != TEXTENCODE_UTF16 ? encode->Encode : TEXTENCODE_UTF16NATIVE);
 }
 
-/*
-** Usage:   test_translate <string/blob> <from enc> <to enc> ?<transient>?
-**
-*/
-static int test_translate(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  u8 enc_from;
-  u8 enc_to;
-  sqlite3_value *pVal;
+// Usage:   test_translate <string/blob> <from enc> <to enc> ?<transient>?
+__device__ static int test_translate(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	if (argc != 4 && argc != 5)
+	{
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " <string/blob> <from enc> <to enc>", nullptr);
+		return TCL_ERROR;
+	}
+	void (*del)(void *p) = (argc == 5 ? _free : DESTRUCTOR_STATIC);
 
-  char *z;
-  int len;
-  void (*xDel)(void *p) = SQLITE_STATIC;
+	TEXTENCODE enc_from = name_to_enc(interp, args[2]);
+	if (!enc_from) return TCL_ERROR;
+	TEXTENCODE enc_to = name_to_enc(interp, args[3]);
+	if (!enc_to) return TCL_ERROR;
 
-  if( objc!=4 && objc!=5 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), 
-        " <string/blob> <from enc> <to enc>", 0
-    );
-    return TCL_ERROR;
-  }
-  if( objc==5 ){
-    xDel = sqlite3_free;
-  }
+	char *z;
+	int len;
+	Mem *val = Vdbe::ValueNew(nullptr);
+	if (enc_from == TEXTENCODE_UTF8)
+	{
+		z = args[1];
+		if (argc == 5)
+			z = _mprintf("%s", z);
+		Vdbe::ValueSetStr(val, -1, z, enc_from, del);
+	}
+	else
+	{
+		z = Tcl_GetByteArray(interp, args[1], &len);
+		if (argc == 5)
+		{
+			char *tmp = z;
+			z = (char *)_alloc(len);
+			_memcpy(z, tmp, len);
+		}
+		Vdbe::ValueSetStr(val, -1, z, enc_from, del);
+	}
 
-  enc_from = name_to_enc(interp, objv[2]);
-  if( !enc_from ) return TCL_ERROR;
-  enc_to = name_to_enc(interp, objv[3]);
-  if( !enc_to ) return TCL_ERROR;
+	z = (char *)Vdbe::ValueText(val, enc_to);
+	len = Vdbe::ValueBytes(val, enc_to) + (enc_to==TEXTENCODE_UTF8?1:2);
+	Tcl_SetObjResult(interp, array_t<const void>((uint8 *)z, len));
 
-  pVal = sqlite3ValueNew(0);
-
-  if( enc_from==SQLITE_UTF8 ){
-    z = Tcl_GetString(objv[1]);
-    if( objc==5 ){
-      z = sqlite3_mprintf("%s", z);
-    }
-    sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);
-  }else{
-    z = (char*)Tcl_GetByteArrayFromObj(objv[1], &len);
-    if( objc==5 ){
-      char *zTmp = z;
-      z = sqlite3_malloc(len);
-      memcpy(z, zTmp, len);
-    }
-    sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);
-  }
-
-  z = (char *)sqlite3ValueText(pVal, enc_to);
-  len = sqlite3ValueBytes(pVal, enc_to) + (enc_to==SQLITE_UTF8?1:2);
-  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((u8*)z, len));
-
-  sqlite3ValueFree(pVal);
-
-  return TCL_OK;
+	Vdbe::ValueFree(val);
+	return TCL_OK;
 }
 
-/*
-** Usage: translate_selftest
-**
-** Call sqlite3UtfSelfTest() to run the internal tests for unicode
-** translation. If there is a problem an assert() will fail.
-**/
-void sqlite3UtfSelfTest(void);
-static int test_translate_selftest(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-#ifndef SQLITE_OMIT_UTF16
-  sqlite3UtfSelfTest();
+// Usage: translate_selftest
+//
+// Call sqlite3UtfSelfTest() to run the internal tests for unicode translation. If there is a problem an assert() will fail.
+__device__ void sqlite3UtfSelfTest();
+__device__ static int test_translate_selftest(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+#ifndef OMIT_UTF16
+	sqlite3UtfSelfTest();
 #endif
-  return SQLITE_OK;
+	return RC_OK;
 }
 
-
-/*
-** Register commands with the TCL interpreter.
-*/
-int Sqlitetest5_Init(Tcl_Interp *interp){
-  static struct {
-    char *zName;
-    Tcl_ObjCmdProc *xProc;
-  } aCmd[] = {
-    { "binarize",                (Tcl_ObjCmdProc*)binarize },
-    { "test_value_overhead",     (Tcl_ObjCmdProc*)test_value_overhead },
-    { "test_translate",          (Tcl_ObjCmdProc*)test_translate     },
-    { "translate_selftest",      (Tcl_ObjCmdProc*)test_translate_selftest},
-  };
-  int i;
-  for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
-  }
-  return SQLITE_OK;
+// Register commands with the TCL interpreter.
+__constant__ static struct {
+	char *Name;
+	Tcl_ObjCmdProc *Proc;
+} _cmds[] = {
+	{ "binarize",                (Tcl_ObjCmdProc *)binarize },
+	{ "test_value_overhead",     (Tcl_ObjCmdProc *)test_value_overhead },
+	{ "test_translate",          (Tcl_ObjCmdProc *)test_translate },
+	{ "translate_selftest",      (Tcl_ObjCmdProc *)test_translate_selftest },
+};
+__device__ int Sqlitetest5_Init(Tcl_Interp *interp)
+{
+	for (int i = 0; i < _lengthof(_cmds); i++)
+		Tcl_CreateObjCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
+	return RC_OK;
 }

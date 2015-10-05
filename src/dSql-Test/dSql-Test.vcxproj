@@ -30,21 +30,11 @@
     <ClCompile Include="TclContext.cu" />
     <ClCompile Include="TclContext+Test.cu" />
     <ClCompile Include="Test1.cu" />
-    <ClCompile Include="Test2.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Test3.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Test4.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Test5.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Test6.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test2.cu" />
+    <ClCompile Include="Test3.cu" />
+    <ClCompile Include="Test4.cu" />
+    <ClCompile Include="Test5.cu" />
+    <ClCompile Include="Test6.cu" />
     <ClCompile Include="Test7.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
