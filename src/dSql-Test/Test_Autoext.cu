@@ -1,167 +1,98 @@
-/*
-** 2006 August 23
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** Test extension for testing the sqlite3_auto_extension() function.
-*/
-#include "tcl.h"
-#include "sqlite3ext.h"
+// Test extension for testing the sqlite3_auto_extension() function.
 
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-static SQLITE_EXTENSION_INIT1
+#include <Tcl.h>
+#include <Core+Vdbe\Core+Ext.cu.h>
 
-/*
-** The sqr() SQL function returns the square of its input value.
-*/
-static void sqrFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  double r = sqlite3_value_double(argv[0]);
-  sqlite3_result_double(context, r*r);
+#ifndef OMIT_LOAD_EXTENSION
+static EXTENSION_INIT1
+	// The sqr() SQL function returns the square of its input value.
+	__device__ static void sqrFunc(FuncContext *fctx, int argc, Mem **args)
+{
+	double r = Vdbe::Value_Double(args[0]);
+	Vdbe::Result_Double(fctx, r*r);
 }
 
-/*
-** This is the entry point to register the extension for the sqr() function.
-*/
-static int sqr_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  SQLITE_EXTENSION_INIT2(pApi);
-  sqlite3_create_function(db, "sqr", 1, SQLITE_ANY, 0, sqrFunc, 0, 0);
-  return 0;
+// This is the entry point to register the extension for the sqr() function.
+static int sqr_init(Context *ctx, char **errMsg, const core_api_routines *api)
+{
+	EXTENSION_INIT2(api);
+	Main::CreateFunction(ctx, "sqr", 1, TEXTENCODE_ANY, 0, sqrFunc, 0, 0);
+	return 0;
 }
 
-/*
-** The cube() SQL function returns the cube of its input value.
-*/
-static void cubeFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  double r = sqlite3_value_double(argv[0]);
-  sqlite3_result_double(context, r*r*r);
+// The cube() SQL function returns the cube of its input value.
+__device__ static void cubeFunc(FuncContext *fctx, int argc, Mem **args)
+{
+	double r = Vdbe::Value_Double(args[0]);
+	Vdbe::Result_Double(fctx, r*r*r);
 }
 
-/*
-** This is the entry point to register the extension for the cube() function.
-*/
-static int cube_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  SQLITE_EXTENSION_INIT2(pApi);
-  sqlite3_create_function(db, "cube", 1, SQLITE_ANY, 0, cubeFunc, 0, 0);
-  return 0;
+// This is the entry point to register the extension for the cube() function.
+__device__ static int cube_init(Context *ctx, char **errMsg, const core_api_routines *api)
+{
+	EXTENSION_INIT2(api);
+	Main::CreateFunction(ctx, "cube", 1, TEXTENCODE_ANY, 0, cubeFunc, 0, 0);
+	return 0;
 }
 
-/*
-** This is a broken extension entry point
-*/
-static int broken_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  char *zErr;
-  SQLITE_EXTENSION_INIT2(pApi);
-  zErr = sqlite3_mprintf("broken autoext!");
-  *pzErrMsg = zErr;
-  return 1;
+// This is a broken extension entry point
+__device__ static int broken_init(Context *ctx, char **errMsg, const core_api_routines *api)
+{
+	EXTENSION_INIT2(api);
+	char *err = _mprintf("broken autoext!");
+	*errMsg = err;
+	return 1;
 }
 
-/*
-** tclcmd:   sqlite3_auto_extension_sqr
-**
-** Register the "sqr" extension to be loaded automatically.
-*/
-static int autoExtSqrObjCmd(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int rc = sqlite3_auto_extension((void*)sqr_init);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return SQLITE_OK;
+// tclcmd:   sqlite3_auto_extension_sqr
+//
+// Register the "sqr" extension to be loaded automatically.
+__device__ static int autoExtSqrObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	RC rc = Main::AutoExtension((void *)sqr_init);
+	Tcl_SetObjResult(interp, (int)rc);
+	return RC_OK;
 }
 
-/*
-** tclcmd:   sqlite3_auto_extension_cube
-**
-** Register the "cube" extension to be loaded automatically.
-*/
-static int autoExtCubeObjCmd(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int rc = sqlite3_auto_extension((void*)cube_init);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return SQLITE_OK;
+// tclcmd:   sqlite3_auto_extension_cube
+//
+// Register the "cube" extension to be loaded automatically.
+__device__ static int autoExtCubeObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	RC rc = Main::AutoExtension((void*)cube_init);
+	Tcl_SetObjResult(interp, (int)rc);
+	return RC_OK;
 }
 
-/*
-** tclcmd:   sqlite3_auto_extension_broken
-**
-** Register the broken extension to be loaded automatically.
-*/
-static int autoExtBrokenObjCmd(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int rc = sqlite3_auto_extension((void*)broken_init);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return SQLITE_OK;
+// tclcmd:   sqlite3_auto_extension_broken
+//
+// Register the broken extension to be loaded automatically.
+__device__ static int autoExtBrokenObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	RC rc = Main::AutoExtension((void*)broken_init);
+	Tcl_SetObjResult(interp, (int)rc);
+	return RC_OK;
 }
 
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */
-
-
-/*
-** tclcmd:   sqlite3_reset_auto_extension
-**
-** Reset all auto-extensions
-*/
-static int resetAutoExtObjCmd(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3_reset_auto_extension();
-  return SQLITE_OK;
-}
-
-
-/*
-** This procedure registers the TCL procs defined in this file.
-*/
-int Sqlitetest_autoext_Init(Tcl_Interp *interp){
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-  Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_sqr",
-          autoExtSqrObjCmd, 0, 0);
-  Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_cube",
-          autoExtCubeObjCmd, 0, 0);
-  Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_broken",
-          autoExtBrokenObjCmd, 0, 0);
 #endif
-  Tcl_CreateObjCommand(interp, "sqlite3_reset_auto_extension",
-          resetAutoExtObjCmd, 0, 0);
-  return TCL_OK;
+
+// tclcmd:   sqlite3_reset_auto_extension
+//
+// Reset all auto-extensions
+__device__ static int resetAutoExtObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	Main::ResetAutoExtension();
+	return RC_OK;
+}
+
+// This procedure registers the TCL procs defined in this file.
+__device__ int Sqlitetest_autoext_Init(Tcl_Interp *interp)
+{
+#ifndef OMIT_LOAD_EXTENSION
+	Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_sqr", autoExtSqrObjCmd, nullptr, nullptr);
+	Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_cube", autoExtCubeObjCmd, nullptr, nullptr);
+	Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_broken", autoExtBrokenObjCmd, nullptr, nullptr);
+#endif
+	Tcl_CreateObjCommand(interp, "sqlite3_reset_auto_extension", resetAutoExtObjCmd, nullptr, nullptr);
+	return TCL_OK;
 }

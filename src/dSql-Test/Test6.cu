@@ -4,7 +4,7 @@
 
 //#define TRACE_CRASHTEST
 
-typedef struct CrashFile CrashFile;
+typedef struct CrashVFile CrashVFile;
 typedef struct CrashGlobal CrashGlobal;
 typedef struct WriteBuffer WriteBuffer;
 
@@ -67,26 +67,47 @@ typedef struct WriteBuffer WriteBuffer;
 
 struct WriteBuffer
 {
-	i64 Offset;                 // Byte offset of the start of this write()
+	int64 Offset;               // Byte offset of the start of this write()
 	int BufLength;              // Number of bytes written
 	uint8 *Buf;                 // Pointer to copy of written data
-	CrashFile *File;            // File this write() applies to
+	CrashVFile *File;            // File this write() applies to
 
 	WriteBuffer *Next;          // Next in CrashGlobal.pWriteList
 };
 
-struct CrashFile
+class CrashVFile : public VFile
 {
-	//const sqlite3_io_methods *pMethod;   // Must be first
+public:
 	VFile *RealFile;				// Underlying "real" file handle
 	char *Name;
-	VSystem::OPEN Flags;                      // Flags the file was opened with
+	VSystem::OPEN Flags;            // Flags the file was opened with
 
 	// Cache of the entire file. This is used to speed up OsRead() and OsFileSize() calls. Although both could be done by traversing the
 	// write-list, in practice this is impractically slow.
-	int Size;                      // Size of file in bytes
-	int DataLength;                      // Size of buffer allocated at zData
-	uint8 *Data;                   // Buffer containing file contents
+	int Size;						// Size of file in bytes
+	int DataLength;					// Size of buffer allocated at zData
+	uint8 *Data;					// Buffer containing file contents
+public:
+	//: VFILE::Opened
+	__device__ virtual RC Read(void *buffer, int amount, int64 offset);
+	__device__ virtual RC Write(const void *buffer, int amount, int64 offset);
+	__device__ virtual RC Truncate(int64 size);
+	__device__ virtual RC Close_();
+	__device__ virtual RC Sync(SYNC flags);
+	__device__ virtual RC get_FileSize(int64 &size);
+
+	__device__ virtual RC Lock(LOCK lock);
+	__device__ virtual RC Unlock(LOCK lock);
+	__device__ virtual RC CheckReservedLock(int &lock);
+	__device__ virtual RC FileControl(FCNTL op, void *arg);
+
+	__device__ virtual uint get_SectorSize();
+	__device__ virtual IOCAP get_DeviceCharacteristics();
+
+	__device__ virtual RC ShmLock(int offset, int n, SHM flags);
+	__device__ virtual void ShmBarrier();
+	__device__ virtual RC ShmUnmap(bool deleteFlag);
+	__device__ virtual RC ShmMap(int region, int sizeRegion, bool isWrite, void volatile **pp);
 };
 
 struct CrashGlobal
@@ -101,7 +122,7 @@ struct CrashGlobal
 	char CrashFile[500];        // Crash during an xSync() on this file
 };
 
-static CrashGlobal _g = {0, 0, CORE_DEFAULT_SECTOR_SIZE, 0, 0};
+static CrashGlobal _g = { nullptr, nullptr, CORE_DEFAULT_SECTOR_SIZE, (VFile::IOCAP)0, 0, nullptr};
 
 // Set this global variable to 1 to enable crash testing.
 __device__ static bool _crashTestEnable = false;
@@ -120,7 +141,7 @@ __device__ static void *crash_realloc(void *p, int n)
 }
 
 // Wrapper around the sqlite3OsWrite() function that avoids writing to the 512 byte block begining at offset PENDING_BYTE.
-__device__ static RC writeDbFile(CrashFile *p, uint8 *z, int64 amount, int64 offset)
+__device__ static RC writeDbFile(CrashVFile *p, uint8 *z, int64 amount, int64 offset)
 {
 	RC rc = RC_OK;
 	int skip = (offset == PENDING_BYTE && (p->Flags & VSystem::OPEN_MAIN_DB) ? 512 : 0);
@@ -130,7 +151,7 @@ __device__ static RC writeDbFile(CrashFile *p, uint8 *z, int64 amount, int64 off
 }
 
 // Flush the write-list as if xSync() had been called on file handle pFile. If isCrash is true, simulate a crash.
-__device__ static int writeListSync(CrashFile *file, bool isCrash)
+__device__ static RC writeListSync(CrashVFile *file, bool isCrash)
 {
 	RC rc = RC_OK;
 	VFile::IOCAP dc = _g.DeviceCharacteristics;
@@ -224,7 +245,7 @@ __device__ static int writeListSync(CrashFile *file, bool isCrash)
 #ifdef TRACE_CRASHTEST
 			_printf("Trashing %d sectors @ %lld (sector %d) (%s)\n", 1+lastId-firstId, write->Offset, firstId, write->File->Name);
 #endif
-			uint8 *garbage = crash_malloc(g.iSectorSize);
+			uint8 *garbage = (uint8 *)crash_malloc(_g.SectorSize);
 			if (garbage)
 			{
 				int64 i;
@@ -264,7 +285,7 @@ __device__ static RC writeListAppend(VFile *file, int64 offset, const uint8 *buf
 	_memset(new_, 0, sizeof(WriteBuffer) + bufLength);
 	new_->Offset = offset;
 	new_->BufLength = bufLength;
-	new_->File = (CrashFile *)file;
+	new_->File = (CrashVFile *)file;
 	if (buf)
 	{
 		new_->Buf = (uint8 *)&new_[1];
@@ -282,606 +303,474 @@ __device__ static RC writeListAppend(VFile *file, int64 offset, const uint8 *buf
 }
 
 // Close a crash-file.
-__device__ static RC cfClose(VFile *file)
+__device__ RC CrashVFile::Close_()
 {
-	CrashFile *crashFile = (CrashFile *)file;
-	writeListSync(crashFile, false);
-	crashFile->RealFile->Close();
+	writeListSync(this, false);
+	RealFile->Close();
 	return RC_OK;
 }
 
 // Read data from a crash-file.
-__device__ static RC cfRead(VFile *file, void *buf, int amount, int64 offset)
+__device__ RC CrashVFile::Read(void *buffer, int amount, int64 offset)
 {
-	CrashFile *crashFile = (CrashFile *)file;
 	// Check the file-size to see if this is a short-read
-	if (crashFile->Size < (offset+amount))
+	if (Size < (offset+amount))
 		return RC_IOERR_SHORT_READ;
-	_memcpy(buf, &crashFile->Data[offset], amount);
+	_memcpy(buffer, &Data[offset], amount);
 	return RC_OK;
 }
 
 // Write data to a crash-file.
-__device__ static RC cfWrite(VFile *file, const void *buf, int amount, int64 offset)
+__device__ RC CrashVFile::Write(const void *buffer, int amount, int64 offset)
 {
-	CrashFile *crashFile = (CrashFile *)file;
-	if (amount+offset > crashFile->Size)
-		crashFile->Size = (int)(amount+offset);
-	while (crashFile->Size > crashFile->DataLength)
+	if (amount+offset > Size)
+		Size = (int)(amount+offset);
+	while (Size > DataLength)
 	{
-		int newLength = (crashFile->DataLength*2) + 4096;
-		uint8 *new_ = (uint8 *)crash_realloc(crashFile->Data, newLength);
+		int newLength = (DataLength*2) + 4096;
+		uint8 *new_ = (uint8 *)crash_realloc(Data, newLength);
 		if (!new_)
 			return RC_NOMEM;
-		_memset(&new_[crashFile->DataLength], 0, newLength-crashFile->DataLength);
-		crashFile->DataLength = newLength;
-		crashFile->Data = new_;
+		_memset(&new_[DataLength], 0, newLength-DataLength);
+		DataLength = newLength;
+		Data = new_;
 	}
-	_memcpy(&crashFile->Data[offset], buf, amount);
-	return writeListAppend(file, offset, buf, amount);
+	_memcpy(&Data[offset], buffer, amount);
+	return writeListAppend(this, offset, (const uint8 *)buffer, amount);
 }
 
-/*
-** Truncate a crash-file.
-*/
-static int cfTruncate(sqlite3_file *pFile, sqlite_int64 size){
-	CrashFile *pCrash = (CrashFile *)pFile;
-	assert(size>=0);
-	if( pCrash->iSize>size ){
-		pCrash->iSize = (int)size;
-	}
-	return writeListAppend(pFile, size, 0, 0);
+// Truncate a crash-file.
+__device__ RC CrashVFile::Truncate(int64 size)
+{
+	_assert(size >= 0);
+	if (Size > size)
+		Size = (int)size;
+	return writeListAppend(this, size, nullptr, 0);
 }
 
-/*
-** Sync a crash-file.
-*/
-static int cfSync(sqlite3_file *pFile, int flags){
-	CrashFile *pCrash = (CrashFile *)pFile;
-	int isCrash = 0;
+// Sync a crash-file.
+__device__ RC CrashVFile::Sync(SYNC flags)
+{
+	bool isCrash = false;
 
-	const char *zName = pCrash->zName;
-	const char *zCrashFile = g.zCrashFile;
-	int nName = (int)strlen(zName);
-	int nCrashFile = (int)strlen(zCrashFile);
+	const char *name = Name;
+	const char *crashFile = _g.CrashFile;
+	int nameLength = (int)_strlen(name);
+	int crashFileLength = (int)_strlen(crashFile);
 
-	if( nCrashFile>0 && zCrashFile[nCrashFile-1]=='*' ){
-		nCrashFile--;
-		if( nName>nCrashFile ) nName = nCrashFile;
+	if (crashFileLength > 0 && crashFile[crashFileLength-1] == '*')
+	{
+		crashFileLength--;
+		if (nameLength > crashFileLength) nameLength = crashFileLength;
 	}
 
 #ifdef TRACE_CRASHTEST
-	printf("cfSync(): nName = %d, nCrashFile = %d, zName = %s, zCrashFile = %s\n",
-		nName, nCrashFile, zName, zCrashFile);
+	_printf("cfSync(): nName = %d, nCrashFile = %d, zName = %s, zCrashFile = %s\n", nameLength, crashFileLength, name, crashFile);
 #endif
 
-	if( nName==nCrashFile && 0==memcmp(zName, zCrashFile, nName) ){
+	if (nameLength == crashFileLength && !_memcmp(name, crashFile, nameLength))
+	{
 #ifdef TRACE_CRASHTEST
-		printf("cfSync(): name matched, g.iCrash = %d\n", g.iCrash);
+		_printf("cfSync(): name matched, g.iCrash = %d\n", _g.CrashAt);
 #endif
-		if( (--g.iCrash)==0 ) isCrash = 1;
+		if ((--_g.CrashAt) == 0) isCrash = true;
 	}
 
-	return writeListSync(pCrash, isCrash);
+	return writeListSync(this, isCrash);
 }
 
-/*
-** Return the current file-size of the crash-file.
-*/
-static int cfFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
-	CrashFile *pCrash = (CrashFile *)pFile;
-	*pSize = (i64)pCrash->iSize;
-	return SQLITE_OK;
+// Return the current file-size of the crash-file.
+__device__ RC CrashVFile::get_FileSize(int64 &size)
+{
+	size = Size;
+	return RC_OK;
 }
 
-/*
-** Calls related to file-locks are passed on to the real file handle.
-*/
-static int cfLock(sqlite3_file *pFile, int eLock){
-	return sqlite3OsLock(((CrashFile *)pFile)->pRealFile, eLock);
+// Calls related to file-locks are passed on to the real file handle.
+__device__ RC CrashVFile::Lock(LOCK lock)
+{
+	return RealFile->Lock(lock);
 }
-static int cfUnlock(sqlite3_file *pFile, int eLock){
-	return sqlite3OsUnlock(((CrashFile *)pFile)->pRealFile, eLock);
+__device__ RC CrashVFile::Unlock(LOCK lock)
+{
+	return RealFile->Unlock(lock);
 }
-static int cfCheckReservedLock(sqlite3_file *pFile, int *pResOut){
-	return sqlite3OsCheckReservedLock(((CrashFile *)pFile)->pRealFile, pResOut);
+__device__ RC CrashVFile::CheckReservedLock(int &lock)
+{
+	return RealFile->CheckReservedLock(lock);
 }
-static int cfFileControl(sqlite3_file *pFile, int op, void *pArg){
-	if( op==SQLITE_FCNTL_SIZE_HINT ){
-		CrashFile *pCrash = (CrashFile *)pFile;
-		i64 nByte = *(i64 *)pArg;
-		if( nByte>pCrash->iSize ){
-			if( SQLITE_OK==writeListAppend(pFile, nByte, 0, 0) ){
-				pCrash->iSize = (int)nByte;
-			}
-		}
-		return SQLITE_OK;
+__device__ RC CrashVFile::FileControl(FCNTL op, void *arg)
+{
+	if (op == FCNTL_SIZE_HINT)
+	{
+		int64 bytes = *(int64 *)arg;
+		if (bytes > Size)
+			if (writeListAppend(this, bytes, nullptr, 0) == RC_OK)
+				Size = (int)bytes;
+		return RC_OK;
 	}
-	return sqlite3OsFileControl(((CrashFile *)pFile)->pRealFile, op, pArg);
+	return RealFile->FileControl(op, arg);
 }
 
-/*
-** The xSectorSize() and xDeviceCharacteristics() functions return
-** the global values configured by the [sqlite_crashparams] tcl
-*  interface.
-*/
-static int cfSectorSize(sqlite3_file *pFile){
-	return g.iSectorSize;
+// The xSectorSize() and xDeviceCharacteristics() functions return the global values configured by the [sqlite_crashparams] tcl interface.
+__device__ uint CrashVFile::get_SectorSize()
+{
+	return _g.SectorSize;
 }
-static int cfDeviceCharacteristics(sqlite3_file *pFile){
-	return g.iDeviceCharacteristics;
+__device__ VFile::IOCAP CrashVFile::get_DeviceCharacteristics()
+{
+	return _g.DeviceCharacteristics;
 }
 
-/*
-** Pass-throughs for WAL support.
-*/
-static int cfShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
-	return sqlite3OsShmLock(((CrashFile*)pFile)->pRealFile, ofst, n, flags);
+// Pass-throughs for WAL support.
+__device__ RC CrashVFile::ShmLock(int offset, int n, SHM flags)
+{
+	return RealFile->ShmLock(offset, n, flags);
 }
-static void cfShmBarrier(sqlite3_file *pFile){
-	sqlite3OsShmBarrier(((CrashFile*)pFile)->pRealFile);
+__device__ void CrashVFile::ShmBarrier()
+{
+	RealFile->ShmBarrier();
 }
-static int cfShmUnmap(sqlite3_file *pFile, int delFlag){
-	return sqlite3OsShmUnmap(((CrashFile*)pFile)->pRealFile, delFlag);
+__device__ RC CrashVFile::ShmUnmap(bool deleteFlag)
+{
+	return RealFile->ShmUnmap(deleteFlag);
 }
-static int cfShmMap(
-	sqlite3_file *pFile,            /* Handle open on database file */
-	int iRegion,                    /* Region to retrieve */
-	int sz,                         /* Size of regions */
-	int w,                          /* True to extend file if necessary */
-	void volatile **pp              /* OUT: Mapped memory */
-	){
-		return sqlite3OsShmMap(((CrashFile*)pFile)->pRealFile, iRegion, sz, w, pp);
+__device__ RC CrashVFile::ShmMap(int region, int sizeRegion, bool isWrite, void volatile **pp)
+{
+	return RealFile->ShmMap(region, sizeRegion, isWrite, pp);
 }
 
-static const sqlite3_io_methods CrashFileVtab = {
-	2,                            /* iVersion */
-	cfClose,                      /* xClose */
-	cfRead,                       /* xRead */
-	cfWrite,                      /* xWrite */
-	cfTruncate,                   /* xTruncate */
-	cfSync,                       /* xSync */
-	cfFileSize,                   /* xFileSize */
-	cfLock,                       /* xLock */
-	cfUnlock,                     /* xUnlock */
-	cfCheckReservedLock,          /* xCheckReservedLock */
-	cfFileControl,                /* xFileControl */
-	cfSectorSize,                 /* xSectorSize */
-	cfDeviceCharacteristics,      /* xDeviceCharacteristics */
-	cfShmMap,                     /* xShmMap */
-	cfShmLock,                    /* xShmLock */
-	cfShmBarrier,                 /* xShmBarrier */
-	cfShmUnmap                    /* xShmUnmap */
+// Application data for the crash VFS
+class CrashVfs : public VSystem
+{
+public:
+	VSystem *Orig;				// Wrapped vfs structure
+public:
+	__device__ virtual RC Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags);
+	__device__ virtual RC Delete(const char *path, bool syncDirectory);
+	__device__ virtual RC Access(const char *path, ACCESS flags, int *outRC);
+	__device__ virtual RC FullPathname(const char *path, int pathOutLength, char *pathOut);
+
+	__device__ virtual void *DlOpen(const char *filename);
+	__device__ virtual void DlError(int bufLength, char *buf);
+	__device__ virtual void (*DlSym(void *handle, const char *symbol))();
+	__device__ virtual void DlClose(void *handle);
+
+	__device__ virtual int Randomness(int bufLength, char *buf);
+	__device__ virtual int Sleep(int microseconds);
+	//__device__ virtual RC CurrentTimeInt64(int64 *now);
+	__device__ virtual RC CurrentTime(double *now);
+	//__device__ virtual RC GetLastError(int bufLength, char *buf);
 };
 
-/*
-** Application data for the crash VFS
-*/
-struct crashAppData {
-	sqlite3_vfs *pOrig;                   /* Wrapped vfs structure */
+// Open a crash-file file handle.
+//
+// The caller will have allocated pVfs->szOsFile bytes of space at pFile. This file uses this space for the CrashVFile structure
+// and allocates space for the "real" file structure using sqlite3_malloc(). The assumption here is (pVfs->szOsFile) is
+// equal or greater than sizeof(CrashVFile).
+__device__ RC CrashVfs::Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags)
+{
+	CrashVFile *wrapper = (CrashVFile *)file;
+	VFile *real = (VFile *)&wrapper[1];
+
+	_memset(wrapper, 0, sizeof(CrashVFile));
+	RC rc = Orig->Open(path, real, flags, outFlags);
+
+	if (rc == RC_OK)
+	{
+		wrapper->Opened = true;
+		wrapper->Name = (char *)path;
+		wrapper->RealFile = real;
+		int64 size;
+		rc = real->get_FileSize(size);
+		wrapper->Size = (int)size;
+		wrapper->Flags = flags;
+	}
+	if (rc == RC_OK)
+	{
+		wrapper->DataLength = (4096 + wrapper->Size);
+		wrapper->Data = (uint8 *)crash_malloc(wrapper->DataLength);
+		if (wrapper->Data)
+		{
+			// os_unix.c contains an assert() that fails if the caller attempts to read data from the 512-byte locking region of a file opened
+			// with the SQLITE_OPEN_MAIN_DB flag. This region of a database file never contains valid data anyhow. So avoid doing such a read here.
+			//
+			// UPDATE: It also contains an assert() verifying that each call to the xRead() method reads less than 128KB of data.
+			const int isDb = (flags & VSystem::OPEN_MAIN_DB);
+			int64 offset;
+			_memset(wrapper->Data, 0, wrapper->DataLength);
+			for (offset = 0; offset < wrapper->Size; offset += 512)
+			{
+				int read = wrapper->Size - (int)offset;
+				if (read > 512) read = 512;
+				if (isDb && offset == PENDING_BYTE) continue;
+				rc = real->Read(&wrapper->Data[offset], read, offset);
+			}
+		}
+		else
+			rc = RC_NOMEM;
+	}
+	if (rc != RC_OK && wrapper->Opened)
+		file->Close();
+	return rc;
+}
+
+__device__ RC CrashVfs::Delete(const char *path, bool syncDirectory)
+{
+	return Orig->Delete(path, syncDirectory);
+}
+__device__ RC CrashVfs::Access(const char *path, ACCESS flags, int *outRC)
+{
+	return Orig->Access(path, flags, outRC);
+}
+__device__ RC CrashVfs::FullPathname(const char *path, int pathOutLength, char *pathOut)
+{
+	return Orig->FullPathname(path, pathOutLength, pathOut);
+}
+
+__device__ void *CrashVfs::DlOpen(const char *filename)
+{
+	return Orig->DlOpen(filename);
+}
+__device__ void CrashVfs::DlError(int bufLength, char *buf)
+{
+	Orig->DlError(bufLength, buf);
+}
+__device__ void (*CrashVfs::DlSym(void *handle, const char *symbol))()
+{
+	return Orig->DlSym(handle, symbol);
+}
+__device__ void CrashVfs::DlClose(void *handle)
+{
+	Orig->DlClose(handle);
+}
+
+__device__ int CrashVfs::Randomness(int bufLength, char *buf)
+{
+	return Orig->Randomness(bufLength, buf);
+}
+__device__ int CrashVfs::Sleep(int microseconds)
+{
+	return Orig->Sleep(microseconds);
+}
+RC CrashVfs::CurrentTime(double *now)
+{
+	return Orig->CurrentTime(now);
+}
+
+__constant__ struct DeviceFlag
+{
+	char *Name;
+	VFile::IOCAP Value;
+} _flags[] = {
+	{ "atomic",              VFile::IOCAP_ATOMIC                },
+	{ "atomic512",           VFile::IOCAP_ATOMIC512             },
+	{ "atomic1k",            VFile::IOCAP_ATOMIC1K              },
+	{ "atomic2k",            VFile::IOCAP_ATOMIC2K              },
+	{ "atomic4k",            VFile::IOCAP_ATOMIC4K              },
+	{ "atomic8k",            VFile::IOCAP_ATOMIC8K              },
+	{ "atomic16k",           VFile::IOCAP_ATOMIC16K             },
+	{ "atomic32k",           VFile::IOCAP_ATOMIC32K             },
+	{ "atomic64k",           VFile::IOCAP_ATOMIC64K             },
+	{ "sequential",          VFile::IOCAP_SEQUENTIAL            },
+	{ "safe_append",         VFile::IOCAP_SAFE_APPEND           },
+	{ "powersafe_overwrite", VFile::IOCAP_POWERSAFE_OVERWRITE   },
+	{ nullptr, (VFile::IOCAP)0 }
 };
-
-/*
-** Open a crash-file file handle.
-**
-** The caller will have allocated pVfs->szOsFile bytes of space
-** at pFile. This file uses this space for the CrashFile structure
-** and allocates space for the "real" file structure using 
-** sqlite3_malloc(). The assumption here is (pVfs->szOsFile) is
-** equal or greater than sizeof(CrashFile).
-*/
-static int cfOpen(
-	sqlite3_vfs *pCfVfs,
-	const char *zName,
-	sqlite3_file *pFile,
-	int flags,
-	int *pOutFlags
-	){
-		sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-		int rc;
-		CrashFile *pWrapper = (CrashFile *)pFile;
-		sqlite3_file *pReal = (sqlite3_file*)&pWrapper[1];
-
-		memset(pWrapper, 0, sizeof(CrashFile));
-		rc = sqlite3OsOpen(pVfs, zName, pReal, flags, pOutFlags);
-
-		if( rc==SQLITE_OK ){
-			i64 iSize;
-			pWrapper->pMethod = &CrashFileVtab;
-			pWrapper->zName = (char *)zName;
-			pWrapper->pRealFile = pReal;
-			rc = sqlite3OsFileSize(pReal, &iSize);
-			pWrapper->iSize = (int)iSize;
-			pWrapper->flags = flags;
+__device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, char *args[], VFile::IOCAP *deviceCharOut, int *sectorSizeOut)
+{
+	int sectorSize = 0;
+	int deviceChar = 0;
+	bool setSectorsize = false;
+	bool setDeviceChar = false;
+	for (int i = 0; i < argc; i += 2)
+	{
+		int optLength;
+		char *opt = Tcl_GetString(interp, args[i], &optLength);
+		if ((optLength > 11 || optLength < 2 || _strncmp("-sectorsize", opt, optLength)) && (optLength > 16 || optLength < 2 || _strncmp("-characteristics", opt, optLength)))
+		{
+			Tcl_AppendResult(interp, "Bad option: \"", opt, "\" - must be \"-characteristics\" or \"-sectorsize\"", nullptr);
+			return TCL_ERROR;
 		}
-		if( rc==SQLITE_OK ){
-			pWrapper->nData = (4096 + pWrapper->iSize);
-			pWrapper->zData = crash_malloc(pWrapper->nData);
-			if( pWrapper->zData ){
-				/* os_unix.c contains an assert() that fails if the caller attempts
-				** to read data from the 512-byte locking region of a file opened
-				** with the SQLITE_OPEN_MAIN_DB flag. This region of a database file
-				** never contains valid data anyhow. So avoid doing such a read here.
-				**
-				** UPDATE: It also contains an assert() verifying that each call
-				** to the xRead() method reads less than 128KB of data.
-				*/
-				const int isDb = (flags&SQLITE_OPEN_MAIN_DB);
-				i64 iOff;
-
-				memset(pWrapper->zData, 0, pWrapper->nData);
-				for(iOff=0; iOff<pWrapper->iSize; iOff += 512){
-					int nRead = pWrapper->iSize - (int)iOff;
-					if( nRead>512 ) nRead = 512;
-					if( isDb && iOff==PENDING_BYTE ) continue;
-					rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], nRead, iOff);
-				}
-			}else{
-				rc = SQLITE_NOMEM;
-			}
+		if (i == argc-1)
+		{
+			Tcl_AppendResult(interp, "Option requires an argument: \"", opt, "\"", nullptr);
+			return TCL_ERROR;
 		}
-		if( rc!=SQLITE_OK && pWrapper->pMethod ){
-			sqlite3OsClose(pFile);
-		}
-		return rc;
-}
 
-static int cfDelete(sqlite3_vfs *pCfVfs, const char *zPath, int dirSync){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	return pVfs->xDelete(pVfs, zPath, dirSync);
-}
-static int cfAccess(
-	sqlite3_vfs *pCfVfs, 
-	const char *zPath, 
-	int flags, 
-	int *pResOut
-	){
-		sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-		return pVfs->xAccess(pVfs, zPath, flags, pResOut);
-}
-static int cfFullPathname(
-	sqlite3_vfs *pCfVfs, 
-	const char *zPath, 
-	int nPathOut,
-	char *zPathOut
-	){
-		sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-		return pVfs->xFullPathname(pVfs, zPath, nPathOut, zPathOut);
-}
-static void *cfDlOpen(sqlite3_vfs *pCfVfs, const char *zPath){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	return pVfs->xDlOpen(pVfs, zPath);
-}
-static void cfDlError(sqlite3_vfs *pCfVfs, int nByte, char *zErrMsg){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	pVfs->xDlError(pVfs, nByte, zErrMsg);
-}
-static void (*cfDlSym(sqlite3_vfs *pCfVfs, void *pH, const char *zSym))(void){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	return pVfs->xDlSym(pVfs, pH, zSym);
-}
-static void cfDlClose(sqlite3_vfs *pCfVfs, void *pHandle){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	pVfs->xDlClose(pVfs, pHandle);
-}
-static int cfRandomness(sqlite3_vfs *pCfVfs, int nByte, char *zBufOut){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	return pVfs->xRandomness(pVfs, nByte, zBufOut);
-}
-static int cfSleep(sqlite3_vfs *pCfVfs, int nMicro){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	return pVfs->xSleep(pVfs, nMicro);
-}
-static int cfCurrentTime(sqlite3_vfs *pCfVfs, double *pTimeOut){
-	sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-	return pVfs->xCurrentTime(pVfs, pTimeOut);
-}
-
-static int processDevSymArgs(
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[],
-	int *piDeviceChar,
-	int *piSectorSize
-	){
-		struct DeviceFlag {
-			char *zName;
-			int iValue;
-		} aFlag[] = {
-			{ "atomic",              SQLITE_IOCAP_ATOMIC                },
-			{ "atomic512",           SQLITE_IOCAP_ATOMIC512             },
-			{ "atomic1k",            SQLITE_IOCAP_ATOMIC1K              },
-			{ "atomic2k",            SQLITE_IOCAP_ATOMIC2K              },
-			{ "atomic4k",            SQLITE_IOCAP_ATOMIC4K              },
-			{ "atomic8k",            SQLITE_IOCAP_ATOMIC8K              },
-			{ "atomic16k",           SQLITE_IOCAP_ATOMIC16K             },
-			{ "atomic32k",           SQLITE_IOCAP_ATOMIC32K             },
-			{ "atomic64k",           SQLITE_IOCAP_ATOMIC64K             },
-			{ "sequential",          SQLITE_IOCAP_SEQUENTIAL            },
-			{ "safe_append",         SQLITE_IOCAP_SAFE_APPEND           },
-			{ "powersafe_overwrite", SQLITE_IOCAP_POWERSAFE_OVERWRITE   },
-			{ 0, 0 }
-		};
-
-		int i;
-		int iDc = 0;
-		int iSectorSize = 0;
-		int setSectorsize = 0;
-		int setDeviceChar = 0;
-
-		for(i=0; i<objc; i+=2){
-			int nOpt;
-			char *zOpt = Tcl_GetStringFromObj(objv[i], &nOpt);
-
-			if( (nOpt>11 || nOpt<2 || strncmp("-sectorsize", zOpt, nOpt)) 
-				&& (nOpt>16 || nOpt<2 || strncmp("-characteristics", zOpt, nOpt))
-				){
-					Tcl_AppendResult(interp, 
-						"Bad option: \"", zOpt, 
-						"\" - must be \"-characteristics\" or \"-sectorsize\"", 0
-						);
-					return TCL_ERROR;
-			}
-			if( i==objc-1 ){
-				Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"",0);
+		if (opt[1] == 's')
+		{
+			if (Tcl_GetInt(interp, args[i+1], &sectorSize))
 				return TCL_ERROR;
-			}
-
-			if( zOpt[1]=='s' ){
-				if( Tcl_GetIntFromObj(interp, objv[i+1], &iSectorSize) ){
+			setSectorsize = true;
+		}
+		else
+		{
+			char **objs;
+			int objc;
+			if (Tcl_ListObjGetElements(interp, args[i+1], &objc, &objs))
+				return TCL_ERROR;
+			for (int j = 0; j < objc; j++)
+			{
+				char *flag = objs[j];
+				int choice;
+				int rc = Tcl_GetIndexIgnoreCase(interp, flag, _flags, sizeof(_flags[0]), "no such flag", 0, &choice);
+				if (rc)
 					return TCL_ERROR;
-				}
-				setSectorsize = 1;
-			}else{
-				int j;
-				Tcl_Obj **apObj;
-				int nObj;
-				if( Tcl_ListObjGetElements(interp, objv[i+1], &nObj, &apObj) ){
-					return TCL_ERROR;
-				}
-				for(j=0; j<nObj; j++){
-					int rc;
-					int iChoice;
-					Tcl_Obj *pFlag = Tcl_DuplicateObj(apObj[j]);
-					Tcl_IncrRefCount(pFlag);
-					Tcl_UtfToLower(Tcl_GetString(pFlag));
-
-					rc = Tcl_GetIndexFromObjStruct(
-						interp, pFlag, aFlag, sizeof(aFlag[0]), "no such flag", 0, &iChoice
-						);
-					Tcl_DecrRefCount(pFlag);
-					if( rc ){
-						return TCL_ERROR;
-					}
-
-					iDc |= aFlag[iChoice].iValue;
-				}
-				setDeviceChar = 1;
+				deviceChar |= _flags[choice].Value;
 			}
+			setDeviceChar = true;
 		}
-
-		if( setDeviceChar ){
-			*piDeviceChar = iDc;
-		}
-		if( setSectorsize ){
-			*piSectorSize = iSectorSize;
-		}
-
-		return TCL_OK;
-}
-
-/*
-** tclcmd:   sqlite_crash_enable ENABLE
-**
-** Parameter ENABLE must be a boolean value. If true, then the "crash"
-** vfs is added to the system. If false, it is removed.
-*/
-static int crashEnableCmd(
-	void * clientData,
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[]
-){
-	int isEnable;
-	static sqlite3_vfs crashVfs = {
-		2,                  /* iVersion */
-		0,                  /* szOsFile */
-		0,                  /* mxPathname */
-		0,                  /* pNext */
-		"crash",            /* zName */
-		0,                  /* pAppData */
-
-		cfOpen,               /* xOpen */
-		cfDelete,             /* xDelete */
-		cfAccess,             /* xAccess */
-		cfFullPathname,       /* xFullPathname */
-		cfDlOpen,             /* xDlOpen */
-		cfDlError,            /* xDlError */
-		cfDlSym,              /* xDlSym */
-		cfDlClose,            /* xDlClose */
-		cfRandomness,         /* xRandomness */
-		cfSleep,              /* xSleep */
-		cfCurrentTime,        /* xCurrentTime */
-		0,                    /* xGetlastError */
-		0,                    /* xCurrentTimeInt64 */
-	};
-
-	if( objc!=2 ){
-		Tcl_WrongNumArgs(interp, 1, objv, "ENABLE");
-		return TCL_ERROR;
 	}
-
-	if( Tcl_GetBooleanFromObj(interp, objv[1], &isEnable) ){
-		return TCL_ERROR;
-	}
-
-	if( (isEnable && crashVfs.pAppData) || (!isEnable && !crashVfs.pAppData) ){
-		return TCL_OK;
-	}
-
-	if( crashVfs.pAppData==0 ){
-		sqlite3_vfs *pOriginalVfs = sqlite3_vfs_find(0);
-		crashVfs.mxPathname = pOriginalVfs->mxPathname;
-		crashVfs.pAppData = (void *)pOriginalVfs;
-		crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
-		sqlite3_vfs_register(&crashVfs, 0);
-	}else{
-		crashVfs.pAppData = 0;
-		sqlite3_vfs_unregister(&crashVfs);
-	}
-
+	if (setDeviceChar)
+		*deviceCharOut = (VFile::IOCAP)deviceChar;
+	if (setSectorsize)
+		*sectorSizeOut = sectorSize;
 	return TCL_OK;
 }
 
-/*
-** tclcmd:   sqlite_crashparams ?OPTIONS? DELAY CRASHFILE
-**
-** This procedure implements a TCL command that enables crash testing
-** in testfixture.  Once enabled, crash testing cannot be disabled.
-**
-** Available options are "-characteristics" and "-sectorsize". Both require
-** an argument. For -sectorsize, this is the simulated sector size in
-** bytes. For -characteristics, the argument must be a list of io-capability
-** flags to simulate. Valid flags are "atomic", "atomic512", "atomic1K",
-** "atomic2K", "atomic4K", "atomic8K", "atomic16K", "atomic32K", 
-** "atomic64K", "sequential" and "safe_append".
-**
-** Example:
-**
-**   sqlite_crashparams -sect 1024 -char {atomic sequential} ./test.db 1
-**
-*/
-static int crashParamsObjCmd(
-	void * clientData,
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[]
-){
-	int iDelay;
-	const char *zCrashFile;
-	int nCrashFile, iDc, iSectorSize;
-
-	iDc = -1;
-	iSectorSize = -1;
-
-	if( objc<3 ){
-		Tcl_WrongNumArgs(interp, 1, objv, "?OPTIONS? DELAY CRASHFILE");
-		goto error;
-	}
-
-	zCrashFile = Tcl_GetStringFromObj(objv[objc-1], &nCrashFile);
-	if( nCrashFile>=sizeof(g.zCrashFile) ){
-		Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", 0);
-		goto error;
-	}
-	if( Tcl_GetIntFromObj(interp, objv[objc-2], &iDelay) ){
-		goto error;
-	}
-
-	if( processDevSymArgs(interp, objc-3, &objv[1], &iDc, &iSectorSize) ){
+// tclcmd:   sqlite_crash_enable ENABLE
+//
+// Parameter ENABLE must be a boolean value. If true, then the "crash" vfs is added to the system. If false, it is removed.
+__device__ CrashVfs _crashVfs;
+__device__ static int crashEnableCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	if (argc != 2)
+	{
+		Tcl_WrongNumArgs(interp, 1, args, "ENABLE");
 		return TCL_ERROR;
 	}
 
-	if( iDc>=0 ){
-		g.iDeviceCharacteristics = iDc;
+	bool isEnable;
+	if (Tcl_GetBoolean(interp, args[1], &isEnable))
+		return TCL_ERROR;
+
+	if ((isEnable && _crashVfs.Orig) || (!isEnable && !_crashVfs.Orig))
+		return TCL_OK;
+
+	if (!_crashVfs.Orig)
+	{
+		VSystem *orig = VSystem::FindVfs(nullptr);
+		_crashVfs.MaxPathname = orig->MaxPathname;
+		_crashVfs.Orig = orig;
+		_crashVfs.SizeOsFile = sizeof(CrashVFile) + orig->SizeOsFile;
+		_crashVfs.Name = "crash";
+		VSystem::RegisterVfs(&_crashVfs, false);
 	}
-	if( iSectorSize>=0 ){
-		g.iSectorSize = iSectorSize;
+	else
+	{
+		_crashVfs.Orig = nullptr;
+		VSystem::UnregisterVfs(&_crashVfs);
+	}
+	return TCL_OK;
+}
+
+// tclcmd:   sqlite_crashparams ?OPTIONS? DELAY CRASHFILE
+//
+// This procedure implements a TCL command that enables crash testing in testfixture.  Once enabled, crash testing cannot be disabled.
+//
+// Available options are "-characteristics" and "-sectorsize". Both require an argument. For -sectorsize, this is the simulated sector size in
+// bytes. For -characteristics, the argument must be a list of io-capability flags to simulate. Valid flags are "atomic", "atomic512", "atomic1K",
+// "atomic2K", "atomic4K", "atomic8K", "atomic16K", "atomic32K", "atomic64K", "sequential" and "safe_append".
+//
+// Example:
+//   sqlite_crashparams -sect 1024 -char {atomic sequential} ./test.db 1
+__device__ static int crashParamsObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	if (argc < 3)
+	{
+		Tcl_WrongNumArgs(interp, 1, args, "?OPTIONS? DELAY CRASHFILE");
+		goto error;
 	}
 
-	g.iCrash = iDelay;
-	memcpy(g.zCrashFile, zCrashFile, nCrashFile+1);
-	sqlite3CrashTestEnable = 1;
+	int crashFileLength;
+	const char *crashFile = Tcl_GetString(interp, args[argc-1], &crashFileLength);
+	if (crashFileLength >= sizeof(_g.CrashFile) ){
+		Tcl_AppendResult(interp, "Filename is too long: \"", crashFile, "\"", 0);
+		goto error;
+	}
+	int delayAt;
+	if (Tcl_GetInt(interp, args[argc-2], &delayAt))
+		goto error;
+
+	VFile::IOCAP deviceChar = (VFile::IOCAP)-1;
+	int sectorSize = -1;
+	if (processDevSymArgs(interp, argc-3, &args[1], &deviceChar, &sectorSize))
+		return TCL_ERROR;
+
+	if (deviceChar >= 0)
+		_g.DeviceCharacteristics = deviceChar;
+	if (sectorSize >= 0)
+		_g.SectorSize = sectorSize;
+
+	_g.CrashAt = delayAt;
+	_memcpy(_g.CrashFile, crashFile, crashFileLength+1);
+	sqlite3CrashTestEnable = true;
 	return TCL_OK;
 
 error:
 	return TCL_ERROR;
 }
 
-static int devSymObjCmd(
-	void * clientData,
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[]
-){
-	void devsym_register(int iDeviceChar, int iSectorSize);
-
-	int iDc = -1;
-	int iSectorSize = -1;
-
-	if( processDevSymArgs(interp, objc-1, &objv[1], &iDc, &iSectorSize) ){
+__device__ extern void devsym_register(int deviceChar, int sectorSize);
+__device__ static int devSymObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	int deviceChar = -1;
+	int sectorSize = -1;
+	if (processDevSymArgs(interp, argc-1, &args[1], &deviceChar, &sectorSize))
 		return TCL_ERROR;
-	}
-	devsym_register(iDc, iSectorSize);
-
+	devsym_register(deviceChar, sectorSize);
 	return TCL_OK;
 }
 
-/*
-** tclcmd: register_jt_vfs ?-default? PARENT-VFS
-*/
-static int jtObjCmd(
-	void * clientData,
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[]
-){
-	int jt_register(char *, int);
-	char *zParent = 0;
-
-	if( objc!=2 && objc!=3 ){
-		Tcl_WrongNumArgs(interp, 1, objv, "?-default? PARENT-VFS");
+// tclcmd: register_jt_vfs ?-default? PARENT-VFS
+__device__ extern int jt_register(char *, int);
+__device__ static int jtObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	if (argc != 2 && argc != 3)
+	{
+		Tcl_WrongNumArgs(interp, 1, args, "?-default? PARENT-VFS");
 		return TCL_ERROR;
 	}
-	zParent = Tcl_GetString(objv[1]);
-	if( objc==3 ){
-		if( strcmp(zParent, "-default") ){
-			Tcl_AppendResult(interp, 
-				"bad option \"", zParent, "\": must be -default", 0
-				);
+	char *parent = args[1];
+	if (argc == 3)
+	{
+		if (!_strcmp(parent, "-default"))
+		{
+			Tcl_AppendResult(interp, "bad option \"", parent, "\": must be -default", nullptr);
 			return TCL_ERROR;
 		}
-		zParent = Tcl_GetString(objv[2]);
+		parent = args[2];
 	}
-
-	if( !(*zParent) ){
-		zParent = 0;
-	}
-	if( jt_register(zParent, objc==3) ){
-		Tcl_AppendResult(interp, "Error in jt_register", 0);
+	if (!(*parent))
+		parent = 0;
+	if (jt_register(parent, argc == 3))
+	{
+		Tcl_AppendResult(interp, "Error in jt_register", nullptr);
 		return TCL_ERROR;
 	}
-
 	return TCL_OK;
 }
 
-/*
-** tclcmd: unregister_jt_vfs
-*/
-static int jtUnregisterObjCmd(
-	void * clientData,
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[]
-){
-	void jt_unregister(void);
-
-	if( objc!=1 ){
-		Tcl_WrongNumArgs(interp, 1, objv, "");
+// tclcmd: unregister_jt_vfs
+__device__ extern void jt_unregister(void);
+__device__ static int jtUnregisterObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+{
+	if (argc != 1)
+	{
+		Tcl_WrongNumArgs(interp, 1, args, "");
 		return TCL_ERROR;
 	}
-
 	jt_unregister();
 	return TCL_OK;
 }
 
-#endif /* SQLITE_OMIT_DISKIO */
+#endif
 
-/*
-** This procedure registers the TCL procedures defined in this file.
-*/
-int Sqlitetest6_Init(Tcl_Interp *interp){
-#ifndef SQLITE_OMIT_DISKIO
+// This procedure registers the TCL procedures defined in this file.
+__device__ int Sqlitetest6_Init(Tcl_Interp *interp)
+{
+#ifndef OMIT_DISKIO
 	Tcl_CreateObjCommand(interp, "sqlite3_crash_enable", crashEnableCmd, 0, 0);
 	Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
 	Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);

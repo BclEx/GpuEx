@@ -800,6 +800,26 @@ __device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size
 	return p;
 }
 
+//__device__ char *_strdup(const char *z);
+__device__ __forceinline char *_strdup(const char *z)
+{
+	if (z == nullptr) return nullptr;
+	size_t n = _strlen(z) + 1;
+	_assert((n & 0x7fffffff) == n);
+	char *newZ = (char *)_alloc((int)n);
+	if (newZ) _memcpy(newZ, (char *)z, n);
+	return newZ;
+}
+//__device__ char *_strndup(const char *z, int n);
+__device__ __forceinline char *_strndup(const char *z, int n)
+{
+	if (z == nullptr) return nullptr;
+	_assert((n & 0x7fffffff) == n);
+	char *newZ = (char *)_alloc(n + 1);
+	if (newZ) { _memcpy(newZ, (char *)z, n); newZ[n] = 0; }
+	return newZ;
+}
+
 //__device__ char *_tagstrdup(TagBase *tag, const char *z);
 __device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
 {

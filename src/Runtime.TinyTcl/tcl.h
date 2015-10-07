@@ -137,6 +137,7 @@ extern __device__ void Tcl_ValidateAllMemory(char *file, int line);
 #endif
 #define Tcl_Alloc(x) _allocFast(x)
 #define Tcl_Free(x) _freeFast(x)
+#define Tcl_Realloc(x,y) _reallocFast(x,y)
 
 // Macro to free up result of interpreter.
 #define Tcl_FreeResult(interp) \
