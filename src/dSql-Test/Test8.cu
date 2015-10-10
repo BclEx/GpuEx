@@ -119,8 +119,8 @@ __device__ static int getColumnNames(Context *ctx, const char *zTab, char ***paC
 {
 	char **aCol = 0;
 	char *zSql;
-	sqlite3_stmt *pStmt = 0;
-	int rc = SQLITE_OK;
+	Vdbe *pStmt = nullptr;
+	RC rc = RC_OK;
 	int nCol = 0;
 
 	/* Prepare the statement "SELECT * FROM <tbl>". The column names
@@ -1257,8 +1257,8 @@ static int register_spellfix_module(
 #ifndef OMIT_VIRTUALTABLE
 __constant__ static struct {
 	char *Name;
-	Tcl_ObjCmdProc *Proc;
-	void *ClientData;
+	Tcl_CmdProc *Proc;
+	ClientData ClientData;
 } _objCmds[] = {
 	{ "register_echo_module",       register_echo_module, nullptr },
 	{ "register_spellfix_module",   register_spellfix_module, nullptr },
@@ -1269,7 +1269,7 @@ __device__ int Sqlitetest8_Init(Tcl_Interp *interp)
 {
 #ifndef OMIT_VIRTUALTABLE
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateObjCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
 #endif
 	return TCL_OK;
 }

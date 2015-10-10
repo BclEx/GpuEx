@@ -606,15 +606,15 @@ __device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, char *arg
 		}
 		else
 		{
-			char **objs;
+			const char **objs;
 			int objc;
 			if (Tcl_ListObjGetElements(interp, args[i+1], &objc, &objs))
 				return TCL_ERROR;
 			for (int j = 0; j < objc; j++)
 			{
-				char *flag = objs[j];
+				const char *flag = objs[j];
 				int choice;
-				int rc = Tcl_GetIndexIgnoreCase(interp, flag, _flags, sizeof(_flags[0]), "no such flag", 0, &choice);
+				int rc = Tcl_GetIndex(interp, flag, (const void **)_flags, sizeof(_flags[0]), "no such flag", 0, &choice, true);
 				if (rc)
 					return TCL_ERROR;
 				deviceChar |= _flags[choice].Value;
@@ -633,7 +633,7 @@ __device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, char *arg
 //
 // Parameter ENABLE must be a boolean value. If true, then the "crash" vfs is added to the system. If false, it is removed.
 __device__ CrashVfs _crashVfs;
-__device__ static int crashEnableCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int crashEnableCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -675,7 +675,7 @@ __device__ static int crashEnableCmd(void *clientData, Tcl_Interp *interp, int a
 //
 // Example:
 //   sqlite_crashparams -sect 1024 -char {atomic sequential} ./test.db 1
-__device__ static int crashParamsObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int crashParamsObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 3)
 	{
@@ -713,7 +713,7 @@ error:
 }
 
 __device__ extern void devsym_register(int deviceChar, int sectorSize);
-__device__ static int devSymObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int devSymObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	int deviceChar = -1;
 	int sectorSize = -1;
@@ -725,14 +725,14 @@ __device__ static int devSymObjCmd(void *clientData, Tcl_Interp *interp, int arg
 
 // tclcmd: register_jt_vfs ?-default? PARENT-VFS
 __device__ extern int jt_register(char *, int);
-__device__ static int jtObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int jtObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2 && argc != 3)
 	{
 		Tcl_WrongNumArgs(interp, 1, args, "?-default? PARENT-VFS");
 		return TCL_ERROR;
 	}
-	char *parent = args[1];
+	const char *parent = args[1];
 	if (argc == 3)
 	{
 		if (!_strcmp(parent, "-default"))
@@ -754,7 +754,7 @@ __device__ static int jtObjCmd(void *clientData, Tcl_Interp *interp, int argc, c
 
 // tclcmd: unregister_jt_vfs
 __device__ extern void jt_unregister(void);
-__device__ static int jtUnregisterObjCmd(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int jtUnregisterObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1)
 	{
@@ -771,11 +771,11 @@ __device__ static int jtUnregisterObjCmd(void *clientData, Tcl_Interp *interp, i
 __device__ int Sqlitetest6_Init(Tcl_Interp *interp)
 {
 #ifndef OMIT_DISKIO
-	Tcl_CreateObjCommand(interp, "sqlite3_crash_enable", crashEnableCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "register_jt_vfs", jtObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "unregister_jt_vfs", jtUnregisterObjCmd, 0, 0);
+	Tcl_CreateCommand(interp, "sqlite3_crash_enable", crashEnableCmd, nullptr, nullptr);
+	Tcl_CreateCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, nullptr, nullptr);
+	Tcl_CreateCommand(interp, "sqlite3_simulate_device", devSymObjCmd, nullptr, nullptr);
+	Tcl_CreateCommand(interp, "register_jt_vfs", jtObjCmd, nullptr, nullptr);
+	Tcl_CreateCommand(interp, "unregister_jt_vfs", jtUnregisterObjCmd, nullptr, nullptr);
 #endif
 	return TCL_OK;
 }

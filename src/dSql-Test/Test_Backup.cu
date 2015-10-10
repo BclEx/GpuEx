@@ -28,7 +28,7 @@ __device__ static int backupTestCmd(ClientData clientData, Tcl_Interp *interp, i
 {
 	Backup *p = (Backup *)clientData;
 	int cmd;
-	int rc2 = Tcl_GetIndex(interp, args[1], _subs, sizeof(_subs[0]), "option", 0, &cmd);
+	int rc2 = Tcl_GetIndex(interp, args[1], (const void **)_subs, sizeof(_subs[0]), "option", 0, &cmd);
 	if (rc2 != TCL_OK)
 		return rc2;
 	if (argc != (2 + _subs[cmd].Argc))
@@ -46,7 +46,7 @@ __device__ static int backupTestCmd(ClientData clientData, Tcl_Interp *interp, i
 		Tcl_GetCommandInfo(interp, cmdName, &cmdInfo);
 		cmdInfo.deleteProc = 0;
 		Tcl_SetCommandInfo(interp, cmdName, &cmdInfo);
-		Tcl_DeleteCommand(interp, cmdName);
+		Tcl_DeleteCommand(interp, (char *)cmdName);
 		rc = Backup::Finish(p);
 		Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
 		break; }
@@ -97,13 +97,13 @@ __device__ static int backupTestInit(ClientData clientData, Tcl_Interp *interp, 
 		return TCL_ERROR;
 	}
 
-	Tcl_CreateObjCommand(interp, cmd, backupTestCmd, p, backupTestFinish);
+	Tcl_CreateCommand(interp, (char *)cmd, backupTestCmd, (ClientData)p, backupTestFinish);
 	Tcl_SetObjResult(interp, args[1]);
 	return TCL_OK;
 }
 
 __device__ int Sqlitetestbackup_Init(Tcl_Interp *interp)
 {
-	Tcl_CreateObjCommand(interp, "sqlite3_backup", backupTestInit, nullptr, nullptr);
+	Tcl_CreateCommand(interp, "sqlite3_backup", backupTestInit, nullptr, nullptr);
 	return TCL_OK;
 }

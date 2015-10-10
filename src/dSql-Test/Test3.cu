@@ -36,7 +36,7 @@ __device__ static int _refsSqlite3 = 0;
 // Usage:   btree_open FILENAME NCACHE
 //
 // Open a new database
-__device__ static int btree_open(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_open(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -75,7 +75,7 @@ __device__ static int btree_open(void *notUsed, Tcl_Interp *interp, int argc, co
 // Usage:   btree_close ID
 //
 // Close the given database.
-__device__ static int btree_close(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_close(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -103,7 +103,7 @@ __device__ static int btree_close(void *notUsed, Tcl_Interp *interp, int argc, c
 // Usage:   btree_begin_transaction ID
 //
 // Start a new transaction
-__device__ static int btree_begin_transaction(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_begin_transaction(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -129,7 +129,7 @@ __constant__ static char *_names[] = {
 	"ref", "page", "max", "size", "state", "err",
 	"hit", "miss", "ovfl", "read", "write"
 };
-__device__ static int btree_pager_stats(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_pager_stats(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -162,7 +162,7 @@ __device__ static int btree_pager_stats(void *notUsed, Tcl_Interp *interp, int a
 // Usage:   btree_cursor ID TABLENUM WRITEABLE
 //
 // Create a new cursor.  Return the ID for the cursor.
-__device__ static int btree_cursor(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_cursor(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 4)
 	{
@@ -199,7 +199,7 @@ __device__ static int btree_cursor(void *notUsed, Tcl_Interp *interp, int argc, 
 // Usage:   btree_close_cursor ID
 //
 // Close a cursor opened using btree_cursor.
-__device__ static int btree_close_cursor(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_close_cursor(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -224,7 +224,7 @@ __device__ static int btree_close_cursor(void *notUsed, Tcl_Interp *interp, int 
 //
 // Move the cursor to the next entry in the table.  Return 0 on success or 1 if the cursor was already on the last entry in the table or if
 // the table is empty.
-__device__ static int btree_next(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_next(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -243,14 +243,14 @@ __device__ static int btree_next(void *notUsed, Tcl_Interp *interp, int argc, co
 	}
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%d", res);
-	Tcl_AppendResult(interp, buf, 0);
+	Tcl_AppendResult(interp, buf, nullptr);
 	return RC_OK;
 }
 
 // Usage:   btree_first ID
 //
 // Move the cursor to the first entry in the table.  Return 0 if the cursor was left point to something and 1 if the table is empty.
-__device__ static int btree_first(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_first(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -277,7 +277,7 @@ __device__ static int btree_first(void *notUsed, Tcl_Interp *interp, int argc, c
 //
 // Return TRUE if the given cursor is not pointing at a valid entry.
 // Return FALSE if the cursor does point to a valid entry.
-__device__ static int btree_eof(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_eof(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -297,7 +297,7 @@ __device__ static int btree_eof(void *notUsed, Tcl_Interp *interp, int argc, con
 // Usage:   btree_payload_size ID
 //
 // Return the number of bytes of payload
-__device__ static int btree_payload_size(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_payload_size(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -330,7 +330,7 @@ __device__ static int btree_payload_size(void *notUsed, Tcl_Interp *interp, int 
 // times.  The first integer is START*MULTIPLIER.  Each iteration increases the integer by INCREMENT.
 //
 // This command returns nothing if it works.  It returns an error message if something goes wrong.
-__device__ static int btree_varint_test(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_varint_test(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	int n1, n2, i, j;
 	if (argc != 5)
@@ -404,7 +404,7 @@ __device__ static int btree_varint_test(void *notUsed, Tcl_Interp *interp, int a
 //
 // sqlite3 db test.db
 // set bt [btree_from_db db]
-__device__ static int btree_from_db(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_from_db(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2 && argc != 3)
 	{
@@ -432,7 +432,7 @@ __device__ static int btree_from_db(void *notUsed, Tcl_Interp *interp, int argc,
 // Usage:   btree_ismemdb ID
 //
 // Return true if the B-Tree is in-memory.
-__device__ static int btree_ismemdb(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_ismemdb(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -452,7 +452,7 @@ __device__ static int btree_ismemdb(void *notUsed, Tcl_Interp *interp, int argc,
 // usage:   btree_set_cache_size ID NCACHE
 //
 // Set the size of the cache used by btree $ID.
-__device__ static int btree_set_cache_size(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int btree_set_cache_size(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -471,26 +471,25 @@ __device__ static int btree_set_cache_size(void *notUsed, Tcl_Interp *interp, in
 	return TCL_OK;
 }      
 
-
 // Register commands with the TCL interpreter.
 __constant__ static struct {
 	char *Name;
 	Tcl_CmdProc *Proc;
 } _cmds[] = {
-	{ "btree_open",               (Tcl_CmdProc *)btree_open               },
-	{ "btree_close",              (Tcl_CmdProc *)btree_close              },
-	{ "btree_begin_transaction",  (Tcl_CmdProc *)btree_begin_transaction  },
-	{ "btree_pager_stats",        (Tcl_CmdProc *)btree_pager_stats        },
-	{ "btree_cursor",             (Tcl_CmdProc *)btree_cursor             },
-	{ "btree_close_cursor",       (Tcl_CmdProc *)btree_close_cursor       },
-	{ "btree_next",               (Tcl_CmdProc *)btree_next               },
-	{ "btree_eof",                (Tcl_CmdProc *)btree_eof                },
-	{ "btree_payload_size",       (Tcl_CmdProc *)btree_payload_size       },
-	{ "btree_first",              (Tcl_CmdProc *)btree_first              },
-	{ "btree_varint_test",        (Tcl_CmdProc *)btree_varint_test        },
-	{ "btree_from_db",            (Tcl_CmdProc *)btree_from_db            },
-	{ "btree_ismemdb",            (Tcl_CmdProc *)btree_ismemdb            },
-	{ "btree_set_cache_size",     (Tcl_CmdProc *)btree_set_cache_size     }
+	{ "btree_open",               btree_open               },
+	{ "btree_close",              btree_close              },
+	{ "btree_begin_transaction",  btree_begin_transaction  },
+	{ "btree_pager_stats",        btree_pager_stats        },
+	{ "btree_cursor",             btree_cursor             },
+	{ "btree_close_cursor",       btree_close_cursor       },
+	{ "btree_next",               btree_next               },
+	{ "btree_eof",                btree_eof                },
+	{ "btree_payload_size",       btree_payload_size       },
+	{ "btree_first",              btree_first              },
+	{ "btree_varint_test",        btree_varint_test        },
+	{ "btree_from_db",            btree_from_db            },
+	{ "btree_ismemdb",            btree_ismemdb            },
+	{ "btree_set_cache_size",     btree_set_cache_size     }
 };
 __device__ int Sqlitetest3_Init(Tcl_Interp *interp)
 {

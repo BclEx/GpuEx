@@ -724,5 +724,8 @@ int Sqlitetest4_Init(Tcl_Interp *interp){
 	return TCL_OK;
 }
 #else
-int Sqlitetest4_Init(Tcl_Interp *interp){ return TCL_OK; }
-#endif /* SQLITE_OS_UNIX */
+__device__ int Sqlitetest4_Init(Tcl_Interp *interp)
+{
+	return TCL_OK;
+}
+#endif

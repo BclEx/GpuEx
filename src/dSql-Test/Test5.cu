@@ -4,7 +4,7 @@
 #include <string.h>
 
 // The first argument is a TCL UTF-8 string. Return the byte array object with the encoded representation of the string, including the NULL terminator.
-__device__ static int binarize(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int binarize(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	_assert(argc == 2);
 	int len;
@@ -19,7 +19,7 @@ __device__ static int binarize(void *clientData, Tcl_Interp *interp, int argc, c
 // is to figure out whether or not it is a problem to use sqlite3_value structures with collation sequence functions.
 //
 // If <do-calls> is 0, then the calls to sqlite3_value_text() are not actually made.
-__device__ static int test_value_overhead(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int test_value_overhead(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -54,9 +54,9 @@ __constant__ struct EncName {
 	{ "UTF16", TEXTENCODE_UTF16 },
 	{ nullptr, (TEXTENCODE)0 }
 };
-__device__ static TEXTENCODE name_to_enc(Tcl_Interp *interp, char *obj)
+__device__ static TEXTENCODE name_to_enc(Tcl_Interp *interp, const char *arg)
 {
-	char *z = obj;
+	char *z = arg;
 	struct EncName *encode;
 	for (encode = &_encodeNames[0]; encode->Name; encode++)
 		if (!_strcmp(z, encode->Name))
@@ -67,7 +67,7 @@ __device__ static TEXTENCODE name_to_enc(Tcl_Interp *interp, char *obj)
 }
 
 // Usage:   test_translate <string/blob> <from enc> <to enc> ?<transient>?
-__device__ static int test_translate(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int test_translate(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 4 && argc != 5)
 	{
@@ -115,7 +115,7 @@ __device__ static int test_translate(void *clientData, Tcl_Interp *interp, int a
 //
 // Call sqlite3UtfSelfTest() to run the internal tests for unicode translation. If there is a problem an assert() will fail.
 __device__ void sqlite3UtfSelfTest();
-__device__ static int test_translate_selftest(void *clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int test_translate_selftest(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 #ifndef OMIT_UTF16
 	sqlite3UtfSelfTest();
@@ -126,16 +126,16 @@ __device__ static int test_translate_selftest(void *clientData, Tcl_Interp *inte
 // Register commands with the TCL interpreter.
 __constant__ static struct {
 	char *Name;
-	Tcl_ObjCmdProc *Proc;
+	Tcl_CmdProc *Proc;
 } _cmds[] = {
-	{ "binarize",                (Tcl_ObjCmdProc *)binarize },
-	{ "test_value_overhead",     (Tcl_ObjCmdProc *)test_value_overhead },
-	{ "test_translate",          (Tcl_ObjCmdProc *)test_translate },
-	{ "translate_selftest",      (Tcl_ObjCmdProc *)test_translate_selftest },
+	{ "binarize",                binarize },
+	{ "test_value_overhead",     test_value_overhead },
+	{ "test_translate",          test_translate },
+	{ "translate_selftest",      test_translate_selftest },
 };
 __device__ int Sqlitetest5_Init(Tcl_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_cmds); i++)
-		Tcl_CreateObjCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
+		Tcl_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
 	return RC_OK;
 }

@@ -688,5 +688,8 @@ int Sqlitetest7_Init(Tcl_Interp *interp){
 	return TCL_OK;
 }
 #else
-int Sqlitetest7_Init(Tcl_Interp *interp){ return TCL_OK; }
-#endif /* SQLITE_OS_UNIX */
+__device__ int Sqlitetest7_Init(Tcl_Interp *interp)
+{
+	return TCL_OK;
+}
+#endif

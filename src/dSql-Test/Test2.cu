@@ -46,7 +46,7 @@ __device__ static void pager_test_reiniter(IPage *notUsed)
 // Usage:   pager_open FILENAME N-PAGE
 //
 // Open a new pager
-__device__ static int pager_open(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_open(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -74,7 +74,7 @@ __device__ static int pager_open(void *notUsed, Tcl_Interp *interp, int argc, co
 // Usage:   pager_close ID
 //
 // Close the given pager.
-__device__ static int pager_close(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_close(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -94,7 +94,7 @@ __device__ static int pager_close(void *notUsed, Tcl_Interp *interp, int argc, c
 // Usage:   pager_rollback ID
 //
 // Rollback changes
-__device__ static int pager_rollback(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_rollback(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -114,7 +114,7 @@ __device__ static int pager_rollback(void *notUsed, Tcl_Interp *interp, int argc
 // Usage:   pager_commit ID
 //
 // Commit all changes
-__device__ static int pager_commit(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_commit(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -140,7 +140,7 @@ __device__ static int pager_commit(void *notUsed, Tcl_Interp *interp, int argc, 
 // Usage:   pager_stmt_begin ID
 //
 // Start a new checkpoint.
-__device__ static int pager_stmt_begin(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_stmt_begin(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -160,7 +160,7 @@ __device__ static int pager_stmt_begin(void *notUsed, Tcl_Interp *interp, int ar
 // Usage:   pager_stmt_rollback ID
 //
 // Rollback changes to a checkpoint
-__device__ static int pager_stmt_rollback(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_stmt_rollback(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -181,7 +181,7 @@ __device__ static int pager_stmt_rollback(void *notUsed, Tcl_Interp *interp, int
 // Usage:   pager_stmt_commit ID
 //
 // Commit changes to a checkpoint
-__device__ static int pager_stmt_commit(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_stmt_commit(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -205,7 +205,7 @@ __constant__ static char *_names[] = {
 	"ref", "page", "max", "size", "state", "err",
 	"hit", "miss", "ovfl",
 };
-__device__ static int pager_stats(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_stats(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -227,14 +227,14 @@ __device__ static int pager_stats(void *notUsed, Tcl_Interp *interp, int argc, c
 // Usage:   pager_pagecount ID
 //
 // Return the size of the database file.
-__device__ static int pager_pagecount(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_pagecount(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(argv[1]);
+	Pager *pager = sqlite3TestTextToPtr(args[1]);
 	int pages;
 	Pager::Pagecount(pager, &pages);
 	char buf[100];
@@ -246,7 +246,7 @@ __device__ static int pager_pagecount(void *notUsed, Tcl_Interp *interp, int arg
 // Usage:   page_get ID PGNO
 //
 // Return a pointer to a page from the database.
-__device__ static int page_get(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int page_get(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -274,7 +274,7 @@ __device__ static int page_get(void *notUsed, Tcl_Interp *interp, int argc, cons
 // Usage:   page_lookup ID PGNO
 //
 // Return a pointer to a page if the page is already in cache. If not in cache, return an empty string.
-__device__ static int page_lookup(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int page_lookup(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -295,7 +295,7 @@ __device__ static int page_lookup(void *notUsed, Tcl_Interp *interp, int argc, c
 }
 
 // Usage:   pager_truncate ID PGNO
-__device__ static int pager_truncate(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int pager_truncate(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -313,7 +313,7 @@ __device__ static int pager_truncate(void *notUsed, Tcl_Interp *interp, int argc
 // Usage:   page_unref PAGE
 //
 // Drop a pointer to a page.
-__device__ static int page_unref(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int page_unref(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -328,7 +328,7 @@ __device__ static int page_unref(void *notUsed, Tcl_Interp *interp, int argc, co
 // Usage:   page_read PAGE
 //
 // Return the content of a page
-__device__ static int page_read(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int page_read(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -345,7 +345,7 @@ __device__ static int page_read(void *notUsed, Tcl_Interp *interp, int argc, con
 // Usage:   page_number PAGE
 //
 // Return the page number for a page.
-__device__ static int page_number(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int page_number(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -362,7 +362,7 @@ __device__ static int page_number(void *notUsed, Tcl_Interp *interp, int argc, c
 // Usage:   page_write PAGE DATA
 //
 // Write something into a page.
-__device__ static int page_write(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int page_write(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -388,7 +388,7 @@ __device__ static int page_write(void *notUsed, Tcl_Interp *interp, int argc, co
 // Write a few bytes at the N megabyte point of FILENAME.  This will create a large file.  If the file was a valid SQLite database, then
 // the next time the database is opened, SQLite will begin allocating new pages after N.  If N is 2096 or bigger, this will test the
 // ability of SQLite to write to large files.
-__device__ static int fake_big_file(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int fake_big_file(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -428,7 +428,7 @@ __device__ static int fake_big_file(void *notUsed, Tcl_Interp *interp, int argc,
 // test_control_pending_byte  PENDING_BYTE
 //
 // Set the PENDING_BYTE using the sqlite3_test_control() interface.
-__device__ static int testPendingByte(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int testPendingByte(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{
@@ -437,7 +437,7 @@ __device__ static int testPendingByte(void *notUsed, Tcl_Interp *interp, int arg
 	}
 	int byte;
 	if (Tcl_GetInt(interp, (char *)args[1], &byte)) return TCL_ERROR;
-	RC rc = sqlite3_test_control(SQLITE_TESTCTRL_PENDING_BYTE, byte);
+	RC rc = Main::TestControl(Main::TESTCTRL_PENDING_BYTE, byte);
 	Tcl_SetObjResult(interp, (int)rc);
 	return TCL_OK;
 }  
@@ -445,7 +445,7 @@ __device__ static int testPendingByte(void *notUsed, Tcl_Interp *interp, int arg
 // sqlite3BitvecBuiltinTest SIZE PROGRAM
 //
 // Invoke the SQLITE_TESTCTRL_BITVEC_TEST operator on test_control. See comments on sqlite3BitvecBuiltinTest() for additional information.
-__device__ static int testBitvecBuiltinTest(void *notUsed, Tcl_Interp *interp, int argc, const char **args)
+__device__ static int testBitvecBuiltinTest(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3)
 	{
@@ -464,7 +464,7 @@ __device__ static int testBitvecBuiltinTest(void *notUsed, Tcl_Interp *interp, i
 		while (_isdigit(*z)) { z++; }
 	}
 	prog[progLength] = 0;
-	RC rc = sqlite3_test_control(SQLITE_TESTCTRL_BITVEC_TEST, sz, prog);
+	RC rc = Main::TestControl(Main::TESTCTRL_BITVEC_TEST, sz, prog);
 	Tcl_SetObjResult(interp, (int)rc);
 	return TCL_OK;
 }  
@@ -476,36 +476,36 @@ extern int sqlite3_io_error_hit;
 extern int sqlite3_io_error_hardhit;
 extern int sqlite3_diskfull_pending;
 extern int sqlite3_diskfull;
-static struct {
+__constant__ static struct {
 	char *Name;
 	Tcl_CmdProc *Proc;
 } _cmds[] = {
-	{ "pager_open",              (Tcl_CmdProc *)pager_open          },
-	{ "pager_close",             (Tcl_CmdProc *)pager_close         },
-	{ "pager_commit",            (Tcl_CmdProc *)pager_commit        },
-	{ "pager_rollback",          (Tcl_CmdProc *)pager_rollback      },
-	{ "pager_stmt_begin",        (Tcl_CmdProc *)pager_stmt_begin    },
-	{ "pager_stmt_commit",       (Tcl_CmdProc *)pager_stmt_commit   },
-	{ "pager_stmt_rollback",     (Tcl_CmdProc *)pager_stmt_rollback },
-	{ "pager_stats",             (Tcl_CmdProc *)pager_stats         },
-	{ "pager_pagecount",         (Tcl_CmdProc *)pager_pagecount     },
-	{ "page_get",                (Tcl_CmdProc *)page_get            },
-	{ "page_lookup",             (Tcl_CmdProc *)page_lookup         },
-	{ "page_unref",              (Tcl_CmdProc *)page_unref          },
-	{ "page_read",               (Tcl_CmdProc *)page_read           },
-	{ "page_write",              (Tcl_CmdProc *)page_write          },
-	{ "page_number",             (Tcl_CmdProc *)page_number         },
-	{ "pager_truncate",          (Tcl_CmdProc *)pager_truncate      },
+	{ "pager_open",              pager_open          },
+	{ "pager_close",             pager_close         },
+	{ "pager_commit",            pager_commit        },
+	{ "pager_rollback",          pager_rollback      },
+	{ "pager_stmt_begin",        pager_stmt_begin    },
+	{ "pager_stmt_commit",       pager_stmt_commit   },
+	{ "pager_stmt_rollback",     pager_stmt_rollback },
+	{ "pager_stats",             pager_stats         },
+	{ "pager_pagecount",         pager_pagecount     },
+	{ "page_get",                page_get            },
+	{ "page_lookup",             page_lookup         },
+	{ "page_unref",              page_unref          },
+	{ "page_read",               page_read           },
+	{ "page_write",              page_write          },
+	{ "page_number",             page_number         },
+	{ "pager_truncate",          pager_truncate      },
 #ifndef OMIT_DISKIO
-	{ "fake_big_file",           (Tcl_CmdProc *)fake_big_file       },
+	{ "fake_big_file",           fake_big_file       },
 #endif
-	{ "sqlite3BitvecBuiltinTest",(Tcl_CmdProc *)testBitvecBuiltinTest     },
-	{ "sqlite3_test_control_pending_byte", (Tcl_CmdProc *)testPendingByte },
+	{ "sqlite3BitvecBuiltinTest",testBitvecBuiltinTest     },
+	{ "sqlite3_test_control_pending_byte", testPendingByte },
 };
 __device__ int Sqlitetest2_Init(Tcl_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_cmds); i++)
-		Tcl_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, 0, 0);
+		Tcl_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
 	Tcl_LinkVar(interp, "sqlite_io_error_pending", (char *)&sqlite3_io_error_pending, TCL_LINK_INT);
 	Tcl_LinkVar(interp, "sqlite_io_error_persist", (char *)&sqlite3_io_error_persist, TCL_LINK_INT);
 	Tcl_LinkVar(interp, "sqlite_io_error_hit", (char *)&sqlite3_io_error_hit, TCL_LINK_INT);
@@ -513,7 +513,7 @@ __device__ int Sqlitetest2_Init(Tcl_Interp *interp)
 	Tcl_LinkVar(interp, "sqlite_diskfull_pending", (char *)&sqlite3_diskfull_pending, TCL_LINK_INT);
 	Tcl_LinkVar(interp, "sqlite_diskfull", (char *)&sqlite3_diskfull, TCL_LINK_INT);
 #ifndef OMIT_WSD
-	Tcl_LinkVar(interp, "sqlite_pending_byte", (char *)&sqlite3PendingByte, TCL_LINK_INT | TCL_LINK_READ_ONLY);
+	Tcl_LinkVar(interp, "sqlite_pending_byte", (char *)&sqlite3PendingByte, TCL_LINK_INT|TCL_LINK_READ_ONLY);
 #endif
 	return TCL_OK;
 }

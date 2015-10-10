@@ -15,7 +15,7 @@
 
 #ifndef _CLIENTDATA
 #define _CLIENTDATA
-typedef int *ClientData;
+typedef void *ClientData;
 #endif
 
 // Data structures defined opaquely in this module.  The definitions below just provide dummy types.  A few fields are made visible in
@@ -52,17 +52,19 @@ extern __device__ ClientData Tcl_GetChannelInstanceData(Tcl_Channel channel);
 // CMD INFO
 typedef struct Tcl_CmdInfo
 {
-    //int isNativeObjectProc;
-    //Tcl_ObjCmdProc *objProc;
-    ClientData objClientData;
-    //Tcl_CmdProc *proc;
-    //ClientData clientData;
-    //Tcl_CmdDeleteProc *deleteProc;
-    //ClientData deleteData;
-    //Tcl_Namespace *namespacePtr;
+	//int isNativeObjectProc;
+	//Tcl_ObjCmdProc *objProc;
+	ClientData objClientData;
+	//Tcl_CmdProc *proc;
+	//ClientData clientData;
+	Tcl_CmdDeleteProc *deleteProc;
+	//ClientData deleteData;
+	//Tcl_Namespace *namespacePtr;
 } Tcl_CmdInfo;
 
 extern __device__ int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName, Tcl_CmdInfo *info);
+extern __device__ int Tcl_SetCommandInfo(Tcl_Interp *interp, const char *cmdName, Tcl_CmdInfo *info);
+
 
 // When a TCL command returns, the string pointer interp->result points to a string containing return information from the command.  In addition,
 // the command procedure returns an integer value, which is one of the following:
@@ -84,8 +86,8 @@ extern __device__ int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName
 
 // Procedure types defined by Tcl:
 typedef void (Tcl_CmdDeleteProc)(ClientData clientData);
-typedef int (Tcl_CmdProc)(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[]);
-typedef void (Tcl_CmdTraceProc)(ClientData clientData, Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *proc, ClientData cmdClientData, int argc, char *argv[]);
+typedef int (Tcl_CmdProc)(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[]);
+typedef void (Tcl_CmdTraceProc)(ClientData clientData, Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *proc, ClientData cmdClientData, int argc, const char *args[]);
 typedef void (Tcl_FreeProc)(char *blockPtr);
 typedef char *(Tcl_VarTraceProc)(ClientData clientData, Tcl_Interp *interp, char *part1, char *part2, int flags);
 
@@ -192,12 +194,13 @@ extern __device__ int Tcl_ExprDouble(Tcl_Interp *interp, char *string, double *p
 extern __device__ int Tcl_ExprLong(Tcl_Interp *interp, char *string, long *ptr);
 extern __device__ int Tcl_ExprString(Tcl_Interp *interp, char *string);
 extern __device__ int Tcl_Fork();
-extern __device__ int Tcl_GetIndex(Tcl_Interp *interp, char *string, const char *table[], char *msg, int flags, int *indexPtr);
-extern __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, bool *boolPtr);
-extern __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr);
-extern __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr);
-extern __device__ int Tcl_GetWideInt(Tcl_Interp *interp, char *string, int64 *intPtr);
-extern __device__ char *Tcl_GetByteArray(Tcl_Interp *interp, char *string, int *arrayLength);
+extern __device__ int Tcl_GetIndex(Tcl_Interp *interp, const char *string, const char *table[], char *msg, int flags, int *indexPtr, bool insensitive = false);
+extern __device__ int Tcl_GetIndex(Tcl_Interp *interp, const char *string, const void *structTable[], int offset, char *msg, int flags, int *indexPtr, bool insensitive = false);
+extern __device__ int Tcl_GetBoolean(Tcl_Interp *interp, const char *string, bool *boolPtr);
+extern __device__ int Tcl_GetDouble(Tcl_Interp *interp, const char *string, double *doublePtr);
+extern __device__ int Tcl_GetInt(Tcl_Interp *interp, const char *string, int *intPtr);
+extern __device__ int Tcl_GetWideInt(Tcl_Interp *interp, const char *string, int64 *intPtr);
+extern __device__ char *Tcl_GetByteArray(Tcl_Interp *interp, const char *string, int *arrayLength);
 extern __device__ char *Tcl_GetVar(Tcl_Interp *interp, char *varName, int flags);
 extern __device__ char *Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2, int flags);
 extern __device__ int Tcl_GlobalEval(Tcl_Interp *interp, char *command);
@@ -266,11 +269,29 @@ extern __device__ ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, char *varName,
 extern __device__ ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1, char *part2, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData);
 extern __device__ int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr);
 
+// LIST (Added_)
+__device__ inline void Tcl_ListObjAppendElement(Tcl_Interp *interp, void *base, char *obj) { }
+__device__ inline void Tcl_ListObjAppendElement(Tcl_Interp *interp, void *base, int obj) { }
+__device__ inline void Tcl_ListObjAppendElement(Tcl_Interp *interp, void *base, int64 obj) { }
+__device__ inline void Tcl_ListObjAppendElement(Tcl_Interp *interp, void *base, double obj) { }
+__device__ inline void Tcl_ListObjAppendElement(Tcl_Interp *interp, void *base, array_t<const void> obj) { }
+extern __device__ int Tcl_ListObjGetElements(Tcl_Interp *interp, char *list, int *argc, const char ***args);
+
+// LINK (Added_)
+#define TCL_LINK_INT		1
+#define TCL_LINK_DOUBLE		2
+#define TCL_LINK_BOOLEAN	3
+#define TCL_LINK_STRING		4
+#define TCL_LINK_READ_ONLY	0x80
+__device__ int Tcl_LinkVar(Tcl_Interp *interp, const char *varName, char *addr, int type);
+__device__ void Tcl_UnlinkVar(Tcl_Interp *interp, const char *varName);
+__device__ void Tcl_UpdateLinkedVar(Tcl_Interp *interp, const char *varName);
+
 // EXTRA
-inline __device__ char *Tcl_GetString(Tcl_Interp *interp, Tcl_Obj *obj, int *length) { *length = obj->Bytes; return (char *)obj; }
-inline __device__ char *Tcl_GetString(Tcl_Interp *interp, char *obj, int *length) { *length = _strlen(obj); return (char *)obj; }
+inline __device__ char *Tcl_GetString(Tcl_Interp *interp, Tcl_Obj *arg, int *length) { *length = arg->Bytes; return (char *)arg; }
+inline __device__ char *Tcl_GetString(Tcl_Interp *interp, const char *arg, int *length) { *length = _strlen(arg); return (char *)arg; }
 //inline __device__ Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *obj);
-extern __device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, char *objv[], const char *message);
+extern __device__ void Tcl_WrongNumArgs(Tcl_Interp *interp, int argc, const char *args[], const char *message);
 extern __device__ Tcl_Obj *Tcl_NewObj(const char *value, int length, char *typeName = nullptr);
 //extern __device__ int Tcl_ObjAppendElement(Tcl_Interp *interp, Tcl_Obj *obj, Tcl_Obj *appendObj);
 extern __device__ void Tcl_IncrRefCount(Tcl_Obj *obj);

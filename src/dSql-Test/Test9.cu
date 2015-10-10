@@ -147,8 +147,8 @@ error_out:
 __constant__ static struct
 {
 	char *Name;
-	Tcl_ObjCmdProc *Proc;
-	void *ClientData;
+	Tcl_CmdProc *Proc;
+	ClientData ClientData;
 } _objCmds[] = {
 	{ "c_misuse_test",    c_misuse_test, nullptr },
 	{ "c_realloc_test",   c_realloc_test, nullptr },
@@ -157,6 +157,6 @@ __constant__ static struct
 __device__ int Sqlitetest9_Init(Tcl_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateObjCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
 	return TCL_OK;
 }
