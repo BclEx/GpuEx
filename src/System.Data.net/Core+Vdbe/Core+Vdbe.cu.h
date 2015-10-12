@@ -199,18 +199,18 @@ namespace CORE_NAME
 	{
 	public:
 		int Version;
-		RC (*Create)(Context *, void *aux, int argc, const char *const *argv, IVTable **vtabs, char **);
-		RC (*Connect)(Context *, void *aux, int argc, const char *const *argv, IVTable **vtabs, char **);
-		RC (*BestIndex)(IVTable *vtab, IIndexInfo *);
+		RC (*Create)(Context *ctx, void *aux, int argc, const char *const *args, IVTable **vtabs, char **err);
+		RC (*Connect)(Context *ctx, void *aux, int argc, const char *const *args, IVTable **vtabs, char **err);
+		RC (*BestIndex)(IVTable *vtab, IIndexInfo *idxInfo);
 		RC (*Disconnect)(IVTable *vtab);
 		RC (*Destroy)(IVTable *vtab);
 		RC (*Open)(IVTable *vtab, IVTableCursor **cursors);
-		RC (*Close)(IVTableCursor*);
-		RC (*Filter)(IVTableCursor*, int idxNum, const char *idxStr, int argc, Mem **argv);
-		RC (*Next)(IVTableCursor*);
-		RC (*Eof)(IVTableCursor*);
-		RC (*Column)(IVTableCursor *, FuncContext *, int);
-		RC (*Rowid)(IVTableCursor *, int64 *rowid);
+		RC (*Close)(IVTableCursor *cur);
+		RC (*Filter)(IVTableCursor *cur, int idxNum, const char *idxStr, int argc, Mem **args);
+		RC (*Next)(IVTableCursor *cur);
+		bool (*Eof)(IVTableCursor *cur);
+		RC (*Column)(IVTableCursor *cur, FuncContext *fctx, int i);
+		RC (*Rowid)(IVTableCursor *cur, int64 *rowid);
 		RC (*Update)(IVTable *, int, Mem **, int64 *);
 		RC (*Begin)(IVTable *vtab);
 		RC (*Sync)(IVTable *vtab);

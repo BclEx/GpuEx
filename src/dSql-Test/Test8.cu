@@ -39,7 +39,7 @@ typedef struct echo_cursor echo_cursor;
 // Member variable aCol[] contains copies of the column names of the real table.
 struct echo_vtab
 {
-	sqlite3_vtab base;
+	IVTable base;
 	Tcl_Interp *interp;     // Tcl interpreter containing debug variables
 	Context *Ctx;           // Database connection
 
@@ -56,7 +56,7 @@ struct echo_vtab
 // An echo cursor object
 struct echo_cursor
 {
-	sqlite3_vtab_cursor base;
+	IVTableCursor base;
 	Vdbe *Stmt;
 };
 

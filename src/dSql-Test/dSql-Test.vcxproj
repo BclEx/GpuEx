@@ -31,9 +31,7 @@
     <ClCompile Include="TclContext+Test.cu" />
     <ClCompile Include="Test_Autoext.cu" />
     <ClCompile Include="Test_Backup.cu" />
-    <ClCompile Include="Test_Btree.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_Btree.cu" />
     <ClCompile Include="Test_Config.cu" />
     <ClCompile Include="Test_DemoVfs.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
@@ -41,12 +39,8 @@
     <ClCompile Include="Test_DevSym.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Test_FS.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Test_Func.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_FS.cu" />
+    <ClCompile Include="Test_Func.cu" />
     <ClCompile Include="Test_Fuzzer.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>

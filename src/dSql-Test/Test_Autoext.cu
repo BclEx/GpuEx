@@ -1,5 +1,4 @@
 // Test extension for testing the sqlite3_auto_extension() function.
-
 #include <Tcl.h>
 #include <Core+Vdbe\Core+Ext.cu.h>
 

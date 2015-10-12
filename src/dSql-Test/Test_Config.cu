@@ -1,9 +1,9 @@
 // This file contains code used for testing the SQLite system. None of the code in this file goes into a deliverable build.
 // 
 // The focus of this file is providing the TCL testing layer access to compile-time constants.
-#include "sqliteLimit.h"
-#include "sqliteInt.h"
-//#include <Core+Vdbe\Core+Vdbe.cu.h>
+//#include "sqliteLimit.h"
+#include <Core+Vdbe\Core+Vdbe.cu.h>
+#include <Core+Vdbe\VdbeInt.cu.h>
 #include <Tcl.h>
 #include <stdlib.h>
 #include <string.h>
