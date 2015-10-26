@@ -55,7 +55,7 @@ namespace CORE_NAME
 #ifndef OMIT_SHARED_CACHE
 	__device__ BtShared *_WSD g_sharedCacheList = nullptr;
 #define _sharedCacheList _GLOBAL(BtShared *, g_sharedCacheList)
-	__device__ int enable_shared_cache(bool enable)
+	__device__ RC Btree::EnableSharedCache(bool enable)
 	{
 		SysEx_GlobalStatics.SharedCacheEnabled = enable;
 		return RC_OK;

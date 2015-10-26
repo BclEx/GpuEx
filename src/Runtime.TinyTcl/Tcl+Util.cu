@@ -203,7 +203,7 @@ __device__ void TclCopyAndCollapse(int count, register char *src, register char 
 *
 *	*argvPtr will be filled in with the address of an array whose elements point to the elements of list, in order.
 *	*argcPtr will get filled in with the number of valid elements in the array.  A single block of memory is dynamically allocated
-*	to hold both the argv array and a copy of the list (with backslashes and braces removed in the standard way).
+*	to hold both the args array and a copy of the list (with backslashes and braces removed in the standard way).
 *	The caller must eventually free this memory by calling free() on *argvPtr.  Note:  *argvPtr and *argcPtr are only modified
 *	if the procedure returns normally.
 *
@@ -224,24 +224,24 @@ __device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, char 
 		}
 	}
 	size++; // Leave space for final NULL pointer.
-	char **argv = (char **)_allocFast((unsigned)((size*sizeof(char *)) + (p - list) + 1));
-	for (i = 0, p = ((char *)argv) + size*sizeof(char *); *list != 0; i++) {
+	char **args = (char **)_allocFast((unsigned)((size*sizeof(char *)) + (p - list) + 1));
+	for (i = 0, p = ((char *)args) + size*sizeof(char *); *list != 0; i++) {
 		char *element;
 		int elSize, brace;
 		int result = TclFindElement(interp, list, &element, &list, &elSize, &brace);
 		if (result != TCL_OK) {
-			_freeFast((char *)argv);
+			_freeFast((char *)args);
 			return result;
 		}
 		if (*element == 0) {
 			break;
 		}
 		if (i >= size) {
-			_freeFast((char *)argv);
+			_freeFast((char *)args);
 			Tcl_SetResult(interp, "internal error in Tcl_SplitList", TCL_STATIC);
 			return TCL_ERROR;
 		}
-		argv[i] = p;
+		args[i] = p;
 		if (brace) {
 			_strncpy(p, element, elSize);
 			p += elSize;
@@ -252,8 +252,8 @@ __device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, char 
 			p += elSize+1;
 		}
 	}
-	argv[i] = NULL;
-	*argvPtr = argv;
+	args[i] = NULL;
+	*argvPtr = args;
 	*argcPtr = i;
 	return TCL_OK;
 }
@@ -471,7 +471,7 @@ __device__ int Tcl_ConvertElement(register const char *src, char *dst, int flags
 *
 *----------------------------------------------------------------------
 */
-__device__ char *Tcl_Merge(int argc, char **argv)
+__device__ char *Tcl_Merge(int argc, const char *args[])
 {
 #define LOCAL_SIZE 20
 	// Pass 1: estimate space, gather flags.
@@ -484,13 +484,13 @@ __device__ char *Tcl_Merge(int argc, char **argv)
 	int numChars = 1;
 	int i;
 	for (i = 0; i < argc; i++) {
-		numChars += Tcl_ScanElement(argv[i], &flagPtr[i]) + 1;
+		numChars += Tcl_ScanElement(args[i], &flagPtr[i]) + 1;
 	}
 	// Pass two: copy into the result area.
 	char *result = (char *)_allocFast((unsigned)numChars);
 	register char *dst = result;
 	for (i = 0; i < argc; i++) {
-		numChars = Tcl_ConvertElement(argv[i], dst, flagPtr[i]);
+		numChars = Tcl_ConvertElement(args[i], dst, flagPtr[i]);
 		dst += numChars;
 		*dst = ' ';
 		dst++;
@@ -513,18 +513,18 @@ __device__ char *Tcl_Merge(int argc, char **argv)
 *	Concatenate a set of strings into a single large string.
 *
 * Results:
-*	The return value is dynamically-allocated string containing a concatenation of all the strings in argv, with spaces between the original argv elements.
+*	The return value is dynamically-allocated string containing a concatenation of all the strings in args, with spaces between the original args elements.
 *
 * Side effects:
 *	Memory is allocated for the result;  the caller is responsible for freeing the memory.
 *
 *----------------------------------------------------------------------
 */
-__device__ char *Tcl_Concat(int argc, char **argv)
+__device__ char *Tcl_Concat(int argc, const char *args[])
 {
 	int totalSize, i;
 	for (totalSize = 1, i = 0; i < argc; i++) {
-		totalSize += _strlen(argv[i]) + 1;
+		totalSize += _strlen(args[i]) + 1;
 	}
 	char *result = (char *)_allocFast((unsigned)totalSize);
 	if (argc == 0) {
@@ -534,7 +534,7 @@ __device__ char *Tcl_Concat(int argc, char **argv)
 	register char *p;
 	for (p = result, i = 0; i < argc; i++) {
 		// Clip white space off the front and back of the string to generate a neater result, and ignore any empty elements.
-		char *element = argv[i];
+		char *element = (char *)args[i];
 		while (_isspace(*element)) {
 			element++;
 		}

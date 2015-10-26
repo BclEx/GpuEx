@@ -216,7 +216,7 @@ namespace CORE_NAME
 		RC (*Sync)(IVTable *vtab);
 		RC (*Commit)(IVTable *vtab);
 		RC (*Rollback)(IVTable *vtab);
-		RC (*FindFunction)(IVTable *vtab, int argsLength, const char *name, void (**func)(FuncContext *, int, Mem **), void **args);
+		bool (*FindFunction)(IVTable *vtab, int argsLength, const char *name, void (**func)(FuncContext*,int,Mem**), void **args);
 		RC (*Rename)(IVTable *vtab, const char *new_);
 		RC (*Savepoint)(IVTable *vtab, int);
 		RC (*Release)(IVTable *vtab, int);

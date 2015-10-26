@@ -221,7 +221,7 @@ extern int chdir(const char *path);
 extern int close(int fd);
 extern int dup2(int src, int dst);
 extern void endpwent();
-// extern int execvp(const char *name, char **argv);
+// extern int execvp(const char *name, const char *args[]);
 extern void _exit(int status);
 // extern pid_t fork(void);
 // extern uid_t geteuidvoid);

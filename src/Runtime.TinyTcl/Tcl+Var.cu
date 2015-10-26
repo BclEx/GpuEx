@@ -851,24 +851,24 @@ __device__ ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1, char *p
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_SetCmd(ClientData dummy, register Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_SetCmd(ClientData dummy, register Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc == 2) {
-		char *value = Tcl_GetVar(interp, argv[1], TCL_LEAVE_ERR_MSG);
+		char *value = Tcl_GetVar(interp, (char *)args[1], TCL_LEAVE_ERR_MSG);
 		if (value == NULL) {
 			return TCL_ERROR;
 		}
 		interp->result = value;
 		return TCL_OK;
 	} else if (argc == 3) {
-		char *result = Tcl_SetVar(interp, argv[1], argv[2], TCL_LEAVE_ERR_MSG);
+		char *result = Tcl_SetVar(interp, (char *)args[1], (char *)args[2], TCL_LEAVE_ERR_MSG);
 		if (result == NULL) {
 			return TCL_ERROR;
 		}
 		interp->result = result;
 		return TCL_OK;
 	} else {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " varName ?newValue?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " varName ?newValue?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 }
@@ -886,14 +886,14 @@ __device__ int Tcl_SetCmd(ClientData dummy, register Tcl_Interp *interp, int arg
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_UnsetCmd(ClientData dummy, register Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_UnsetCmd(ClientData dummy, register Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " varName ?varName ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " varName ?varName ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	for (int i = 1; i < argc; i++) {
-		if (Tcl_UnsetVar(interp, argv[i], TCL_LEAVE_ERR_MSG) != 0) {
+		if (Tcl_UnsetVar(interp, (char *)args[i], TCL_LEAVE_ERR_MSG) != 0) {
 			return TCL_ERROR;
 		}
 	}
@@ -914,15 +914,15 @@ __device__ int Tcl_UnsetCmd(ClientData dummy, register Tcl_Interp *interp, int a
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_AppendCmd(ClientData dummy, register Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_AppendCmd(ClientData dummy, register Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " varName value ?value ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " varName value ?value ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	char *result = NULL; // (Initialization only needed to keep the compiler from complaining)
 	for (int i = 2; i < argc; i++) {
-		result = Tcl_SetVar(interp, argv[1], argv[i], TCL_APPEND_VALUE|TCL_LEAVE_ERR_MSG);
+		result = Tcl_SetVar(interp, (char *)args[1], (char *)args[i], TCL_APPEND_VALUE|TCL_LEAVE_ERR_MSG);
 		if (result == NULL) {
 			return TCL_ERROR;
 		}
@@ -945,15 +945,15 @@ __device__ int Tcl_AppendCmd(ClientData dummy, register Tcl_Interp *interp, int 
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LappendCmd(ClientData dummy, register Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LappendCmd(ClientData dummy, register Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " varName value ?value ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " varName value ?value ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	char *result = NULL; // (Initialization only needed to keep the compiler from complaining)
 	for (int i = 2; i < argc; i++) {
-		result = Tcl_SetVar(interp, argv[1], argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_LEAVE_ERR_MSG);
+		result = Tcl_SetVar(interp, (char *)args[1], (char *)args[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_LEAVE_ERR_MSG);
 		if (result == NULL) {
 			return TCL_ERROR;
 		}
@@ -976,24 +976,24 @@ __device__ int Tcl_LappendCmd(ClientData dummy, register Tcl_Interp *interp, int
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int argc, const char *args[])
 {
 	Interp *iPtr = (Interp *)interp;
 	if (argc < 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " option arrayName ?arg ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " option arrayName ?arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 
 	// Locate the array variable (and it better be an array).
 	// If the name starts with ::, we lookup in the global scope
 	Tcl_HashEntry *hPtr;
-	if (argv[2][0] == ':' && argv[2][1] == ':') {
-		hPtr = Tcl_FindHashEntry(&iPtr->globalTable, argv[2] + 2);
+	if (args[2][0] == ':' && args[2][1] == ':') {
+		hPtr = Tcl_FindHashEntry(&iPtr->globalTable, (char *)args[2] + 2);
 	}
 	else if (iPtr->varFramePtr == NULL) {
-		hPtr = Tcl_FindHashEntry(&iPtr->globalTable, argv[2]);
+		hPtr = Tcl_FindHashEntry(&iPtr->globalTable, (char *)args[2]);
 	} else {
-		hPtr = Tcl_FindHashEntry(&iPtr->varFramePtr->varTable, argv[2]);
+		hPtr = Tcl_FindHashEntry(&iPtr->varFramePtr->varTable, (char *)args[2]);
 	}
 	bool notArray = false;
 	Var *varPtr = NULL; // Initialization needed only to prevent compiler warning.
@@ -1011,17 +1011,17 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 	}
 
 	// Dispatch based on the option.
-	int c = argv[1][0];
-	int length = _strlen(argv[1]);
-	if (c == 'a' && !_strncmp(argv[1], "anymore", length)) {
+	int c = args[1][0];
+	int length = _strlen(args[1]);
+	if (c == 'a' && !_strncmp(args[1], "anymore", length)) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " anymore arrayName searchId\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " anymore arrayName searchId\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (notArray) {
 			goto error;
 		}
-		ArraySearch *searchPtr = ParseSearchId(interp, varPtr, argv[2], argv[3]);
+		ArraySearch *searchPtr = ParseSearchId(interp, varPtr, (char *)args[2], (char *)args[3]);
 		if (searchPtr == NULL) {
 			return TCL_ERROR;
 		}
@@ -1040,15 +1040,15 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 		}
 		interp->result = "1";
 		return TCL_OK;
-	} else if (c == 'd' && !_strncmp(argv[1], "donesearch", length)) {
+	} else if (c == 'd' && !_strncmp(args[1], "donesearch", length)) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " donesearch arrayName searchId\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " donesearch arrayName searchId\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (notArray) {
 			goto error;
 		}
-		ArraySearch *searchPtr = ParseSearchId(interp, varPtr, argv[2], argv[3]);
+		ArraySearch *searchPtr = ParseSearchId(interp, varPtr, (char *)args[2], (char *)args[3]);
 		if (searchPtr == NULL) {
 			return TCL_ERROR;
 		}
@@ -1063,15 +1063,15 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 			}
 		}
 		_freeFast((char *)searchPtr);
-	} else if (c == 'e' && !_strncmp(argv[1], "exists", length)) {
+	} else if (c == 'e' && !_strncmp(args[1], "exists", length)) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " exists arrayName\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " exists arrayName\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		interp->result = (notArray ? "0" : "1");
-	} else if (c == 'g' && !_strncmp(argv[1], "get", length)) {
+	} else if (c == 'g' && !_strncmp(args[1], "get", length)) {
 		if (argc != 3 && argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " get arrayName ?pattern?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " get arrayName ?pattern?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (notArray) {
@@ -1084,15 +1084,15 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 				continue;
 			}
 			char *name = Tcl_GetHashKey(varPtr->value.tablePtr, hPtr);
-			if (argc == 4 && !Tcl_StringMatch(name, argv[3])) {
+			if (argc == 4 && !Tcl_StringMatch(name, (char *)args[3])) {
 				continue;
 			}
 			Tcl_AppendElement(interp, name, 0);
 			Tcl_AppendElement(interp, varPtr2->value.string, 0);
 		}
-	} else if (c == 'n' && !_strncmp(argv[1], "names", length) && length >= 2) {
+	} else if (c == 'n' && !_strncmp(args[1], "names", length) && length >= 2) {
 		if (argc != 3 && argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " names arrayName ?pattern?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " names arrayName ?pattern?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (notArray) {
@@ -1105,14 +1105,14 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 				continue;
 			}
 			char *name = Tcl_GetHashKey(varPtr->value.tablePtr, hPtr);
-			if (argc == 4 && !Tcl_StringMatch(name, argv[3])) {
+			if (argc == 4 && !Tcl_StringMatch(name, (char *)args[3])) {
 				continue;
 			}
 			Tcl_AppendElement(interp, name, 0);
 		}
-	} else if (c == 'u' && !_strncmp(argv[1], "unset", length) && length >= 2) {
+	} else if (c == 'u' && !_strncmp(args[1], "unset", length) && length >= 2) {
 		if (argc != 3 && argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " unset arrayName ?pattern?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " unset arrayName ?pattern?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (notArray) {
@@ -1125,21 +1125,21 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 				continue;
 			}
 			char *name = Tcl_GetHashKey(varPtr->value.tablePtr, hPtr);
-			if ((argc == 3) || Tcl_StringMatch(name, argv[3])) {
-				if (Tcl_UnsetVar2(interp, argv[2], name, 0) != TCL_OK) {
+			if ((argc == 3) || Tcl_StringMatch(name, (char *)args[3])) {
+				if (Tcl_UnsetVar2(interp, (char *)args[2], name, 0) != TCL_OK) {
 					return TCL_ERROR;
 				}
 			}
 		}
-	} else if (c == 'n' && !_strncmp(argv[1], "nextelement", length) && length >= 2) {
+	} else if (c == 'n' && !_strncmp(args[1], "nextelement", length) && length >= 2) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " nextelement arrayName searchId\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " nextelement arrayName searchId\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (notArray) {
 			goto error;
 		}
-		ArraySearch *searchPtr = ParseSearchId(interp, varPtr, argv[2], argv[3]);
+		ArraySearch *searchPtr = ParseSearchId(interp, varPtr, (char *)args[2], (char *)args[3]);
 		if (searchPtr == NULL) {
 			return TCL_ERROR;
 		}
@@ -1159,14 +1159,14 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 			}
 		}
 		interp->result = Tcl_GetHashKey(varPtr->value.tablePtr, hPtr);
-	} else if (c == 's' && !_strncmp(argv[1], "set", length) && length >= 2) {
+	} else if (c == 's' && !_strncmp(args[1], "set", length) && length >= 2) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " set arrayName list\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " set arrayName list\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		char **valueArgv;
+		const char **valueArgs;
 		int valueArgc;
-		if (Tcl_SplitList(interp, argv[3], &valueArgc, &valueArgv) != TCL_OK) {
+		if (Tcl_SplitList(interp, (char *)args[3], &valueArgc, &valueArgs) != TCL_OK) {
 			return TCL_ERROR;
 		}
 		int result = TCL_OK;
@@ -1176,17 +1176,17 @@ __device__ int Tcl_ArrayCmd(ClientData dummy, register Tcl_Interp *interp, int a
 			goto setDone;
 		}
 		for (int i = 0; i < valueArgc; i += 2) {
-			if (Tcl_SetVar2(interp, argv[2], valueArgv[i], valueArgv[i+1], TCL_LEAVE_ERR_MSG) == NULL) {
+			if (Tcl_SetVar2(interp, (char *)args[2], (char *)valueArgs[i], (char *)valueArgs[i+1], TCL_LEAVE_ERR_MSG) == NULL) {
 				result = TCL_ERROR;
 				break;
 			}
 		}
 setDone:
-		_freeFast((char *)valueArgv);
+		_freeFast((char *)valueArgs);
 		return result;
-	} else if (c == 's' && !_strncmp(argv[1], "size", length) && length >= 2) {
+	} else if (c == 's' && !_strncmp(args[1], "size", length) && length >= 2) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " size arrayName\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " size arrayName\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		int size = 0;
@@ -1201,9 +1201,9 @@ setDone:
 			}
 		}
 		_sprintf(interp->result, "%d", size);
-	} else if (c == 's' && !_strncmp(argv[1], "startsearch", length) && length >= 2) {
+	} else if (c == 's' && !_strncmp(args[1], "startsearch", length) && length >= 2) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " startsearch arrayName\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " startsearch arrayName\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (notArray) {
@@ -1212,25 +1212,25 @@ setDone:
 		ArraySearch *searchPtr = (ArraySearch *)_allocFast(sizeof(ArraySearch));
 		if (varPtr->searchPtr == NULL) {
 			searchPtr->id = 1;
-			Tcl_AppendResult(interp, "s-1-", argv[2], (char *)NULL);
+			Tcl_AppendResult(interp, "s-1-", args[2], (char *)NULL);
 		} else {
 			char string[20];
 			searchPtr->id = varPtr->searchPtr->id + 1;
 			_sprintf(string, "%d", searchPtr->id);
-			Tcl_AppendResult(interp, "s-", string, "-", argv[2], (char *)NULL);
+			Tcl_AppendResult(interp, "s-", string, "-", args[2], (char *)NULL);
 		}
 		searchPtr->varPtr = varPtr;
 		searchPtr->nextEntry = Tcl_FirstHashEntry(varPtr->value.tablePtr, &searchPtr->search);
 		searchPtr->nextPtr = varPtr->searchPtr;
 		varPtr->searchPtr = searchPtr;
 	} else {
-		Tcl_AppendResult(interp, "bad option \"", argv[1], "\": should be anymore, donesearch, exists, ", "get, names, nextelement, ", "set, size, or startsearch", (char *)NULL);
+		Tcl_AppendResult(interp, "bad option \"", args[1], "\": should be anymore, donesearch, exists, ", "get, names, nextelement, ", "set, size, or startsearch", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
 
 error:
-	Tcl_AppendResult(interp, "\"", argv[2], "\" isn't an array", (char *)NULL);
+	Tcl_AppendResult(interp, "\"", args[2], "\" isn't an array", (char *)NULL);
 	return TCL_ERROR;
 }
 
@@ -1248,20 +1248,20 @@ error:
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	register Interp *iPtr = (Interp *)interp;
 	if (argc < 2) {
-		Tcl_AppendResult((Tcl_Interp *)iPtr, "wrong # args: should be \"", argv[0], " varName ?varName ...?\"", (char *)NULL);
+		Tcl_AppendResult((Tcl_Interp *)iPtr, "wrong # args: should be \"", args[0], " varName ?varName ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	if (iPtr->varFramePtr == NULL) {
 		return TCL_OK;
 	}
 	Var *gVarPtr;
-	for (argc--, argv++; argc > 0; argc--, argv++) {
+	for (argc--, args++; argc > 0; argc--, args++) {
 		int new_;
-		Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&iPtr->globalTable, *argv, &new_);
+		Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&iPtr->globalTable, (char *)*args, &new_);
 		if (new_) {
 			gVarPtr = NewVar(0);
 			gVarPtr->flags |= VAR_UNDEFINED;
@@ -1269,14 +1269,14 @@ __device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 		} else {
 			gVarPtr = (Var *)Tcl_GetHashValue(hPtr);
 		}
-		Tcl_HashEntry *hPtr2 = Tcl_CreateHashEntry(&iPtr->varFramePtr->varTable, *argv, &new_);
+		Tcl_HashEntry *hPtr2 = Tcl_CreateHashEntry(&iPtr->varFramePtr->varTable, (char *)*args, &new_);
 		Var *varPtr;
 		if (!new_) {
 			varPtr = (Var *)Tcl_GetHashValue(hPtr2);
 			if (varPtr->flags & VAR_UPVAR) {
 				continue;
 			} else {
-				Tcl_AppendResult((Tcl_Interp *)iPtr, "variable \"", *argv, "\" already exists", (char *)NULL);
+				Tcl_AppendResult((Tcl_Interp *)iPtr, "variable \"", *args, "\" already exists", (char *)NULL);
 				return TCL_ERROR;
 			}
 		}
@@ -1303,23 +1303,23 @@ __device__ int Tcl_GlobalCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_UpvarCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_UpvarCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	register Interp *iPtr = (Interp *)interp;
 	if (argc < 3) {
 upvarSyntax:
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ?level? otherVar localVar ?otherVar localVar ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ?level? otherVar localVar ?otherVar localVar ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 
 	// Find the hash table containing the variable being referenced.
 	CallFrame *framePtr;
-	int result = TclGetFrame(interp, argv[1], &framePtr);
+	int result = TclGetFrame(interp, (char *)args[1], &framePtr);
 	if (result == -1) {
 		return TCL_ERROR;
 	}
 	argc -= result+1;
-	argv += result+1;
+	args += result+1;
 	Tcl_HashTable *upVarTablePtr;
 	if (framePtr == NULL) {
 		upVarTablePtr = &iPtr->globalTable;
@@ -1336,7 +1336,7 @@ upvarSyntax:
 	Var *upVarPtr;
 	while (argc > 0) {
 		int new_;
-		Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(upVarTablePtr, argv[0], &new_);
+		Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(upVarTablePtr, (char *)args[0], &new_);
 		if (new_) {
 			upVarPtr = NewVar(0);
 			upVarPtr->flags |= VAR_UNDEFINED;
@@ -1348,9 +1348,9 @@ upvarSyntax:
 				upVarPtr = (Var *)Tcl_GetHashValue(hPtr);
 			}
 		}
-		Tcl_HashEntry *hPtr2 = Tcl_CreateHashEntry(&iPtr->varFramePtr->varTable, argv[1], &new_);
+		Tcl_HashEntry *hPtr2 = Tcl_CreateHashEntry(&iPtr->varFramePtr->varTable, (char *)args[1], &new_);
 		if (!new_) {
-			Tcl_AppendResult((Tcl_Interp *)iPtr, "variable \"", argv[1], "\" already exists", (char *)NULL);
+			Tcl_AppendResult((Tcl_Interp *)iPtr, "variable \"", args[1], "\" already exists", (char *)NULL);
 			return TCL_ERROR;
 		}
 		Var *varPtr = NewVar(0);
@@ -1359,7 +1359,7 @@ upvarSyntax:
 		upVarPtr->upvarUses++;
 		Tcl_SetHashValue(hPtr2, varPtr);
 		argc -= 2;
-		argv += 2;
+		args += 2;
 	}
 	return TCL_OK;
 }

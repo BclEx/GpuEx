@@ -23,16 +23,16 @@
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LoadCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2 || argc > 3) {
-		Tcl_AppendResult (interp, "bad # args: ", argv[0], 0);
+		Tcl_AppendResult (interp, "bad # args: ", args[0], 0);
 		return TCL_ERROR;
 	}
-	char *modname = argv[1];
+	char *modname = (char *)args[1];
 	char *pkgname = 0;
 	if (argc >= 3) {
-		pkgname = argv[2];
+		pkgname = (char *)args[2];
 	}
 	// REVISIT: Should make sure that we aren't loading this file twice
 	// The desired file isn't currently loaded, so load it.

@@ -34,7 +34,6 @@
     <ClCompile Include="Test_RegExp.cu" />
     <ClCompile Include="Test_Schema.cu" />
     <ClCompile Include="Test_Server.cu" />
-    <ClCompile Include="Test_SpellFix.cu" />
     <ClCompile Include="Test_SqlLog.cu" />
     <ClCompile Include="Test_Stat.cu" />
     <ClCompile Include="Test_SuperLock.cu" />
@@ -47,6 +46,7 @@
     <ClCompile Include="Test_Wsd.cu" />
     <ClCompile Include="Test8.cu" />
     <ClCompile Include="Test9.cu" />
+    <ClCompile Include="Test_SpellFix.cu.inc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="tclsqlite.c" />
@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TclContext.cu.h" />
+    <ClInclude Include="Test.cu.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="test">

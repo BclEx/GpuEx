@@ -416,7 +416,7 @@ __device__ int TclParseBraces(Tcl_Interp *interp, char *string, char **termPtr, 
 *--------------------------------------------------------------
 *
 * TclParseWords --
-*	This procedure parses one or more words from a command string and creates argv-style pointers to fully-substituted
+*	This procedure parses one or more words from a command string and creates args-style pointers to fully-substituted
 *	copies of those words.
 *
 * Results:
@@ -430,10 +430,10 @@ __device__ int TclParseBraces(Tcl_Interp *interp, char *string, char **termPtr, 
 *	last word.  This is either the command terminator (if *argcPtr < maxWords), the character just after the last
 *	one in a word (if *argcPtr is maxWords), or the vicinity of an error (if the result is not TCL_OK).
 *	
-*	The pointers at *argv are filled in with pointers to the fully-substituted words, and the actual contents of the
+*	The pointers at *args are filled in with pointers to the fully-substituted words, and the actual contents of the
 *	words are copied to the buffer at pvPtr.
 *
-*	If an error occurrs then an error message is left in interp->result and the information at *argv, *argcPtr,
+*	If an error occurrs then an error message is left in interp->result and the information at *args, *argcPtr,
 *	and *pvPtr may be incomplete.
 *
 * Side effects:
@@ -441,15 +441,15 @@ __device__ int TclParseBraces(Tcl_Interp *interp, char *string, char **termPtr, 
 *
 *--------------------------------------------------------------
 */
-__device__ int TclParseWords(Tcl_Interp *interp, char *string, int flags, int maxWords, char **termPtr, int *argcPtr, char **argv, register ParseValue *pvPtr)
+__device__ int TclParseWords(Tcl_Interp *interp, char *string, int flags, int maxWords, char **termPtr, int *argcPtr, char **args, register ParseValue *pvPtr)
 {
 	int result;
 	register char *src = string;
-	char *oldBuffer = pvPtr->buffer; // Used to detect when pvPtr's buffer gets reallocated, so we can adjust all of the argv pointers.
+	char *oldBuffer = pvPtr->buffer; // Used to detect when pvPtr's buffer gets reallocated, so we can adjust all of the args pointers.
 	register char *dst = pvPtr->next;
 	int argc;
 	for (argc = 0; argc < maxWords; argc++) {
-		argv[argc] = dst;
+		args[argc] = dst;
 		// Skip leading space.
 skipSpace:
 		register int c = *src;
@@ -565,13 +565,13 @@ copy:
 			src = *termPtr;
 			dst = pvPtr->next;
 		}
-		// We're at the end of a word, so add a null terminator.  Then see if the buffer was re-allocated during this word.  If so, update all of the argv pointers.
+		// We're at the end of a word, so add a null terminator.  Then see if the buffer was re-allocated during this word.  If so, update all of the args pointers.
 wordEnd:
 		*dst = '\0';
 		dst++;
 		if (oldBuffer != pvPtr->buffer) {
 			for (int i = 0; i <= argc; i++) {
-				argv[i] = pvPtr->buffer + (argv[i] - oldBuffer);
+				args[i] = pvPtr->buffer + (args[i] - oldBuffer);
 			}
 			oldBuffer = pvPtr->buffer;
 		}

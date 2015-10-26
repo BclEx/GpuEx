@@ -241,13 +241,6 @@ namespace CORE_NAME
 #define WIN32_TEMP_DIRECTORY_TYPE (2) 
 #endif
 
-#ifndef DEFAULT_SECTOR_SIZE
-#define DEFAULT_SECTOR_SIZE 4096
-#endif
-#ifndef TEMP_FILE_PREFIX
-#define TEMP_FILE_PREFIX "etilqs_"
-#endif
-
 #pragma endregion
 
 #pragma region Syscall

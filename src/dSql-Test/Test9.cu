@@ -5,7 +5,7 @@
 #include <string.h>
 
 // c_collation_test
-__device__ static int c_collation_test(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int c_collation_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1)
 	{
@@ -41,7 +41,7 @@ error_out:
 }
 
 // c_realloc_test
-__device__ static int c_realloc_test(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int c_realloc_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1)
 	{
@@ -73,7 +73,7 @@ error_out:
 }
 
 // c_misuse_test
-__device__ static int c_misuse_test(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int c_misuse_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1)
 	{

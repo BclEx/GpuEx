@@ -2,6 +2,10 @@
 
 namespace CORE_NAME
 {
+#ifndef OMIT_WSD
+	__device__ int _Core_PendingByte = 0x40000000;
+#endif
+
 	__device__ RC VFile::Lock(LOCK lock) { return RC_OK; }
 	__device__ RC VFile::Unlock(LOCK lock) { return RC_OK; }
 	__device__ RC VFile::CheckReservedLock(int &lock) { return RC_OK; }

@@ -24,10 +24,10 @@
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_BreakCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_BreakCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_BREAK;
@@ -47,27 +47,27 @@ __device__ int Tcl_BreakCmd(ClientData dummy, Tcl_Interp *interp, int argc, char
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_CaseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_CaseCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	int i, result;
 	if (argc < 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " string ?in? patList body ... ?default body?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " string ?in? patList body ... ?default body?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	char *string = argv[1];
+	char *string = (char *)args[1];
 	int body = -1;
-	if (!_strcmp(argv[2], "in")) {
+	if (!_strcmp(args[2], "in")) {
 		i = 3;
 	} else {
 		i = 2;
 	}
 	int caseArgc = argc - i;
-	char **caseArgv = argv + i;
+	const char **caseArgs = args + i;
 
 	// If all of the pattern/command pairs are lumped into a single argument, split them out again.
 	int splitArgs = 0;
 	if (caseArgc == 1) {
-		result = Tcl_SplitList(interp, caseArgv[0], &caseArgc, &caseArgv);
+		result = Tcl_SplitList(interp, (char *)caseArgs[0], &caseArgc, &caseArgs);
 		if (result != TCL_OK) {
 			return result;
 		}
@@ -76,7 +76,7 @@ __device__ int Tcl_CaseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 
 	for (i = 0; i < caseArgc; i += 2) {
 		int patArgc, j;
-		char **patArgv;
+		const char **patArgs;
 
 		if (i == (caseArgc-1)) {
 			interp->result = "extra case pattern with no body";
@@ -86,16 +86,16 @@ __device__ int Tcl_CaseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 
 		// Check for special case of single pattern (no list) with no backslash sequences.
 		register char *p;
-		for (p = caseArgv[i]; *p != 0; p++) {
+		for (p = (char *)caseArgs[i]; *p != 0; p++) {
 			if (_isspace(*p) || *p == '\\') {
 				break;
 			}
 		}
 		if (*p == 0) {
-			if (*caseArgv[i] == 'd' && !_strcmp(caseArgv[i], "default")) {
+			if (*caseArgs[i] == 'd' && !_strcmp(caseArgs[i], "default")) {
 				body = i+1;
 			}
-			if (Tcl_StringMatch(string, caseArgv[i])) {
+			if (Tcl_StringMatch(string, (char *)caseArgs[i])) {
 				body = i+1;
 				goto match;
 			}
@@ -103,17 +103,17 @@ __device__ int Tcl_CaseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		}
 
 		// Break up pattern lists, then check each of the patterns in the list.
-		result = Tcl_SplitList(interp, caseArgv[i], &patArgc, &patArgv);
+		result = Tcl_SplitList(interp, (char *)caseArgs[i], &patArgc, &patArgs);
 		if (result != TCL_OK) {
 			goto cleanup;
 		}
 		for (j = 0; j < patArgc; j++) {
-			if (Tcl_StringMatch(string, patArgv[j])) {
+			if (Tcl_StringMatch(string, (char *)patArgs[j])) {
 				body = i+1;
 				break;
 			}
 		}
-		_freeFast((char *) patArgv);
+		_freeFast((char *) patArgs);
 		if (j < patArgc) {
 			break;
 		}
@@ -121,10 +121,10 @@ __device__ int Tcl_CaseCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 
 match:
 	if (body != -1) {
-		result = Tcl_Eval(interp, caseArgv[body], 0, (char **)NULL);
+		result = Tcl_Eval(interp, (char *)caseArgs[body], 0, (char **)NULL);
 		if (result == TCL_ERROR) {
 			char msg[100];
-			_sprintf(msg, "\n    (\"%.50s\" arm line %d)", caseArgv[body-1], interp->errorLine);
+			_sprintf(msg, "\n    (\"%.50s\" arm line %d)", caseArgs[body-1], interp->errorLine);
 			Tcl_AddErrorInfo(interp, msg);
 		}
 		goto cleanup;
@@ -135,7 +135,7 @@ match:
 
 cleanup:
 	if (splitArgs) {
-		_freeFast((char *)caseArgv);
+		_freeFast((char *)caseArgs);
 	}
 	return result;
 }
@@ -154,16 +154,16 @@ cleanup:
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_CatchCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_CatchCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	int result;
 	if (argc != 2 && argc != 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " command ?varName?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " command ?varName?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	result = Tcl_Eval(interp, argv[1], TCL_CATCH_SIGNAL, (char **)NULL);
+	result = Tcl_Eval(interp, (char *)args[1], TCL_CATCH_SIGNAL, (char **)NULL);
 	if (argc == 3) {
-		if (Tcl_SetVar(interp, argv[2], interp->result, 0) == NULL) {
+		if (Tcl_SetVar(interp, (char *)args[2], interp->result, 0) == NULL) {
 			Tcl_SetResult(interp, "couldn't save command result in variable", TCL_STATIC);
 			return TCL_ERROR;
 		}
@@ -187,10 +187,10 @@ __device__ int Tcl_CatchCmd(ClientData dummy, Tcl_Interp *interp, int argc, char
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ConcatCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ConcatCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc >= 2) {
-		interp->result = Tcl_Concat(argc-1, argv+1);
+		interp->result = Tcl_Concat(argc-1, args+1);
 		interp->freeProc = (Tcl_FreeProc *)_free;
 	}
 	return TCL_OK;
@@ -210,10 +210,10 @@ __device__ int Tcl_ConcatCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ContinueCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ContinueCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_CONTINUE;
@@ -233,22 +233,22 @@ __device__ int Tcl_ContinueCmd(ClientData dummy, Tcl_Interp *interp, int argc, c
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ErrorCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ErrorCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	Interp *iPtr = (Interp *) interp;
 	if (argc < 2 || argc > 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " message ?errorInfo? ?errorCode?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " message ?errorInfo? ?errorCode?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (argc >= 3 && argv[2][0] != 0) {
-		Tcl_AddErrorInfo(interp, argv[2]);
+	if (argc >= 3 && args[2][0] != 0) {
+		Tcl_AddErrorInfo(interp, (char *)args[2]);
 		iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
 	if (argc == 4) {
-		Tcl_SetVar2(interp, "errorCode", (char *)NULL, argv[3], TCL_GLOBAL_ONLY);
+		Tcl_SetVar2(interp, "errorCode", (char *)NULL, (char *)args[3], TCL_GLOBAL_ONLY);
 		iPtr->flags |= ERROR_CODE_SET;
 	}
-	Tcl_SetResult(interp, argv[1], TCL_VOLATILE);
+	Tcl_SetResult(interp, (char *)args[1], TCL_VOLATILE);
 	return TCL_ERROR;
 }
 
@@ -266,18 +266,18 @@ __device__ int Tcl_ErrorCmd(ClientData dummy, Tcl_Interp *interp, int argc, char
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_EvalCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_EvalCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " arg ?arg ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " arg ?arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int result;
 	if (argc == 2) {
-		result = Tcl_Eval(interp, argv[1], 0, (char **)NULL);
+		result = Tcl_Eval(interp, (char *)args[1], 0, (char **)NULL);
 	} else {
 		// More than one argument:  concatenate them together with spaces between, then evaluate the result.
-		char *cmd = Tcl_Concat(argc-1, argv+1);
+		char *cmd = Tcl_Concat(argc-1, args+1);
 		result = Tcl_Eval(interp, cmd, 0, (char **)NULL);
 		_freeFast(cmd);
 	}
@@ -303,17 +303,17 @@ __device__ int Tcl_EvalCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ExprCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ExprCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " arg ?arg ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " arg ?arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	if (argc == 2) {
-		return Tcl_ExprString(interp, argv[1]);
+		return Tcl_ExprString(interp, (char *)args[1]);
 	}
 	else {
-		char *buf = Tcl_Concat(argc - 1, argv + 1);
+		char *buf = Tcl_Concat(argc - 1, args + 1);
 		int result = Tcl_ExprString(interp, buf);
 		_freeFast(buf);
 		return result;
@@ -334,13 +334,13 @@ __device__ int Tcl_ExprCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ForCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ForCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 5) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " start test next command\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " start test next command\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	int result = Tcl_Eval(interp, argv[1], 0, (char **)NULL);
+	int result = Tcl_Eval(interp, (char *)args[1], 0, (char **)NULL);
 	if (result != TCL_OK) {
 		if (result == TCL_ERROR) {
 			Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
@@ -349,14 +349,14 @@ __device__ int Tcl_ForCmd(ClientData dummy, Tcl_Interp *interp, int argc, char *
 	}
 	while (true) {
 		int value;
-		result = Tcl_ExprBoolean(interp, argv[2], &value);
+		result = Tcl_ExprBoolean(interp, (char *)args[2], &value);
 		if (result != TCL_OK) {
 			return result;
 		}
 		if (!value) {
 			break;
 		}
-		result = Tcl_Eval(interp, argv[4], 0, (char **)NULL);
+		result = Tcl_Eval(interp, (char *)args[4], 0, (char **)NULL);
 		if (result != TCL_OK && result != TCL_CONTINUE) {
 			if (result == TCL_ERROR) {
 				char msg[60];
@@ -365,7 +365,7 @@ __device__ int Tcl_ForCmd(ClientData dummy, Tcl_Interp *interp, int argc, char *
 			}
 			break;
 		}
-		result = Tcl_Eval(interp, argv[3], 0, (char **)NULL);
+		result = Tcl_Eval(interp, (char *)args[3], 0, (char **)NULL);
 		if (result == TCL_BREAK) {
 			break;
 		} else if (result != TCL_OK) {
@@ -398,26 +398,26 @@ __device__ int Tcl_ForCmd(ClientData dummy, Tcl_Interp *interp, int argc, char *
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ForeachCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ForeachCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " varName list command\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " varName list command\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	// Break the list up into elements, and execute the command once for each value of the element.
 	int listArgc;
-	char **listArgv;
-	int result = Tcl_SplitList(interp, argv[2], &listArgc, &listArgv);
+	const char **listArgs;
+	int result = Tcl_SplitList(interp, (char *)args[2], &listArgc, &listArgs);
 	if (result != TCL_OK) {
 		return result;
 	}
 	for (int i = 0; i < listArgc; i++) {
-		if (Tcl_SetVar(interp, argv[1], listArgv[i], 0) == NULL) {
+		if (Tcl_SetVar(interp, (char *)args[1], (char *)listArgs[i], 0) == NULL) {
 			Tcl_SetResult(interp, "couldn't set loop variable", TCL_STATIC);
 			result = TCL_ERROR;
 			break;
 		}
-		result = Tcl_Eval(interp, argv[3], 0, (char **)NULL);
+		result = Tcl_Eval(interp, (char *)args[3], 0, (char **)NULL);
 		if (result != TCL_OK) {
 			if (result == TCL_CONTINUE) {
 				result = TCL_OK;
@@ -434,7 +434,7 @@ __device__ int Tcl_ForeachCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 			}
 		}
 	}
-	_freeFast((char *)listArgv);
+	_freeFast((char *)listArgs);
 	if (result == TCL_OK) {
 		Tcl_ResetResult(interp);
 	}
@@ -455,7 +455,7 @@ __device__ int Tcl_ForeachCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_FormatCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_FormatCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	register char *format;	// Used to read characters from the format string.
 	char newFormat[40];		// A new format specifier is generated here.
@@ -476,15 +476,15 @@ __device__ int Tcl_FormatCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 	// This procedure is a bit nasty.  The goal is to use sprintf to do most of the dirty work.  There are several problems:
 	// 1. this procedure can't trust its arguments.
 	// 2. we must be able to provide a large enough result area to hold whatever's generated.  This is hard to estimate.
-	// 2. there's no way to move the arguments from argv to the call to sprintf in a reasonable way.  This is particularly nasty because some of the arguments may be two-word values (doubles).
+	// 2. there's no way to move the arguments from args to the call to sprintf in a reasonable way.  This is particularly nasty because some of the arguments may be two-word values (doubles).
 	// So, what happens here is to scan the format string one % group at a time, making many individual calls to sprintf.
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " formatString ?arg arg ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " formatString ?arg arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	char **curArg = argv+2; // Remainder of argv array.
+	const char **curArg = args+2; // Remainder of args array.
 	argc -= 2;
-	for (format = argv[1]; *format != 0; ) {
+	for (format = (char *)args[1]; *format != 0; ) {
 		register char *newPtr = newFormat;
 		width = precision = useTwoWords = noPercent = valSize = 0;
 
@@ -616,7 +616,7 @@ __device__ int Tcl_FormatCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 				valSize = sizeof(int);
 			break;
 		case 's':
-			oneWordValue = *curArg;
+			oneWordValue = (char *)*curArg;
 			size = _strlen(*curArg);
 			valSize = 0;
 			break;

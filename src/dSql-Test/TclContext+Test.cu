@@ -339,7 +339,7 @@ __device__ int Md5_Register(Context *ctx)
 #ifdef _TEST
 __device__ static void init_all(Tcl_Interp *);
 
-__device__ static int init_all_cmd(ClientData cd, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int init_all_cmd(ClientData cd, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2)
 	{

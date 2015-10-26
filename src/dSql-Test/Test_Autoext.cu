@@ -46,9 +46,9 @@ __device__ static int broken_init(Context *ctx, char **errMsg, const core_api_ro
 // tclcmd:   sqlite3_auto_extension_sqr
 //
 // Register the "sqr" extension to be loaded automatically.
-__device__ static int autoExtSqrObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int autoExtSqrObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	RC rc = Main::AutoExtension((void *)sqr_init);
+	RC rc = Main::AutoExtension((void(*)())sqr_init);
 	Tcl_SetObjResult(interp, (int)rc);
 	return RC_OK;
 }
@@ -56,9 +56,9 @@ __device__ static int autoExtSqrObjCmd(ClientData clientData, Tcl_Interp *interp
 // tclcmd:   sqlite3_auto_extension_cube
 //
 // Register the "cube" extension to be loaded automatically.
-__device__ static int autoExtCubeObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int autoExtCubeObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	RC rc = Main::AutoExtension((void*)cube_init);
+	RC rc = Main::AutoExtension((void(*)())cube_init);
 	Tcl_SetObjResult(interp, (int)rc);
 	return RC_OK;
 }
@@ -66,9 +66,9 @@ __device__ static int autoExtCubeObjCmd(ClientData clientData, Tcl_Interp *inter
 // tclcmd:   sqlite3_auto_extension_broken
 //
 // Register the broken extension to be loaded automatically.
-__device__ static int autoExtBrokenObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int autoExtBrokenObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	RC rc = Main::AutoExtension((void*)broken_init);
+	RC rc = Main::AutoExtension((void(*)())broken_init);
 	Tcl_SetObjResult(interp, (int)rc);
 	return RC_OK;
 }
@@ -78,7 +78,7 @@ __device__ static int autoExtBrokenObjCmd(ClientData clientData, Tcl_Interp *int
 // tclcmd:   sqlite3_reset_auto_extension
 //
 // Reset all auto-extensions
-__device__ static int resetAutoExtObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int resetAutoExtObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	Main::ResetAutoExtension();
 	return RC_OK;

@@ -56,7 +56,7 @@ __constant__ struct EncName {
 };
 __device__ static TEXTENCODE name_to_enc(Tcl_Interp *interp, const char *arg)
 {
-	char *z = arg;
+	char *z = (char *)arg;
 	struct EncName *encode;
 	for (encode = &_encodeNames[0]; encode->Name; encode++)
 		if (!_strcmp(z, encode->Name))
@@ -86,7 +86,7 @@ __device__ static int test_translate(ClientData clientData, Tcl_Interp *interp, 
 	Mem *val = Vdbe::ValueNew(nullptr);
 	if (enc_from == TEXTENCODE_UTF8)
 	{
-		z = args[1];
+		z = (char *)args[1];
 		if (argc == 5)
 			z = _mprintf("%s", z);
 		Vdbe::ValueSetStr(val, -1, z, enc_from, del);

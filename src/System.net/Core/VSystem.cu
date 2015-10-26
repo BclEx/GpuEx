@@ -2,6 +2,31 @@
 #include "Core.cu.h"
 namespace CORE_NAME
 {
+	__device__ VFile *VSystem::_AttachFile(void *buffer) { return nullptr; }
+	__device__ RC VSystem::Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags) { return RC_OK; }
+	__device__ RC VSystem::Delete(const char *path, bool syncDirectory) { return RC_OK; }
+	__device__ RC VSystem::Access(const char *path, ACCESS flags, int *outRC) { return RC_OK; }
+	__device__ RC VSystem::FullPathname(const char *path, int pathOutLength, char *pathOut) { return RC_OK; }
+
+	__device__ void *VSystem::DlOpen(const char *filename) { return nullptr; }
+	__device__ void VSystem::DlError(int bufLength, char *buf) { }
+	__device__ void (*VSystem::DlSym(void *handle, const char *symbol))() { return nullptr; }
+	__device__ void VSystem::DlClose(void *handle) { }
+
+	__device__ int VSystem::Randomness(int bufLength, char *buf) { return 0; }
+	__device__ int VSystem::Sleep(int microseconds) { return 0; }
+	__device__ RC VSystem::CurrentTimeInt64(int64 *now) { return RC_OK; }
+	__device__ RC VSystem::CurrentTime(double *now) { return RC_OK; }
+	__device__ RC VSystem::GetLastError(int bufLength, char *buf) { return RC_OK; }
+
+	__device__ RC VSystem::SetSystemCall(const char *name, syscall_ptr newFunc) { return RC_OK; }
+	__device__ syscall_ptr VSystem::GetSystemCall(const char *name) { return nullptr; }
+	__device__ const char *VSystem::NextSystemCall(const char *name) { return nullptr; }
+
+
+	// VfsList
+#pragma region VfsList
+
 	__device__ static VSystem *_WSD g_vfsList = nullptr;
 #define _vfsList _GLOBAL(VSystem *, g_vfsList)
 
@@ -63,6 +88,8 @@ namespace CORE_NAME
 		_mutex_leave(mutex);
 		return RC_OK;
 	}
+
+#pragma endregion
 
 	// from main_c
 #pragma region File

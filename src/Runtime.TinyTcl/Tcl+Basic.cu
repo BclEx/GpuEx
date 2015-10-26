@@ -392,13 +392,13 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 		iPtr->catch_level++;
 	}
 
-	// The storage immediately below is used to generate a copy of the command, after all argument substitutions.  Pv will contain the argv values passed to the command procedure.
+	// The storage immediately below is used to generate a copy of the command, after all argument substitutions.  Pv will contain the args values passed to the command procedure.
 	char *oldBuffer;
 
 	// There can be many sub-commands (separated by semi-colons or newlines) in one command string.  This outer loop iterates over individual commands.
 	int i;
-	char *(argStorage[NUM_ARGS]); // This procedure generates an (argv, argc) array for the command, It starts out with stack-allocated space but uses dynamically- allocated storage to increase it if needed.
-	char **argv;
+	const char *(argStorage[NUM_ARGS]); // This procedure generates an (args, argc) array for the command, It starts out with stack-allocated space but uses dynamically- allocated storage to increase it if needed.
+	const char **args;
 	char *ellipsis = ""; // Used in setting errorInfo variable; set to "..." to indicate that not all of offending command is included in errorInfo.  "" means that the command is all there.
 	while (*src != termChar) {
 		if (iPtr->catch_level && iPtr->signal) {
@@ -426,53 +426,53 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 		}
 		cmdStart = src;
 
-		// Parse the words of the command, generating the argc and argv for the command procedure.  May have to call
-		// TclParseWords several times, expanding the argv array between calls.
+		// Parse the words of the command, generating the argc and args for the command procedure.  May have to call
+		// TclParseWords several times, expanding the args array between calls.
 		pv.next = oldBuffer = pv.buffer;
 		int argc = 0;
 		int argSize = NUM_ARGS;
-		argv = argStorage;
+		args = argStorage;
 		while (true) {
-			// Note:  the "- 2" below guarantees that we won't use the last two argv slots here.  One is for a NULL pointer to
+			// Note:  the "- 2" below guarantees that we won't use the last two args slots here.  One is for a NULL pointer to
 			// mark the end of the list, and the other is to leave room for inserting the command name "unknown" as the first argument (see below).
 			int newArgs, maxArgs = argSize - argc - 2;
-			result = TclParseWords((Tcl_Interp *)iPtr, src, flags, maxArgs, termPtr, &newArgs, &argv[argc], &pv);
+			result = TclParseWords((Tcl_Interp *)iPtr, src, flags, maxArgs, termPtr, &newArgs, &args[argc], &pv);
 			src = *termPtr;
 			if (result != TCL_OK) {
 				ellipsis = "...";
 				goto done;
 			}
 
-			// Careful!  Buffer space may have gotten reallocated while parsing words.  If this happened, be sure to update all of the older argv pointers to refer to the new space.
+			// Careful!  Buffer space may have gotten reallocated while parsing words.  If this happened, be sure to update all of the older args pointers to refer to the new space.
 			if (oldBuffer != pv.buffer) {
 				for (i = 0; i < argc; i++) {
-					argv[i] = pv.buffer + (argv[i] - oldBuffer);
+					args[i] = pv.buffer + (args[i] - oldBuffer);
 				}
 				oldBuffer = pv.buffer;
 			}
 			argc += newArgs;
 			if (newArgs < maxArgs) {
-				argv[argc] = (char *)NULL;
+				args[argc] = (char *)NULL;
 				break;
 			}
 
 			// Args didn't all fit in the current array.  Make it bigger.
 			argSize *= 2;
-			char **newArgv = (char **)_allocFast((unsigned)argSize * sizeof(char *));
+			const char **newArgs2 = (const char **)_allocFast((unsigned)argSize * sizeof(char *));
 			for (i = 0; i < argc; i++) {
-				newArgv[i] = argv[i];
+				newArgs2[i] = args[i];
 			}
-			if (argv != argStorage) {
-				_freeFast((char *)argv);
+			if (args != argStorage) {
+				_freeFast((char *)args);
 			}
-			argv = newArgv;
+			args = newArgs2;
 		}
 
 		// If this is an empty command (or if we're just parsing commands without evaluating them), then just skip to the next command.
 		if (argc == 0 || iPtr->noEval) {
 			continue;
 		}
-		argv[argc] = NULL;
+		args[argc] = NULL;
 
 		// Save information for the history module, if needed.
 		if (flags & TCL_RECORD_BOUNDS) {
@@ -482,19 +482,19 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 
 		// Find the procedure to execute this command.  If there isn't one, then see if there is a command "unknown".  If so,
 		// invoke it instead, passing it the words of the original command as arguments.
-		Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->commandTable, argv[0]);
+		Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&iPtr->commandTable, (char *)args[0]);
 		if (hPtr == NULL) {
 			hPtr = Tcl_FindHashEntry(&iPtr->commandTable, "unknown");
 			if (hPtr == NULL) {
 				Tcl_ResetResult(interp);
-				Tcl_AppendResult(interp, "invalid command name: \"", argv[0], "\"", (char *)NULL);
+				Tcl_AppendResult(interp, "invalid command name: \"", args[0], "\"", (char *)NULL);
 				result = TCL_ERROR;
 				goto done;
 			}
 			for (i = argc; i >= 0; i--) {
-				argv[i+1] = argv[i];
+				args[i+1] = args[i];
 			}
-			argv[0] = "unknown";
+			args[0] = "unknown";
 			argc++;
 		}
 		Command *cmdPtr = (Command *)Tcl_GetHashValue(hPtr);
@@ -506,7 +506,7 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 			}
 			char saved = *src;
 			*src = 0;
-			(*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels, cmdStart, cmdPtr->proc, cmdPtr->clientData, argc, argv);
+			(*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels, cmdStart, cmdPtr->proc, cmdPtr->clientData, argc, args);
 			*src = saved;
 		}
 
@@ -516,7 +516,7 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 		Tcl_FreeResult(iPtr);
 		iPtr->result = iPtr->resultSpace;
 		iPtr->resultSpace[0] = 0;
-		result = (*cmdPtr->proc)(cmdPtr->clientData, interp, argc, argv);
+		result = (*cmdPtr->proc)(cmdPtr->clientData, interp, argc, args);
 		if (result != TCL_OK) {
 			break;
 		}
@@ -534,8 +534,8 @@ done:
 	if (pv.buffer != copyStorage) {
 		_freeFast((char *)pv.buffer);
 	}
-	if (argv != argStorage) {
-		_freeFast((char *)argv);
+	if (args != argStorage) {
+		_freeFast((char *)args);
 	}
 	iPtr->numLevels--;
 	if (iPtr->numLevels == 0) {
@@ -613,14 +613,14 @@ done:
 * Side effects:
 *	From now on, proc will be called just before a command procedure is called to execute a Tcl command.  Calls to proc will have the following form:
 *
-*	void proc(ClientData clientData, Tcl_Interp *interp, int level, char *command, int (*cmdProc)(), ClientData cmdClientData, int argc, char **argv)
+*	void proc(ClientData clientData, Tcl_Interp *interp, int level, char *command, int (*cmdProc)(), ClientData cmdClientData, int argc, const char *args[])
 *	{
 *	}
 *
 *	The clientData and interp arguments to proc will be the same as the corresponding arguments to this procedure.  Level gives
 *	the nesting level of command interpretation for this interpreter (0 corresponds to top level).  Command gives the ASCII text of
 *	the raw command, cmdProc and cmdClientData give the procedure that will be called to process the command and the ClientData value it
-*	will receive, and argc and argv give the arguments to the command, after any argument parsing and substitution.  Proc
+*	will receive, and argc and args give the arguments to the command, after any argument parsing and substitution.  Proc
 *	does not return a value.
 *
 *----------------------------------------------------------------------

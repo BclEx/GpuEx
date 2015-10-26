@@ -7,10 +7,10 @@
 #include "TclMod.h"
 #include <string.h>
 
-__device__ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv)
+__device__ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, const char **args[])
 {
-	if (*argc == 1 && _strchr(*argv[0], ' ')) {
-		if (Tcl_SplitList(interp, *argv[0], argc, argv) == TCL_OK) {
+	if (*argc == 1 && _strchr(*args[0], ' ')) {
+		if (Tcl_SplitList(interp, (char *)*args[0], argc, args) == TCL_OK) {
 			return 1;
 		}
 	}
@@ -20,7 +20,7 @@ __device__ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv)
 /*
 * Implements the common 'commands' subcommand
 */
-__device__ static int tclmod_cmd_commands(Tcl_Interp *interp, int argc, char **argv)
+__device__ static int tclmod_cmd_commands(Tcl_Interp *interp, int argc, const char *args[])
 {
 	return TCL_OK; // Nothing to do, since the result has already been created
 }
@@ -43,15 +43,15 @@ __constant__ static const tclmod_command_type tclmod_command_entry = {
 * Returns 1 if match and args OK.
 * Returns -1 if match but args not OK (leaves error in interp->result)
 */
-__device__ static int check_match_command(Tcl_Interp *interp, const tclmod_command_type *ct, int argc, char *argv[])
+__device__ static int check_match_command(Tcl_Interp *interp, const tclmod_command_type *ct, int argc, const char *args[])
 {
-	if (!_strcmp(ct->cmd, argv[1])) {
-		if (argc == 3 && !_strcmp(argv[2], "?")) {
-			Tcl_AppendResult (interp, "Usage: ", argv[0], " ", ct->cmd, " ", ct->args, "\n\n", ct->description, (char *)NULL);
+	if (!_strcmp(ct->cmd, args[1])) {
+		if (argc == 3 && !_strcmp(args[2], "?")) {
+			Tcl_AppendResult (interp, "Usage: ", args[0], " ", ct->cmd, " ", ct->args, "\n\n", ct->description, (char *)NULL);
 			return -1;
 		}
 		if (argc < ct->minargs + 2 || (ct->maxargs >= 0 && argc > ct->maxargs + 2)) {
-			Tcl_AppendResult (interp, "wrong # args: should be \"", argv[0], " ", ct->cmd, " ", ct->args, "\"", (char *)NULL);
+			Tcl_AppendResult (interp, "wrong # args: should be \"", args[0], " ", ct->cmd, " ", ct->args, "\"", (char *)NULL);
 			return -1;
 		}
 		return 1;
@@ -59,17 +59,17 @@ __device__ static int check_match_command(Tcl_Interp *interp, const tclmod_comma
 	return 0;
 }
 
-__device__ const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, char **argv)
+__device__ const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, const char *args[])
 {
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " command ...\"\n", (char *)NULL);
-		Tcl_AppendResult(interp, "Use \"", argv[0], " ?\" or \"", argv[0], " command ?\" for help", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " command ...\"\n", (char *)NULL);
+		Tcl_AppendResult(interp, "Use \"", args[0], " ?\" or \"", args[0], " command ?\" for help", (char *)NULL);
 		return 0;
 	}
 
 	const tclmod_command_type *ct;
 	for (ct = command_table; ct->cmd; ct++) {
-		int ret = check_match_command(interp, ct, argc, argv);
+		int ret = check_match_command(interp, ct, argc, args);
 		if (ret == 1) {
 			return ct; // Matched and args OK
 		}
@@ -79,7 +79,7 @@ __device__ const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const
 	}
 
 	// No match, so see if it is a builtin command
-	if (!_strcmp(argv[1], "commands")) {
+	if (!_strcmp(args[1], "commands")) {
 		const tclmod_command_type *ct;
 		for (ct = command_table; ct->cmd; ct++) {
 			if (!(ct->flags & TCL_MODFLAG_HIDDEN)) {
@@ -90,11 +90,11 @@ __device__ const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const
 	}
 
 	// No, so show usage
-	if (!_strcmp(argv[1], "?")) {
-		Tcl_AppendResult(interp, "Usage: \"", argv[0], " command ...\", where command is one of: ", (char *)NULL);
+	if (!_strcmp(args[1], "?")) {
+		Tcl_AppendResult(interp, "Usage: \"", args[0], " command ...\", where command is one of: ", (char *)NULL);
 	}
 	else {
-		Tcl_AppendResult(interp, "Error: ", argv[0], ", unknown command \"", argv[1], "\": should be ", (char *)NULL);
+		Tcl_AppendResult(interp, "Error: ", args[0], ", unknown command \"", args[1], "\": should be ", (char *)NULL);
 	}
 
 	const char *sep = "";

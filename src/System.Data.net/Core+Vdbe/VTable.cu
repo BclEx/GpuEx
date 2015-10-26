@@ -680,9 +680,9 @@ namespace CORE_NAME
 
 		// Call the xFindFunction method on the virtual table implementation to see if the implementation wants to overload this function 
 		char *lowerName = _tagstrdup(ctx, def->Name);
-		RC rc = RC_OK;
 		void (*func)(FuncContext *, int, Mem **) = nullptr;
 		void *args = nullptr;
+		bool rc = false;
 		if (lowerName)
 		{
 			for (unsigned char *z = (unsigned char*)lowerName; *z; z++)
@@ -690,7 +690,7 @@ namespace CORE_NAME
 			rc = imodule->FindFunction(ivtable, argsLength, lowerName, &func, &args);
 			_tagfree(ctx, lowerName);
 		}
-		if (rc == RC_OK)
+		if (!rc)
 			return def;
 
 		// Create a new ephemeral function definition for the overloaded function

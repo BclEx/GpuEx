@@ -685,7 +685,17 @@ __device__ char *_vmprintf(const char *fmt, _va_list *args)
 	return b.ToString();
 }
 
-__device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, _va_list *args)
+__device__ int __vsnprintf(const char *buf, size_t bufLen, const char *fmt, _va_list *args)
+{
+	if (bufLen <= 0) return -1;
+	TextBuilder b;
+	TextBuilder::Init(&b, (char *)buf, (int)bufLen, 0);
+	b.AllocType = 0;
+	b.AppendFormat_(false, fmt, *args);
+	return b.Index;
+}
+
+__device__ char *__vmnprintf(const char *buf, size_t bufLen, const char *fmt, _va_list *args)
 {
 	if (bufLen <= 0) return (char *)buf;
 	TextBuilder b;
@@ -694,4 +704,3 @@ __device__ char *__vsnprintf(const char *buf, size_t bufLen, const char *fmt, _v
 	b.AppendFormat_(false, fmt, *args);
 	return b.ToString();
 }
-

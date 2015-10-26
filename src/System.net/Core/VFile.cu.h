@@ -1,7 +1,12 @@
 ﻿// sqlite3.h
 namespace CORE_NAME
 {
+#ifdef OMIT_WSD
 #define PENDING_BYTE 0x40000000
+#else
+	__device__ extern int _Core_PendingByte;
+#define PENDING_BYTE _Core_PendingByte
+#endif
 #define RESERVED_BYTE (PENDING_BYTE+1)
 #define SHARED_FIRST (PENDING_BYTE+2)
 #define SHARED_SIZE 510

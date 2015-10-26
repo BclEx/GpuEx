@@ -50,7 +50,7 @@ extern __device__ char *Tcl_DownShift(char *targetStr, const char *sourceStr);
 extern __device__ void Tcl_ErrorAbort(Tcl_Interp *interp, int noStackDump, int exitCode);
 extern __device__ char *Tcl_UpShift(char *targetStr, const char *sourceStr);
 extern __device__ int Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName, const char *keyedList, char **fieldValuePtr);
-__device__ int Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *keyedList, int *keyesArgcPtr, char ***keyesArgvPtr);
+__device__ int Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *keyedList, int *keyesArgcPtr, char ***keyesArgsPtr);
 extern __device__ int Tcl_GetLong(Tcl_Interp *interp, const char *string, long *longPtr);
 extern __device__ int Tcl_GetUnsigned(Tcl_Interp *interp, const char *string, unsigned *unsignedPtr);
 extern __device__ char *Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName, const char *fieldvalue, const char *keyedList);
@@ -67,8 +67,8 @@ extern __device__ void_pt Tcl_HandleWalk(void_pt headerPtr, int *walkKeyPtr);
 extern __device__ void Tcl_WalkKeyToHandle(void_pt headerPtr, int walkKey, char *handlePtr);
 extern __device__ void_pt Tcl_HandleXlate(Tcl_Interp *interp, void_pt headerPtr, const char *handle);
 extern __device__ int Tcl_MathError(char *functionName, int errorType);
-extern __device__ void Tcl_Startup(Tcl_Interp *interp, int argc, const char **argv, const char *defaultFile, unsigned options);
-extern __device__ int Tcl_ShellEnvInit(Tcl_Interp *interp, unsigned options, const char *programName, int argc, const char **argv, int interactive, const char *defaultFile);
+extern __device__ void Tcl_Startup(Tcl_Interp *interp, int argc, const char **args, const char *defaultFile, unsigned options);
+extern __device__ int Tcl_ShellEnvInit(Tcl_Interp *interp, unsigned options, const char *programName, int argc, const char **args, int interactive, const char *defaultFile);
 extern __device__ int Tcl_System(Tcl_Interp *interp, char *command);
 
 #endif /* __TCLEX_H__ */

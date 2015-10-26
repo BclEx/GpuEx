@@ -67,7 +67,7 @@ __device__ static void destructor(void *p)
 __device__ static void test_destructor(FuncContext *fctx, int argc, Mem **args)
 {
 	_test_destructor_count_var++;
-	_assert(arg == 1);
+	_assert(argc == 1);
 	if (Vdbe::Value_Type(args[0]) == TYPE_NULL) return;
 	int len = Vdbe::Value_Bytes(args[0]); 
 	char *val = (char *)testContextMalloc(fctx, len+3);
@@ -260,7 +260,7 @@ __device__ static void testHexToBin(const char *in, char *out)
 #ifndef OMIT_UTF16
 __device__ static void testHexToUtf16be(FuncContext *fctx, int argc, Mem **args)
 {
-	_assert(nArg == 1);
+	_assert(argc == 1);
 	int n = Vdbe::Value_Bytes(args[0]);
 	const char *in = (const char *)Vdbe::Value_Text(args[0]);
 	char *out = (char *)_alloc(n/2);

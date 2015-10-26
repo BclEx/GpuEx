@@ -1,5 +1,5 @@
 //#include <RuntimeEx.h>
-#include "TclContext.cu.h"
+#include "Test.cu.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -81,7 +81,7 @@ __device__ static int pager_close(ClientData notUsed, Tcl_Interp *interp, int ar
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	RC rc = pager->Close();
 	if (rc != RC_OK)
 	{
@@ -101,7 +101,7 @@ __device__ static int pager_rollback(ClientData notUsed, Tcl_Interp *interp, int
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	RC rc = pager->Rollback();
 	if (rc != RC_OK)
 	{
@@ -121,7 +121,7 @@ __device__ static int pager_commit(ClientData notUsed, Tcl_Interp *interp, int a
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	RC rc = pager->CommitPhaseOne(nullptr, false);
 	if (rc != RC_OK)
 	{
@@ -147,7 +147,7 @@ __device__ static int pager_stmt_begin(ClientData notUsed, Tcl_Interp *interp, i
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	RC rc = pager->OpenSavepoint(1);
 	if (rc != RC_OK)
 	{
@@ -167,7 +167,7 @@ __device__ static int pager_stmt_rollback(ClientData notUsed, Tcl_Interp *interp
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	RC rc = pager->Savepoint(IPager::SAVEPOINT_ROLLBACK, 0);
 	pager->Savepoint(IPager::SAVEPOINT_RELEASE, 0);
 	if (rc != RC_OK)
@@ -188,7 +188,7 @@ __device__ static int pager_stmt_commit(ClientData notUsed, Tcl_Interp *interp, 
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	RC rc = pager->Savepoint(IPager::SAVEPOINT_RELEASE, 0);
 	if (rc != RC_OK)
 	{
@@ -212,7 +212,7 @@ __device__ static int pager_stats(ClientData notUsed, Tcl_Interp *interp, int ar
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	int *a = pager->Stats;
 	for (int i = 0; i < 9; i++)
 	{
@@ -234,9 +234,9 @@ __device__ static int pager_pagecount(ClientData notUsed, Tcl_Interp *interp, in
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
-	int pages;
-	Pager::Pagecount(pager, &pages);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pid pages;
+	pager->Pages(&pages);
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%d", pages);
 	Tcl_AppendResult(interp, buf, nullptr);
@@ -253,7 +253,7 @@ __device__ static int page_get(ClientData notUsed, Tcl_Interp *interp, int argc,
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID PGNO\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	int pgid;
 	if (Tcl_GetInt(interp, (char *)args[2], &pgid)) return TCL_ERROR;
 	RC rc = pager->SharedLock();
@@ -281,7 +281,7 @@ __device__ static int page_lookup(ClientData notUsed, Tcl_Interp *interp, int ar
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID PGNO\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	int pgid;
 	if (Tcl_GetInt(interp, (char *)args[2], &pgid)) return TCL_ERROR;
 	IPage *page = pager->Lookup(pgid);
@@ -302,7 +302,7 @@ __device__ static int pager_truncate(ClientData notUsed, Tcl_Interp *interp, int
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID PGNO\"", nullptr);
 		return TCL_ERROR;
 	}
-	Pager *pager = sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
 	int pgid;
 	if (Tcl_GetInt(interp, (char *)args[2], &pgid)) return TCL_ERROR;
 	pager->TruncateImage(pgid);
@@ -335,7 +335,7 @@ __device__ static int page_read(ClientData notUsed, Tcl_Interp *interp, int argc
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " PAGE\"", nullptr);
 		return TCL_ERROR;
 	}
-	IPage *page = sqlite3TestTextToPtr(args[1]);
+	IPage *page = (IPage *)sqlite3TestTextToPtr(args[1]);
 	char buf[100];
 	_memcpy(buf, Pager::GetData(page), sizeof(buf));
 	Tcl_AppendResult(interp, buf, nullptr);
@@ -513,7 +513,7 @@ __device__ int Sqlitetest2_Init(Tcl_Interp *interp)
 	Tcl_LinkVar(interp, "sqlite_diskfull_pending", (char *)&sqlite3_diskfull_pending, TCL_LINK_INT);
 	Tcl_LinkVar(interp, "sqlite_diskfull", (char *)&sqlite3_diskfull, TCL_LINK_INT);
 #ifndef OMIT_WSD
-	Tcl_LinkVar(interp, "sqlite_pending_byte", (char *)&sqlite3PendingByte, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+	Tcl_LinkVar(interp, "sqlite_pending_byte", (char *)&_Core_PendingByte, TCL_LINK_INT|TCL_LINK_READ_ONLY);
 #endif
 	return TCL_OK;
 }

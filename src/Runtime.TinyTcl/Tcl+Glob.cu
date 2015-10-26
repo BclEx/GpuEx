@@ -358,15 +358,15 @@ __device__ char *Tcl_TildeSubst(Tcl_Interp *interp, char *name)
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_GlobCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_GlobCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2) {
 notEnoughArgs:
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ?-nocomplain? name ?name ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ?-nocomplain? name ?name ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	bool noComplain = false;
-	if (argv[1][0] == '-' && !_strcmp(argv[1], "-nocomplain")) {
+	if (args[1][0] == '-' && !_strcmp(args[1], "-nocomplain")) {
 		if (argc < 3) {
 			goto notEnoughArgs;
 		}
@@ -376,7 +376,7 @@ notEnoughArgs:
 	int i;
 	for (i = 1 + noComplain; i < argc; i++) {
 		// Do special checks for names starting at the root and for names beginning with ~.  Then let DoGlob do the rest.
-		char *thisName = argv[i];
+		char *thisName = (char *)args[i];
 #if TCL_GETWD
 		if (*thisName == '~') {
 			thisName = Tcl_TildeSubst(interp, thisName);
@@ -399,7 +399,7 @@ notEnoughArgs:
 		char *sep = "";
 		Tcl_AppendResult(interp, "no files matched glob pattern", (argc == 2 ? " \"" : "s \""), (char *)NULL);
 		for (i = 1; i < argc; i++) {
-			Tcl_AppendResult(interp, sep, argv[i], (char *)NULL);
+			Tcl_AppendResult(interp, sep, args[i], (char *)NULL);
 			sep = " ";
 		}
 		Tcl_AppendResult(interp, "\"", (char *)NULL);

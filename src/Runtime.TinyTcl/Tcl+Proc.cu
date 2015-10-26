@@ -11,7 +11,7 @@
 #include "Tcl+Int.h"
 
 // Forward references to procedures defined later in this file:
-__device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int argc, char **argv);
+__device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[]);
 __device__ static void ProcDeleteProc(ClientData clientData);
 
 /*
@@ -28,23 +28,23 @@ __device__ static void ProcDeleteProc(ClientData clientData);
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " name args body\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " name args body\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	register Arg *argPtr = NULL; // Initialization not needed, but prevents compiler warning.
 	register Proc *procPtr = (Proc *)_allocFast(sizeof(Proc));
-	procPtr->command = (char *)_allocFast((unsigned)_strlen(argv[3]) + 1);
-	_strcpy(procPtr->command, argv[3]);
+	procPtr->command = (char *)_allocFast((unsigned)_strlen(args[3]) + 1);
+	_strcpy(procPtr->command, args[3]);
 	procPtr->argPtr = NULL;
 	procPtr->uses = 1; // 1 for initial definition
 
 	// Break up the argument list into argument specifiers, then process each argument specifier.
 	int argCount;
-	char **argArray = NULL;
-	int result = Tcl_SplitList(interp, argv[2], &argCount, &argArray);
+	const char **argArray = NULL;
+	int result = Tcl_SplitList(interp, (char *)args[2], &argCount, &argArray);
 	if (result != TCL_OK) {
 		goto procError;
 	}
@@ -52,8 +52,8 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	for (int i = 0; i < argCount; i++) {
 		// Now divide the specifier up into name and default.
 		int fieldCount;
-		char **fieldValues;
-		result = Tcl_SplitList(interp, argArray[i], &fieldCount, &fieldValues);
+		const char **fieldValues;
+		result = Tcl_SplitList(interp, (char *)argArray[i], &fieldCount, &fieldValues);
 		if (result != TCL_OK) {
 			goto procError;
 		}
@@ -65,7 +65,7 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		}
 		if (fieldCount == 0 || *fieldValues[0] == 0) {
 			_freeFast((char *) fieldValues);
-			Tcl_AppendResult(interp, "procedure \"", argv[1], "\" has argument with no name", (char *)NULL);
+			Tcl_AppendResult(interp, "procedure \"", args[1], "\" has argument with no name", (char *)NULL);
 			result = TCL_ERROR;
 			goto procError;
 		}
@@ -93,7 +93,7 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		}
 		_freeFast((char *)fieldValues);
 	}
-	Tcl_CreateCommand(interp, argv[1], InterpProc, (ClientData) procPtr, ProcDeleteProc);
+	Tcl_CreateCommand(interp, (char *)args[1], InterpProc, (ClientData)procPtr, ProcDeleteProc);
 	_freeFast((char *)argArray);
 	return TCL_OK;
 
@@ -189,18 +189,18 @@ levelError:
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_UplevelCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_UplevelCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	register Interp *iPtr = (Interp *)interp;
 	if (argc < 2) {
 uplevelSyntax:
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ?level? command ?arg ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ?level? command ?arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 
 	// Find the level to use for executing the command.
 	CallFrame *framePtr;
-	int result = TclGetFrame(interp, argv[1], &framePtr);
+	int result = TclGetFrame(interp, (char *)args[1], &framePtr);
 	if (result == -1) {
 		return TCL_ERROR;
 	}
@@ -208,7 +208,7 @@ uplevelSyntax:
 	if (argc == 0) {
 		goto uplevelSyntax;
 	}
-	argv += (result+1);
+	args += (result+1);
 
 	// Modify the interpreter state to execute in the given frame.
 	CallFrame *savedVarFramePtr = iPtr->varFramePtr;
@@ -216,9 +216,9 @@ uplevelSyntax:
 
 	// Execute the residual arguments as a command.
 	if (argc == 1) {
-		result = Tcl_Eval(interp, argv[0], 0, (char **)NULL);
+		result = Tcl_Eval(interp, (char *)args[0], 0, (char **)NULL);
 	} else {
-		char *cmd = Tcl_Concat(argc, argv);
+		char *cmd = Tcl_Concat(argc, args);
 		result = Tcl_Eval(interp, cmd, 0, (char **)NULL);
 		_freeFast(cmd);
 	}
@@ -297,7 +297,7 @@ __device__ Proc *TclIsProc(Command *cmdPtr)
 *
 *----------------------------------------------------------------------
 */
-__device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
+__device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	register Proc *procPtr = (Proc *)clientData;
 	register Interp *iPtr = (Interp *)interp;
@@ -312,7 +312,7 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 		frame.level = 1;
 	}
 	frame.argc = argc;
-	frame.argv = argv;
+	frame.args = args;
 	frame.callerPtr = iPtr->framePtr;
 	frame.callerVarPtr = iPtr->varFramePtr;
 	iPtr->framePtr = &frame;
@@ -320,32 +320,32 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 
 	// Match the actual arguments against the procedure's formal parameters to compute local variables.
 	register Arg *argPtr;
-	char **args;
-	for (argPtr = procPtr->argPtr, args = argv+1, argc -= 1; argPtr != NULL; argPtr = argPtr->nextPtr, args++, argc--) {
+	const char **args2;
+	for (argPtr = procPtr->argPtr, args2 = args+1, argc -= 1; argPtr != NULL; argPtr = argPtr->nextPtr, args2++, argc--) {
 		// Handle the special case of the last formal being "args".  When it occurs, assign it a list consisting of all the remaining actual arguments.
 		char *value;
 		if (argPtr->nextPtr == NULL && !_strcmp(argPtr->name, "args")) {
 			if (argc < 0) {
 				argc = 0;
 			}
-			value = Tcl_Merge(argc, args);
+			value = Tcl_Merge(argc, args2);
 			Tcl_SetVar(interp, argPtr->name, value, 0);
 			_freeFast(value);
 			argc = 0;
 			break;
 		} else if (argc > 0) {
-			value = *args;
+			value = (char *)*args2;
 		} else if (argPtr->defValue != NULL) {
 			value = argPtr->defValue;
 		} else {
-			Tcl_AppendResult(interp, "no value given for parameter \"", argPtr->name, "\" to \"", argv[0], "\"", (char *)NULL);
+			Tcl_AppendResult(interp, "no value given for parameter \"", argPtr->name, "\" to \"", args[0], "\"", (char *)NULL);
 			result = TCL_ERROR;
 			goto procDone;
 		}
 		Tcl_SetVar(interp, argPtr->name, value, 0);
 	}
 	if (argc > 0) {
-		Tcl_AppendResult(interp, "called \"", argv[0], "\" with too many arguments", (char *)NULL);
+		Tcl_AppendResult(interp, "called \"", args[0], "\" with too many arguments", (char *)NULL);
 		result = TCL_ERROR;
 		goto procDone;
 	}
@@ -370,7 +370,7 @@ __device__ static int InterpProc(ClientData clientData, Tcl_Interp *interp, int 
 	} else if (result == TCL_ERROR) {
 		// Record information telling where the error occurred.
 		char msg[100];
-		_sprintf(msg, "\n    (procedure \"%.50s\" line %d)", argv[0], iPtr->errorLine);
+		_sprintf(msg, "\n    (procedure \"%.50s\" line %d)", args[0], iPtr->errorLine);
 		Tcl_AddErrorInfo(interp, msg);
 	} else if (result == TCL_BREAK) {
 		iPtr->result = "invoked \"break\" outside of a loop";

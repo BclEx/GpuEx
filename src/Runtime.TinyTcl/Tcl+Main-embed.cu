@@ -47,19 +47,19 @@ char _initCmd[] = "echo \"procplace.com embedded tcl 6.7\"; source drongo.tcl";
 
 #ifdef TCL_MEM_DEBUG
 char _dumpFile[100];
-int cmdCheckmem(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdCheckmem(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileName\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " fileName\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	strcpy(_dumpFile, argv[1]);
+	strcpy(_dumpFile, args[1]);
 	_quitFlag = true;
 	return TCL_OK;
 }
 #endif
 
-int cmdGetkey(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdGetkey(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	char c;
 	if (read(0, &c, 1) < 0) {
@@ -69,26 +69,26 @@ int cmdGetkey(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 	return TCL_OK;
 }
 
-int cmdPause(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdPause(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	usleep(50000);
 	return TCL_OK;
 }
 
-int cmdEcho(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdEcho(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	for (int i = 1; ; i++) {
-		if (argv[i] == NULL) {
+		if (args[i] == NULL) {
 			if (i != argc) {
 echoError:
-				sprintf(interp->result, "argument list wasn't properly NULL-terminated in \"%s\" command", argv[0]);
+				sprintf(interp->result, "argument list wasn't properly NULL-terminated in \"%s\" command", args[0]);
 			}
 			break;
 		}
 		if (i >= argc) {
 			goto echoError;
 		}
-		fputs(argv[i], stdout);
+		fputs(args[i], stdout);
 		if (i < (argc-1)) {
 			printf(" ");
 		}

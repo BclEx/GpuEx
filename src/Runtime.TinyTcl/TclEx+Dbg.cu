@@ -30,8 +30,8 @@ typedef struct traceInfo_t {
 // Prototypes of internal functions.
 __device__ static void PrintStr(FILE *filePtr, char *string, int numChars);
 __device__ static void PrintArg(FILE *filePtr, char *argStr, int noTruncate);
-__device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *command, int argc, char **argv);
-__device__ static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *cmdProc, ClientData cmdClientData, int argc, char **argv);
+__device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *command, int argc, const char *args[]);
+__device__ static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *cmdProc, ClientData cmdClientData, int argc, const char *args[]);
 __device__ static void CleanUpDebug(ClientData clientData);
 
 /*
@@ -90,7 +90,7 @@ __device__ static void PrintArg(FILE *filePtr, char *argStr, int noTruncate)
 * 
 *-----------------------------------------------------------------------------
 */
-__device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *command, int argc, char **argv)
+__device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *command, int argc, const char *args[])
 {
 #if NOTSUP
 	static struct timeval last_time;
@@ -116,7 +116,7 @@ __device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *com
 		for (idx = 0; idx < argc; idx++) {
 			if (idx > 0)
 				_fputc(' ', traceInfoPtr->filePtr);
-			PrintArg(traceInfoPtr->filePtr, argv[idx], traceInfoPtr->noTruncate);
+			PrintArg(traceInfoPtr->filePtr, (char *)args[idx], traceInfoPtr->noTruncate);
 		}
 	}
 	_fputc('\n', traceInfoPtr->filePtr);
@@ -132,16 +132,16 @@ __device__ static void TraceCode(traceInfo_pt traceInfoPtr, int level, char *com
 *
 *-----------------------------------------------------------------------------
 */
-__device__  static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *cmdProc, ClientData cmdClientData, int argc, char **argv)
+__device__  static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *cmdProc, ClientData cmdClientData, int argc, const char *args[])
 {
 	Interp *iPtr = (Interp *)interp;
 	traceInfo_pt traceInfoPtr = (traceInfo_pt)clientData;
 	if (!traceInfoPtr->procCalls) {
-		TraceCode(traceInfoPtr, level, command, argc, argv);
+		TraceCode(traceInfoPtr, level, command, argc, args);
 	} else {
-		if (TclFindProc(iPtr, argv[0]) != NULL) {
+		if (TclFindProc(iPtr, (char *)args[0]) != NULL) {
 			int procLevel = (iPtr->varFramePtr == NULL ? 0 : iPtr->varFramePtr->level);
-			TraceCode(traceInfoPtr, procLevel, command, argc, argv);
+			TraceCode(traceInfoPtr, procLevel, command, argc, args);
 		}
 	}
 }
@@ -160,7 +160,7 @@ __device__  static void CmdTraceRoutine(ClientData clientData, Tcl_Interp *inter
 *
 *-----------------------------------------------------------------------------
 */
-__device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
+__device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	//Interp *iPtr = (Interp *)interp;
 	traceInfo_pt infoPtr = (traceInfo_pt)clientData;
@@ -170,7 +170,7 @@ __device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp,
 		goto argumentError;
 
 	// Handle `depth' sub-command.
-	if (STREQU(argv[1], "depth")) {
+	if (STREQU(args[1], "depth")) {
 		if (argc != 2)
 			goto argumentError;
 		_sprintf(interp->result, "%d", infoPtr->depth);
@@ -185,7 +185,7 @@ __device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp,
 	}
 
 	// Handle off sub-command.
-	if (STREQU(argv[1], "off")) {
+	if (STREQU(args[1], "off")) {
 		if (argc != 2)
 			goto argumentError;
 		return TCL_OK;
@@ -199,43 +199,43 @@ __device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp,
 	fileHandle          = NULL;
 
 	for (idx = 2; idx < argc; idx++) {
-		if (STREQU(argv[idx], "notruncate")) {
+		if (STREQU(args[idx], "notruncate")) {
 			if (infoPtr->noTruncate)
 				goto argumentError;
 			infoPtr->noTruncate = TRUE;
 			continue;
 		}
-		if (STREQU(argv[idx], "noeval")) {
+		if (STREQU(args[idx], "noeval")) {
 			if (infoPtr->noEval)
 				goto argumentError;
 			infoPtr->noEval = TRUE;
 			continue;
 		}
-		if (STREQU(argv[idx], "flush")) {
+		if (STREQU(args[idx], "flush")) {
 			if (infoPtr->flush)
 				goto argumentError;
 			infoPtr->flush = TRUE;
 			continue;
 		}
-		if (STREQU(argv[idx], "procs")) {
+		if (STREQU(args[idx], "procs")) {
 			if (infoPtr->procCalls)
 				goto argumentError;
 			infoPtr->procCalls = TRUE;
 			continue;
 		}
-		if (STRNEQU(argv[idx], "std", 3) || STRNEQU(argv[idx], "file", 4)) {
+		if (STRNEQU(args[idx], "std", 3) || STRNEQU(args[idx], "file", 4)) {
 			if (fileHandle != NULL)
 				goto argumentError;
-			fileHandle = argv[idx];
+			fileHandle = (char *)args[idx];
 			continue;
 		}
 		goto invalidOption;
 	}
 
-	if (STREQU(argv[1], "on")) {
+	if (STREQU(args[1], "on")) {
 		infoPtr->depth = MAXINT;
 	} else {
-		if (Tcl_GetInt(interp, argv[1], &(infoPtr->depth)) != TCL_OK)
+		if (Tcl_GetInt(interp, args[1], &(infoPtr->depth)) != TCL_OK)
 			return TCL_ERROR;
 	}
 	if (fileHandle != NULL) {
@@ -253,7 +253,7 @@ __device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp,
 	return TCL_OK;
 
 argumentError:
-	Tcl_AppendResult (interp, "wrong # args: ", argv[0], " level | on [noeval] [notruncate] [flush] [procs]", "[handle] | off | depth", (char *)NULL);
+	Tcl_AppendResult (interp, "wrong # args: ", args[0], " level | on [noeval] [notruncate] [flush] [procs]", "[handle] | off | depth", (char *)NULL);
 	return TCL_ERROR;
 
 invalidOption:

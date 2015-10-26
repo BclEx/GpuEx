@@ -11,7 +11,7 @@ typedef struct TestSqlFunc TestSqlFunc;
 struct SqlFunc
 {
 	Tcl_Interp *Interp;		// The TCL interpret to execute the function
-	Tcl_Obj *Script;		// The Tcl_Obj representation of the script
+	char *Script;			// The Tcl_Obj representation of the script
 	TclContext *Ctx;		// Database connection that owns this function
 	//bool UseEvalObjv;	// True if it is safe to use Tcl_EvalObjv
 	char *Name;			// Name of this function
@@ -54,13 +54,13 @@ struct TclContext
 	int DisableAuth;			// Disable the authorizer if it exists
 	char *NullText;				// Text to substitute for an SQL NULL value
 	SqlFunc *Funcs;				// List of SQL functions
-	Tcl_Obj *UpdateHook;		// Update hook script (if any)
-	Tcl_Obj *RollbackHook;		// Rollback hook script (if any)
-	Tcl_Obj *WalHook;			// WAL hook script (if any)
-	Tcl_Obj *UnlockNotify;		// Unlock notify script (if any)
+	char *UpdateHook;			// Update hook script (if any)
+	char *RollbackHook;			// Rollback hook script (if any)
+	char *WalHook;				// WAL hook script (if any)
+	char *UnlockNotify;			// Unlock notify script (if any)
 	SqlCollate *Collates;		// List of SQL collation functions
 	RC RC;						// Return code of most recent sqlite3_exec()
-	Tcl_Obj *CollateNeeded;		// Collation needed script
+	char *CollateNeeded;		// Collation needed script
 	array_t<SqlPreparedStmt> Stmts;	// List of prepared statements
 	SqlPreparedStmt *StmtLast;		// Last statement in the list
 	int MaxStmt;				// The next maximum number of stmtList

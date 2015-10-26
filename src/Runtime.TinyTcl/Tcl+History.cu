@@ -169,7 +169,7 @@ __device__ int Tcl_RecordAndEval(Tcl_Interp *interp, char *cmd, int flags)
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	register Interp *iPtr = (Interp *)interp;
 	register HistoryEvent *eventPtr;
@@ -180,24 +180,24 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 	if (argc == 1) {
 		goto infoCmd;
 	}
-	int c = argv[1][0];
-	int length = _strlen(argv[1]);
-	if (c == 'a' && !_strncmp(argv[1], "add", length)) {
+	int c = args[1][0];
+	int length = _strlen(args[1]);
+	if (c == 'a' && !_strncmp(args[1], "add", length)) {
 		if (argc != 3 && argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " add event ?exec?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " add event ?exec?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (argc == 4) {
-			if (_strncmp(argv[3], "exec", _strlen(argv[3]))) {
-				Tcl_AppendResult(interp, "bad argument \"", argv[3], "\": should be \"exec\"", (char *)NULL);
+			if (_strncmp(args[3], "exec", _strlen(args[3]))) {
+				Tcl_AppendResult(interp, "bad argument \"", args[3], "\": should be \"exec\"", (char *)NULL);
 				return TCL_ERROR;
 			}
-			return Tcl_RecordAndEval(interp, argv[2], 0);
+			return Tcl_RecordAndEval(interp, (char *)args[2], 0);
 		}
-		return Tcl_RecordAndEval(interp, argv[2], TCL_NO_EVAL);
-	} else if (c == 'c' && !_strncmp(argv[1], "change", length)) {
+		return Tcl_RecordAndEval(interp, (char *)args[2], TCL_NO_EVAL);
+	} else if (c == 'c' && !_strncmp(args[1], "change", length)) {
 		if (argc != 3 && argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " change newValue ?event?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " change newValue ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (argc == 3) {
@@ -210,35 +210,35 @@ __device__ int Tcl_HistoryCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 				iPtr->revPtr = nextPtr;
 			}
 		} else {
-			eventPtr = GetEvent(iPtr, argv[3]);
+			eventPtr = GetEvent(iPtr, (char *)args[3]);
 			if (eventPtr == NULL) {
 				return TCL_ERROR;
 			}
 		}
-		MakeSpace(eventPtr, (int) _strlen(argv[2]) + 1);
-		_strcpy(eventPtr->command, argv[2]);
+		MakeSpace(eventPtr, (int)_strlen(args[2]) + 1);
+		_strcpy(eventPtr->command, args[2]);
 		return TCL_OK;
-	} else if (c == 'e' && !_strncmp(argv[1], "event", length)) {
+	} else if (c == 'e' && !_strncmp(args[1], "event", length)) {
 		if (argc > 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " event ?event?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " event ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		eventPtr = GetEvent(iPtr, argc==2 ? "-1" : argv[2]);
+		eventPtr = GetEvent(iPtr, argc==2 ? "-1" : args[2]);
 		if (eventPtr == NULL) {
 			return TCL_ERROR;
 		}
 		RevResult(iPtr, eventPtr->command);
 		Tcl_SetResult(interp, eventPtr->command, TCL_VOLATILE);
 		return TCL_OK;
-	} else if (c == 'i' && !_strncmp(argv[1], "info", length)) {
+	} else if (c == 'i' && !_strncmp(args[1], "info", length)) {
 		if (argc != 2 && argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " info ?count?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " info ?count?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 infoCmd:
 		int count;
 		if (argc == 3) {
-			if (Tcl_GetInt(interp, argv[2], &count) != TCL_OK) {
+			if (Tcl_GetInt(interp, args[2], &count) != TCL_OK) {
 				return TCL_ERROR;
 			}
 			if (count > iPtr->numEvents) {
@@ -277,17 +277,17 @@ infoCmd:
 			Tcl_AppendResult(interp, cur, (char *)NULL);
 		}
 		return TCL_OK;
-	} else if (c == 'k' && !_strncmp(argv[1], "keep", length)) {
+	} else if (c == 'k' && !_strncmp(args[1], "keep", length)) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " keep number\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " keep number\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		int count;
-		if (Tcl_GetInt(interp, argv[2], &count) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &count) != TCL_OK) {
 			return TCL_ERROR;
 		}
 		if (count <= 0 || count > 1000) {
-			Tcl_AppendResult(interp, "illegal keep count \"", argv[2], "\"", (char *)NULL);
+			Tcl_AppendResult(interp, "illegal keep count \"", args[2], "\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		// Create a new history array and copy as much existing history as possible from the old array.
@@ -330,44 +330,44 @@ infoCmd:
 		}
 		iPtr->numEvents = count;
 		return TCL_OK;
-	} else if (c == 'n' && !_strncmp(argv[1], "nextid", length)) {
+	} else if (c == 'n' && !_strncmp(args[1], "nextid", length)) {
 		if (argc != 2) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " nextid\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " nextid\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		_sprintf(iPtr->result, "%d", iPtr->curEventNum+1);
 		return TCL_OK;
-	} else if (c == 'r' && !_strncmp(argv[1], "redo", length)) {
+	} else if (c == 'r' && !_strncmp(args[1], "redo", length)) {
 		if (argc > 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " redo ?event?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " redo ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		eventPtr = GetEvent(iPtr, (argc == 2 ? "-1" : argv[2]));
+		eventPtr = GetEvent(iPtr, (argc == 2 ? "-1" : args[2]));
 		if (eventPtr == NULL) {
 			return TCL_ERROR;
 		}
 		RevCommand(iPtr, eventPtr->command);
 		return Tcl_Eval(interp, eventPtr->command, 0, 0);
-	} else if (c == 's' && !_strncmp(argv[1], "substitute", length)) {
+	} else if (c == 's' && !_strncmp(args[1], "substitute", length)) {
 		if (argc > 5 || argc < 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " substitute old new ?event?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " substitute old new ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		eventPtr = GetEvent(iPtr, (argc == 4 ? "-1" : argv[4]));
+		eventPtr = GetEvent(iPtr, (argc == 4 ? "-1" : (char *)args[4]));
 		if (eventPtr == NULL) {
 			return TCL_ERROR;
 		}
-		return SubsAndEval(iPtr, eventPtr->command, argv[2], argv[3]);
-	} else if (c == 'w' && !_strncmp(argv[1], "words", length)) {
+		return SubsAndEval(iPtr, eventPtr->command, (char *)args[2], (char *)args[3]);
+	} else if (c == 'w' && !_strncmp(args[1], "words", length)) {
 		if (argc != 3 && argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " words num-num/pat ?event?\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " words num-num/pat ?event?\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		eventPtr = GetEvent(iPtr, (argc == 3 ? "-1" : argv[3]));
+		eventPtr = GetEvent(iPtr, (argc == 3 ? "-1" : (char *)args[3]));
 		if (eventPtr == NULL) {
 			return TCL_ERROR;
 		}
-		char *words = GetWords(iPtr, eventPtr->command, argv[2]);
+		char *words = GetWords(iPtr, eventPtr->command, (char *)args[2]);
 		if (words == NULL) {
 			return TCL_ERROR;
 		}
@@ -376,7 +376,7 @@ infoCmd:
 		iPtr->freeProc = TCL_DYNAMIC;
 		return TCL_OK;
 	}
-	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": must be add, change, event, info, keep, nextid, ", "redo, substitute, or words", (char *)NULL);
+	Tcl_AppendResult(interp, "bad option \"", args[1], "\": must be add, change, event, info, keep, nextid, ", "redo, substitute, or words", (char *)NULL);
 	return TCL_ERROR;
 }
 
@@ -523,9 +523,9 @@ __device__ static void RevResult(register Interp *iPtr, char *string)
 	register HistoryRev *revPtr = (HistoryRev *)_allocFast(sizeof(HistoryRev));
 	revPtr->firstIndex = (int)(evalFirst - iPtr->historyFirst);
 	revPtr->lastIndex = (int)(evalLast - iPtr->historyFirst);
-	char *argv[2];
-	argv[0] = string;
-	revPtr->newBytes = Tcl_Merge(1, argv);
+	const char *args[2];
+	args[0] = string;
+	revPtr->newBytes = Tcl_Merge(1, args);
 	revPtr->newSize = _strlen(revPtr->newBytes);
 	InsertRev(iPtr, revPtr);
 }

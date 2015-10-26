@@ -23,13 +23,13 @@
 *      Standard TCL result.
 *-----------------------------------------------------------------------------
 */
-__device__ int Tcl_ReaddirCmd(ClientData clientData, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ReaddirCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "bad # args: ", argv[0], " dirPath", (char *)NULL);
+		Tcl_AppendResult(interp, "bad # args: ", args[0], " dirPath", (char *)NULL);
 		return TCL_ERROR;
 	}
-	char *dirPath = argv[1];
+	char *dirPath = args[1];
 	DIR *dirPtr = opendir(dirPath);
 	if (dirPtr == NULL)  {
 		Tcl_AppendResult(interp, dirPath, ": ", Tcl_OSError(interp), (char *)NULL);

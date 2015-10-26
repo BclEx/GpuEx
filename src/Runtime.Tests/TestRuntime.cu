@@ -177,25 +177,25 @@ __global__ static void runtime12(void *r)
 {
 	_runtimeSetHeap(r);
 	char buf[100];
-	char *a0 = __snprintf(buf, sizeof(buf), "t0\n"); _assert(!_strcmp(a0, "t0\n"));
-	char *a1 = __snprintf(buf, sizeof(buf), "t1 %s\n", "1"); _assert(!_strcmp(a1, "t1 1\n"));
-	char *a2 = __snprintf(buf, sizeof(buf), "t2 %s %d\n", "1", 2); _assert(!_strcmp(a2, "t2 1 2\n"));
-	char *a3 = __snprintf(buf, sizeof(buf), "t3 %s %d %d\n", "1", 2, 3); _assert(!_strcmp(a3, "t3 1 2 3\n"));
-	char *a4 = __snprintf(buf, sizeof(buf), "t4 %s %d %d %d\n", "1", 2, 3, 4); _assert(!_strcmp(a4, "t4 1 2 3 4\n"));
-	char *a5 = __snprintf(buf, sizeof(buf), "t5 %s %d %d %d %d\n", "1", 2, 3, 4, 5); _assert(!_strcmp(a5, "t5 1 2 3 4 5\n"));
-	char *a6 = __snprintf(buf, sizeof(buf), "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(!_strcmp(a6, "t6 1 2 3 4 5 6\n"));
-	char *a7 = __snprintf(buf, sizeof(buf), "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(!_strcmp(a7, "t7 1 2 3 4 5 6 7\n"));
-	char *a8 = __snprintf(buf, sizeof(buf), "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(!_strcmp(a8, "t8 1 2 3 4 5 6 7 8\n"));
-	char *a9 = __snprintf(buf, sizeof(buf), "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(a9, "t9 1 2 3 4 5 6 7 8 9\n")); //: errors with %s
-	char *aA = __snprintf(buf, sizeof(buf), "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(!_strcmp(aA, "ta 1 2 3 4 5 6 7 8 9 A\n"));
+	int a0 = __snprintf(buf, sizeof(buf), "t0\n"); _assert(a0 == 2);
+	int a1 = __snprintf(buf, sizeof(buf), "t1 %s\n", "1"); _assert(a1 == 4);
+	int a2 = __snprintf(buf, sizeof(buf), "t2 %s %d\n", "1", 2); _assert(a2 == 6);
+	int a3 = __snprintf(buf, sizeof(buf), "t3 %s %d %d\n", "1", 2, 3); _assert(a3 = 8);
+	int a4 = __snprintf(buf, sizeof(buf), "t4 %s %d %d %d\n", "1", 2, 3, 4); _assert(a4 == 10);
+	int a5 = __snprintf(buf, sizeof(buf), "t5 %s %d %d %d %d\n", "1", 2, 3, 4, 5); _assert(a5 == 12);
+	int a6 = __snprintf(buf, sizeof(buf), "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(a6 == 14);
+	int a7 = __snprintf(buf, sizeof(buf), "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(a7 == 16);
+	int a8 = __snprintf(buf, sizeof(buf), "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(a8 == 18);
+	int a9 = __snprintf(buf, sizeof(buf), "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(a9 == 20);
+	int aA = __snprintf(buf, sizeof(buf), "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(aA == 22);
 	// extended
-	char *aB = __snprintf(buf, sizeof(buf), "tb %s %d %d %d %d %d %d %d %d %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B"); _assert(!_strcmp(aB, "tb 1 2 3 4 5 6 7 8 9 A B\n"));
-	char *aC = __snprintf(buf, sizeof(buf), "tc %s %d %d %d %d %d %d %d %d %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C"); _assert(!_strcmp(aC, "tc 1 2 3 4 5 6 7 8 9 A B C\n"));
-	char *aD = __snprintf(buf, sizeof(buf), "td %s %d %d %d %d %d %d %d %d %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D"); _assert(!_strcmp(aD, "td 1 2 3 4 5 6 7 8 9 A B C D\n"));
-	char *aE = __snprintf(buf, sizeof(buf), "te %s %d %d %d %d %d %d %d %d %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E"); _assert(!_strcmp(aE, "te 1 2 3 4 5 6 7 8 9 A B C D E\n"));
-	char *aF = __snprintf(buf, sizeof(buf), "tf %s %d %d %d %d %d %d %d %d %s %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"); _assert(!_strcmp(aF, "tf 1 2 3 4 5 6 7 8 9 A B C D E F\n"));
+	int aB = __snprintf(buf, sizeof(buf), "tb %s %d %d %d %d %d %d %d %d %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B"); _assert(aB == 24);
+	int aC = __snprintf(buf, sizeof(buf), "tc %s %d %d %d %d %d %d %d %d %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C"); _assert(aC == 26);
+	int aD = __snprintf(buf, sizeof(buf), "td %s %d %d %d %d %d %d %d %d %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D"); _assert(aD == 28);
+	int aE = __snprintf(buf, sizeof(buf), "te %s %d %d %d %d %d %d %d %d %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E"); _assert(aE == 30);
+	int aF = __snprintf(buf, sizeof(buf), "tf %s %d %d %d %d %d %d %d %d %s %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"); _assert(aF == 32);
 	//
-	char *b0 = _sprintf(buf, "t0\n"); _assert(!_strcmp(b0, "t0\n"));
+	int b0 = _sprintf(buf, "t0\n"); _assert(b0 == 2);
 	printf("Example: 12\n");
 }
 
@@ -267,6 +267,33 @@ __global__ static void runtime14(void *r)
 	printf("Example: 14\n");
 }
 
+// MNPRINTF
+__global__ static void runtime15(void *r)
+{
+	_runtimeSetHeap(r);
+	char buf[100];
+	char *a0 = __mnprintf(buf, sizeof(buf), "t0\n"); _assert(!_strcmp(a0, "t0\n"));
+	char *a1 = __mnprintf(buf, sizeof(buf), "t1 %s\n", "1"); _assert(!_strcmp(a1, "t1 1\n"));
+	char *a2 = __mnprintf(buf, sizeof(buf), "t2 %s %d\n", "1", 2); _assert(!_strcmp(a2, "t2 1 2\n"));
+	char *a3 = __mnprintf(buf, sizeof(buf), "t3 %s %d %d\n", "1", 2, 3); _assert(!_strcmp(a3, "t3 1 2 3\n"));
+	char *a4 = __mnprintf(buf, sizeof(buf), "t4 %s %d %d %d\n", "1", 2, 3, 4); _assert(!_strcmp(a4, "t4 1 2 3 4\n"));
+	char *a5 = __mnprintf(buf, sizeof(buf), "t5 %s %d %d %d %d\n", "1", 2, 3, 4, 5); _assert(!_strcmp(a5, "t5 1 2 3 4 5\n"));
+	char *a6 = __mnprintf(buf, sizeof(buf), "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(!_strcmp(a6, "t6 1 2 3 4 5 6\n"));
+	char *a7 = __mnprintf(buf, sizeof(buf), "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(!_strcmp(a7, "t7 1 2 3 4 5 6 7\n"));
+	char *a8 = __mnprintf(buf, sizeof(buf), "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(!_strcmp(a8, "t8 1 2 3 4 5 6 7 8\n"));
+	char *a9 = __mnprintf(buf, sizeof(buf), "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(!_strcmp(a9, "t9 1 2 3 4 5 6 7 8 9\n"));
+	char *aA = __mnprintf(buf, sizeof(buf), "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(!_strcmp(aA, "ta 1 2 3 4 5 6 7 8 9 A\n"));
+	// extended
+	char *aB = __mnprintf(buf, sizeof(buf), "tb %s %d %d %d %d %d %d %d %d %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B"); _assert(!_strcmp(aB, "tb 1 2 3 4 5 6 7 8 9 A B\n"));
+	char *aC = __mnprintf(buf, sizeof(buf), "tc %s %d %d %d %d %d %d %d %d %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C"); _assert(!_strcmp(aC, "tc 1 2 3 4 5 6 7 8 9 A B C\n"));
+	char *aD = __mnprintf(buf, sizeof(buf), "td %s %d %d %d %d %d %d %d %d %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D"); _assert(!_strcmp(aD, "td 1 2 3 4 5 6 7 8 9 A B C D\n"));
+	char *aE = __mnprintf(buf, sizeof(buf), "te %s %d %d %d %d %d %d %d %d %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E"); _assert(!_strcmp(aE, "te 1 2 3 4 5 6 7 8 9 A B C D E\n"));
+	char *aF = __mnprintf(buf, sizeof(buf), "tf %s %d %d %d %d %d %d %d %d %s %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"); _assert(!_strcmp(aF, "tf 1 2 3 4 5 6 7 8 9 A B C D E F\n"));
+	//
+	char *b0 = _mmprintf(buf, "t0\n"); _assert(!_strcmp(b0, "t0\n"));
+	printf("Example: 15\n");
+}
+
 #if __CUDACC__
 void __testRuntime(cudaDeviceHeap &r)
 {
@@ -286,6 +313,7 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime12<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime13<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime14<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+	runtime15<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	RuntimeSentinel::ServerShutdown();
 }
 #else
@@ -309,6 +337,7 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime12(r.heap);
 	runtime13(r.heap);
 	runtime14(r.heap);
+	runtime15(r.heap);
 #if OS_MAP
 	RuntimeSentinel::ServerShutdown();
 #endif

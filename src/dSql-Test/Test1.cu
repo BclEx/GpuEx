@@ -160,7 +160,7 @@ __device__ const char *sqlite3TestErrorName(int rc)
 #define t1ErrorName sqlite3TestErrorName
 
 // Convert an sqlite3_stmt* into an sqlite3*.  This depends on the fact that the sqlite3* is the first field in the Vdbe structure.
-#define StmtToDb(X) sqlite3_db_handle(X)
+#define StmtToDb(X) Vdbe::Stmt_Ctx(X)
 
 // Check a return value to make sure it agrees with the results from sqlite3_errcode.
 int sqlite3TestErrCode(Tcl_Interp *interp, Context *ctx, int rc)
@@ -1115,7 +1115,7 @@ __device__ static int test_enable_shared(ClientData clientData, Tcl_Interp *inte
 	{
 		bool enable;
 		if (Tcl_GetBoolean(interp, args[1], &enable)) return TCL_ERROR;
-		RC rc = core_enable_shared_cache(enable);
+		RC rc = Btree::EnableSharedCache(enable);
 		if (rc != RC_OK)
 		{
 			Tcl_SetResult(interp, (char *)Main::ErrStr(rc), TCL_STATIC);
@@ -1139,7 +1139,7 @@ __device__ static int test_extended_result_codes(ClientData clientData, Tcl_Inte
 	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
 	bool enable;
 	if (Tcl_GetBoolean(interp, args[2], &enable) ) return TCL_ERROR;
-	core_extended_result_codes(ctx, enable);
+	Main::ExtendedResultCodes(ctx, enable);
 	return TCL_OK;
 }
 
@@ -1329,7 +1329,7 @@ typedef struct TestCollationX TestCollationX;
 __device__ static void testCreateCollationDel(void *ctx)
 {
 	TestCollationX *p = (TestCollationX *)ctx;
-	int rc = Tcl_Eval(p->Interp, p->Del);
+	int rc = Tcl_Eval(p->Interp, (char *)p->Del, 0, nullptr);
 	if (rc != TCL_OK)
 		Tcl_BackgroundError(p->Interp);
 	Tcl_DecrRefCount(p->Cmp);
@@ -1339,12 +1339,12 @@ __device__ static void testCreateCollationDel(void *ctx)
 __device__ static int testCreateCollationCmp(void *ctx, int leftLength, const void *left, int rightLength, const void *right)
 {
 	TestCollationX *p = (TestCollationX *)ctx;
-	Tcl_Obj *script = Tcl_DuplicateObj(p->Cmp);
+	char *script = Tcl_DuplicateObj(p->Cmp);
 	Tcl_IncrRefCount(script);
 	Tcl_ListObjAppendElement(nullptr, script, Tcl_NewStringObj((char *)left, leftLength));
 	Tcl_ListObjAppendElement(nullptr, script, Tcl_NewStringObj((char *)right, rightLength));
 	int res = 0;
-	if (Tcl_Eval(p->Interp, script) != TCL_OK || Tcl_GetInt(p->Interp, p->Interp->result, &res) != TCL_OK)
+	if (Tcl_Eval(p->Interp, script, 0, nullptr) != TCL_OK || Tcl_GetInt(p->Interp, p->Interp->result, &res) != TCL_OK)
 		Tcl_BackgroundError(p->Interp);
 	Tcl_DecrRefCount(script);
 	return res;
@@ -1359,8 +1359,8 @@ __device__ static int test_create_collation_v2(ClientData clientData, Tcl_Interp
 	Context *ctx;
 	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
 	TestCollationX *p = (TestCollationX *)_alloc(sizeof(TestCollationX));
-	p->Cmp = args[3];
-	p->Del = args[4];
+	p->Cmp = (char *)args[3];
+	p->Del = (char *)args[4];
 	p->Interp = interp;
 	Tcl_IncrRefCount(p->Cmp);
 	Tcl_IncrRefCount(p->Del);
@@ -1399,7 +1399,7 @@ __device__ static void cf2Destroy(void *user)
 	CreateFunctionV2 *p = (CreateFunctionV2 *)user;
 	if (p->Interp && p->Destroy)
 	{
-		int rc = Tcl_Eval(p->Interp, p->Destroy);
+		int rc = Tcl_Eval(p->Interp, p->Destroy, 0, nullptr);
 		if (rc != TCL_OK) Tcl_BackgroundError(p->Interp);
 	}
 	if (p->Func) Tcl_DecrRefCount(p->Func); 
@@ -1451,10 +1451,10 @@ __device__ static int test_create_function_v2(ClientData clientData, Tcl_Interp 
 		}
 		switch (switchId)
 		{
-		case 0: p->Func = args[i+1];      break;
-		case 1: p->Step = args[i+1];      break;
-		case 2: p->Final = args[i+1];     break;
-		case 3: p->Destroy = args[i+1];   break;
+		case 0: p->Func = (char *)args[i+1];      break;
+		case 1: p->Step = (char *)args[i+1];      break;
+		case 2: p->Final = (char *)args[i+1];     break;
+		case 3: p->Destroy = (char *)args[i+1];   break;
 		}
 	}
 	if (p->Func) p->Func = Tcl_DuplicateObj(p->Func); 
@@ -1487,9 +1487,9 @@ __device__ static int test_load_extension(ClientData clientData, Tcl_Interp *int
 		Tcl_WrongNumArgs(interp, 1, args, "DB-HANDLE FILE ?PROC?");
 		return TCL_ERROR;
 	}
-	char *dbName = args[1];
-	char *fileName = args[2];
-	char *procName = (argc == 4 ? args[3] : nullptr);
+	char *dbName = (char *)args[1];
+	char *fileName = (char *)args[2];
+	char *procName = (argc == 4 ? (char *)args[3] : nullptr);
 	// Extract the C database handle from the Tcl command name
 	Tcl_CmdInfo cmdInfo;
 	if (!Tcl_GetCommandInfo(interp, dbName, &cmdInfo))
@@ -1759,7 +1759,7 @@ __device__ static int test_reset(ClientData clientData, Tcl_Interp *interp, int 
 	}
 	Vdbe *stmt;
 	if (getStmtPointer(interp, args[1], &stmt)) return TCL_ERROR;
-	bool rc = Vdbe::Reset(stmt);
+	RC rc = Vdbe::Reset(stmt);
 	if (stmt && sqlite3TestErrCode(interp, StmtToDb(stmt), rc)) return TCL_ERROR;
 	Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
 	//if (rc) return TCL_ERROR;
@@ -1884,14 +1884,14 @@ __device__ static Tcl_Interp *_testCollateInterp;
 __device__ static int test_collate_func(void *ctx, int aLength, const void *a, int bLength, const void *b)
 {
 	Tcl_Interp *interp = _testCollateInterp;
-	int encin = PTR_TO_INT(ctx);
-	Tcl_Obj *pX = Tcl_NewStringObj("test_collate", -1);
+	TEXTENCODE encin = (TEXTENCODE)PTR_TO_INT(ctx);
+	char *pX = Tcl_NewStringObj("test_collate", -1);
 	Tcl_IncrRefCount(pX);
 	switch (encin)
 	{
-	case TEXTENCODE_UTF8: Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-8",-1)); break;
-	case TEXTENCODE_UTF16LE: Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16LE",-1)); break;
-	case TEXTENCODE_UTF16BE: Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16BE",-1)); break;
+	case TEXTENCODE_UTF8: Tcl_ListObjAppendElement(interp, pX, "UTF-8"); break;
+	case TEXTENCODE_UTF16LE: Tcl_ListObjAppendElement(interp, pX, "UTF-16LE"); break;
+	case TEXTENCODE_UTF16BE: Tcl_ListObjAppendElement(interp, pX, "UTF-16BE"); break;
 	default: _assert(false);
 	}
 	//
@@ -1901,14 +1901,14 @@ __device__ static int test_collate_func(void *ctx, int aLength, const void *a, i
 	{
 		Vdbe::ValueSetStr(val, aLength, a, encin, DESTRUCTOR_STATIC);
 		int n = Vdbe::Value_Bytes(val);
-		Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj((char*)Vdbe::Value_Text(val), n));
+		Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj((char *)Vdbe::Value_Text(val), n));
 		Vdbe::ValueSetStr(val, bLength, b, encin, DESTRUCTOR_STATIC);
 		n = Vdbe::Value_Bytes(val);
-		Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj((char*)Vdbe::Value_Text(val), n));
+		Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj((char *)Vdbe::Value_Text(val), n));
 		Vdbe::ValueFree(val);
 	}
 	_benignalloc_end();
-	Tcl_EvalObj(interp, pX, 0);
+	Tcl_Eval(interp, pX, 0, nullptr);
 	Tcl_DecrRefCount(pX);
 	int res;
 	Tcl_GetInt(interp, interp->result, &res);
@@ -2038,11 +2038,11 @@ __device__ static int add_alignment_test_collations(ClientData clientData, Tcl_I
 __device__ static void test_function_utf8(FuncContext *fctx, int argc, Mem **args)
 {
 	Tcl_Interp *interp = (Tcl_Interp *)Vdbe::User_Data(fctx);
-	Tcl_Interp *pX = Tcl_NewStringObj("test_function", -1);
+	char *pX = Tcl_NewStringObj("test_function", -1);
 	Tcl_IncrRefCount(pX);
-	Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-8", -1));
+	Tcl_ListObjAppendElement(interp, pX, "UTF-8");
 	Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj((char *)Vdbe::Value_Text(args[0]), -1));
-	Tcl_EvalObj(interp, pX, 0);
+	Tcl_Eval(interp, pX, 0, nullptr);
 	Tcl_DecrRefCount(pX);
 	Vdbe::Result_Text(fctx, interp->result, -1, DESTRUCTOR_TRANSIENT);
 	Mem *val = Vdbe::ValueNew(nullptr);
@@ -2053,11 +2053,11 @@ __device__ static void test_function_utf8(FuncContext *fctx, int argc, Mem **arg
 __device__ static void test_function_utf16le(FuncContext *fctx, int argc, Mem **args)
 {
 	Tcl_Interp *interp = (Tcl_Interp *)Vdbe::User_Data(fctx);
-	Tcl_Obj *pX = Tcl_NewStringObj("test_function", -1);
+	char *pX = Tcl_NewStringObj("test_function", -1);
 	Tcl_IncrRefCount(pX);
-	Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16LE", -1));
+	Tcl_ListObjAppendElement(interp, pX, "UTF-16LE");
 	Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj((char*)Vdbe::Value_Text(args[0]), -1));
-	Tcl_EvalObj(interp, pX, 0);
+	Tcl_Eval(interp, pX, 0, nullptr);
 	Tcl_DecrRefCount(pX);
 	Mem *val = Vdbe::ValueNew(nullptr);
 	Vdbe::ValueSetStr(val, -1, interp->result, TEXTENCODE_UTF8, DESTRUCTOR_STATIC);
@@ -2067,11 +2067,11 @@ __device__ static void test_function_utf16le(FuncContext *fctx, int argc, Mem **
 __device__ static void test_function_utf16be(FuncContext *fctx,  int argc, Mem **args)
 {
 	Tcl_Interp *interp = (Tcl_Interp *)Vdbe::User_Data(fctx);
-	Tcl_Obj *pX = Tcl_NewStringObj("test_function", -1);
+	char *pX = Tcl_NewStringObj("test_function", -1);
 	Tcl_IncrRefCount(pX);
-	Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16BE", -1));
+	Tcl_ListObjAppendElement(interp, pX, "UTF-16BE");
 	Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj((char *)Vdbe::Value_Text(args[0]), -1));
-	Tcl_EvalObj(interp, pX, 0);
+	Tcl_Eval(interp, pX, 0, nullptr);
 	Tcl_DecrRefCount(pX);
 	Mem *val = Vdbe::ValueNew(nullptr);
 	Vdbe::ValueSetStr(val, -1, interp->result, TEXTENCODE_UTF8, DESTRUCTOR_STATIC);
@@ -2322,10 +2322,10 @@ __device__ static int test_bind_text16(ClientData clientData, Tcl_Interp *interp
 {
 #ifndef OMIT_UTF16
 	void (*xDel)(void*) = (argc == 6 ? DESTRUCTOR_STATIC : DESTRUCTOR_TRANSIENT);
-	char *oStmt    = args[argc-4];
-	char *oN       = args[argc-3];
-	char *oString  = args[argc-2];
-	char *oBytes   = args[argc-1];
+	char *oStmt    = (char *)args[argc-4];
+	char *oN       = (char *)args[argc-3];
+	char *oString  = (char *)args[argc-2];
+	char *oBytes   = (char *)args[argc-1];
 	if (argc != 5 && argc != 6)
 	{
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " STMT N VALUE BYTES", nullptr);
@@ -2560,7 +2560,7 @@ __device__ static int test_prepare(ClientData clientData, Tcl_Interp *interp, in
 			bytes = bytes - (int)(tail-sql);
 		if ((int)_strlen(tail) < bytes)
 			bytes = (int)_strlen(tail);
-		Tcl_SetVar2(interp, args[4], 0, Tcl_NewStringObj(tail, bytes), 0);
+		Tcl_SetVar2(interp, (char *)args[4], 0, Tcl_NewStringObj(tail, bytes), 0);
 	}
 	char buf[50];
 	if (rc != RC_OK)
@@ -2686,7 +2686,7 @@ __device__ static int test_prepare16(ClientData clientData, Tcl_Interp *interp, 
 	if (argc >= 5)
 	{
 		sqlLength = (tail ? sqlLength - (int)((uint8 *)tail-(uint8 *)sql) : 0);
-		Tcl_SetVar2(interp, args[4], nullptr, Tcl_NewByteArray(tail, bytes), 0);
+		Tcl_SetVar2(interp, (char *)args[4], nullptr, Tcl_NewByteArray(tail, bytes), 0);
 	}
 	char buf[50];
 	if (stmt)
@@ -2724,7 +2724,7 @@ __device__ static int test_prepare16_v2(ClientData clientData, Tcl_Interp *inter
 	if (argc >= 5)
 	{
 		sqlLength = (tail ? sqlLength - (int)((uint8 *)tail-(uint8 *)sql) : 0);
-		Tcl_SetVar2(interp, args[4], nullptr, Tcl_NewByteArray(tail, bytes), 0);
+		Tcl_SetVar2(interp, (char *)args[4], nullptr, Tcl_NewByteArray(tail, bytes), 0);
 	}
 	char buf[50];
 	if (stmt)
@@ -2788,14 +2788,14 @@ __device__ static int test_open_v2(ClientData clientData, Tcl_Interp *interp, in
 	const char *vfs = args[3];
 	if (vfs[0] == 0x00) vfs = nullptr;
 	int flagLength;
-	Tcl_Obj **flags;
-	int rc = Tcl_ListObjGetElements(interp, args[2], &flagLength, &flags);
+	const char **flags;
+	int rc = Tcl_ListObjGetElements(interp, (char *)args[2], &flagLength, &flags);
 	if (rc != TCL_OK) return rc;
 	VSystem::OPEN flags2 = (VSystem::OPEN)0;
 	for (int i = 0; i < flagLength; i++)
 	{
 		int flagId;
-		rc = Tcl_GetIndex(interp, flags[i], _flags, sizeof(_flags[0]), "flag", 0, &flagId);
+		rc = Tcl_GetIndex(interp, flags[i], (const void **)_flags, sizeof(_flags[0]), "flag", 0, &flagId);
 		if (rc != TCL_OK) return rc;
 		flags2 |= _flags[flagId].Flag;
 	}
@@ -3237,7 +3237,7 @@ __device__ static int tcl_variable_type(ClientData clientData, Tcl_Interp *inter
 		Tcl_WrongNumArgs(interp, 1, args, "VARIABLE");
 		return TCL_ERROR;
 	}
-	Tcl_Obj *var = Tcl_GetVar2(interp, args[1], nullptr, TCL_LEAVE_ERR_MSG);
+	char *var = Tcl_GetVar2(interp, (char *)args[1], nullptr, TCL_LEAVE_ERR_MSG);
 	if (!var) return TCL_ERROR;
 	if (var->TypePtr)
 		Tcl_SetObjResult(interp, var->TypePtr->Name);
@@ -3363,7 +3363,7 @@ __device__ static int test_pager_refcounts(ClientData clientData, Tcl_Interp *in
 	}
 	Context *ctx;
 	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
-	Tcl_Obj *result = Tcl_NewObj();
+	char *result = Tcl_NewObj();
 	for (int i = 0; i < ctx->DBs.length; i++)
 	{
 		int v;
@@ -3392,7 +3392,7 @@ __device__ static int test_pager_refcounts(ClientData clientData, Tcl_Interp *in
 // a result of their defective TCL rather than problems in SQLite.
 __device__ static int working_64bit_int(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	Tcl_Obj *testObj = Tcl_NewWideIntObj(1000000*(int64)1234567890);
+	char *testObj = Tcl_NewWideInt(1000000*(int64)1234567890);
 	bool working = !_strcmp((char *)testObj, "1234567890000000");
 	Tcl_DecrRefCount(testObj);
 	Tcl_SetObjResult(interp, working);
@@ -3405,7 +3405,7 @@ __device__ static int working_64bit_int(ClientData clientData, Tcl_Interp *inter
 // VFS when none are previously registered, and the ability to unregister the only available VFS.  Ticket #2738
 __device__ static int vfs_unlink_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	NullVSystem one, two;
+	VSystem one, two;
 
 	VSystem::UnregisterVfs(nullptr); // Unregister of NULL is harmless
 	one.Name = "__one";
@@ -3440,8 +3440,9 @@ __device__ static int vfs_unlink_test(ClientData clientData, Tcl_Interp *interp,
 	}
 
 	// Unlink the default VFS.  Repeat until there are no more VFSes registered.
+	int i;
 	VSystem *vfs[20];
-	for (int i = 0; i < _lengthof(vfs); i++)
+	for (i = 0; i < _lengthof(vfs); i++)
 	{
 		vfs[i] = VSystem::FindVfs(nullptr);
 		if (vfs[i])
@@ -3493,7 +3494,7 @@ __device__ static int vfs_unlink_test(ClientData clientData, Tcl_Interp *interp,
 // This TCL command attempts to vfs_find and vfs_register when the sqlite3_initialize() interface is failing.  All calls should fail.
 __device__ static int vfs_initfail_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	NullXVSystem one;
+	VSystem one;
 	one.Name = "__one";
 
 	if (VSystem::FindVfs(nullptr)) return TCL_ERROR;
@@ -3710,9 +3711,9 @@ __device__ static int file_control_win32_av_retry(ClientData clientData, Tcl_Int
 	}
 	Context *ctx;
 	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
+	int a[2];
 	if (Tcl_GetInt(interp, args[2], &a[0])) return TCL_ERROR;
 	if (Tcl_GetInt(interp, args[3], &a[1])) return TCL_ERROR;
-	int a[2];
 	RC rc = Main::FileControl(ctx, nullptr, VFile::FCNTL_WIN32_AV_RETRY, (void *)a);
 	char z[100];
 	__snprintf(z, sizeof(z), "%d %d %d", rc, a[0], a[1]);
@@ -3733,7 +3734,7 @@ __device__ static int file_control_persist_wal(ClientData clientData, Tcl_Interp
 	Context *ctx;
 	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
 	bool persist;
-	if (Tcl_GetInt(interp, args[2], &persist)) return TCL_ERROR;
+	if (Tcl_GetBoolean(interp, args[2], &persist)) return TCL_ERROR;
 	RC rc = Main::FileControl(ctx, nullptr, VFile::FCNTL_PERSIST_WAL, (void *)&persist);
 	char z[100];
 	__snprintf(z, sizeof(z), "%d %d", rc, persist);
@@ -3904,20 +3905,20 @@ __device__ static int reset_prng_state(ClientData clientData, Tcl_Interp *interp
 // tclcmd:  pcache_stats
 __device__ static int test_pcache_stats(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	int min;
-	int max;
-	int current;
-	int recyclables;
+	uint min;
+	uint max;
+	uint current;
+	uint recyclables;
 	PCache1_testStats(&current, &max, &min, &recyclables);
-	Tcl_Obj *ret = Tcl_NewObj();
+	char *ret = Tcl_NewObj();
 	Tcl_ListObjAppendElement(interp, ret, "current");
-	Tcl_ListObjAppendElement(interp, ret, current);
+	Tcl_ListObjAppendElement(interp, ret, (int)current);
 	Tcl_ListObjAppendElement(interp, ret, "max");
-	Tcl_ListObjAppendElement(interp, ret, max);
+	Tcl_ListObjAppendElement(interp, ret, (int)max);
 	Tcl_ListObjAppendElement(interp, ret, "min");
-	Tcl_ListObjAppendElement(interp, ret, min);
+	Tcl_ListObjAppendElement(interp, ret, (int)min);
 	Tcl_ListObjAppendElement(interp, ret, "recyclable");
-	Tcl_ListObjAppendElement(interp, ret, recyclables);
+	Tcl_ListObjAppendElement(interp, ret, (int)recyclables);
 	Tcl_SetObjResult(interp, ret);
 	return TCL_OK;
 }
@@ -3987,7 +3988,7 @@ __device__ static int test_wal_checkpoint_v2(ClientData clientData, Tcl_Interp *
 	const char *dbName = (argc == 4 ? args[3] : nullptr);
 	Context *ctx;
 	IPager::CHECKPOINT mode;
-	if (getDbPointer(interp, args[1], &ctx) || Tcl_GetIndex(interp, args[2], _modes, "mode", 0, &mode)) return TCL_ERROR;
+	if (getDbPointer(interp, args[1], &ctx) || Tcl_GetIndex(interp, args[2], (const char **)_modes, "mode", 0, (int *)&mode)) return TCL_ERROR;
 
 	int logs = -555;
 	int ckpts = -555;
@@ -3999,8 +4000,7 @@ __device__ static int test_wal_checkpoint_v2(ClientData clientData, Tcl_Interp *
 	}
 
 	Tcl_Obj *ret = Tcl_NewObj();
-	Tcl_AppendResult
-		Tcl_ListObjAppendElement(interp, ret, (rc == RC_BUSY ? 1 : 0));
+	Tcl_ListObjAppendElement(interp, ret, (rc == RC_BUSY ? 1 : 0));
 	Tcl_ListObjAppendElement(interp, ret, logs);
 	Tcl_ListObjAppendElement(interp, ret, ckpts);
 	Tcl_SetObjResult(interp, ret);
@@ -4011,15 +4011,15 @@ __device__ static int test_wal_checkpoint_v2(ClientData clientData, Tcl_Interp *
 __device__ static struct LogCallback
 {
 	Tcl_Interp *Interp;
-	const char *Obj;
+	char *Obj;
 } _logcallback = { nullptr, nullptr };
 __device__ static void xLogcallback(void *unused, int err, char *msg)
 {
-	Tcl_Obj *new_ = Tcl_DuplicateObj(_logcallback.Obj);
+	char *new_ = Tcl_DuplicateObj(_logcallback.Obj);
 	Tcl_IncrRefCount(new_);
 	Tcl_ListObjAppendElement(0, new_, sqlite3TestErrorName(err));
 	Tcl_ListObjAppendElement(0, new_, msg);
-	Tcl_EvalObjEx(logcallback.Interp, new_, TCL_EVAL_GLOBAL|TCL_EVAL_DIRECT);
+	Tcl_Eval(_logcallback.Interp, new_, 0, nullptr);
 	Tcl_DecrRefCount(new_);
 }
 __device__ static int test_sqlite3_log(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
@@ -4038,7 +4038,7 @@ __device__ static int test_sqlite3_log(ClientData clientData, Tcl_Interp *interp
 	}
 	if (argc > 1)
 	{
-		_logcallback.Obj = args[1];
+		_logcallback.Obj = (char *)args[1];
 		Tcl_IncrRefCount(_logcallback.Obj);
 		_logcallback.Interp = interp;
 		SysEx::Config(SysEx::CONFIG_LOG, xLogcallback, 0);
@@ -4084,7 +4084,7 @@ __device__ RC printExplainQueryPlan(Vdbe *stmt)
 	char *explain = _mprintf("EXPLAIN QUERY PLAN %s", sql);
 	if (!explain) return RC_NOMEM;
 	Vdbe *explainStmt; // Compiled EXPLAIN QUERY PLAN command
-	RC rc = Prepare::Prepare_v2(sqlite3_db_handle(stmt), explain, -1, &explainStmt, 0);
+	RC rc = Prepare::Prepare_v2(Vdbe::Stmt_Ctx(stmt), explain, -1, &explainStmt, 0);
 	_free(explain);
 	if (rc != RC_OK) return rc;
 	while (explainStmt->Step() != RC_ROW)
@@ -4095,7 +4095,7 @@ __device__ RC printExplainQueryPlan(Vdbe *stmt)
 		const char *detail = (const char *)Vdbe::Column_Text(explainStmt, 3);
 		_printf("%d %d %d %s\n", selectid, orderid, fromid, detail);
 	}
-	return explainStmt->Finalize();
+	return Vdbe::Finalize(explainStmt);
 }
 
 __device__ static int test_print_eqp(ClientData clientData,Tcl_Interp *interp, int argc, const char *args[])
@@ -4116,15 +4116,15 @@ __device__ static int test_print_eqp(ClientData clientData,Tcl_Interp *interp, i
 #endif
 
 // sqlite3_test_control VERB ARGS...
+__constant__ struct Verb
+{
+	const char *Name;
+	int Id;
+} _verbs[] = {
+	{ "SQLITE_TESTCTRL_LOCALTIME_FAULT", Main::TESTCTRL_LOCALTIME_FAULT }, 
+};
 __device__ static int test_test_control(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	struct Verb
-	{
-		const char *Name;
-		int Id;
-	} _verbs[] = {
-		{ "SQLITE_TESTCTRL_LOCALTIME_FAULT", Main::TESTCTRL_LOCALTIME_FAULT }, 
-	};
 	if (argc < 2)
 	{
 		Tcl_WrongNumArgs(interp, 1, args, "VERB ARGS...");
@@ -4152,6 +4152,8 @@ __device__ static int test_test_control(ClientData clientData, Tcl_Interp *inter
 }
 
 #if OS_WIN
+#include <windows.h>
+#include <process.h>
 
 // Information passed from the main thread into the windows file locker background thread.
 struct win32FileLocker
@@ -4163,7 +4165,6 @@ struct win32FileLocker
 	int ok;             // Finished ok
 	int err;            // True if an error occurs
 };
-#include <process.h>
 
 // The background thread that does file locking.
 __device__ static void win32_file_locker(void *appData)
@@ -4294,7 +4295,7 @@ __device__ static int optimization_control(ClientData clientData, Tcl_Interp *in
 			break;
 		}
 	}
-	if (onoff) mask = ~mask;
+	if (onoff) mask = (OPTFLAG)~mask;
 	if (i >= _lengthof(_opts))
 	{
 		Tcl_AppendResult(interp, "unknown optimization - should be one of:", nullptr);
@@ -4321,7 +4322,7 @@ extern int sqlite3_current_time;
 extern int sqlite3_hostid_num;
 #endif
 extern int sqlite3_max_blobsize;
-extern int sqlite3BtreeSharedCacheReport(void *, Tcl_Interp *, int, char **);
+__device__ extern int sqlite3BtreeSharedCacheReport(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[]);
 __constant__ static struct
 {
 	char *Name;
@@ -4549,6 +4550,8 @@ __constant__ static char *query_plan = sqlite3_query_plan;
 extern int sqlite3_fts3_enable_parentheses;
 #endif
 #endif
+__device__ extern char *g_temp_directory;
+__device__ extern char *g_data_directory;
 __device__ int Sqlitetest1_Init(Tcl_Interp *interp)
 {
 	int i;
@@ -4570,7 +4573,7 @@ __device__ int Sqlitetest1_Init(Tcl_Interp *interp)
 	Tcl_LinkVar(interp, "sqlite3_pager_writedb_count", (char*)&sqlite3_pager_writedb_count, TCL_LINK_INT);
 	Tcl_LinkVar(interp, "sqlite3_pager_writej_count", (char*)&sqlite3_pager_writej_count, TCL_LINK_INT);
 #ifndef OMIT_UTF16
-	Tcl_LinkVar(interp, "unaligned_string_counter", (char*)&unaligned_string_counter, TCL_LINK_INT);
+	Tcl_LinkVar(interp, "unaligned_string_counter", (char*)&_unaligned_string_counter, TCL_LINK_INT);
 #endif
 #ifndef OMIT_UTF16
 	Tcl_LinkVar(interp, "sqlite_last_needed_collation", (char*)&_neededCollation, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
@@ -4593,8 +4596,8 @@ __device__ int Sqlitetest1_Init(Tcl_Interp *interp)
 #endif
 	Tcl_LinkVar(interp, "sqlite_static_bind_value", (char*)&_static_bind_value, TCL_LINK_STRING);
 	Tcl_LinkVar(interp, "sqlite_static_bind_nbyte", (char*)&_static_bind_nbyte, TCL_LINK_INT);
-	Tcl_LinkVar(interp, "sqlite_temp_directory", (char*)&_temp_directory, TCL_LINK_STRING);
-	Tcl_LinkVar(interp, "sqlite_data_directory", (char*)&_data_directory, TCL_LINK_STRING);
+	Tcl_LinkVar(interp, "sqlite_temp_directory", (char*)&g_temp_directory, TCL_LINK_STRING);
+	Tcl_LinkVar(interp, "sqlite_data_directory", (char*)&g_data_directory, TCL_LINK_STRING);
 	Tcl_LinkVar(interp, "bitmask_size", (char*)&bitmask_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
 	Tcl_LinkVar(interp, "sqlite_sync_count", (char*)&sqlite3_sync_count, TCL_LINK_INT);
 	Tcl_LinkVar(interp, "sqlite_fullsync_count", (char*)&sqlite3_fullsync_count, TCL_LINK_INT);

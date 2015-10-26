@@ -370,7 +370,7 @@ __device__ static void DbRollbackHandler(void *clientData)
 {
 	TclContext *tctx = (TclContext *)clientData;
 	_assert(tctx->RollbackHook);
-	if (Tcl_Eval(tctx->Interp, *tctx->RollbackHook, 0, nullptr) != TCL_OK)
+	if (Tcl_Eval(tctx->Interp, tctx->RollbackHook, 0, nullptr) != TCL_OK)
 		Tcl_BackgroundError(tctx->Interp);
 }
 
@@ -381,7 +381,7 @@ __device__ static int DbWalHandler(void *clientData, Context *ctx, const char *d
 	Tcl_Interp *interp = tctx->Interp;
 	_assert(tctx->WalHook);
 	char b[50];
-	Tcl_SetResult(interp, *tctx->WalHook, nullptr);
+	Tcl_SetResult(interp, tctx->WalHook, nullptr);
 	Tcl_AppendElement(interp, dbName, false);
 	Tcl_AppendElement(interp, _itoa(entrys, b), false);
 	char *cmd = interp->result;
@@ -481,7 +481,7 @@ __device__ static void TclSqlFunc(FuncContext *fctx, int argc, Mem **argv)
 		// By "shallow" copy, we mean a only the outer list Tcl_Obj is duplicated. The new Tcl_Obj contains pointers to the original list elements. 
 		// That way, when Tcl_EvalObjv() is run and shimmers the first element of the list to tclCmdNameType, that alternate representation will
 		// be preserved and reused on the next invocation.
-		char **args;
+		const char **args;
 		int argsLength;
 		if (Tcl_SplitList(interp, *p->Script, &argsLength, &args))
 		{
@@ -1185,7 +1185,7 @@ enum TTYPE_enum { TTYPE_DEFERRED, TTYPE_EXCLUSIVE, TTYPE_IMMEDIATE };
 //       db1 close
 //
 // The first command opens a connection to the "my_database" database and calls that connection "db1".  The second command causes this subroutine to be invoked.
-__device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2)
 	{
@@ -1202,7 +1202,6 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 	int rc = TCL_OK;
 	switch ((DB_enum)choice)
 	{
-/*
 	case DB_AUTHORIZER: {
 		//    $db authorizer ?CALLBACK?
 		//
@@ -1255,6 +1254,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 #endif
 		return RC_OK; }
 
+/*
 	case DB_BACKUP: {
 		//    $db backup ?DATABASE? FILENAME
 		//
@@ -1351,7 +1351,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 			Tcl_WrongNumArgs(interp, 1, args, "cache option ?arg?");
 			return TCL_ERROR;
 		}
-		char *subCmd = args[2];
+		char *subCmd = (char *)args[2];
 		if (subCmd[0] == 'f' && !_strcmp(subCmd,"flush"))
 		{
 			if (argc != 3)
@@ -1415,7 +1415,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 		//    $db close
 		//
 		// Shutdown the database
-		Tcl_DeleteCommand(interp, args[0]);
+		Tcl_DeleteCommand(interp, (char *)args[0]);
 		return rc; }
 
 	case DB_COLLATE: {
@@ -1427,7 +1427,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 			Tcl_WrongNumArgs(interp, 2, args, "NAME SCRIPT");
 			return TCL_ERROR;
 		}
-		char *name = args[2];
+		char *name = (char *)args[2];
 		int scriptLength;
 		char *script = Tcl_GetString(interp, args[3], &scriptLength);
 		SqlCollate *collate = (SqlCollate *)Tcl_Alloc(sizeof(*collate) + scriptLength + 1);
@@ -1455,7 +1455,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 		}
 		if (p->CollateNeeded)
 			Tcl_DecrRefCount(p->CollateNeeded);
-		p->CollateNeeded = Tcl_DuplicateObj(args[2]);
+		p->CollateNeeded = Tcl_DuplicateObj((char *)args[2]);
 		Tcl_IncrRefCount(p->CollateNeeded);
 		Main::CollationNeeded(p->Ctx, p, TclCollateNeeded);
 		return rc; }
@@ -1533,9 +1533,9 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 		int i;
 		char *sep = (argc >= 6 ? args[5] : "\t");
 		char *null = (argc >= 7 ? args[6] : "");
-		char *conflict = args[2]; // The conflict algorithm to use
-		char *table = args[3]; // Insert data into this table
-		char *file = args[4]; // The file from which to extract data
+		char *conflict = (char *)args[2]; // The conflict algorithm to use
+		char *table = (char *)args[3]; // Insert data into this table
+		char *file = (char *)args[4]; // The file from which to extract data
 		int sepLength = _strlen(sep); // Number of bytes in zSep[]
 		int nullLength = _strlen(null); // Number of bytes in zNull[]
 		if (sepLength == 0)
@@ -1723,7 +1723,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 			return TCL_ERROR;
 		}
 
-		DbEvalInit(&sEval, p, args[2], nullptr);
+		DbEvalInit(&sEval, p, (char *)args[2], nullptr);
 		rc = DbEvalStep(&sEval);
 		if (choice == DB_ONECOLUMN)
 		{
@@ -2011,7 +2011,6 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 		}
 #endif
 		return rc; }
-
 	case DB_RESTORE: {
 		//    $db restore ?DATABASE? FILENAME
 		//
@@ -2315,7 +2314,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, char *arg
 // DBNAME that is used to control that connection.  The database connection is deleted when the DBNAME command is deleted.
 //
 // The second argument is the name of the database file.
-__device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, const char *args[])
 {
 	// In normal use, each TCL interpreter runs in a single thread.  So by default, we can turn of mutexing on SQLite database connections.
 	// However, for testing purposes it is useful to have mutexes turned on.  So, by default, mutexes default off.  But if compiled with
@@ -2438,7 +2437,7 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char *args[
 		return TCL_ERROR;
 	}
 	_memset(p, 0, sizeof(*p));
-	char *fileName = args[2];
+	char *fileName = (char *)args[2];
 	//fileName = Tcl_TranslateFileName(interp, fileName, &translatedFilename);
 	RC rc = Main::Open_v2(fileName, &p->Ctx, flags, vfsName);
 	if (p->Ctx)

@@ -531,7 +531,7 @@ __device__ char *_itoa64(int64 i, char *b)
 {
 	char *p = b;
 	if (i < 0) { *p++ = '-'; i *= -1; }
-	int shifter = i;
+	int64 shifter = i;
 	do { ++p; shifter = shifter/10; } while(shifter); // Move to where representation ends
 	*p = '\0';
 	do { *--p = _digit[i%10]; i = i/10; } while(i); // Move back, inserting digits as u go

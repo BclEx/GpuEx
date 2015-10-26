@@ -28,19 +28,19 @@ char _initCmd[] = "puts stdout \"\nEmbedded Tcl 6.8.0\n\"";//; source tcl_sys/au
 
 #ifdef TCL_MEM_DEBUG
 char _dumpFile[100];
-int cmdCheckmem(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdCheckmem(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " fileName\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " fileName\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	strcpy(_dumpFile, argv[1]);
+	strcpy(_dumpFile, args[1]);
 	_quitFlag = true;
 	return TCL_OK;
 }
 #endif
 
-int main(int argc, char *argv[])
+int main(int argc, const char *args[])
 {
 	_interp = Tcl_CreateInterp();
 #ifdef TCL_MEM_DEBUG
@@ -61,14 +61,14 @@ int main(int argc, char *argv[])
 	int result;
 	FILE *in;
 	FILE *out;
-	if (argc > 1 && strcmp(argv[1], "-"))
+	if (argc > 1 && strcmp(args[1], "-"))
 	{
-		char *filename = argv[1]+1;
+		char *filename = (char *)args[1]+1;
 
-		// Before we eval the file, create an argv global containing the remaining arguments
-		char *args = Tcl_Merge(argc - 2, argv + 2);
-		Tcl_SetVar(_interp, "argv", args, TCL_GLOBAL_ONLY);
-		_freeFast(args);
+		// Before we eval the file, create an args global containing the remaining arguments
+		char *args2 = Tcl_Merge(argc - 2, args + 2);
+		Tcl_SetVar(_interp, "argv", args2, TCL_GLOBAL_ONLY);
+		_freeFast(args2);
 
 		result = Tcl_EvalFile(_interp, filename);
 		if (result != TCL_OK)

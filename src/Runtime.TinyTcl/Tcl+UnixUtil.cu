@@ -275,7 +275,7 @@ nextPid:
 *----------------------------------------------------------------------
 *
 * Tcl_CreatePipeline --
-*	Given an argc/argv array, instantiate a pipeline of processes as described by the argv.
+*	Given an argc/args array, instantiate a pipeline of processes as described by the args.
 *
 * Results:
 *	The return value is a count of the number of new processes created, or -1 if an error occurred while creating the pipeline.
@@ -291,7 +291,7 @@ nextPid:
 *
 *----------------------------------------------------------------------
 */
-int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr)
+int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr)
 {
 	if (inPipePtr != NULL) {
 		*inPipePtr = -1;
@@ -308,7 +308,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 
 	// First, scan through all the arguments to figure out the structure of the pipeline.  Count the number of distinct processes (it's the number of "|" arguments).
 	// If there are "<", "<<", or ">" argumentsthen make note of input and output redirection and remove these arguments and the arguments that follow them.
-	int cmdCount = 1; // Count of number of distinct commands found in argc/argv.
+	int cmdCount = 1; // Count of number of distinct commands found in argc/args.
 	int lastBar = -1;
 	char *input = NULL; // Describes input for pipeline, depending on "inputFile".  NULL means take input from stdin/pipe.
 	int inputFile = 0; // 1 means input is name of input file. 2 means input is filehandle name. 0 means input holds actual text to be input to command.
@@ -319,7 +319,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 	int i;
 	for (i = 0; i < argc; i++) {
 		int removecount = 1;
-		if (argv[i][0] == '|' && argv[i][1] == 0) {
+		if (args[i][0] == '|' && args[i][1] == 0) {
 			if (i == (lastBar+1) || i == (argc-1)) {
 				interp->result = "illegal use of | in command";
 				return -1;
@@ -327,8 +327,8 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 			lastBar = i;
 			cmdCount++;
 			continue;
-		} else if (argv[i][0] == '<') {
-			input = argv[i] + 1;
+		} else if (args[i][0] == '<') {
+			input = args[i] + 1;
 			inputFile = 1;
 			if (*input == '<') {
 				inputFile = 0;
@@ -339,11 +339,11 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				input++;
 			}
 			if (!*input) {
-				input = argv[i + 1];
+				input = args[i + 1];
 				removecount++;
 			}
-		} else if (argv[i][0] == '>') {
-			output = argv[i] + 1;
+		} else if (args[i][0] == '>') {
+			output = args[i] + 1;
 			outputFile = 0;
 			if (*output == '@') {
 				outputFile = 2;
@@ -354,11 +354,11 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				output++;
 			}
 			if (!*output) {
-				output = argv[i + 1];
+				output = args[i + 1];
 				removecount++;
 			}
-		} else if (argv[i][0] == '2' && argv[i][1] == '>') {
-			error = argv[i] + 2;
+		} else if (args[i][0] == '2' && args[i][1] == '>') {
+			error = args[i] + 2;
 			errorFile = 0;
 			if (*error == '@') {
 				errorFile = 2;
@@ -369,18 +369,18 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **argv, int **pidArray
 				error++;
 			}
 			if (!*error) {
-				error = argv[i + 1];
+				error = args[i + 1];
 				removecount++;
 			}
 		} else {
 			continue;
 		}
 		if (i + removecount > argc) {
-			Tcl_AppendResult(interp, "can't specify \"", argv[i], "\" as last word in command", (char *)NULL);
+			Tcl_AppendResult(interp, "can't specify \"", args[i], "\" as last word in command", (char *)NULL);
 			return -1;
 		}
 		for (int j = i+removecount; j < argc; j++) {
-			argv[j-removecount] = argv[j];
+			args[j-removecount] = args[j];
 		}
 		argc -= removecount;
 		i -= removecount; // Process new arg from same position.
@@ -547,11 +547,11 @@ errFileError:
 	int lastArg;
 	for (int firstArg = 0; firstArg < argc; numPids++, firstArg = lastArg+1) {
 		for (lastArg = firstArg; lastArg < argc; lastArg++) {
-			if (argv[lastArg][0] == '|' && argv[lastArg][1] == 0) {
+			if (args[lastArg][0] == '|' && args[lastArg][1] == 0) {
 				break;
 			}
 		}
-		argv[lastArg] = NULL;
+		args[lastArg] = NULL;
 		if (lastArg == argc) {
 			outputId = lastOutputId;
 		} else {
@@ -561,7 +561,7 @@ errFileError:
 			}
 			outputId = pipeIds[1];
 		}
-		char *execName = Tcl_TildeSubst(interp, argv[firstArg]);
+		char *execName = Tcl_TildeSubst(interp, args[firstArg]);
 		int pid = Tcl_Fork();
 		if (pid == -1) {
 			Tcl_AppendResult(interp, "couldn't fork child process: ", Tcl_OSError(interp), (char *)NULL);
@@ -577,8 +577,8 @@ errFileError:
 			for (i = 3; i <= outputId || i <= inputId || i <= errorId; i++) {
 				close(i);
 			}
-			execvp(execName, &argv[firstArg]);
-			sprintf(errSpace, "couldn't find \"%.150s\" to execute\n", argv[firstArg]);
+			execvp(execName, &args[firstArg]);
+			sprintf(errSpace, "couldn't find \"%.150s\" to execute\n", args[firstArg]);
 			write(2, errSpace, strlen(errSpace));
 			_exit(1);
 		} else {

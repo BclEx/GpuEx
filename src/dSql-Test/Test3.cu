@@ -1,4 +1,4 @@
-#include "TclContext.cu.h"
+#include "Test.cu.h"
 #include "..\System.Data.net\Core+Btree\BtreeInt.cu.h"
 #include <stdlib.h>
 #include <string.h>
@@ -82,7 +82,7 @@ __device__ static int btree_close(ClientData notUsed, Tcl_Interp *interp, int ar
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
 	RC rc = bt->Close();
 	if (rc != RC_OK)
 	{
@@ -110,7 +110,7 @@ __device__ static int btree_begin_transaction(ClientData notUsed, Tcl_Interp *in
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
 	bt->Enter();
 	RC rc = bt->BeginTrans(1);
 	bt->Leave();
@@ -136,7 +136,7 @@ __device__ static int btree_pager_stats(ClientData notUsed, Tcl_Interp *interp, 
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
 
 	// Normally in this file, with a b-tree handle opened using the [btree_open] command it is safe to call sqlite3BtreeEnter() directly.
 	// But this function is sometimes called with a btree handle obtained from an open SQLite connection (using [btree_from_db]). In this case
@@ -169,12 +169,12 @@ __device__ static int btree_cursor(ClientData notUsed, Tcl_Interp *interp, int a
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID TABLENUM WRITEABLE\"", nullptr);
 		return TCL_ERROR;
 	}
-	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
 	int tableId;
 	if (Tcl_GetInt(interp, (char *)args[2], &tableId)) return TCL_ERROR;
 	bool wrFlag;
 	if (Tcl_GetBoolean(interp, (char *)args[3], &wrFlag)) return TCL_ERROR;
-	BtCursor *cur = (BtCursor *)ckalloc(Btree::CursorSize());
+	BtCursor *cur = (BtCursor *)Tcl_Alloc(Btree::CursorSize());
 	_memset(cur, 0, Btree::CursorSize());
 	bt->Enter();
 	RC rc = RC_OK;
@@ -186,7 +186,7 @@ __device__ static int btree_cursor(ClientData notUsed, Tcl_Interp *interp, int a
 	bt->Leave();
 	if (rc)
 	{
-		ckfree((char *)cur);
+		Tcl_Free((char *)cur);
 		Tcl_AppendResult(interp, errorName(rc), nullptr);
 		return TCL_ERROR;
 	}
@@ -206,12 +206,12 @@ __device__ static int btree_close_cursor(ClientData notUsed, Tcl_Interp *interp,
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
 	Btree *bt = cur->Btree;
 	bt->Enter();
 	RC rc = Btree::CloseCursor(cur);
 	bt->Leave();
-	ckfree((char *)cur);
+	Tcl_Free((char *)cur);
 	if (rc)
 	{
 		Tcl_AppendResult(interp, errorName(rc), nullptr);
@@ -231,7 +231,7 @@ __device__ static int btree_next(ClientData notUsed, Tcl_Interp *interp, int arg
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
 	cur->Btree->Enter();
 	int res = 0;
 	RC rc = Btree::Next_(cur->Next, &res);
@@ -257,7 +257,7 @@ __device__ static int btree_first(ClientData notUsed, Tcl_Interp *interp, int ar
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
 	cur->Btree->Enter();
 	int res = 0;
 	RC rc = Btree::First(cur, &res);
@@ -284,7 +284,7 @@ __device__ static int btree_eof(ClientData notUsed, Tcl_Interp *interp, int argc
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
 	cur->Btree->Enter();
 	bool rc = Btree::Eof(cur);
 	cur->Btree->Leave();
@@ -304,7 +304,7 @@ __device__ static int btree_payload_size(ClientData notUsed, Tcl_Interp *interp,
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	BtCursor *cur = sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
 	cur->Btree->Enter();
 
 	// The cursor may be in "require-seek" state. If this is the case, the call to BtreeDataSize() will fix it.
@@ -439,7 +439,7 @@ __device__ static int btree_ismemdb(ClientData notUsed, Tcl_Interp *interp, int 
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
 		return TCL_ERROR;
 	}
-	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
 	_mutex_enter(bt->Ctx->Mutex);
 	bt->Enter();
 	bool res = bt->get_Pager()->MemoryDB;
@@ -459,7 +459,7 @@ __device__ static int btree_set_cache_size(ClientData notUsed, Tcl_Interp *inter
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " BT NCACHE\"", nullptr);
 		return TCL_ERROR;
 	}
-	Btree *bt = sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
 	int cacheSize;
 	if (Tcl_GetInt(interp, (char *)args[2], &cacheSize)) return TCL_ERROR;
 

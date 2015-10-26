@@ -4,7 +4,7 @@
 
 //#define TRACE_CRASHTEST
 
-typedef struct CrashVFile CrashVFile;
+typedef class CrashVFile CrashVFile;
 typedef struct CrashGlobal CrashGlobal;
 typedef struct WriteBuffer WriteBuffer;
 
@@ -122,7 +122,7 @@ struct CrashGlobal
 	char CrashFile[500];        // Crash during an xSync() on this file
 };
 
-static CrashGlobal _g = { nullptr, nullptr, CORE_DEFAULT_SECTOR_SIZE, (VFile::IOCAP)0, 0, nullptr};
+static CrashGlobal _g = { nullptr, nullptr, DEFAULT_SECTOR_SIZE, (VFile::IOCAP)0, 0, 0 };
 
 // Set this global variable to 1 to enable crash testing.
 __device__ static bool _crashTestEnable = false;
@@ -577,7 +577,7 @@ __constant__ struct DeviceFlag
 	{ "powersafe_overwrite", VFile::IOCAP_POWERSAFE_OVERWRITE   },
 	{ nullptr, (VFile::IOCAP)0 }
 };
-__device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, char *args[], VFile::IOCAP *deviceCharOut, int *sectorSizeOut)
+__device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, const char *args[], VFile::IOCAP *deviceCharOut, int *sectorSizeOut)
 {
 	int sectorSize = 0;
 	int deviceChar = 0;
@@ -608,7 +608,7 @@ __device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, char *arg
 		{
 			const char **objs;
 			int objc;
-			if (Tcl_ListObjGetElements(interp, args[i+1], &objc, &objs))
+			if (Tcl_ListObjGetElements(interp, (char *)args[i+1], &objc, &objs))
 				return TCL_ERROR;
 			for (int j = 0; j < objc; j++)
 			{
@@ -705,7 +705,7 @@ __device__ static int crashParamsObjCmd(ClientData clientData, Tcl_Interp *inter
 
 	_g.CrashAt = delayAt;
 	_memcpy(_g.CrashFile, crashFile, crashFileLength+1);
-	sqlite3CrashTestEnable = true;
+	_crashTestEnable = true;
 	return TCL_OK;
 
 error:
@@ -715,7 +715,7 @@ error:
 __device__ extern void devsym_register(int deviceChar, int sectorSize);
 __device__ static int devSymObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	int deviceChar = -1;
+	VFile::IOCAP deviceChar = (VFile::IOCAP)-1;
 	int sectorSize = -1;
 	if (processDevSymArgs(interp, argc-1, &args[1], &deviceChar, &sectorSize))
 		return TCL_ERROR;
@@ -732,7 +732,7 @@ __device__ static int jtObjCmd(ClientData clientData, Tcl_Interp *interp, int ar
 		Tcl_WrongNumArgs(interp, 1, args, "?-default? PARENT-VFS");
 		return TCL_ERROR;
 	}
-	const char *parent = args[1];
+	char *parent = (char *)args[1];
 	if (argc == 3)
 	{
 		if (!_strcmp(parent, "-default"))
@@ -740,7 +740,7 @@ __device__ static int jtObjCmd(ClientData clientData, Tcl_Interp *interp, int ar
 			Tcl_AppendResult(interp, "bad option \"", parent, "\": must be -default", nullptr);
 			return TCL_ERROR;
 		}
-		parent = args[2];
+		parent = (char *)args[2];
 	}
 	if (!(*parent))
 		parent = 0;

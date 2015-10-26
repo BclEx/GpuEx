@@ -24,7 +24,7 @@ __constant__ struct BackupSubCommand {
 	{ nullptr, (BackupSubCommandEnum)0, 0, nullptr }
 };
 
-__device__ static int backupTestCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int backupTestCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	Backup *p = (Backup *)clientData;
 	int cmd;
@@ -74,7 +74,7 @@ __device__ static void backupTestFinish(ClientData clientData)
 }
 
 //     sqlite3_backup CMDNAME DESTHANDLE DESTNAME SRCHANDLE SRCNAME
-__device__ static int backupTestInit(ClientData clientData, Tcl_Interp *interp, int argc, char *args[])
+__device__ static int backupTestInit(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 6)
 	{

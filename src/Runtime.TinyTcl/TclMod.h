@@ -16,7 +16,7 @@
 #define TCL_MODFLAG_BUILTIN 0x0002
 // Custom flags start at 0x0100
 
-typedef int tclmod_cmd_function(Tcl_Interp *interp, int argc, char **argv);
+typedef int tclmod_cmd_function(Tcl_Interp *interp, int argc, const char *args[]);
 
 typedef struct {
 	const char *cmd;				// Name of the (sub)command
@@ -30,11 +30,11 @@ typedef struct {
 
 /*
 * Often a command may be called with either multiple arguments, or a single argument which is a list.
-* This function detects a single argument which is a list and splits that list into separate arguments and updates *argc and *argv appropriately.
+* This function detects a single argument which is a list and splits that list into separate arguments and updates *argc and *args appropriately.
 *
-* Returns 1 if the list was split (in which case *argv will need to be freed) or 0 if no changes were made.
+* Returns 1 if the list was split (in which case *args will need to be freed) or 0 if no changes were made.
 */
-__device__ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv);
+__device__ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***args);
 
 /*
 * Looks up the appropriate subcommand in the given command table and return the command function which implements the subcommand.
@@ -42,13 +42,13 @@ __device__ int tcl_split_one_arg(Tcl_Interp *interp, int *argc, char ***argv);
 *
 * Typical usage is:
 *  {
-*    const tclmod_command_type *ct = tclmod_parse_cmd(interp, command_table, argc, argv);
+*    const tclmod_command_type *ct = tclmod_parse_cmd(interp, command_table, argc, args);
 *    if (ct) {
-*      return ct->function(interp, argc - 2, argv + 2);
+*      return ct->function(interp, argc - 2, args + 2);
 *    }
 *    return TCL_ERROR;
 *  }
 */
-__device__ const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, char **argv);
+__device__ const tclmod_command_type *tclmod_parse_cmd(Tcl_Interp *interp, const tclmod_command_type *command_table, int argc, const char *args[]);
 
 #endif /* __TCLMOD_H__ */

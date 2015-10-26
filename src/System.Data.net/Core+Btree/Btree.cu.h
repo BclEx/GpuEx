@@ -140,6 +140,9 @@ namespace CORE_NAME
 		__device__ RC DropTable(int tableID, int *movedID);
 		__device__ RC ClearTable(int tableID, int *changes);
 		__device__ void TripAllCursors(RC errCode);
+#ifndef OMIT_SHARED_CACHE
+		__device__ static RC EnableSharedCache(bool enable);
+#endif
 
 		enum META : uint8
 		{

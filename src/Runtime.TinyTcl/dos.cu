@@ -14,10 +14,10 @@
 
 #ifdef COMPILE_BIOS_MEMSIZE
 // bios_memsize - return the size of memory according to the BIOS
-int cmdbios_memsize(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdbios_memsize(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	long memsize = _bios_memsize() * 1024;
@@ -31,10 +31,10 @@ int cmdbios_memsize(ClientData clientData, Tcl_Interp *interp, int argc, char *a
 // This is a very primitive command, probably dating back to the original PC.  You can't find out much, and it's all packed into the word that's
 // returned.  If you really need this data, this code should be expanded to unpack it for you.
 #ifdef COMPILE_BIOS_EQUIPLIST
-int cmdbios_equiplist(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdbios_equiplist(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	_sprintf(interp->result, "%u", _bios_equiplist());
@@ -43,10 +43,10 @@ int cmdbios_equiplist(ClientData clientData, Tcl_Interp *interp, int argc, char 
 #endif
 
 // kbhit - returns 1 if a key has been hit, else 0
-int cmdkbhit(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdkbhit(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	_sprintf(interp->result, "%d", kbhit());
@@ -54,10 +54,10 @@ int cmdkbhit(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 }
 
 // getkey - returns a key as an integer keycode.  waits until a key has been pressed.  (So use kbhit to see if one is there first, if you don't want to wait.)
-int cmdgetkey(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdgetkey(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	_sprintf(interp->result, "%d", getch());
@@ -65,14 +65,14 @@ int cmdgetkey(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 }
 
 // sound frequency - start the sound playing a square wave at the specified frequency in hertz.  If 0, stops the sound from playing.
-int cmdsound(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdsound(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " frequency\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " frequency\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int frequency;
-	if (Tcl_GetInt(interp, argv[1], &frequency) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[1], &frequency) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	if (frequency == 0) {
@@ -84,10 +84,10 @@ int cmdsound(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 }
 
 // getdate - returns the current date as a list containing month, day, year
-int cmdgetdate(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdgetdate(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	struct dosdate_t date;
@@ -97,22 +97,22 @@ int cmdgetdate(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[]
 }
 
 // setdate month day year -- set the current date to the specified month, day and year
-int cmdsetdate(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdsetdate(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " month day year", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " month day year", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int month;
-	if (Tcl_GetInt(interp, argv[1], &month) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[1], &month) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	int day;
-	if (Tcl_GetInt(interp, argv[2], &day) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[2], &day) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	int year;
-	if (Tcl_GetInt(interp, argv[3], &year) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[3], &year) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	struct dosdate_t date;
@@ -128,10 +128,10 @@ int cmdsetdate(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[]
 }
 
 // gettime - returns the current time as a list containing hours, minutes, and seconds
-int cmdgettime(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdgettime(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	struct dostime_t time;
@@ -141,22 +141,22 @@ int cmdgettime(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[]
 }
 
 // settime hour minute second -- set the current time to the specified hour, minute and second
-int cmdsettime(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdsettime(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " hour minute second", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " hour minute second", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int hour;
-	if (Tcl_GetInt(interp, argv[1], &hour) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[1], &hour) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	int minute;
-	if (Tcl_GetInt(interp, argv[2], &minute) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[2], &minute) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	int second;
-	if (Tcl_GetInt(interp, argv[3], &second) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[3], &second) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	struct dostime_t time;
@@ -196,14 +196,14 @@ bad_drive:
 //
 // Currently this works under a DOS window but not on the handheld.
 #ifdef COMPILE_DISKFREE
-int cmddiskfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmddiskfree(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " drive\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " drive\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int drive;
-	if ((drive = convert_drive_id (interp, argv[1])) < 0) {
+	if ((drive = convert_drive_id (interp, args[1])) < 0) {
 		return TCL_ERROR;
 	}
 	struct diskfree_t diskfree;
@@ -221,14 +221,14 @@ int cmddiskfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[
 
 // cmdgetfat - returns a list containing the FAT ID byte, sectors per cluster, number of clusters, and bytes per sector.
 #ifdef COMPILE_GETFAT
-int cmdgetfat(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdgetfat(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " drive\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " drive\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int drive;
-	if ((drive = convert_drive_id(interp, argv[1])) < 0) {
+	if ((drive = convert_drive_id(interp, args[1])) < 0) {
 		return TCL_ERROR;
 	}
 	struct fatinfo dtable;
@@ -239,14 +239,14 @@ int cmdgetfat(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 #endif
 
 // cmdgetdfree - returns a list containing the available clusters, total clusters, bytes per sector, and sectors per cluster.
-int cmdgetdfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdgetdfree(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " drive\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " drive\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int drive;
-	if ((drive = convert_drive_id (interp, argv[1])) < 0) {
+	if ((drive = convert_drive_id (interp, args[1])) < 0) {
 		return TCL_ERROR;
 	}
 	struct dfree dtable;
@@ -256,10 +256,10 @@ int cmdgetdfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[
 }
 
 // drive letter - set the current drive to the specified letter
-int cmddrive(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmddrive(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc > 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ?driveid?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ?driveid?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 
@@ -269,7 +269,7 @@ int cmddrive(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		_sprintf(interp->result, "%c", drive + 'A' - 1);
 		return TCL_OK;
 	}
-	if ((drive = convert_drive_id(interp, argv[1])) < 0) {
+	if ((drive = convert_drive_id(interp, args[1])) < 0) {
 		return TCL_ERROR;
 	}
 	unsigned ndrives;
@@ -283,14 +283,14 @@ int cmddrive(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 }
 
 // memfree - returns the amount of RAM left on the system
-int cmdmemfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdmemfree(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	_sprintf(interp->result, "%lu", farcoreleft());
 	return TCL_OK;
 }
 
 // stackfree - returns the amount of stack left on the system
-int cmdstackfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdstackfree(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	_sprintf(interp->result, "%u", stackavail());
 	return TCL_OK;
@@ -298,35 +298,35 @@ int cmdstackfree(ClientData clientData, Tcl_Interp *interp, int argc, char *argv
 
 #ifdef COMPILE_BIOS_SERIALCOM
 // bios_serialcom - does serial I/O stuff through the BIOS
-int cmdbios_serialcom(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdbios_serialcom(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 3 || argc > 4) {
 argcount:
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " command port (data)\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " command port (data)\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int command;
 	int port;
 	int data = 0;
 	bool needData = false;
-	if (STREQU(argv[1], "status")) {
+	if (STREQU(args[1], "status")) {
 		command = _COM_STATUS;
 		if (argc != 3) goto argcount;
-	} else if (STREQU(argv[1], "receive")) {
+	} else if (STREQU(args[1], "receive")) {
 		command = _COM_RECEIVE;
 		if (argc != 3) goto argcount;
-	} else if (STREQU(argv[1], "send")) {
+	} else if (STREQU(args[1], "send")) {
 		command = _COM_SEND;
 		if (argc != 4) goto argcount;
-		if (Tcl_GetInt(interp, argv[2], &port) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &port) != TCL_OK) {
 			return TCL_ERROR;
 		}
 		char *s;
-		for (s = argv[3]; *s != '\0'; s++) {
+		for (s = args[3]; *s != '\0'; s++) {
 			_bios_serialcom(command, port, *s);
 		}
 		return TCL_OK;
-	} else if (STREQU (argv[1], "init")) {
+	} else if (STREQU (args[1], "init")) {
 		command = _COM_INIT;
 		if (argc == 3) {
 			data = (_COM_9600|_COM_NOPARITY|_COM_CHR8|_COM_STOP1);
@@ -335,13 +335,13 @@ argcount:
 			needData = true;
 		}
 	} else {
-		Tcl_AppendResult(interp, "bad arg: ", argv[0], " command must be one of \"init\", \"send\", \"receive\" or \"status\"", (char *)NULL);
+		Tcl_AppendResult(interp, "bad arg: ", args[0], " command must be one of \"init\", \"send\", \"receive\" or \"status\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (Tcl_GetInt(interp, argv[2], &port) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[2], &port) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	if (needData && Tcl_GetInt(interp, argv[3], &data) != TCL_OK) {
+	if (needData && Tcl_GetInt(interp, args[3], &data) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	_sprintf(interp->result, "%u", _bios_serialcom(command, port, data));
@@ -350,10 +350,10 @@ argcount:
 #endif
 
 // rawclock - returns the raw clock value in ticks
-int cmdrawclock(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdrawclock(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	_sprintf(interp->result, "%lu", clock());
@@ -362,10 +362,10 @@ int cmdrawclock(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[
 
 // getverify - returns the operating system verify flag.  If 0, writes are not being verified.  If 1, they are.
 #ifdef COMPILE_GETVERIFY
-int cmdgetverify(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdgetverify(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	_sprintf(interp->result, "%d", getverify());
@@ -374,14 +374,14 @@ int cmdgetverify(ClientData clientData, Tcl_Interp *interp, int argc, char *argv
 #endif
 
 // wait ms - wait the specified number of milliseconds
-int cmdwait(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdwait(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " milliseconds\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " milliseconds\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int milliseconds;
-	if (Tcl_GetInt(interp, argv[1], &milliseconds) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[1], &milliseconds) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	delay((unsigned)milliseconds);
@@ -389,18 +389,18 @@ int cmdwait(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 }
 
 // gotoxy - address the cursor to the specified x and y location
-int cmdgotoxy(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdgotoxy(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " x y\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " x y\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int x;
-	if (Tcl_GetInt(interp, argv[1], &x) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[1], &x) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	int y;
-	if (Tcl_GetInt(interp, argv[2], &y) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[2], &y) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	gotoxy(x, y);
@@ -408,10 +408,10 @@ int cmdgotoxy(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 }
 
 // clrscr - clear the screen
-int cmdclrscr(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdclrscr(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	clrscr();
@@ -419,10 +419,10 @@ int cmdclrscr(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 }
 
 // heapcheck - check the heap for corruption
-int cmdheapcheck(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdheapcheck(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 1) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], "\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], "\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	switch (heapcheck())
@@ -442,42 +442,42 @@ int cmdheapcheck(ClientData clientData, Tcl_Interp *interp, int argc, char *argv
 }
 
 // mkdir dir - create a directory
-int cmdmkdir(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdmkdir(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " dirname\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " dirname\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (mkdir(argv[1]) < 0) {
-		Tcl_AppendResult(interp, "Couldn't make directory: ", argv[1], ": ", Tcl_OSError(interp), (char *)NULL);
+	if (mkdir(args[1]) < 0) {
+		Tcl_AppendResult(interp, "Couldn't make directory: ", args[1], ": ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
 }
 
 // unlink file - delete a file
-int cmdunlink(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdunlink(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " filename\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " filename\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (unlink(argv[1]) < 0) {
-		Tcl_AppendResult(interp, "Couldn't unlink file: ", argv[1], ": ", Tcl_OSError(interp), (char *)NULL);
+	if (unlink(args[1]) < 0) {
+		Tcl_AppendResult(interp, "Couldn't unlink file: ", args[1], ": ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
 }
 
 // execvp -- terminate the current process and execute a new one
-int cmdexecvp(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdexecvp(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " command ?args?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " command ?args?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (execvp (argv[1], &argv[1]) < 0) {
-		Tcl_AppendResult(interp, "Couldn't execvp: ", argv[1], ": ", Tcl_OSError(interp), (char *)NULL);
+	if (execvp (args[1], &args[1]) < 0) {
+		Tcl_AppendResult(interp, "Couldn't execvp: ", args[1], ": ", Tcl_OSError(interp), (char *)NULL);
 		return TCL_ERROR;
 	}
 	// Actually we should not ever get here.  If the execvp succeeds, we terminate.
@@ -528,62 +528,62 @@ wherex - get horizontal cursor position
 wherey - get vertical cursor position
 */
 /* video - do stuff to the video */
-int cmdvideo(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+int cmdvideo(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 2) {
 argcount:
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " subcommand ?options?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " subcommand ?options?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (STREQU(argv[1], "write")) {
+	if (STREQU(args[1], "write")) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ", argv[1], " data\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ", args[1], " data\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		cputs(argv[2]);
+		cputs(args[2]);
 		return TCL_OK;
 	}
 	int x;
 	int y;
-	if (STREQU(argv[1], "goto")) {
+	if (STREQU(args[1], "goto")) {
 		if (argc != 4) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ", argv[1], " x y\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ", args[1], " x y\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		if (Tcl_GetInt(interp, argv[2], &x) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &x) != TCL_OK) {
 			return TCL_ERROR;
 		}
-		if (Tcl_GetInt(interp, argv[3], &y) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[3], &y) != TCL_OK) {
 			return TCL_ERROR;
 		}
 		gotoxy(x, y);
 		return TCL_OK;
 	}
-	if (STREQU(argv[1], "normal")) {
+	if (STREQU(args[1], "normal")) {
 		if (argc != 2) goto bad2arg;
 		normvideo();
 		return TCL_OK;
 	}
-	if (STREQU (argv[1], "dim")) {
+	if (STREQU (args[1], "dim")) {
 		if (argc != 2) goto bad2arg;
 		lowvideo();
 		return TCL_OK;
 	}
 	int color;
 	int blink;
-	if (STREQU (argv[1], "bright")) {
+	if (STREQU (args[1], "bright")) {
 		if (argc != 2) goto bad2arg;
 		highvideo();
 		return TCL_OK;
 	}
-	else if (STREQU(argv[1], "color")) {
+	else if (STREQU(args[1], "color")) {
 		if (argc == 3) {
 			blink = 0;
 		} else {
 			if (argc != 4) goto argcount;
 			blink = 128;
 		}
-		if (Tcl_GetInt(interp, argv[2], &color) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &color) != TCL_OK) {
 			return TCL_ERROR;
 		}
 		if (color < 0 || color > 15) {
@@ -593,9 +593,9 @@ argcount:
 		textcolor(color + blink);
 		return TCL_OK;
 	}
-	if (STREQU(argv[1], "bgcolor")) {
+	if (STREQU(args[1], "bgcolor")) {
 		if (argc != 3) goto argcount;
-		if (Tcl_GetInt(interp, argv[2], &color) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &color) != TCL_OK) {
 			return TCL_ERROR;
 		}
 		if (color < 0 || color > 7) {
@@ -605,30 +605,30 @@ argcount:
 		textbackground(color + blink);
 		return TCL_OK;
 	}
-	if (STREQU(argv[1], "clear")) {
+	if (STREQU(args[1], "clear")) {
 		if (argc != 2) {
 bad2arg:
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ", argv[1], "\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ", args[1], "\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		clrscr();
 		return TCL_OK;
 	}
 	extern int _directvideo;
-	if (STREQU(argv[1], "direct")) {
+	if (STREQU(args[1], "direct")) {
 		int directvideo;
 		if (argc == 2) {
 			_sprintf(interp->result, "%d", _directvideo);
 			return TCL_OK;
 		}
 		if (argc > 3) goto argcount;
-		if (Tcl_GetInt(interp, argv[2], &directvideo) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &directvideo) != TCL_OK) {
 			return TCL_ERROR;
 		}
 		_directvideo = directvideo;
 		return TCL_OK;
 	}
-	Tcl_AppendResult(interp, "bad arg: ", argv[0], " subcommand must be one of \"data\", \"goto\", \"clear\", \"normal\", \"dim\", \"bright\", \"color\" or \"bgcolor\"", (char *)NULL);
+	Tcl_AppendResult(interp, "bad arg: ", args[0], " subcommand must be one of \"data\", \"goto\", \"clear\", \"normal\", \"dim\", \"bright\", \"color\" or \"bgcolor\"", (char *)NULL);
 	return TCL_ERROR;
 }
 

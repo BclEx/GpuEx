@@ -28,32 +28,32 @@ __device__ static int SortCompareProc(const char *first, const char *second);
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_IfCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_IfCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	int result, value;
 
 	int i = 1;
 	while (true) {
-		// At this point in the loop, argv and argc refer to an expression to test, either for the main expression or an expression
+		// At this point in the loop, args and argc refer to an expression to test, either for the main expression or an expression
 		// following an "elseif".  The arguments after the expression must be "then" (optional) and a script to execute if the expression is true.
 		if (i >= argc) {
-			Tcl_AppendResult(interp, "wrong # args: no expression after \"", argv[i-1], "\" argument", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: no expression after \"", args[i-1], "\" argument", (char *)NULL);
 			return TCL_ERROR;
 		}
-		result = Tcl_ExprBoolean(interp, argv[i], &value);
+		result = Tcl_ExprBoolean(interp, (char *)args[i], &value);
 		if (result != TCL_OK) {
 			return result;
 		}
 		i++;
-		if (i < argc && !_strcmp(argv[i], "then")) {
+		if (i < argc && !_strcmp(args[i], "then")) {
 			i++;
 		}
 		if (i >= argc) {
-			Tcl_AppendResult(interp, "wrong # args: no script following \"", argv[i-1], "\" argument", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: no script following \"", args[i-1], "\" argument", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (value) {
-			return Tcl_Eval(interp, argv[i], 0, (char **)NULL);
+			return Tcl_Eval(interp, (char *)args[i], 0, (char **)NULL);
 		}
 
 		// The expression evaluated to false.  Skip the command, then see if there is an "else" or "elseif" clause.
@@ -61,7 +61,7 @@ __device__ int Tcl_IfCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **
 		if (i >= argc) {
 			return TCL_OK;
 		}
-		if (argv[i][0] == 'e' && !_strcmp(argv[i], "elseif")) {
+		if (args[i][0] == 'e' && !_strcmp(args[i], "elseif")) {
 			i++;
 			continue;
 		}
@@ -69,14 +69,14 @@ __device__ int Tcl_IfCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **
 	}
 
 	// Couldn't find a "then" or "elseif" clause to execute.  Check now for an "else" clause.  We know that there's at least one more argument when we get here.
-	if (!_strcmp(argv[i], "else")) {
+	if (!_strcmp(args[i], "else")) {
 		i++;
 		if (i >= argc) {
 			Tcl_AppendResult(interp, "wrong # args: no script following \"else\" argument", (char *)NULL);
 			return TCL_ERROR;
 		}
 	}
-	return Tcl_Eval(interp, argv[i], 0, (char **)NULL);
+	return Tcl_Eval(interp, (char *)args[i], 0, (char **)NULL);
 }
 
 /*
@@ -93,13 +93,13 @@ __device__ int Tcl_IfCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_IncrCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_IncrCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2 && argc != 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " varName ?increment?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " varName ?increment?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	char *oldString = Tcl_GetVar(interp, argv[1], TCL_LEAVE_ERR_MSG);
+	char *oldString = Tcl_GetVar(interp, (char *)args[1], TCL_LEAVE_ERR_MSG);
 	if (oldString == NULL) {
 		return TCL_ERROR;
 	}
@@ -112,7 +112,7 @@ __device__ int Tcl_IncrCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 		value += 1;
 	} else {
 		int increment;
-		if (Tcl_GetInt(interp, argv[2], &increment) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &increment) != TCL_OK) {
 			Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 			return TCL_ERROR;
 		}
@@ -120,7 +120,7 @@ __device__ int Tcl_IncrCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	}
 	char newString[30];
 	_sprintf(newString, "%d", value);
-	char *result = Tcl_SetVar(interp, argv[1], newString, TCL_LEAVE_ERR_MSG);
+	char *result = Tcl_SetVar(interp, (char *)args[1], newString, TCL_LEAVE_ERR_MSG);
 	if (result == NULL) {
 		return TCL_ERROR;
 	}
@@ -142,7 +142,7 @@ __device__ int Tcl_IncrCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_InfoCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_InfoCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	register Interp *iPtr = (Interp *) interp;
 	int length;
@@ -155,92 +155,92 @@ __device__ int Tcl_InfoCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 	Tcl_HashSearch search;
 
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " option ?arg arg ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " option ?arg arg ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	c = argv[1][0];
-	length = _strlen(argv[1]);
-	if (c == 'a' && !_strncmp(argv[1], "args", length)) {
+	c = args[1][0];
+	length = _strlen(args[1]);
+	if (c == 'a' && !_strncmp(args[1], "args", length)) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " args procname\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " args procname\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		procPtr = TclFindProc(iPtr, argv[2]);
+		procPtr = TclFindProc(iPtr, (char *)args[2]);
 		if (procPtr == NULL) {
 infoNoSuchProc:
-			Tcl_AppendResult(interp, "\"", argv[2], "\" isn't a procedure", (char *)NULL);
+			Tcl_AppendResult(interp, "\"", args[2], "\" isn't a procedure", (char *)NULL);
 			return TCL_ERROR;
 		}
 		for (argPtr = procPtr->argPtr; argPtr != NULL; argPtr = argPtr->nextPtr) {
 			Tcl_AppendElement(interp, argPtr->name, 0);
 		}
 		return TCL_OK;
-	} else if (c == 'b' && !_strncmp(argv[1], "body", length)) {
+	} else if (c == 'b' && !_strncmp(args[1], "body", length)) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " body procname\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " body procname\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		procPtr = TclFindProc(iPtr, argv[2]);
+		procPtr = TclFindProc(iPtr, (char *)args[2]);
 		if (procPtr == NULL) {
 			goto infoNoSuchProc;
 		}
 		iPtr->result = procPtr->command;
 		return TCL_OK;
-	} else if (c == 'c' && !_strncmp(argv[1], "cmdcount", length) && length >= 2) {
+	} else if (c == 'c' && !_strncmp(args[1], "cmdcount", length) && length >= 2) {
 		if (argc != 2) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " cmdcount\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " cmdcount\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		_sprintf(iPtr->result, "%d", iPtr->cmdCount);
 		return TCL_OK;
-	} else if (c == 'c' && !_strncmp(argv[1], "commands", length) && length >= 4) {
+	} else if (c == 'c' && !_strncmp(args[1], "commands", length) && length >= 4) {
 		if (argc > 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " commands [pattern]\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " commands [pattern]\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		for (hPtr = Tcl_FirstHashEntry(&iPtr->commandTable, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 			char *name = Tcl_GetHashKey(&iPtr->commandTable, hPtr);
-			if (argc == 3 && !Tcl_StringMatch(name, argv[2])) {
+			if (argc == 3 && !Tcl_StringMatch(name, (char *)args[2])) {
 				continue;
 			}
 			Tcl_AppendElement(interp, name, 0);
 		}
 		return TCL_OK;
-	} else if (c == 'c' && !_strncmp(argv[1], "complete", length) && length >= 4) {
+	} else if (c == 'c' && !_strncmp(args[1], "complete", length) && length >= 4) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " complete command\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " complete command\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		if (Tcl_CommandComplete(argv[2])) {
+		if (Tcl_CommandComplete((char *)args[2])) {
 			interp->result = "1";
 		} else {
 			interp->result = "0";
 		}
 		return TCL_OK;
-	} else if (c == 'd' && !_strncmp(argv[1], "default", length)) {
+	} else if (c == 'd' && !_strncmp(args[1], "default", length)) {
 		if (argc != 5) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " default procname arg varname\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " default procname arg varname\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		procPtr = TclFindProc(iPtr, argv[2]);
+		procPtr = TclFindProc(iPtr, (char *)args[2]);
 		if (procPtr == NULL) {
 			goto infoNoSuchProc;
 		}
 		for (argPtr = procPtr->argPtr; ; argPtr = argPtr->nextPtr) {
 			if (argPtr == NULL) {
-				Tcl_AppendResult(interp, "procedure \"", argv[2], "\" doesn't have an argument \"", argv[3], "\"", (char *)NULL);
+				Tcl_AppendResult(interp, "procedure \"", args[2], "\" doesn't have an argument \"", args[3], "\"", (char *)NULL);
 				return TCL_ERROR;
 			}
-			if (_strcmp(argv[3], argPtr->name) == 0) {
+			if (_strcmp(args[3], argPtr->name) == 0) {
 				if (argPtr->defValue != NULL) {
-					if (Tcl_SetVar((Tcl_Interp *) iPtr, argv[4], argPtr->defValue, 0) == NULL) {
+					if (Tcl_SetVar((Tcl_Interp *)iPtr, (char *)args[4], argPtr->defValue, 0) == NULL) {
 defStoreError:
-						Tcl_AppendResult(interp, "couldn't store default value in variable \"", argv[4], "\"", (char *)NULL);
+						Tcl_AppendResult(interp, "couldn't store default value in variable \"", args[4], "\"", (char *)NULL);
 						return TCL_ERROR;
 					}
 					iPtr->result = "1";
 				} else {
-					if (Tcl_SetVar((Tcl_Interp *)iPtr, argv[4], "", 0) == NULL) {
+					if (Tcl_SetVar((Tcl_Interp *)iPtr, (char *)args[4], "", 0) == NULL) {
 						goto defStoreError;
 					}
 					iPtr->result = "0";
@@ -248,24 +248,24 @@ defStoreError:
 				return TCL_OK;
 			}
 		}
-	} else if (c == 'e' && !_strncmp(argv[1], "exists", length)) {
+	} else if (c == 'e' && !_strncmp(args[1], "exists", length)) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " exists varName\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " exists varName\"", (char *)NULL);
 			return TCL_ERROR;
 		}
-		char *p = Tcl_GetVar((Tcl_Interp *)iPtr, argv[2], 0);
+		char *p = Tcl_GetVar((Tcl_Interp *)iPtr, (char *)args[2], 0);
 		// The code below handles the special case where the name is for an array:  Tcl_GetVar will reject this since you can't read an array variable without an index.
 		if (p == NULL) {
-			if (_strchr(argv[2], '(') != NULL) {
+			if (_strchr(args[2], '(') != NULL) {
 noVar:
 				iPtr->result = "0";
 				return TCL_OK;
 			}
 			Tcl_HashEntry *hPtr;
 			if (iPtr->varFramePtr == NULL) {
-				hPtr = Tcl_FindHashEntry(&iPtr->globalTable, argv[2]);
+				hPtr = Tcl_FindHashEntry(&iPtr->globalTable, (char *)args[2]);
 			} else {
-				hPtr = Tcl_FindHashEntry(&iPtr->varFramePtr->varTable, argv[2]);
+				hPtr = Tcl_FindHashEntry(&iPtr->varFramePtr->varTable, (char *)args[2]);
 			}
 			if (hPtr == NULL) {
 				goto noVar;
@@ -280,9 +280,9 @@ noVar:
 		}
 		iPtr->result = "1";
 		return TCL_OK;
-	} else if (c == 'g' && !_strncmp(argv[1], "globals", length)) {
+	} else if (c == 'g' && !_strncmp(args[1], "globals", length)) {
 		if (argc > 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " globals [pattern]\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " globals [pattern]\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		for (hPtr = Tcl_FirstHashEntry(&iPtr->globalTable, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
@@ -291,7 +291,7 @@ noVar:
 				continue;
 			}
 			char *name = Tcl_GetHashKey(&iPtr->globalTable, hPtr);
-			if (argc == 3 && !Tcl_StringMatch(name, argv[2])) {
+			if (argc == 3 && !Tcl_StringMatch(name, (char *)args[2])) {
 				continue;
 			}
 			Tcl_AppendElement(interp, name, 0);
@@ -299,9 +299,9 @@ noVar:
 		return TCL_OK;
 	}
 #ifdef HAVE_GETHOSTNAME
-	else if (c == 'h' && !_strncmp(argv[1], "hostname", length)) {
+	else if (c == 'h' && !_strncmp(args[1], "hostname", length)) {
 		if (argc != 2) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " hostname\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " hostname\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		static int hostnameInited = 0;
@@ -314,7 +314,7 @@ noVar:
 		return TCL_OK;
 	}
 #endif
-	else if (c == 'l' && !_strncmp(argv[1], "level", length) && length >= 2) {
+	else if (c == 'l' && !_strncmp(args[1], "level", length) && length >= 2) {
 		if (argc == 2) {
 			if (iPtr->varFramePtr == NULL) {
 				iPtr->result = "0";
@@ -324,13 +324,13 @@ noVar:
 			return TCL_OK;
 		} else if (argc == 3) {
 			int level;
-			if (Tcl_GetInt(interp, argv[2], &level) != TCL_OK) {
+			if (Tcl_GetInt(interp, args[2], &level) != TCL_OK) {
 				return TCL_ERROR;
 			}
 			if (level <= 0) {
 				if (iPtr->varFramePtr == NULL) {
 levelError:
-					Tcl_AppendResult(interp, "bad level \"", argv[2], "\"", (char *)NULL);
+					Tcl_AppendResult(interp, "bad level \"", args[2], "\"", (char *)NULL);
 					return TCL_ERROR;
 				}
 				level += iPtr->varFramePtr->level;
@@ -344,15 +344,15 @@ levelError:
 			if (framePtr == NULL) {
 				goto levelError;
 			}
-			iPtr->result = Tcl_Merge(framePtr->argc, framePtr->argv);
+			iPtr->result = Tcl_Merge(framePtr->argc, framePtr->args);
 			iPtr->freeProc = (Tcl_FreeProc *)_free;
 			return TCL_OK;
 		}
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " level [number]\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " level [number]\"", (char *)NULL);
 		return TCL_ERROR;
-	} else if (c == 'l' && !_strncmp(argv[1], "library", length) && length >= 2) {
+	} else if (c == 'l' && !_strncmp(args[1], "library", length) && length >= 2) {
 		if (argc != 2) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " library\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " library\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		interp->result = _getenv("TCL_LIBRARY");
@@ -365,9 +365,9 @@ levelError:
 #endif
 		}
 		return TCL_OK;
-	} else if (c == 'l' && !_strncmp(argv[1], "locals", length) && length >= 2) {
+	} else if (c == 'l' && !_strncmp(args[1], "locals", length) && length >= 2) {
 		if (argc > 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " locals [pattern]\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " locals [pattern]\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (iPtr->varFramePtr == NULL) {
@@ -379,15 +379,15 @@ levelError:
 				continue;
 			}
 			char *name = Tcl_GetHashKey(&iPtr->varFramePtr->varTable, hPtr);
-			if (argc == 3 && !Tcl_StringMatch(name, argv[2])) {
+			if (argc == 3 && !Tcl_StringMatch(name, (char *)args[2])) {
 				continue;
 			}
 			Tcl_AppendElement(interp, name, 0);
 		}
 		return TCL_OK;
-	} else if (c == 'p' && !_strncmp(argv[1], "procs", length)) {
+	} else if (c == 'p' && !_strncmp(args[1], "procs", length)) {
 		if (argc > 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " procs [pattern]\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " procs [pattern]\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		for (hPtr = Tcl_FirstHashEntry(&iPtr->commandTable, &search); hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
@@ -396,32 +396,32 @@ levelError:
 			if (!TclIsProc(cmdPtr)) {
 				continue;
 			}
-			if (argc == 3 && !Tcl_StringMatch(name, argv[2])) {
+			if (argc == 3 && !Tcl_StringMatch(name, (char *)args[2])) {
 				continue;
 			}
 			Tcl_AppendElement(interp, name, 0);
 		}
 		return TCL_OK;
-	} else if (c == 's' && !_strncmp(argv[1], "script", length)) {
+	} else if (c == 's' && !_strncmp(args[1], "script", length)) {
 		if (argc != 2) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " script\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " script\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		if (iPtr->scriptFile != NULL) {
 			interp->result = iPtr->scriptFile;
 		}
 		return TCL_OK;
-	} else if (c == 't' && !_strncmp(argv[1], "tclversion", length)) {
+	} else if (c == 't' && !_strncmp(args[1], "tclversion", length)) {
 		if (argc != 2) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " tclversion\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " tclversion\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		// Note:  TCL_VERSION below is expected to be set with a "-D" switch in the Makefile.
 		iPtr->result = TCL_VERSION;
 		return TCL_OK;
-	} else if (c == 'v' && !_strncmp(argv[1], "vars", length)) {
+	} else if (c == 'v' && !_strncmp(args[1], "vars", length)) {
 		if (argc > 3) {
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " vars [pattern]\"", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " vars [pattern]\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 		Tcl_HashTable *tablePtr;
@@ -436,14 +436,14 @@ levelError:
 				continue;
 			}
 			char *name = Tcl_GetHashKey(tablePtr, hPtr);
-			if (argc == 3 && !Tcl_StringMatch(name, argv[2])) {
+			if (argc == 3 && !Tcl_StringMatch(name, (char *)args[2])) {
 				continue;
 			}
 			Tcl_AppendElement(interp, name, 0);
 		}
 		return TCL_OK;
 	} else {
-		Tcl_AppendResult(interp, "bad option \"", argv[1], "\": should be args, body, cmdcount, commands, ", "complete, default, ", "exists, globals, level, library, locals, procs, ", "script, tclversion, or vars", (char *)NULL);
+		Tcl_AppendResult(interp, "bad option \"", args[1], "\": should be args, body, cmdcount, commands, ", "complete, default, ", "exists, globals, level, library, locals, procs, ", "script, tclversion, or vars", (char *)NULL);
 		return TCL_ERROR;
 	}
 }
@@ -462,30 +462,30 @@ levelError:
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_JoinCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_JoinCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	char *joinString;
 	if (argc == 2) {
 		joinString = " ";
 	} else if (argc == 3) {
-		joinString = argv[2];
+		joinString = (char *)args[2];
 	} else {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " list ?joinString?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " list ?joinString?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int listArgc;
-	char **listArgv;
-	if (Tcl_SplitList(interp, argv[1], &listArgc, &listArgv) != TCL_OK) {
+	const char **listArgs;
+	if (Tcl_SplitList(interp, (char *)args[1], &listArgc, &listArgs) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	for (int i = 0; i < listArgc; i++) {
 		if (i == 0) {
-			Tcl_AppendResult(interp, listArgv[0], (char *)NULL);
+			Tcl_AppendResult(interp, listArgs[0], (char *)NULL);
 		} else  {
-			Tcl_AppendResult(interp, joinString, listArgv[i], (char *)NULL);
+			Tcl_AppendResult(interp, joinString, listArgs[i], (char *)NULL);
 		}
 	}
-	_freeFast((char *)listArgv);
+	_freeFast((char *)listArgs);
 	return TCL_OK;
 }
 
@@ -503,17 +503,17 @@ __device__ int Tcl_JoinCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LindexCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LindexCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	char *p, *element;
 	int index, result;
 	if (argc != 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " list index\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " list index\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (!_strcmp(argv[2], "end")) {
+	if (!_strcmp(args[2], "end")) {
 		// Find the length of the list
-		for (index = 0, p = argv[1]; *p != 0 ; index++) {
+		for (index = 0, p = (char *)args[1]; *p != 0 ; index++) {
 			result = TclFindElement(interp, p, &element, &p, (int *)NULL, (int *) NULL);
 			if (result != TCL_OK) {
 				return result;
@@ -526,9 +526,9 @@ __device__ int Tcl_LindexCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 		// and subtract 1
 		index--;
 	} else {
-		if (Tcl_GetInt(interp, argv[2], &index) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[2], &index) != TCL_OK) {
 			Tcl_ResetResult(interp);
-			Tcl_AppendResult(interp, "expected integer or \"end\" but got \"", argv[2], "\"", (char *)NULL);
+			Tcl_AppendResult(interp, "expected integer or \"end\" but got \"", args[2], "\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 	}
@@ -537,7 +537,7 @@ __device__ int Tcl_LindexCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 	}
 
 	int size, parenthesized;
-	for (p = argv[1] ; index >= 0; index--) {
+	for (p = (char *)args[1]; index >= 0; index--) {
 		result = TclFindElement(interp, p, &element, &p, &size, &parenthesized);
 		if (result != TCL_OK) {
 			return result;
@@ -573,46 +573,46 @@ __device__ int Tcl_LindexCmd(ClientData dummy, Tcl_Interp *interp, int argc, cha
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LinsertCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LinsertCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc < 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " list index element ?element ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " list index element ?element ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int index;
-	if (Tcl_GetInt(interp, argv[2], &index) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[2], &index) != TCL_OK) {
 		return TCL_ERROR;
 	}
 
 	// Skip over the first "index" elements of the list, then add all of those elements to the result.
 	int size = 0;
-	char *element = argv[1];
+	char *element = (char *)args[1];
 	char *p;
 	int count;
-	for (count = 0, p = argv[1]; count < index && *p != 0; count++) {
+	for (count = 0, p = (char *)args[1]; count < index && *p != 0; count++) {
 		int result = TclFindElement(interp, p, &element, &p, &size, (int *)NULL);
 		if (result != TCL_OK) {
 			return result;
 		}
 	}
 	if (*p == 0) {
-		Tcl_AppendResult(interp, argv[1], (char *)NULL);
+		Tcl_AppendResult(interp, args[1], (char *)NULL);
 	} else {
 		char *end = element+size;
-		if (element != argv[1]) {
+		if (element != args[1]) {
 			while (*end != 0 && !_isspace(*end)) {
 				end++;
 			}
 		}
 		char savedChar = *end;
 		*end = 0;
-		Tcl_AppendResult(interp, argv[1], (char *)NULL);
+		Tcl_AppendResult(interp, args[1], (char *)NULL);
 		*end = savedChar;
 	}
 
 	// Add the new list elements.
 	for (int i = 3; i < argc; i++) {
-		Tcl_AppendElement(interp, argv[i], 0);
+		Tcl_AppendElement(interp, args[i], 0);
 	}
 
 	// Append the remainder of the original list.
@@ -636,10 +636,10 @@ __device__ int Tcl_LinsertCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_ListCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_ListCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc >= 2) {
-		interp->result = Tcl_Merge(argc-1, argv+1);
+		interp->result = Tcl_Merge(argc-1, args+1);
 		interp->freeProc = (Tcl_FreeProc *)_free;
 	}
 	return TCL_OK;
@@ -659,15 +659,15 @@ __device__ int Tcl_ListCmd(ClientData dummy, Tcl_Interp *interp, int argc, char 
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LlengthCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LlengthCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 2) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " list\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " list\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int count;
 	char *p;
-	for (count = 0, p = argv[1]; *p != 0 ; count++) {
+	for (count = 0, p = (char *)args[1]; *p != 0 ; count++) {
 		char *element;
 		int result = TclFindElement(interp, p, &element, &p, (int *)NULL, (int *)NULL);
 		if (result != TCL_OK) {
@@ -695,26 +695,26 @@ __device__ int Tcl_LlengthCmd(ClientData dummy, Tcl_Interp *interp, int argc, ch
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LrangeCmd(ClientData notUsed, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LrangeCmd(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	int first, last, result;
 	char *begin, *end, c, *dummy;
 	if (argc != 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " list first last\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " list first last\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (Tcl_GetInt(interp, argv[2], &first) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[2], &first) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	if (first < 0) {
 		first = 0;
 	}
-	if (*argv[3] == 'e' && !_strncmp(argv[3], "end", _strlen(argv[3]))) {
+	if (*args[3] == 'e' && !_strncmp(args[3], "end", _strlen(args[3]))) {
 		last = 1000000;
 	} else {
-		if (Tcl_GetInt(interp, argv[3], &last) != TCL_OK) {
+		if (Tcl_GetInt(interp, args[3], &last) != TCL_OK) {
 			Tcl_ResetResult(interp);
-			Tcl_AppendResult(interp, "expected integer or \"end\" but got \"", argv[3], "\"", (char *)NULL);
+			Tcl_AppendResult(interp, "expected integer or \"end\" but got \"", args[3], "\"", (char *)NULL);
 			return TCL_ERROR;
 		}
 	}
@@ -724,7 +724,7 @@ __device__ int Tcl_LrangeCmd(ClientData notUsed, Tcl_Interp *interp, int argc, c
 
 	// Extract a range of fields.
 	int count;
-	for (count = 0, begin = argv[1]; count < first; count++) {
+	for (count = 0, begin = (char *)args[1]; count < first; count++) {
 		result = TclFindElement(interp, begin, &dummy, &begin, (int *)NULL, (int *)NULL);
 		if (result != TCL_OK) {
 			return result;
@@ -765,18 +765,18 @@ __device__ int Tcl_LrangeCmd(ClientData notUsed, Tcl_Interp *interp, int argc, c
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LreplaceCmd(ClientData notUsed, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LreplaceCmd(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	char *p1, *p2, *dummy;
 	int i, first, last, count, result;
 	if (argc < 4) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " list first last ?element element ...?\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " list first last ?element element ...?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (Tcl_GetInt(interp, argv[2], &first) != TCL_OK) {
+	if (Tcl_GetInt(interp, args[2], &first) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	if (TclGetListIndex(interp, argv[3], &last) != TCL_OK) {
+	if (TclGetListIndex(interp, (char *)args[3], &last) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	if (first < 0) {
@@ -792,15 +792,15 @@ __device__ int Tcl_LreplaceCmd(ClientData notUsed, Tcl_Interp *interp, int argc,
 
 	// Skip over the elements of the list before "first".
 	int size = 0;
-	char *element = argv[1];
-	for (count = 0, p1 = argv[1]; count < first && *p1 != 0; count++) {
+	char *element = (char *)args[1];
+	for (count = 0, p1 = (char *)args[1]; count < first && *p1 != 0; count++) {
 		result = TclFindElement(interp, p1, &element, &p1, &size, (int *)NULL);
 		if (result != TCL_OK) {
 			return result;
 		}
 	}
 	if (*p1 == 0) {
-		Tcl_AppendResult(interp, "list doesn't contain element ", argv[2], (char *)NULL);
+		Tcl_AppendResult(interp, "list doesn't contain element ", args[2], (char *)NULL);
 		return TCL_ERROR;
 	}
 
@@ -814,19 +814,19 @@ __device__ int Tcl_LreplaceCmd(ClientData notUsed, Tcl_Interp *interp, int argc,
 
 	// Add the elements before "first" to the result.  Be sure to include quote or brace characters that might terminate the last of these elements.
 	p1 = element+size;
-	if (element != argv[1]) {
+	if (element != args[1]) {
 		while (*p1 != 0 && !_isspace(*p1)) {
 			p1++;
 		}
 	}
 	char savedChar = *p1;
 	*p1 = 0;
-	Tcl_AppendResult(interp, argv[1], (char *)NULL);
+	Tcl_AppendResult(interp, args[1], (char *)NULL);
 	*p1 = savedChar;
 
 	// Add the new list elements.
 	for (i = 4; i < argc; i++) {
-		Tcl_AppendElement(interp, argv[i], 0);
+		Tcl_AppendElement(interp, args[i], 0);
 	}
 
 	// Append the remainder of the original list.
@@ -854,26 +854,26 @@ __device__ int Tcl_LreplaceCmd(ClientData notUsed, Tcl_Interp *interp, int argc,
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_LsearchCmd(ClientData notUsed, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LsearchCmd(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	if (argc != 3) {
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " list pattern\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " list pattern\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int listArgc;
-	char **listArgv;
-	if (Tcl_SplitList(interp, argv[1], &listArgc, &listArgv) != TCL_OK) {
+	const char **listArgs;
+	if (Tcl_SplitList(interp, (char *)args[1], &listArgc, &listArgs) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	int match = -1;
 	for (int i = 0; i < listArgc; i++) {
-		if (Tcl_StringMatch(listArgv[i], argv[2])) {
+		if (Tcl_StringMatch((char *)listArgs[i], (char *)args[2])) {
 			match = i;
 			break;
 		}
 	}
 	_sprintf(interp->result, "%d", match);
-	_freeFast((char *)listArgv);
+	_freeFast((char *)listArgs);
 	return TCL_OK;
 }
 
@@ -916,58 +916,58 @@ __device__ static int CommandSortCompareProc(const char *first, const char *seco
 	if (_sort_result != TCL_OK) {
 		return _strcmp(*((char **)first), *((char **)second));
 	}
-	char *cmdargv[4];
-	cmdargv[0] = _sort_command;
-	cmdargv[1] = *((char **)first);
-	cmdargv[2] = *((char **)second);
-	cmdargv[3] = *((char **)second);
-	char *compare_cmd = Tcl_Merge(3, cmdargv);
+	const char *cmdargs[4];
+	cmdargs[0] = _sort_command;
+	cmdargs[1] = *((char **)first);
+	cmdargs[2] = *((char **)second);
+	cmdargs[3] = *((char **)second);
+	char *compare_cmd = Tcl_Merge(3, cmdargs);
 	_sort_result = Tcl_Eval(_sort_interp, compare_cmd, 0, 0);
 	_freeFast(compare_cmd);
 	if (_sort_result != TCL_OK) {
 		// We need to return something, so fallback to strcmp
-		return _strcmp(cmdargv[1], cmdargv[2]);
+		return _strcmp(cmdargs[1], cmdargs[2]);
 	}
 	return _atoi(_sort_interp->result);
 }
 
-__device__ int Tcl_LsortCmd(ClientData notUsed, Tcl_Interp *interp, int argc, char **argv)
+__device__ int Tcl_LsortCmd(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
 {
 	typedef int (compare_function_type)(const void *, const void *);
 	compare_function_type *compare = (compare_function_type *)SortCompareProc;
 	_sort_result = TCL_OK;
 	while (argc > 2) {
 		argc--;
-		argv++;
-		if (!_strcmp(argv[0], "-integer")) {
+		args++;
+		if (!_strcmp(args[0], "-integer")) {
 			compare = (compare_function_type *)IntegerSortCompareProc;
 			break;
 		}
-		if (!_strcmp(argv[0], "-command")) {
+		if (!_strcmp(args[0], "-command")) {
 			compare = (compare_function_type *)CommandSortCompareProc;
-			_sort_command = argv[1];
+			_sort_command = (char *)args[1];
 			_sort_interp = interp;
 			argc--;
-			argv++;
+			args++;
 			break;
 		}
 	}
-	char *cmd = argv[0];
+	char *cmd = (char *)args[0];
 	if (argc != 2) {
 		Tcl_AppendResult(interp, "wrong # args: should be \"", cmd, " ?-integer|-command cmd? list\"", (char *)NULL);
 		return TCL_ERROR;
 	}
 	int listArgc;
-	char **listArgv;
-	if (Tcl_SplitList(interp, argv[1], &listArgc, &listArgv) != TCL_OK) {
+	const char **listArgs;
+	if (Tcl_SplitList(interp, (char *)args[1], &listArgc, &listArgs) != TCL_OK) {
 		return TCL_ERROR;
 	}
-	_qsort(listArgv, listArgc, sizeof(char *), compare);
+	_qsort(listArgs, listArgc, sizeof(char *), compare);
 	if (_sort_result != TCL_OK) {
 		return _sort_result;
 	}
-	interp->result = Tcl_Merge(listArgc, listArgv);
+	interp->result = Tcl_Merge(listArgc, listArgs);
 	interp->freeProc = (Tcl_FreeProc *)_free;
-	_freeFast((char *)listArgv);
+	_freeFast((char *)listArgs);
 	return TCL_OK;
 }

@@ -293,73 +293,73 @@ __device__ char *Tcl_MemRealloc(char *ptr, unsigned int size, char *file, int li
 *
 *----------------------------------------------------------------------
 */
-__device__ static int MemoryCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
+__device__ static int MemoryCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	char *fileName;
 	if (argc < 2) {
-		Tcl_AppendResult(interp, "wrong # args:  should be \"", argv[0], " option [args..]\"", (char *)NULL);
+		Tcl_AppendResult(interp, "wrong # args:  should be \"", args[0], " option [args..]\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	if (!_strcmp(argv[1], "trace")) {
+	if (!_strcmp(args[1], "trace")) {
 		if (argc != 3) 
 			goto bad_suboption;
-		_alloc_tracing = (!_strcmp(argv[2], "on"));
+		_alloc_tracing = (!_strcmp(args[2], "on"));
 		return TCL_OK;
 	}
-	if (!_strcmp(argv[1], "init")) {
+	if (!_strcmp(args[1], "init")) {
 		if (argc != 3)
 			goto bad_suboption;
-		_init_malloced_bodies = (!_strcmp(argv[2], "on"));
+		_init_malloced_bodies = (!_strcmp(args[2], "on"));
 		return TCL_OK;
 	}
-	if (!_strcmp(argv[1], "validate")) {
+	if (!_strcmp(args[1], "validate")) {
 		if (argc != 3)
 			goto bad_suboption;
-		_validate_memory = (!_strcmp(argv[2], "on"));
+		_validate_memory = (!_strcmp(args[2], "on"));
 		return TCL_OK;
 	}
-	if (!_strcmp(argv[1], "_trace_on_at_malloc")) {
+	if (!_strcmp(args[1], "_trace_on_at_malloc")) {
 		if (argc != 3) 
 			goto argError;
-		if (Tcl_GetInt(interp, argv[2], &_trace_on_at_malloc) != TCL_OK)
+		if (Tcl_GetInt(interp, args[2], &_trace_on_at_malloc) != TCL_OK)
 			return TCL_ERROR;
 		return TCL_OK;
 	}
-	if (!_strcmp(argv[1], "_break_on_malloc")) {
+	if (!_strcmp(args[1], "_break_on_malloc")) {
 		if (argc != 3) 
 			goto argError;
-		if (Tcl_GetInt(interp, argv[2], &_break_on_malloc) != TCL_OK)
+		if (Tcl_GetInt(interp, args[2], &_break_on_malloc) != TCL_OK)
 			return TCL_ERROR;
 		return TCL_OK;
 	}
-	if (!_strcmp(argv[1],"info")) {
+	if (!_strcmp(args[1],"info")) {
 		dump_memory_info(stdout);
 		return TCL_OK;
 	}
-	if (!_strcmp(argv[1], "active")) {
+	if (!_strcmp(args[1], "active")) {
 		if (argc != 3) {
-			Tcl_AppendResult(interp, "wrong # args:  should be \"", argv[0], " active file", (char *)NULL);
+			Tcl_AppendResult(interp, "wrong # args:  should be \"", args[0], " active file", (char *)NULL);
 			return TCL_ERROR;
 		}
-		fileName = argv[2];
+		fileName = (char *)args[2];
 		if (fileName[0] == '~')
 			if ((fileName = Tcl_TildeSubst(interp, fileName)) == NULL)
 				return TCL_ERROR;
 		if (Tcl_DumpActiveMemory(fileName) != TCL_OK) {
-			Tcl_AppendResult(interp, "error accessing ", argv[2], (char *)NULL);
+			Tcl_AppendResult(interp, "error accessing ", args[2], (char *)NULL);
 			return TCL_ERROR;
 		}
 		return TCL_OK;
 	}
-	Tcl_AppendResult(interp, "bad option \"", argv[1], "\":  should be info, init, active, _break_on_malloc, ", "_trace_on_at_malloc, trace, or validate", (char *)NULL);
+	Tcl_AppendResult(interp, "bad option \"", args[1], "\":  should be info, init, active, _break_on_malloc, ", "_trace_on_at_malloc, trace, or validate", (char *)NULL);
 	return TCL_ERROR;
 
 argError:
-	Tcl_AppendResult(interp, "wrong # args:  should be \"", argv[0], " ", argv[1], "count\"", (char *)NULL);
+	Tcl_AppendResult(interp, "wrong # args:  should be \"", args[0], " ", args[1], "count\"", (char *)NULL);
 	return TCL_ERROR;
 
 bad_suboption:
-	Tcl_AppendResult(interp, "wrong # args:  should be \"", argv[0], " ", argv[1], " on|off\"", (char *)NULL);
+	Tcl_AppendResult(interp, "wrong # args:  should be \"", args[0], " ", args[1], " on|off\"", (char *)NULL);
 	return TCL_ERROR;
 }
 
