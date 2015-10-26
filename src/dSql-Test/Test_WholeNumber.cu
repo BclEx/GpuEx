@@ -1,311 +1,237 @@
-/*
-** 2011 April 02
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-**
-** This file implements a virtual table that returns the whole numbers
-** between 1 and 4294967295, inclusive.
-**
-** Example:
-**
-**     CREATE VIRTUAL TABLE nums USING wholenumber;
-**     SELECT value FROM nums WHERE value<10;
-**
-** Results in:
-**
-**     1 2 3 4 5 6 7 8 9
-*/
-#include "sqlite3.h"
+
+// This file implements a virtual table that returns the whole numbers between 1 and 4294967295, inclusive.
+// Example:
+//     CREATE VIRTUAL TABLE nums USING wholenumber;
+//     SELECT value FROM nums WHERE value<10;
+//
+// Results in:
+//     1 2 3 4 5 6 7 8 9
+#include <Core+Vdbe\Core+Vdbe.cu.h>
 #include <assert.h>
 #include <string.h>
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
+#ifndef OMIT_VIRTUALTABLE
 
-
-/* A wholenumber cursor object */
+// A wholenumber cursor object
 typedef struct wholenumber_cursor wholenumber_cursor;
-struct wholenumber_cursor {
-  sqlite3_vtab_cursor base;  /* Base class - must be first */
-  sqlite3_int64 iValue;      /* Current value */
-  sqlite3_int64 mxValue;     /* Maximum value */
+struct wholenumber_cursor
+{
+	IVTableCursor base;  // Base class - must be first
+	int64 Value;      // Current value
+	int64 MaxValue;     // Maximum value
 };
 
-/* Methods for the wholenumber module */
-static int wholenumberConnect(
-  sqlite3 *db,
-  void *pAux,
-  int argc, const char *const*argv,
-  sqlite3_vtab **ppVtab,
-  char **pzErr
-){
-  sqlite3_vtab *pNew;
-  pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
-  if( pNew==0 ) return SQLITE_NOMEM;
-  sqlite3_declare_vtab(db, "CREATE TABLE x(value)");
-  memset(pNew, 0, sizeof(*pNew));
-  return SQLITE_OK;
-}
-/* Note that for this virtual table, the xCreate and xConnect
-** methods are identical. */
-
-static int wholenumberDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
-  return SQLITE_OK;
-}
-/* The xDisconnect and xDestroy methods are also the same */
-
-
-/*
-** Open a new wholenumber cursor.
-*/
-static int wholenumberOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
-  wholenumber_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
-  if( pCur==0 ) return SQLITE_NOMEM;
-  memset(pCur, 0, sizeof(*pCur));
-  *ppCursor = &pCur->base;
-  return SQLITE_OK;
+// Methods for the wholenumber module
+// Note that for this virtual table, the xCreate and xConnect methods are identical.
+__device__ static RC WholenumberConnect(Context *ctx, void *aux, int argc, const char *const args[], IVTable **vtable, char **err)
+{
+	IVTable *new_ = *vtable = (IVTable *)_alloc(sizeof(*new_));
+	if (!new_) return RC_NOMEM;
+	VTable::DeclareVTable(ctx, "CREATE TABLE x(value)");
+	_memset(new_, 0, sizeof(*new_));
+	return RC_OK;
 }
 
-/*
-** Close a wholenumber cursor.
-*/
-static int wholenumberClose(sqlite3_vtab_cursor *cur){
-  sqlite3_free(cur);
-  return SQLITE_OK;
+// The xDisconnect and xDestroy methods are also the same
+__device__ static RC WholenumberDisconnect(IVTable *vtab)
+{
+	_free(vtab);
+	return RC_OK;
 }
 
-
-/*
-** Advance a cursor to its next row of output
-*/
-static int wholenumberNext(sqlite3_vtab_cursor *cur){
-  wholenumber_cursor *pCur = (wholenumber_cursor*)cur;
-  pCur->iValue++;
-  return SQLITE_OK;
+// Open a new wholenumber cursor.
+__device__ static RC WholenumberOpen(IVTable *p, IVTableCursor **cursor)
+{
+	wholenumber_cursor *cur = (wholenumber_cursor *)_alloc(sizeof(*cur));
+	if (!cur) return RC_NOMEM;
+	_memset(cur, 0, sizeof(*cur));
+	*cursor = &cur->base;
+	return RC_OK;
 }
 
-/*
-** Return the value associated with a wholenumber.
-*/
-static int wholenumberColumn(
-  sqlite3_vtab_cursor *cur,
-  sqlite3_context *ctx,
-  int i
-){
-  wholenumber_cursor *pCur = (wholenumber_cursor*)cur;
-  sqlite3_result_int64(ctx, pCur->iValue);
-  return SQLITE_OK;
+// Close a wholenumber cursor.
+__device__ static RC WholenumberClose(IVTableCursor *cur)
+{
+	_free(cur);
+	return RC_OK;
 }
 
-/*
-** The rowid.
-*/
-static int wholenumberRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
-  wholenumber_cursor *pCur = (wholenumber_cursor*)cur;
-  *pRowid = pCur->iValue;
-  return SQLITE_OK;
+// Advance a cursor to its next row of output
+__device__ static RC WholenumberNext(IVTableCursor *cur2)
+{
+	wholenumber_cursor *cur = (wholenumber_cursor *)cur2;
+	cur->Value++;
+	return RC_OK;
 }
 
-/*
-** When the wholenumber_cursor.rLimit value is 0 or less, that is a signal
-** that the cursor has nothing more to output.
-*/
-static int wholenumberEof(sqlite3_vtab_cursor *cur){
-  wholenumber_cursor *pCur = (wholenumber_cursor*)cur;
-  return pCur->iValue>pCur->mxValue || pCur->iValue==0;
+// Return the value associated with a wholenumber.
+__device__ static RC WholenumberColumn(IVTableCursor *cur2, FuncContext *fctx, int i)
+{
+	wholenumber_cursor *cur = (wholenumber_cursor *)cur2;
+	Vdbe::Result_Int64(fctx, cur->Value);
+	return RC_OK;
 }
 
-/*
-** Called to "rewind" a cursor back to the beginning so that
-** it starts its output over again.  Always called at least once
-** prior to any wholenumberColumn, wholenumberRowid, or wholenumberEof call.
-**
-**    idxNum   Constraints
-**    ------   ---------------------
-**      0      (none)
-**      1      value > $argv0
-**      2      value >= $argv0
-**      4      value < $argv0
-**      8      value <= $argv0
-**
-**      5      value > $argv0 AND value < $argv1
-**      6      value >= $argv0 AND value < $argv1
-**      9      value > $argv0 AND value <= $argv1
-**     10      value >= $argv0 AND value <= $argv1
-*/
-static int wholenumberFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
-  int idxNum, const char *idxStr,
-  int argc, sqlite3_value **argv
-){
-  wholenumber_cursor *pCur = (wholenumber_cursor *)pVtabCursor;
-  sqlite3_int64 v;
-  int i = 0;
-  pCur->iValue = 1;
-  pCur->mxValue = 0xffffffff;  /* 4294967295 */
-  if( idxNum & 3 ){
-    v = sqlite3_value_int64(argv[0]) + (idxNum&1);
-    if( v>pCur->iValue && v<=pCur->mxValue ) pCur->iValue = v;
-    i++;
-  }
-  if( idxNum & 12 ){
-    v = sqlite3_value_int64(argv[i]) - ((idxNum>>2)&1);
-    if( v>=pCur->iValue && v<pCur->mxValue ) pCur->mxValue = v;
-  }
-  return SQLITE_OK;
+// The rowid.
+__device__ static RC WholenumberRowid(IVTableCursor *cur2, int64 *rowid)
+{
+	wholenumber_cursor *cur = (wholenumber_cursor *)cur2;
+	*rowid = cur->Value;
+	return RC_OK;
 }
 
-/*
-** Search for terms of these forms:
-**
-**  (1)  value > $value
-**  (2)  value >= $value
-**  (4)  value < $value
-**  (8)  value <= $value
-**
-** idxNum is an ORed combination of 1 or 2 with 4 or 8.
-*/
-static int wholenumberBestIndex(
-  sqlite3_vtab *tab,
-  sqlite3_index_info *pIdxInfo
-){
-  int i;
-  int idxNum = 0;
-  int argvIdx = 1;
-  int ltIdx = -1;
-  int gtIdx = -1;
-  const struct sqlite3_index_constraint *pConstraint;
-  pConstraint = pIdxInfo->aConstraint;
-  for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
-    if( (idxNum & 3)==0 && pConstraint->op==SQLITE_INDEX_CONSTRAINT_GT ){
-      idxNum |= 1;
-      ltIdx = i;
-    }
-    if( (idxNum & 3)==0 && pConstraint->op==SQLITE_INDEX_CONSTRAINT_GE ){
-      idxNum |= 2;
-      ltIdx = i;
-    }
-    if( (idxNum & 12)==0 && pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ){
-      idxNum |= 4;
-      gtIdx = i;
-    }
-    if( (idxNum & 12)==0 && pConstraint->op==SQLITE_INDEX_CONSTRAINT_LE ){
-      idxNum |= 8;
-      gtIdx = i;
-    }
-  }
-  pIdxInfo->idxNum = idxNum;
-  if( ltIdx>=0 ){
-    pIdxInfo->aConstraintUsage[ltIdx].argvIndex = argvIdx++;
-    pIdxInfo->aConstraintUsage[ltIdx].omit = 1;
-  }
-  if( gtIdx>=0 ){
-    pIdxInfo->aConstraintUsage[gtIdx].argvIndex = argvIdx;
-    pIdxInfo->aConstraintUsage[gtIdx].omit = 1;
-  }
-  if( pIdxInfo->nOrderBy==1
-   && pIdxInfo->aOrderBy[0].desc==0
-  ){
-    pIdxInfo->orderByConsumed = 1;
-  }
-  pIdxInfo->estimatedCost = (double)1;
-  return SQLITE_OK;
+// When the wholenumber_cursor.rLimit value is 0 or less, that is a signal that the cursor has nothing more to output.
+__device__ static bool WholenumberEof(IVTableCursor *cur2)
+{
+	wholenumber_cursor *cur = (wholenumber_cursor *)cur2;
+	return (cur->Value > cur->MaxValue || cur->Value == 0);
 }
 
-/*
-** A virtual table module that provides read-only access to a
-** Tcl global variable namespace.
-*/
-static sqlite3_module wholenumberModule = {
-  0,                         /* iVersion */
-  wholenumberConnect,
-  wholenumberConnect,
-  wholenumberBestIndex,
-  wholenumberDisconnect, 
-  wholenumberDisconnect,
-  wholenumberOpen,           /* xOpen - open a cursor */
-  wholenumberClose,          /* xClose - close a cursor */
-  wholenumberFilter,         /* xFilter - configure scan constraints */
-  wholenumberNext,           /* xNext - advance a cursor */
-  wholenumberEof,            /* xEof - check for end of scan */
-  wholenumberColumn,         /* xColumn - read data */
-  wholenumberRowid,          /* xRowid - read data */
-  0,                         /* xUpdate */
-  0,                         /* xBegin */
-  0,                         /* xSync */
-  0,                         /* xCommit */
-  0,                         /* xRollback */
-  0,                         /* xFindMethod */
-  0,                         /* xRename */
+// Called to "rewind" a cursor back to the beginning so that it starts its output over again.  Always called at least once
+// prior to any wholenumberColumn, wholenumberRowid, or wholenumberEof call.
+//
+//    idxNum   Constraints
+//    ------   ---------------------
+//      0      (none)
+//      1      value > $argv0
+//      2      value >= $argv0
+//      4      value < $argv0
+//      8      value <= $argv0
+//
+//      5      value > $argv0 AND value < $argv1
+//      6      value >= $argv0 AND value < $argv1
+//      9      value > $argv0 AND value <= $argv1
+//     10      value >= $argv0 AND value <= $argv1
+__device__ static RC WholenumberFilter(IVTableCursor *vtabCursor, int idxNum, const char *idxStr, int argc, Mem **args)
+{
+	wholenumber_cursor *cur = (wholenumber_cursor *)vtabCursor;
+	int64 v;
+	int i = 0;
+	cur->Value = 1;
+	cur->MaxValue = 0xffffffff; // 4294967295
+	if (idxNum & 3)
+	{
+		v = Vdbe::Value_Int64(args[0]) + (idxNum&1);
+		if (v > cur->Value && v <= cur->MaxValue) cur->Value = v;
+		i++;
+	}
+	if (idxNum & 12)
+	{
+		v = Vdbe::Value_Int64(args[i]) - ((idxNum>>2)&1);
+		if (v >= cur->Value && v < cur->MaxValue) cur->MaxValue = v;
+	}
+	return RC_OK;
+}
+
+// Search for terms of these forms:
+//
+//  (1)  value > $value
+//  (2)  value >= $value
+//  (4)  value < $value
+//  (8)  value <= $value
+//
+// idxNum is an ORed combination of 1 or 2 with 4 or 8.
+__device__ static RC WholenumberBestIndex(IVTable *vtab, IIndexInfo *idxInfo)
+{
+	int idxNum = 0;
+	int argvIdx = 1;
+	int ltIdx = -1;
+	int gtIdx = -1;
+	const IIndexInfo::Constraint *constraint = idxInfo->Constraints.data;
+	for (int i = 0; i < idxInfo->Constraints.length; i++, constraint++)
+	{
+		if (!constraint->Usable) continue;
+		if ((idxNum & 3) == 0 && constraint->OP == INDEX_CONSTRAINT_GT) { idxNum |= 1; ltIdx = i; }
+		if ((idxNum & 3) == 0 && constraint->OP == INDEX_CONSTRAINT_GE) { idxNum |= 2; ltIdx = i; }
+		if ((idxNum & 12) == 0 && constraint->OP == INDEX_CONSTRAINT_LT) { idxNum |= 4; gtIdx = i; }
+		if ((idxNum & 12) == 0 && constraint->OP == INDEX_CONSTRAINT_LE) { idxNum |= 8; gtIdx = i; }
+	}
+	idxInfo->IdxNum = idxNum;
+	if (ltIdx >= 0)
+	{
+		idxInfo->ConstraintUsages[ltIdx].ArgvIndex = argvIdx++;
+		idxInfo->ConstraintUsages[ltIdx].Omit = true;
+	}
+	if (gtIdx >= 0)
+	{
+		idxInfo->ConstraintUsages[gtIdx].ArgvIndex = argvIdx;
+		idxInfo->ConstraintUsages[gtIdx].Omit = true;
+	}
+	if (idxInfo->OrderBys.length == 1 && !idxInfo->OrderBys[0].Desc)
+		idxInfo->OrderByConsumed = true;
+	idxInfo->EstimatedCost = (double)1;
+	return RC_OK;
+}
+
+// A virtual table module that provides read-only access to a Tcl global variable namespace.
+__constant__ static ITableModule _wholenumberModule =
+{
+	0,							// iVersion
+	WholenumberConnect,
+	WholenumberConnect,
+	WholenumberBestIndex,
+	WholenumberDisconnect, 
+	WholenumberDisconnect,
+	WholenumberOpen,			// xOpen - open a cursor
+	WholenumberClose,			// xClose - close a cursor
+	WholenumberFilter,			// xFilter - configure scan constraints
+	WholenumberNext,			// xNext - advance a cursor
+	WholenumberEof,				// xEof - check for end of scan
+	WholenumberColumn,			// xColumn - read data
+	WholenumberRowid,			// xRowid - read data
+	nullptr,					// xUpdate
+	nullptr,					// xBegin
+	nullptr,					// xSync
+	nullptr,					// xCommit
+	nullptr,					// xRollback
+	nullptr,					// xFindMethod
+	nullptr,					// xRename
 };
 
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
-
-
-/*
-** Register the wholenumber virtual table
-*/
-int wholenumber_register(sqlite3 *db){
-  int rc = SQLITE_OK;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3_create_module(db, "wholenumber", &wholenumberModule, 0);
 #endif
-  return rc;
+
+// Register the wholenumber virtual table
+__device__ int wholenumber_register(Context *ctx)
+{
+	RC rc = RC_OK;
+#ifndef OMIT_VIRTUALTABLE
+	rc = VTable::CreateModule(ctx, "wholenumber", &_wholenumberModule, nullptr, nullptr);
+#endif
+	return rc;
 }
 
-#ifdef SQLITE_TEST
-#include <tcl.h>
-/*
-** Decode a pointer to an sqlite3 object.
-*/
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+#ifdef _TEST
+#include <Tcl.h>
+// Decode a pointer to an sqlite3 object.
+__device__ extern int GetDbPointer(Tcl_Interp *interp, char *a, Context **ctx);
 
-/*
-** Register the echo virtual table module.
-*/
-static int register_wholenumber_module(
-  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int objc,              /* Number of arguments */
-  Tcl_Obj *CONST objv[]  /* Command arguments */
-){
-  sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  wholenumber_register(db);
-  return TCL_OK;
+// Register the echo virtual table module.
+__device__ static int register_wholenumber_module(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+{
+	if (argc != 2)
+	{
+		Tcl_WrongNumArgs(interp, 1, args, "DB");
+		return TCL_ERROR;
+	}
+	Context *ctx;
+	if (GetDbPointer(interp, (char *)args[1], &ctx)) return TCL_ERROR;
+	wholenumber_register(ctx);
+	return TCL_OK;
 }
 
-
-/*
-** Register commands with the TCL interpreter.
-*/
-int Sqlitetestwholenumber_Init(Tcl_Interp *interp){
-  static struct {
-     char *zName;
-     Tcl_ObjCmdProc *xProc;
-     void *clientData;
-  } aObjCmd[] = {
-     { "register_wholenumber_module",   register_wholenumber_module, 0 },
-  };
-  int i;
-  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
-        aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
-  }
-  return TCL_OK;
+// Register commands with the TCL interpreter.
+__constant__ static struct {
+	char *Name;
+	Tcl_CmdProc *Proc;
+	ClientData ClientData;
+} _objCmds[] = {
+	{ "register_wholenumber_module",  register_wholenumber_module, nullptr },
+};
+__device__ int Sqlitetestwholenumber_Init(Tcl_Interp *interp)
+{
+	for (int i = 0; i < _lengthof(_objCmds); i++)
+		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+	return TCL_OK;
 }
 
-#endif /* SQLITE_TEST */
+#endif

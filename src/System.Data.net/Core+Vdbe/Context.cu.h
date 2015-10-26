@@ -230,7 +230,7 @@ namespace CORE_NAME
 #endif
 
 #pragma region From: Status
-		__device__ RC Status(CTXSTATUS op, int *current, int *highwater, bool resetFlag);
+		__device__ static RC Status(CTXSTATUS op, int *current, int *highwater, bool resetFlag);
 #pragma endregion
 
 	};

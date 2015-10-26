@@ -1,122 +1,87 @@
-/*
-** 2006 June 14
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** Test extension for testing the sqlite3_load_extension() function.
-*/
+// Test extension for testing the sqlite3_load_extension() function.
 #include <string.h>
-#include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
+#include <Core+Vdbe\Core+Ext.cu.h>
+EXTENSION_INIT1
 
-/*
-** The half() SQL function returns half of its input value.
-*/
-static void halfFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  sqlite3_result_double(context, 0.5*sqlite3_value_double(argv[0]));
+	// The half() SQL function returns half of its input value.
+	__device__ static void HalfFunc(FuncContext *fctx, int argc, Mem **args)
+{
+	Vdbe::Result_Double(fctx, 0.5 * Vdbe::Value_Double(args[0]));
 }
 
-/*
-** SQL functions to call the sqlite3_status function and return results.
-*/
-static void statusFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int op, mx, cur, resetFlag, rc;
-  if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
-    op = sqlite3_value_int(argv[0]);
-  }else if( sqlite3_value_type(argv[0])==SQLITE_TEXT ){
-    int i;
-    const char *zName;
-    static const struct {
-      const char *zName;
-      int op;
-    } aOp[] = {
-      { "MEMORY_USED",         SQLITE_STATUS_MEMORY_USED         },
-      { "PAGECACHE_USED",      SQLITE_STATUS_PAGECACHE_USED      },
-      { "PAGECACHE_OVERFLOW",  SQLITE_STATUS_PAGECACHE_OVERFLOW  },
-      { "SCRATCH_USED",        SQLITE_STATUS_SCRATCH_USED        },
-      { "SCRATCH_OVERFLOW",    SQLITE_STATUS_SCRATCH_OVERFLOW    },
-      { "MALLOC_SIZE",         SQLITE_STATUS_MALLOC_SIZE         },
-    };
-    int nOp = sizeof(aOp)/sizeof(aOp[0]);
-    zName = (const char*)sqlite3_value_text(argv[0]);
-    for(i=0; i<nOp; i++){
-      if( strcmp(aOp[i].zName, zName)==0 ){
-        op = aOp[i].op;
-        break;
-      }
-    }
-    if( i>=nOp ){
-      char *zMsg = sqlite3_mprintf("unknown status property: %s", zName);
-      sqlite3_result_error(context, zMsg, -1);
-      sqlite3_free(zMsg);
-      return;
-    }
-  }else{
-    sqlite3_result_error(context, "unknown status type", -1);
-    return;
-  }
-  if( argc==2 ){
-    resetFlag = sqlite3_value_int(argv[1]);
-  }else{
-    resetFlag = 0;
-  }
-  rc = sqlite3_status(op, &cur, &mx, resetFlag);
-  if( rc!=SQLITE_OK ){
-    char *zMsg = sqlite3_mprintf("sqlite3_status(%d,...) returns %d", op, rc);
-    sqlite3_result_error(context, zMsg, -1);
-    sqlite3_free(zMsg);
-    return;
-  } 
-  if( argc==2 ){
-    sqlite3_result_int(context, mx);
-  }else{
-    sqlite3_result_int(context, cur);
-  }
+// SQL functions to call the sqlite3_status function and return results.
+__constant__ static const struct {
+	const char *Name;
+	STATUS OP;
+} _ops[] = {
+	{ "MEMORY_USED",         STATUS_MEMORY_USED         },
+	{ "PAGECACHE_USED",      STATUS_PAGECACHE_USED      },
+	{ "PAGECACHE_OVERFLOW",  STATUS_PAGECACHE_OVERFLOW  },
+	{ "SCRATCH_USED",        STATUS_SCRATCH_USED        },
+	{ "SCRATCH_OVERFLOW",    STATUS_SCRATCH_OVERFLOW    },
+	{ "MALLOC_SIZE",         STATUS_MALLOC_SIZE         },
+};
+
+__device__ static void StatusFunc(FuncContext *fctx, int argc, Mem **args)
+{
+	STATUS op;
+	if (Vdbe::Value_Type(args[0]) == TYPE_INTEGER)
+		op = (STATUS)Vdbe::Value_Int(args[0]);
+	else if (Vdbe::Value_Type(args[0]) == TYPE_TEXT)
+	{
+		int i;
+		int opsLength = _lengthof(_ops);
+		const char *name = (const char *)Vdbe::Value_Text(args[0]);
+		for (i = 0; i < opsLength; i++)
+		{
+			if (!_strcmp(_ops[i].Name, name))
+			{
+				op = _ops[i].OP;
+				break;
+			}
+		}
+		if (i >= opsLength)
+		{
+			char *msg = _mprintf("unknown status property: %s", name);
+			Vdbe::Result_Error(fctx, msg, -1);
+			_free(msg);
+			return;
+		}
+	}
+	else
+	{
+		Vdbe::Result_Error(fctx, "unknown status type", -1);
+		return;
+	}
+	bool resetFlag = (argc == 2 ? Vdbe::Value_Int(args[1]) != 0 : false);
+	int cur, max;
+	bool rc = _status(op, &cur, &max, resetFlag);
+	if (!rc)
+	{
+		char *msg = _mprintf("sqlite3_status(%d,...) returns %d", op, rc);
+		Vdbe::Result_Error(fctx, msg, -1);
+		_free(msg);
+		return;
+	} 
+	Vdbe::Result_Int(fctx, (argc == 2 ? max : cur));
 }
 
-/*
-** Extension load function.
-*/
-int testloadext_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  int nErr = 0;
-  SQLITE_EXTENSION_INIT2(pApi);
-  nErr |= sqlite3_create_function(db, "half", 1, SQLITE_ANY, 0, halfFunc, 0, 0);
-  nErr |= sqlite3_create_function(db, "sqlite3_status", 1, SQLITE_ANY, 0,
-                          statusFunc, 0, 0);
-  nErr |= sqlite3_create_function(db, "sqlite3_status", 2, SQLITE_ANY, 0,
-                          statusFunc, 0, 0);
-  return nErr ? SQLITE_ERROR : SQLITE_OK;
+// Extension load function.
+__device__ RC testloadext_init(Context *ctx, char **errMsg, const core_api_routines *api)
+{
+	int err = 0;
+	EXTENSION_INIT2(api);
+	err |= Main::CreateFunction(ctx, "half", 1, TEXTENCODE_ANY, 0, HalfFunc, 0, 0);
+	err |= Main::CreateFunction(ctx, "sqlite3_status", 1, TEXTENCODE_ANY, 0, StatusFunc, 0, 0);
+	err |= Main::CreateFunction(ctx, "sqlite3_status", 2, TEXTENCODE_ANY, 0, StatusFunc, 0, 0);
+	return (err ? RC_ERROR : RC_OK);
 }
 
-/*
-** Another extension entry point. This one always fails.
-*/
-int testbrokenext_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  char *zErr;
-  SQLITE_EXTENSION_INIT2(pApi);
-  zErr = sqlite3_mprintf("broken!");
-  *pzErrMsg = zErr;
-  return 1;
+// Another extension entry point. This one always fails.
+__device__ int testbrokenext_init(Context *ctx, char **errMsg, const core_api_routines *api)
+{
+	EXTENSION_INIT2(api);
+	char *err = _mprintf("broken!");
+	*errMsg = err;
+	return 1;
 }

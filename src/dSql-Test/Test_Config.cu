@@ -470,7 +470,7 @@ __device__ static void set_options(Tcl_Interp *interp)
 #endif
 
 	Tcl_SetVar2(interp, "sqlite_options", "threadsafe", STRINGVALUE(SQLITE_THREADSAFE), TCL_GLOBAL_ONLY);
-	assert(sqlite3_threadsafe() == SQLITE_THREADSAFE );
+	_assert(sqlite3_threadsafe() == SQLITE_THREADSAFE );
 
 #ifdef SQLITE_OMIT_TEMPDB
 	Tcl_SetVar2(interp, "sqlite_options", "tempdb", "0", TCL_GLOBAL_ONLY);

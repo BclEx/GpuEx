@@ -84,14 +84,14 @@ namespace CORE_NAME
 		};
 		__device__ static RC Config_(CONFIG op, _va_list &args);
 #if __CUDACC__
-		__device__ inline static void Config(CONFIG op) { _va_list args; _va_start(args); Config_(op, args); _va_end(args); }
-		template <typename T1> __device__ inline static void Config(CONFIG op, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); Config_(op, args); _va_end(args); }
-		template <typename T1, typename T2> __device__ inline static void Config(CONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); Config_(op, args); _va_end(args); }
-		template <typename T1, typename T2, typename T3> __device__ inline static void Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); Config_(op, args); _va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static void Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); Config_(op, args); _va_end(args); }
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static void Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); Config_(op, args); _va_end(args); }
+		__device__ inline static RC Config(CONFIG op) { _va_list args; _va_start(args); RC rc = Config_(op, args); _va_end(args); return rc; }
+		template <typename T1> __device__ inline static RC Config(CONFIG op, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); RC rc = Config_(op, args); _va_end(args); return rc; }
+		template <typename T1, typename T2> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); RC rc = Config_(op, args); _va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); RC rc = Config_(op, args); _va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); RC rc = Config_(op, args); _va_end(args); return rc; }
+		template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline static RC Config(CONFIG op, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); RC rc = Config_(op, args); _va_end(args); return rc; }
 #else
-		__device__ inline void static Config(CONFIG op, ...) { _va_list args; _va_start(args, op); Config_(op, args); _va_end(args); }
+		__device__ inline RC static Config(CONFIG op, ...) { _va_list args; _va_start(args, op); RC rc = Config_(op, args); _va_end(args); return rc; }
 #endif
 
 #pragma endregion

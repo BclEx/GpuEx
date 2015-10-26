@@ -383,9 +383,9 @@ __device__ static int registerTestFunctions(Context *ctx)
 __device__ static int autoinstall_test_funcs(ClientData clientData, Tcl_Interp *interp, int argc, const char *objs[])
 {
 	extern int Md5_Register(Context *);
-	RC rc = Main::AutoExtension((void *)registerTestFunctions);
+	RC rc = Main::AutoExtension((void(*)())registerTestFunctions);
 	if (rc == RC_OK)
-		rc = Main::AutoExtension((void *)Md5_Register);
+		rc = Main::AutoExtension((void(*)())Md5_Register);
 	Tcl_SetObjResult(interp, (int)rc);
 	return TCL_OK;
 }
@@ -399,12 +399,9 @@ __device__ static void tFinal(FuncContext *a) { }
 // Make various calls to sqlite3_create_function that do not have valid parameters.  Verify that the error condition is detected and reported.
 __device__ static int abuse_create_function(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
-	extern int getDbPointer(Tcl_Interp*, const char*, Context**);
-	int rc;
-	int mxArg;
-
+	__device__ extern int GetDbPointer(Tcl_Interp*, char*, Context**);
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, (char *)args[1], &ctx)) return TCL_ERROR;
 
 	RC rc = Main::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, tStep, tFinal);
 	if (rc != RC_MISUSE) goto abuse_err;
@@ -469,7 +466,7 @@ __device__ int Sqlitetest_func_Init(Tcl_Interp *interp)
 	for (int i = 0; i < _lengthof(_objCmds); i++)
 		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, nullptr, nullptr);
 	Main::Initialize();
-	Main::AutoExtension((void *)registerTestFunctions);
-	Main::AutoExtension((void *)Md5_Register);
+	Main::AutoExtension((void(*)())registerTestFunctions);
+	Main::AutoExtension((void(*)())Md5_Register);
 	return TCL_OK;
 }

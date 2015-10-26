@@ -1324,7 +1324,7 @@ extern "C" __device__ inline int _unlink(const char *a) { }
 #define _fwrite(p, s, n, f) fread(p, s, n, f)
 #define _fseek(f, o, s) fseek(f, o, s)
 #define _ftell(f) ftell(f)
-#define _feoff(f) feoff(f)
+#define _feof(f) feof(f)
 #define _ferror(f) ferror(f)
 #define _clearerr(f) clearerr(f)
 #define _rename(a, b) rename(a, b)

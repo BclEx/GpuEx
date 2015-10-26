@@ -159,13 +159,12 @@ __device__ static RC fsColumn(IVTableCursor *cur2, FuncContext *fctx, int i)
 		const char *file = (const char *)Vdbe::Column_Text(cur->Stmt, 1);
 		int fd = open(file, O_RDONLY);
 		if (fd < 0) return RC_IOERR;
-		struct stat sbuf;
+		struct _stat sbuf;
 		_fstat(fd, &sbuf);
 
 		if (sbuf.st_size >= cur->Alloc)
 		{
 			int newLength = sbuf.st_size*2;
-			char *new_;
 			if (newLength < 1024) newLength = 1024;
 
 			char *new_ = (char *)_realloc(cur->Buf, newLength);
@@ -197,7 +196,7 @@ __device__ static RC fsRowid(IVTableCursor *cur2, int64 *rowid)
 
 __device__ static bool fsEof(IVTableCursor *cur2)
 {
-	fs_cursor *cur = (fs_cursor *)cur;
+	fs_cursor *cur = (fs_cursor *)cur2;
 	return (Vdbe::Data_Count(cur->Stmt) == 0);
 }
 
@@ -244,7 +243,7 @@ __constant__ static ITableModule _fsModule = {
 };
 
 // Decode a pointer to an sqlite3 object.
-__device__ extern int getDbPointer(Tcl_Interp *interp, const char *a, Context **ctx);
+__device__ extern int GetDbPointer(Tcl_Interp *interp, char *a, Context **ctx);
 
 // Register the echo virtual table module.
 __device__ static int register_fs_module(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
@@ -255,9 +254,9 @@ __device__ static int register_fs_module(ClientData clientData, Tcl_Interp *inte
 		return TCL_ERROR;
 	}
 	Context *ctx;
-	if( getDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, (char *)args[1], &ctx)) return TCL_ERROR;
 #ifndef OMIT_VIRTUALTABLE
-	VTable::CreateModule(ctx, "fs", &_fsModule, (void *)interp);
+	VTable::CreateModule(ctx, "fs", &_fsModule, (void *)interp, nullptr);
 #endif
 	return TCL_OK;
 }
