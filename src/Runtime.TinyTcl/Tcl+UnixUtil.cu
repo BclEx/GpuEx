@@ -291,7 +291,7 @@ nextPid:
 *
 *----------------------------------------------------------------------
 */
-int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr)
+int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr)
 {
 	if (inPipePtr != NULL) {
 		*inPipePtr = -1;

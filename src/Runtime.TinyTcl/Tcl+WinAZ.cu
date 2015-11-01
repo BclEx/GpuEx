@@ -479,6 +479,18 @@ badStat:
 		}
 		interp->result = GetFileType((int)statBuf.st_mode);
 		return TCL_OK;
+		// added here. access not supported
+	} else if (c == 'e' && !strncmp(args[1], "exists", length) && length >= 3) {
+		if (argc != 3) {
+			args[1] = "exists";
+			goto not3Args;
+		}
+		if (stat(fileName, &statBuf) == -1) {
+			interp->result = "0";
+		} else {
+			interp->result = "1";
+		}
+		return TCL_OK;
 	} else {
 		Tcl_AppendResult(interp, "bad option \"", args[1], "\": should be atime, dirname, executable, exists, ", "extension, isdirectory, isfile, lstat, mtime, owned, ", "readable, ",
 #ifdef S_IFLNK
@@ -736,7 +748,7 @@ int Tcl_OpenCmd(ClientData notUsed, Tcl_Interp *interp, int argc, const char *ar
 	Interp *iPtr = (Interp *) interp;
 	char *access;
 	if (argc == 2) {
-		access = "r";
+		access = "rb";
 	} else if (argc == 3) {
 		access = (char *)args[2];
 	} else {
@@ -830,7 +842,7 @@ badAccess:
 		//		Tcl_AppendResult(interp, "can't read output from command:", " standard output was redirected", (char *)NULL);
 		//		goto error;
 		//	}
-		//	filePtr->f = fopen(outPipe, "r");
+		//	filePtr->f = fopen(outPipe, "rb");
 		//}
 		//if (filePtr->writable) {
 		//	if (!inPipe) {

@@ -102,6 +102,11 @@ __device__ void _qsort(void *base, size_t num, size_t size, int (*compar)(const 
 // OS
 #pragma region OS
 
+#include <sys/stat.h>
+//#define WIN32_LEAN_AND_MEAN
+//#include <windows.h>
+//#undef WIN32_LEAN_AND_MEAN
+
 #if __CUDACC__
 typedef int mode_t;
 __device__ int __chmod(const char *a, mode_t m);

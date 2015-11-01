@@ -201,10 +201,10 @@ __device__ void TclCopyAndCollapse(int count, register char *src, register char 
 *	The return value is normally TCL_OK, which means that the list was successfully split up.  If TCL_ERROR is
 *	returned, it means that "list" didn't have proper list structure;  interp->result will contain a more detailed error message.
 *
-*	*argvPtr will be filled in with the address of an array whose elements point to the elements of list, in order.
+*	*argsPtr will be filled in with the address of an array whose elements point to the elements of list, in order.
 *	*argcPtr will get filled in with the number of valid elements in the array.  A single block of memory is dynamically allocated
 *	to hold both the args array and a copy of the list (with backslashes and braces removed in the standard way).
-*	The caller must eventually free this memory by calling free() on *argvPtr.  Note:  *argvPtr and *argcPtr are only modified
+*	The caller must eventually free this memory by calling free() on *argsPtr.  Note:  *argsPtr and *argcPtr are only modified
 *	if the procedure returns normally.
 *
 * Side effects:
@@ -212,7 +212,7 @@ __device__ void TclCopyAndCollapse(int count, register char *src, register char 
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, char ***argvPtr)
+__device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, const char **argsPtr[])
 {
 	// Figure out how much space to allocate.  There must be enough space for both the array of pointers and also for a copy of
 	// the list.  To estimate the number of pointers needed, count the number of space characters in the list.
@@ -224,7 +224,7 @@ __device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, char 
 		}
 	}
 	size++; // Leave space for final NULL pointer.
-	char **args = (char **)_allocFast((unsigned)((size*sizeof(char *)) + (p - list) + 1));
+	const char **args = (const char **)_allocFast((unsigned)((size*sizeof(char *)) + (p - list) + 1));
 	for (i = 0, p = ((char *)args) + size*sizeof(char *); *list != 0; i++) {
 		char *element;
 		int elSize, brace;
@@ -253,7 +253,7 @@ __device__ int Tcl_SplitList(Tcl_Interp *interp, char *list, int *argcPtr, char 
 		}
 	}
 	args[i] = NULL;
-	*argvPtr = args;
+	*argsPtr = args;
 	*argcPtr = i;
 	return TCL_OK;
 }

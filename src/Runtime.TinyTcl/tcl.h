@@ -11,6 +11,7 @@
 #define TCL_VERSION "6.7"
 #define TCL_MAJOR_VERSION 6
 #define TCL_MINOR_VERSION 7
+#define TCL_LIBRARY "library"
 #include <Runtime.h>
 
 #ifndef _CLIENTDATA
@@ -144,10 +145,10 @@ extern __device__ void Tcl_ValidateAllMemory(char *file, int line);
 
 // Macro to free up result of interpreter.
 #define Tcl_FreeResult(interp) \
-	if ((interp)->freeProc != 0) { \
+	if ((interp)->freeProc) { \
 	if ((interp)->freeProc == (Tcl_FreeProc *)_free) { _freeFast((interp)->result); } \
 	else { (*(interp)->freeProc)((interp)->result); } \
-	(interp)->freeProc = 0; }
+	(interp)->freeProc = nullptr; }
 
 // Exported Tcl procedures:
 extern __device__ void Tcl_AppendElement(Tcl_Interp *interp, const char *string, bool noSep = false);
@@ -196,7 +197,7 @@ extern __device__ int Tcl_ExprLong(Tcl_Interp *interp, char *string, long *ptr);
 extern __device__ int Tcl_ExprString(Tcl_Interp *interp, char *string);
 extern __device__ int Tcl_Fork();
 extern __device__ int Tcl_GetIndex(Tcl_Interp *interp, const char *string, const char *table[], char *msg, int flags, int *indexPtr, bool insensitive = false);
-extern __device__ int Tcl_GetIndex(Tcl_Interp *interp, const char *string, const void *structTable[], int offset, char *msg, int flags, int *indexPtr, bool insensitive = false);
+extern __device__ int Tcl_GetIndex2(Tcl_Interp *interp, const char *string, const void *structTable[], int offset, char *msg, int flags, int *indexPtr, bool insensitive = false);
 extern __device__ int Tcl_GetBoolean(Tcl_Interp *interp, const char *string, bool *boolPtr);
 extern __device__ int Tcl_GetDouble(Tcl_Interp *interp, const char *string, double *doublePtr);
 extern __device__ int Tcl_GetInt(Tcl_Interp *interp, const char *string, int *intPtr);

@@ -861,7 +861,7 @@ __device__ static int ExprTopLevel(Tcl_Interp *interp, char *string, Value *valu
 	valuePtr->pv.buffer = valuePtr->pv.next = valuePtr->staticSpace;
 	valuePtr->pv.end = valuePtr->pv.buffer + STATIC_STRING_SPACE - 1;
 	valuePtr->pv.expandProc = TclExpandParseValue;
-	valuePtr->pv.clientData = (ClientData) NULL;
+	valuePtr->pv.clientData = (ClientData)NULL;
 
 	int result = ExprGetValue(interp, &info, -1, valuePtr);
 	if (result != TCL_OK) {

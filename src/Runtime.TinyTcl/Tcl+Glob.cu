@@ -9,7 +9,6 @@
 // express or implied warranty.
 
 #include "Tcl+Int.h"
-#include <sys/stat.h>
 #include <RuntimeOS.h>
 
 // The structure below is used to keep track of a globbing result being built up (i.e. a partial list of file names).  The list grows dynamically to be as big as needed.

@@ -428,7 +428,7 @@ __device__ static void DbUpdateHandler(void *p, TK op, const char *dbName, const
 	_assert(tctx->UpdateHook);
 	_assert(op == TK_INSERT || op == TK_UPDATE || op == TK_DELETE);
 	char b[50];
-	Tcl_SetResult(interp, *tctx->UpdateHook, nullptr);
+	Tcl_SetResult(interp, tctx->UpdateHook, nullptr);
 	Tcl_AppendElement(interp, (op == TK_INSERT?"INSERT":(op == TK_UPDATE?"UPDATE":"DELETE")), false);
 	Tcl_AppendElement(interp, dbName, false);
 	Tcl_AppendElement(interp, tableName, false);
@@ -441,7 +441,7 @@ __device__ static void TclCollateNeeded(void *p, Context *ctx, TEXTENCODE encode
 {
 	TclContext *tctx = (TclContext *)p;
 	Tcl_Interp *interp = tctx->Interp;
-	Tcl_SetResult(interp, *tctx->CollateNeeded, nullptr);
+	Tcl_SetResult(interp, tctx->CollateNeeded, nullptr);
 	Tcl_AppendElement(interp, name, false);
 	char *cmd = interp->result;
 	Tcl_Eval(interp, cmd, 0, nullptr);

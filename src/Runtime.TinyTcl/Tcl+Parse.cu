@@ -441,7 +441,7 @@ __device__ int TclParseBraces(Tcl_Interp *interp, char *string, char **termPtr, 
 *
 *--------------------------------------------------------------
 */
-__device__ int TclParseWords(Tcl_Interp *interp, char *string, int flags, int maxWords, char **termPtr, int *argcPtr, char **args, register ParseValue *pvPtr)
+__device__ int TclParseWords(Tcl_Interp *interp, char *string, int flags, int maxWords, char **termPtr, int *argcPtr, const char *args[], register ParseValue *pvPtr)
 {
 	int result;
 	register char *src = string;

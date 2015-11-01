@@ -1,0 +1,227 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="dos.cu" />
+    <ClCompile Include="regex_compat.cu" />
+    <ClCompile Include="Tcl+Alloc.cu" />
+    <ClCompile Include="Tcl+Assem.cu" />
+    <ClCompile Include="Tcl+Basic.cu" />
+    <ClCompile Include="Tcl+CmdAH.cu" />
+    <ClCompile Include="Tcl+CmdIL.cu" />
+    <ClCompile Include="Tcl+CmdMZ.cu" />
+    <ClCompile Include="Tcl+Expr.cu" />
+    <ClCompile Include="Tcl+Get.cu" />
+    <ClCompile Include="Tcl+Glob.cu" />
+    <ClCompile Include="Tcl+GpuAZ.cu" />
+    <ClCompile Include="Tcl+GpuEnv.cu" />
+    <ClCompile Include="Tcl+GpuStr.cu" />
+    <ClCompile Include="Tcl+GpuUtil.cu" />
+    <ClCompile Include="Tcl+Hash.cu" />
+    <ClCompile Include="Tcl+History.cu" />
+    <ClCompile Include="Tcl+Load.cu" />
+    <ClCompile Include="Tcl+Load-noop.cu" />
+    <ClCompile Include="Tcl+Load-unix.cu" />
+    <ClCompile Include="Tcl+Load-win.cu" />
+    <ClCompile Include="Tcl+Main-embed.cu" />
+    <ClCompile Include="Tcl+Main.cu" />
+    <ClCompile Include="Tcl+Obj.cu" />
+    <ClCompile Include="Tcl+Parse.cu" />
+    <ClCompile Include="Tcl+Proc.cu" />
+    <ClCompile Include="Tcl+UnixAZ.cu" />
+    <ClCompile Include="Tcl+UnixEnv.cu" />
+    <ClCompile Include="Tcl+UnixStr.cu" />
+    <ClCompile Include="Tcl+UnixUtil.cu" />
+    <ClCompile Include="Tcl+WinAZ.cu" />
+    <ClCompile Include="Tcl+WinEnv.cu" />
+    <ClCompile Include="Tcl+WinStr.cu" />
+    <ClCompile Include="Tcl+WinUtil.cu" />
+    <ClCompile Include="Tcl+Util.cu" />
+    <ClCompile Include="Tcl+Var.cu" />
+    <ClCompile Include="TclEx+Dbg.cu" />
+    <ClCompile Include="TclEx+Extensions.cu" />
+    <ClCompile Include="TclEx+Gen.cu" />
+    <ClCompile Include="TclEx+Main.cu" />
+    <ClCompile Include="TclEx+UnixReaddir.cu" />
+    <ClCompile Include="TclMod.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="regex_compat.h" />
+    <ClInclude Include="Tcl.h" />
+    <ClInclude Include="Tcl+Gpu.h" />
+    <ClInclude Include="Tcl+Hash.h" />
+    <ClInclude Include="Tcl+Int.h" />
+    <ClInclude Include="Tcl+Load.h" />
+    <ClInclude Include="Tcl+Unix.h" />
+    <ClInclude Include="Tcl+Win.h" />
+    <ClInclude Include="TclEx.h" />
+    <ClInclude Include="TclEx+Int.h" />
+    <ClInclude Include="TclMod.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RTcl.cu" />
+    <None Include="tcl_sys\autoinit.tcl">
+      <Filter>tcl_sys</Filter>
+    </None>
+    <None Include="tcl_sys\devel.tcl">
+      <Filter>tcl_sys</Filter>
+    </None>
+    <None Include="tcl_sys\system.tcl">
+      <Filter>tcl_sys</Filter>
+    </None>
+    <None Include="tests\all">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\append.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\case.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\concat.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\defs">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\error.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\eval.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\expr.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\for.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\format.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\history.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\if.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\incr.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\info.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\join.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\lindex.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\linsert.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\list.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\llength.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\lrange.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\lreplace.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\lsearch.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\lsort.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\misc.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\open.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\parse.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\proc.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\regexp.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\rename.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\scan.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\set.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\source.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\split.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\string.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\trace.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\unknown.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\uplevel.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\upvar.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\while.test">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="library\init.tcl">
+      <Filter>library</Filter>
+    </None>
+    <None Include="library\mkindex.tcl">
+      <Filter>library</Filter>
+    </None>
+    <None Include="library\parray.tcl">
+      <Filter>library</Filter>
+    </None>
+    <None Include="library\tclIndex">
+      <Filter>library</Filter>
+    </None>
+    <None Include="tests\cd.test_">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\env.test_">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\exec.test_">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\file.test_">
+      <Filter>tests</Filter>
+    </None>
+    <None Include="tests\glob.test_">
+      <Filter>tests</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="tcl_sys">
+      <UniqueIdentifier>{89c0caf0-84ce-491d-bcf7-30742b81edfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{28012046-790a-4b04-a842-12a37aa65823}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="library">
+      <UniqueIdentifier>{ade0f6bd-05e7-406f-a51d-438d9be114b3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

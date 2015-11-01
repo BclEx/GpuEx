@@ -24,7 +24,10 @@ __device__ void TclEx_InitExtensions(Tcl_Interp *interp);
 Tcl_Interp *_interp;
 Tcl_CmdBuf _buffer;
 bool _quitFlag = false;
-char _initCmd[] = "puts stdout \"\nEmbedded Tcl 6.8.0\n\"";//; source tcl_sys/autoinit.tcl";
+//char _initCmd[] = "puts stdout \"Embedded Tcl 6.8.0\n\"";
+//char _initCmd[] = "source tcl_sys/autoinit.tcl";
+char _initCmd[] = "cd tests; source all";
+//char _initCmd[] = "cd tests; source append.test";
 
 #ifdef TCL_MEM_DEBUG
 char _dumpFile[100];

@@ -44,7 +44,7 @@ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 	if (fileName == NULL) {
 		goto error;
 	}
-	FILE *file = fopen(fileName, "r");
+	FILE *file = fopen(fileName, "rb");
 	if (!file) {
 		Tcl_AppendResult(interp, "couldn't read file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		goto error;
@@ -161,7 +161,7 @@ void mktemp(char *buf, int size)
 *
 *----------------------------------------------------------------------
 */
-int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArrayPtr, int **inPipePtr, int **outPipePtr, int **errFilePtr)
+int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **pidArrayPtr, int **inPipePtr, int **outPipePtr, int **errFilePtr)
 {
 	if (inPipePtr != NULL) {
 		*inPipePtr = -1;
@@ -294,7 +294,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArray
 			inputId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
 		} else {
 			// File redirection.  Just open the file.
-			inputId = fopen(input, "r");
+			inputId = fopen(input, "rb");
 			if (!inputId) {
 				Tcl_AppendResult(interp, "couldn't read file \"", input, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -386,7 +386,7 @@ errFileError:
 			Tcl_AppendResult(interp, "couldn't create error file for command: ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
 		}
-		*errFilePtr = fopen(errName, "r");
+		*errFilePtr = fopen(errName, "rb");
 		if (*errFilePtr < 0) {
 			goto errFileError;
 		}

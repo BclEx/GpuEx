@@ -9,3 +9,4 @@
 
 puts "Welcome to Tiny Tcl 6.8"
 
+#cd tests; source all

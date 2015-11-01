@@ -692,6 +692,7 @@ __device__ int __vsnprintf(const char *buf, size_t bufLen, const char *fmt, _va_
 	TextBuilder::Init(&b, (char *)buf, (int)bufLen, 0);
 	b.AllocType = 0;
 	b.AppendFormat_(false, fmt, *args);
+	b.ToString();
 	return b.Index;
 }
 

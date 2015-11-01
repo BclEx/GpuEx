@@ -31,7 +31,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -226,6 +226,59 @@
     <None Include="TclEx+Main.cu" />
     <None Include="TclEx+UnixReaddir.cu" />
     <None Include="TclMod.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="library\init.tcl" />
+    <None Include="library\mkindex.tcl" />
+    <None Include="library\parray.tcl" />
+    <None Include="library\tclIndex" />
+    <None Include="tcl_sys\autoinit.tcl" />
+    <None Include="tcl_sys\devel.tcl" />
+    <None Include="tcl_sys\system.tcl" />
+    <None Include="tests\all" />
+    <None Include="tests\append.test" />
+    <None Include="tests\case.test" />
+    <None Include="tests\cd.test_" />
+    <None Include="tests\concat.test" />
+    <None Include="tests\defs" />
+    <None Include="tests\env.test_" />
+    <None Include="tests\error.test" />
+    <None Include="tests\eval.test" />
+    <None Include="tests\exec.test_" />
+    <None Include="tests\expr.test" />
+    <None Include="tests\file.test_" />
+    <None Include="tests\for.test" />
+    <None Include="tests\format.test" />
+    <None Include="tests\glob.test_" />
+    <None Include="tests\history.test" />
+    <None Include="tests\if.test" />
+    <None Include="tests\incr.test" />
+    <None Include="tests\info.test" />
+    <None Include="tests\join.test" />
+    <None Include="tests\lindex.test" />
+    <None Include="tests\linsert.test" />
+    <None Include="tests\list.test" />
+    <None Include="tests\llength.test" />
+    <None Include="tests\lrange.test" />
+    <None Include="tests\lreplace.test" />
+    <None Include="tests\lsearch.test" />
+    <None Include="tests\lsort.test" />
+    <None Include="tests\misc.test" />
+    <None Include="tests\open.test" />
+    <None Include="tests\parse.test" />
+    <None Include="tests\proc.test" />
+    <None Include="tests\regexp.test" />
+    <None Include="tests\rename.test" />
+    <None Include="tests\scan.test" />
+    <None Include="tests\set.test" />
+    <None Include="tests\source.test" />
+    <None Include="tests\split.test" />
+    <None Include="tests\string.test" />
+    <None Include="tests\trace.test" />
+    <None Include="tests\unknown.test" />
+    <None Include="tests\uplevel.test" />
+    <None Include="tests\upvar.test" />
+    <None Include="tests\while.test" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

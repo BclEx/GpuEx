@@ -11,7 +11,12 @@
 
 #include "Tcl+Int.h"
 
-__device__ int Tcl_GetIndex(Tcl_Interp *interp, char *string, const char *table[], char *msg, int flags, int *indexPtr)
+__device__ int Tcl_GetIndex(Tcl_Interp *interp, const char *string, const char *table[], char *msg, int flags, int *indexPtr, bool insensitive)
+{
+	return TCL_OK;
+}
+
+__device__ int Tcl_GetIndex2(Tcl_Interp *interp, const char *string, const void *structTable[], int offset, char *msg, int flags, int *indexPtr, bool insensitive)
 {
 	return TCL_OK;
 }
@@ -31,7 +36,7 @@ __device__ int Tcl_GetIndex(Tcl_Interp *interp, char *string, const char *table[
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr)
+__device__ int Tcl_GetInt(Tcl_Interp *interp, const char *string, int *intPtr)
 {
 	char *end;
 	long i = _strtol(string, &end, 0);
@@ -61,7 +66,7 @@ __device__ int Tcl_GetInt(Tcl_Interp *interp, char *string, int *intPtr)
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_GetWideInt(Tcl_Interp *interp, char *string, int64 *intPtr)
+__device__ int Tcl_GetWideInt(Tcl_Interp *interp, const char *string, int64 *intPtr)
 {
 	char *end;
 	int64 i = _strtol(string, &end, 0);
@@ -91,7 +96,7 @@ __device__ int Tcl_GetWideInt(Tcl_Interp *interp, char *string, int64 *intPtr)
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr)
+__device__ int Tcl_GetDouble(Tcl_Interp *interp, const char *string, double *doublePtr)
 {
 	char *end;
 	double d = _strtod(string, &end);
@@ -121,7 +126,7 @@ __device__ int Tcl_GetDouble(Tcl_Interp *interp, char *string, double *doublePtr
 *
 *----------------------------------------------------------------------
 */
-__device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, bool *boolPtr)
+__device__ int Tcl_GetBoolean(Tcl_Interp *interp, const char *string, bool *boolPtr)
 {
 	char c, lowerCase[10]; // Convert the input string to all lower-case.
 	int i;
@@ -179,7 +184,7 @@ __device__ int Tcl_GetBoolean(Tcl_Interp *interp, char *string, bool *boolPtr)
 *
 *----------------------------------------------------------------------
 */
-__device__ char *Tcl_GetByteArray(Tcl_Interp *interp, char *string, int *arrayLength)
+__device__ char *Tcl_GetByteArray(Tcl_Interp *interp, const char *string, int *arrayLength)
 {
 	return TCL_OK;
 }

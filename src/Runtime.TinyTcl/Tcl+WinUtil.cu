@@ -44,7 +44,7 @@ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 	if (fileName == NULL) {
 		goto error;
 	}
-	FILE *file = fopen(fileName, "r");
+	FILE *file = fopen(fileName, "rb");
 	if (!file) {
 		Tcl_AppendResult(interp, "couldn't read file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		goto error;
@@ -161,7 +161,7 @@ void mktemp(char *buf, int size)
 *
 *----------------------------------------------------------------------
 */
-int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArrayPtr, FILE **inPipePtr, FILE **outPipePtr, FILE **errFilePtr)
+int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **pidArrayPtr, FILE **inPipePtr, FILE **outPipePtr, FILE **errFilePtr)
 {
 	if (inPipePtr != NULL) {
 		*inPipePtr = NULL;
@@ -198,7 +198,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArray
 			cmdCount++;
 			continue;
 		} else if (args[i][0] == '<') {
-			input = args[i] + 1;
+			input = (char *)args[i] + 1;
 			inputFile = 1;
 			if (*input == '<') {
 				inputFile = 0;
@@ -209,11 +209,11 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArray
 				input++;
 			}
 			if (!*input) {
-				input = args[i + 1];
+				input = (char *)args[i + 1];
 				removecount++;
 			}
 		} else if (args[i][0] == '>') {
-			output = args[i] + 1;
+			output = (char *)args[i] + 1;
 			outputFile = 0;
 			if (*output == '@') {
 				outputFile = 2;
@@ -224,11 +224,11 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArray
 				output++;
 			}
 			if (!*output) {
-				output = args[i + 1];
+				output = (char *)args[i + 1];
 				removecount++;
 			}
 		} else if (args[i][0] == '2' && args[i][1] == '>') {
-			error = args[i] + 2;
+			error = (char *)args[i] + 2;
 			errorFile = 0;
 			if (*error == '@') {
 				errorFile = 2;
@@ -239,7 +239,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArray
 				error++;
 			}
 			if (!*error) {
-				error = args[i + 1];
+				error = (char *)args[i + 1];
 				removecount++;
 			}
 		} else {
@@ -294,7 +294,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, char **args, int **pidArray
 			inputId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
 		} else {
 			// File redirection.  Just open the file.
-			inputId = fopen(input, "r");
+			inputId = fopen(input, "rb");
 			if (!inputId) {
 				Tcl_AppendResult(interp, "couldn't read file \"", input, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -386,7 +386,7 @@ errFileError:
 			Tcl_AppendResult(interp, "couldn't create error file for command: ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
 		}
-		*errFilePtr = fopen(errName, "r");
+		*errFilePtr = fopen(errName, "rb");
 		if (*errFilePtr < 0) {
 			goto errFileError;
 		}
@@ -419,7 +419,7 @@ errFileError:
 			//	}
 			//	outputId = pipeIds[1];
 		}
-		char *execName = Tcl_TildeSubst(interp, args[firstArg]);
+		char *execName = Tcl_TildeSubst(interp, (char *)args[firstArg]);
 		int pid = -1; //Tcl_Fork();
 		if (pid == -1) {
 			Tcl_AppendResult(interp, "couldn't fork child process: ", Tcl_OSError(interp), (char *)NULL);

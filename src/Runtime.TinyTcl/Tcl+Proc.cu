@@ -76,7 +76,7 @@ __device__ int Tcl_ProcCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 		} else {
 			valueLength = 0;
 		}
-		argPtr = (Arg *) _allocFast((unsigned)(sizeof(Arg) - sizeof(argPtr->name) + nameLength + valueLength));
+		argPtr = (Arg *)_allocFast((unsigned)(sizeof(Arg) - sizeof(argPtr->name) + nameLength + valueLength));
 		if (lastArgPtr == NULL) {
 			procPtr->argPtr = argPtr;
 		} else {

@@ -737,7 +737,7 @@ __device__ int Tcl_OpenCmd(ClientData notUsed, Tcl_Interp *interp, int argc, con
 	Interp *iPtr = (Interp *)interp;
 	char *access;
 	if (argc == 2) {
-		access = "r";
+		access = "rb";
 	} else if (argc == 3) {
 		access = args[2];
 	} else {
@@ -831,7 +831,7 @@ badAccess:
 		//		Tcl_AppendResult(interp, "can't read output from command:", " standard output was redirected", (char *)NULL);
 		//		goto error;
 		//	}
-		//	filePtr->f = _fdopen(outPipe, "r");
+		//	filePtr->f = _fdopen(outPipe, "rb");
 		//}
 		//if (filePtr->writable) {
 		//	if (inPipe == -1) {
