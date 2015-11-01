@@ -140,7 +140,7 @@ __device__ int Tcl_RecordAndEval(Tcl_Interp *interp, char *cmd, int flags)
 		length--;
 	}
 	MakeSpace(eventPtr, length + 1);
-	_strncpy(eventPtr->command, cmd, (size_t) length);
+	_strncpy(eventPtr->command, cmd, (size_t)length);
 	eventPtr->command[length] = 0;
 
 	// Execute the command.  Note: history revision isn't possible after a nested call to this procedure, because the event at the top of
@@ -255,7 +255,7 @@ infoCmd:
 			}
 			char *cur = iPtr->events[indx].command;
 			if (*cur == '\0') {
-				continue;		/* No command recorded here. */
+				continue; // No command recorded here.
 			}
 			char serial[20];
 			_sprintf(serial, "%6d  ", iPtr->curEventNum + 1 - (count - i));
@@ -321,7 +321,7 @@ infoCmd:
 				_freeFast(iPtr->events[i].command);
 			}
 		}
-		_freeFast((char *) iPtr->events);
+		_freeFast((char *)iPtr->events);
 		iPtr->events = events;
 		if (count < iPtr->numEvents) {
 			iPtr->curEvent = count-1;

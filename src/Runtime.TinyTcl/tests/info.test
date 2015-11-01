@@ -65,12 +65,12 @@ test info-4.1 {info commands option} {
     list [string match {* t1 *} $x] [string match {* t2 *} $x] \
             [string match {* set *} $x] [string match {* list *} $x]
 } {1 1 1 1}
-test info-4.2 {info commands option} {
-    proc t1 {} {}
-    rename t1 {}
-    set x [info co]
-    string match {* t1 *} $x
-} 0
+##test info-4.2 {info commands option} {
+##    proc t1 {} {}
+##    rename t1 {}
+##    set x [info co]
+##    string match {* t1 *} $x
+##} 0
 test info-4.3 {info commands option} {
     proc _t1_ {} {}
     proc _t2_ {} {}

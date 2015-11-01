@@ -562,14 +562,33 @@ template <typename T> __device__ __forceinline const T *_strchr(const T *src, ch
 	register unsigned char *s = (unsigned char *)src;
 	register unsigned char l = (unsigned char)__curtUpperToLower[character];
 	while (*s && __curtUpperToLower[*s] != l) { s++; }
-	return (const T *)*s;
+	return (const T *)(*s ? s : nullptr);
 }
 
 // strstr
+//http://articles.leetcode.com/2010/10/implement-strstr-to-find-substring-in.html
 template <typename T> __device__ __forceinline const T *_strstr(const T *__restrict__ src, const T *__restrict__ str)
 {
+	if (!*str) return src;
+	char *p1 = (char *)src, *p2 = (char *)str;
+	char *p1Adv = (char *)src;
+	while (*++p2)
+		p1Adv++;
+	while (*p1Adv)
+	{
+		char *p1Begin = p1;
+		p2 = (char *)str;
+		while (*p1 && *p2 && *p1 == *p2)
+		{
+			p1++;
+			p2++;
+		}
+		if (!*p2)
+			return p1Begin;
+		p1 = p1Begin + 1;
+		p1Adv++;
+	}
 	return nullptr;
-	//http://articles.leetcode.com/2010/10/implement-strstr-to-find-substring-in.html
 }
 
 // strcmp
@@ -577,7 +596,7 @@ template <typename T> __device__ __forceinline int _strcmp(const T *__restrict__
 {
 	register unsigned char *a = (unsigned char *)left;
 	register unsigned char *b = (unsigned char *)right;
-	while (*a != 0 && __curtUpperToLower[*a] == __curtUpperToLower[*b]) { a++; b++; }
+	while (*a && __curtUpperToLower[*a] == __curtUpperToLower[*b]) { a++; b++; }
 	return __curtUpperToLower[*a] - __curtUpperToLower[*b];
 }
 
@@ -1166,9 +1185,9 @@ public:
 	char *Base;			// A base allocation.  Not from malloc.
 	char *Text;			// The string collected so far
 	int Index;			// Length of the string so far
-	int Size;			// Amount of space allocated in zText
+	size_t Size;		// Amount of space allocated in zText
 	int MaxSize;		// Maximum allowed string length
-	bool AllocFailed;  // Becomes true if any memory allocation fails
+	bool AllocFailed;	// Becomes true if any memory allocation fails
 	unsigned char AllocType; // 0: none,  1: _tagalloc,  2: _alloc
 	bool Overflowed;    // Becomes true if string size exceeds limits
 
@@ -1238,7 +1257,7 @@ extern "C" __device__ inline static int __snprintf(const char *buf, size_t bufLe
 	return n;
 }
 #endif
-#define _sprintf(buf, fmt, ...) __snprintf(buf, sizeof(buf), fmt, __VA_ARGS__)
+#define _sprintf(buf, fmt, ...) __snprintf(buf, -1, fmt, __VA_ARGS__)
 
 #pragma endregion
 

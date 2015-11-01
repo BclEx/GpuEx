@@ -26,8 +26,8 @@ Tcl_CmdBuf _buffer;
 bool _quitFlag = false;
 //char _initCmd[] = "puts stdout \"Embedded Tcl 6.8.0\n\"";
 //char _initCmd[] = "source tcl_sys/autoinit.tcl";
-char _initCmd[] = "cd tests; source all";
-//char _initCmd[] = "cd tests; source append.test";
+//char _initCmd[] = "cd tests; source all";
+char _initCmd[] = "cd tests; source file.test";
 
 #ifdef TCL_MEM_DEBUG
 char _dumpFile[100];

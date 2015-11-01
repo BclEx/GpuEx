@@ -206,10 +206,10 @@
     <None Include="tests\exec.test_">
       <Filter>tests</Filter>
     </None>
-    <None Include="tests\file.test_">
+    <None Include="tests\glob.test_">
       <Filter>tests</Filter>
     </None>
-    <None Include="tests\glob.test_">
+    <None Include="tests\file.test">
       <Filter>tests</Filter>
     </None>
   </ItemGroup>

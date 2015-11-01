@@ -397,8 +397,9 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 
 	// There can be many sub-commands (separated by semi-colons or newlines) in one command string.  This outer loop iterates over individual commands.
 	int i;
-	const char *(argStorage[NUM_ARGS]); // This procedure generates an (args, argc) array for the command, It starts out with stack-allocated space but uses dynamically- allocated storage to increase it if needed.
-	const char **args;
+	const char *argStorage[NUM_ARGS]; // This procedure generates an (args, argc) array for the command, It starts out with stack-allocated space but uses dynamically- allocated storage to increase it if needed.
+	const char **args = argStorage;
+	int argSize = NUM_ARGS;
 	char *ellipsis = ""; // Used in setting errorInfo variable; set to "..." to indicate that not all of offending command is included in errorInfo.  "" means that the command is all there.
 	while (*src != termChar) {
 		if (iPtr->catch_level && iPtr->signal) {
@@ -430,8 +431,6 @@ __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr
 		// TclParseWords several times, expanding the args array between calls.
 		pv.next = oldBuffer = pv.buffer;
 		int argc = 0;
-		int argSize = NUM_ARGS;
-		args = argStorage;
 		while (true) {
 			// Note:  the "- 2" below guarantees that we won't use the last two args slots here.  One is for a NULL pointer to
 			// mark the end of the list, and the other is to leave room for inserting the command name "unknown" as the first argument (see below).

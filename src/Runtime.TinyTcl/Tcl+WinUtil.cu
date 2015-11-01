@@ -267,7 +267,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 			// Immediate data in command.  Create temporary file and put data into file.
 			char inName[MAX_PATH];
 			mktemp(inName, sizeof(inName));
-			inputId = fopen(inName, "rw");
+			inputId = fopen(inName, "w+");
 			if (inputId < 0) {
 				Tcl_AppendResult(interp, "couldn't create input file for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;

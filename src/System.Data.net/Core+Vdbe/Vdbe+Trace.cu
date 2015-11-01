@@ -170,10 +170,10 @@ namespace CORE_NAME {
 			if (p->Str.Text && p->IndentLength < _lengthof(p->Indents))
 			{
 				const char *z = p->Str.Text;
-				int i = p->Str.Size-1;
+				int i = (int)p->Str.Size-1;
 				int x;
 				while (i >= 0 && z[i] != '\n' ) { i--; }
-				x = (p->Str.Size - 1) - i;
+				x = (int)(p->Str.Size - 1) - i;
 				if( p->IndentLength && x < p->Indents[p->IndentLength-1])
 					x = p->Indents[p->IndentLength-1];
 				p->Indents[p->IndentLength] = x;

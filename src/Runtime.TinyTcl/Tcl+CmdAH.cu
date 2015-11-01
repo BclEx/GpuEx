@@ -156,12 +156,11 @@ cleanup:
 */
 __device__ int Tcl_CatchCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
-	int result;
 	if (argc != 2 && argc != 3) {
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " command ?varName?\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	result = Tcl_Eval(interp, (char *)args[1], TCL_CATCH_SIGNAL, (char **)NULL);
+	int result = Tcl_Eval(interp, (char *)args[1], TCL_CATCH_SIGNAL, (char **)NULL);
 	if (argc == 3) {
 		if (Tcl_SetVar(interp, (char *)args[2], interp->result, 0) == NULL) {
 			Tcl_SetResult(interp, "couldn't save command result in variable", TCL_STATIC);
@@ -189,6 +188,10 @@ __device__ int Tcl_CatchCmd(ClientData dummy, Tcl_Interp *interp, int argc, cons
 */
 __device__ int Tcl_ConcatCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
+	if (argc < 2) {
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " arg ?arg ...?\"", (char *)NULL);
+		return TCL_ERROR;
+	}
 	if (argc >= 2) {
 		interp->result = Tcl_Concat(argc-1, args+1);
 		interp->freeProc = (Tcl_FreeProc *)_free;

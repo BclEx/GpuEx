@@ -369,7 +369,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, _v
 			if (realvalue > 0.0)
 			{
 				double64 scale = 1.0;
-				while (realvalue >= 1e100*scale && exp <= 350) { scale *= 1e100;exp += 100; }
+				while (realvalue >= 1e100*scale && exp <= 350) { scale *= 1e100; exp += 100; }
 				while (realvalue >= 1e64*scale && exp <= 350) { scale *= 1e64; exp += 64; }
 				while (realvalue >= 1e8*scale && exp <= 350) { scale *= 1e8; exp += 8; }
 				while (realvalue >= 10.0*scale && exp <= 350) { scale *= 10.0; exp++; }
@@ -463,7 +463,7 @@ __device__ void TextBuilder::AppendFormat_(bool useExtended, const char *fmt, _v
 #endif
 			break;
 		case TYPE_SIZE:
-			*(_va_arg(args, int*)) = Size;
+			*(_va_arg(args, int*)) = (int)Size;
 			length = width = 0;
 			break;
 		case TYPE_PERCENT:
@@ -577,7 +577,7 @@ __device__ void TextBuilder::Append(const char *z, int length)
 		if (!AllocType)
 		{
 			Overflowed = true;
-			length = Size - Index - 1;
+			length = (int)(Size - Index - 1);
 			if (length <= 0)
 				return;
 		}
@@ -650,16 +650,17 @@ __device__ void TextBuilder::Reset()
 
 __device__ void TextBuilder::Init(TextBuilder *b, char *text, int capacity, int maxSize)
 {
-	b->Text = b->Base = text;
-	b->Tag = nullptr;
-	b->Index = 0;
-	b->Size = capacity;
-	b->MaxSize = maxSize;
-	b->AllocType = 1;
-	b->Overflowed = false;
-	b->AllocFailed = false;
+	b->Text = b->Base = text; //: zText
+	b->Tag = nullptr; //: db
+	b->Index = 0; //: nChar
+	b->Size = capacity; //: nAlloc
+	b->MaxSize = maxSize; //: mxAlloc
+	b->AllocType = 1; //: useMalloc
+	b->Overflowed = false; //: tooBig
+	b->AllocFailed = false; //: mallocFailed
 }
 
+//: sqlite3VMPrintf
 __device__ char *_vmtagprintf(TagBase *tag, const char *fmt, _va_list *args)
 {
 	//if (!RuntimeInitialize()) return nullptr;
@@ -674,6 +675,7 @@ __device__ char *_vmtagprintf(TagBase *tag, const char *fmt, _va_list *args)
 	return z;
 }
 
+//: sqlite3_vmprintf
 __device__ char *_vmprintf(const char *fmt, _va_list *args)
 {
 	//if (!RuntimeInitialize()) return nullptr;
@@ -685,6 +687,7 @@ __device__ char *_vmprintf(const char *fmt, _va_list *args)
 	return b.ToString();
 }
 
+//: sqlite3_vsnprintf
 __device__ int __vsnprintf(const char *buf, size_t bufLen, const char *fmt, _va_list *args)
 {
 	if (bufLen <= 0) return -1;

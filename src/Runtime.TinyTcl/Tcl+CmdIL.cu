@@ -30,8 +30,6 @@ __device__ static int SortCompareProc(const char *first, const char *second);
 */
 __device__ int Tcl_IfCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
-	int result, value;
-
 	int i = 1;
 	while (true) {
 		// At this point in the loop, args and argc refer to an expression to test, either for the main expression or an expression
@@ -40,7 +38,8 @@ __device__ int Tcl_IfCmd(ClientData dummy, Tcl_Interp *interp, int argc, const c
 			Tcl_AppendResult(interp, "wrong # args: no expression after \"", args[i-1], "\" argument", (char *)NULL);
 			return TCL_ERROR;
 		}
-		result = Tcl_ExprBoolean(interp, (char *)args[i], &value);
+		int value;
+		int result = Tcl_ExprBoolean(interp, (char *)args[i], &value);
 		if (result != TCL_OK) {
 			return result;
 		}

@@ -250,7 +250,7 @@ test history-9.4 {words option} {catch {history w 1--1} msg} 1
 test history-9.5 {words option} {
     catch {history w 1--1} msg
     set msg
-} {bad word selector "1--1":  should be num-num or pattern}
+} {bad word selector "1--1": should be num-num or pattern}
 test history-9.6 {words option} {
     history add {word0 word1 word2 a b c word6}
     history add foo
