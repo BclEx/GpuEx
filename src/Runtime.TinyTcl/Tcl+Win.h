@@ -1,6 +1,8 @@
 #ifndef __TCL_WIN_H__
 #define __TCL_WIN_H__
 
+#define VC_EXTRALEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <tchar.h>
 #include <direct.h>

@@ -1,6 +1,7 @@
 #include "Tcl+Int.h"
 #if OS_WIN
 #include "Tcl+Win.h"
+#include <io.h>
 
 // The variable below caches the name of the current working directory in order to avoid repeated calls to getwd.  The string is malloc-ed. NULL means the cache needs to be refreshed.
 static char *currentDir = NULL;
@@ -228,6 +229,7 @@ int Tcl_ExitCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args
 	return TCL_OK; // Better not ever reach this!
 }
 
+//#include <unistd.h>
 /*
 *----------------------------------------------------------------------
 *
@@ -320,41 +322,41 @@ not3Args:
 		return TCL_ERROR;
 	}
 	int mode = 0; // Initialized only to prevent compiler warning message.
-	//	if (c == 'r' && !strncmp(args[1], "readable", length) && length >= 5) {
-	//		if (argc != 3) {
-	//			args[1] = "readable";
-	//			goto not3Args;
-	//		}
-	//		mode = R_OK;
-	//checkAccess:
-	//		if (access(fileName, mode) == -1) {
-	//			interp->result = "0";
-	//		} else {
-	//			interp->result = "1";
-	//		}
-	//		return TCL_OK;
-	//	} else if (c == 'w' && !strncmp(args[1], "writable", length)) {
-	//		if (argc != 3) {
-	//			args[1] = "writable";
-	//			goto not3Args;
-	//		}
-	//		mode = W_OK;
-	//		goto checkAccess;
-	//	} else if (c == 'e' && !strncmp(args[1], "executable", length) && length >= 3) {
-	//		if (argc != 3) {
-	//			args[1] = "executable";
-	//			goto not3Args;
-	//		}
-	//		mode = X_OK;
-	//		goto checkAccess;
-	//	} else if (c == 'e' && !strncmp(args[1], "exists", length) && length >= 3) {
-	//		if (argc != 3) {
-	//			args[1] = "exists";
-	//			goto not3Args;
-	//		}
-	//		mode = F_OK;
-	//		goto checkAccess;
-	//	}
+	if (c == 'r' && !strncmp(args[1], "readable", length) && length >= 5) {
+		if (argc != 3) {
+			args[1] = "readable";
+			goto not3Args;
+		}
+		mode = R_OK;
+checkAccess:
+		if (_access(fileName, mode) == -1) {
+			interp->result = "0";
+		} else {
+			interp->result = "1";
+		}
+		return TCL_OK;
+	} else if (c == 'w' && !strncmp(args[1], "writable", length)) {
+		if (argc != 3) {
+			args[1] = "writable";
+			goto not3Args;
+		}
+		mode = W_OK;
+		goto checkAccess;
+	} else if (c == 'e' && !strncmp(args[1], "executable", length) && length >= 3) {
+		if (argc != 3) {
+			args[1] = "executable";
+			goto not3Args;
+		}
+		mode = X_OK;
+		goto checkAccess;
+	} else if (c == 'e' && !strncmp(args[1], "exists", length) && length >= 3) {
+		if (argc != 3) {
+			args[1] = "exists";
+			goto not3Args;
+		}
+		mode = F_OK;
+		goto checkAccess;
+	}
 
 	// Next, handle operations on the file
 	if (c == 'd' && !strncmp(args[1], "delete", length) && length >= 3) {
@@ -479,18 +481,17 @@ badStat:
 		}
 		interp->result = GetFileType((int)statBuf.st_mode);
 		return TCL_OK;
-		// added here. access not supported
-	} else if (c == 'e' && !strncmp(args[1], "exists", length) && length >= 3) {
-		if (argc != 3) {
-			args[1] = "exists";
-			goto not3Args;
-		}
-		if (stat(fileName, &statBuf) == -1) {
-			interp->result = "0";
-		} else {
-			interp->result = "1";
-		}
-		return TCL_OK;
+		//} else if (c == 'e' && !strncmp(args[1], "exists", length) && length >= 3) {
+		//	if (argc != 3) {
+		//		args[1] = "exists";
+		//		goto not3Args;
+		//	}
+		//	if (stat(fileName, &statBuf) == -1) {
+		//		interp->result = "0";
+		//	} else {
+		//		interp->result = "1";
+		//	}
+		//	return TCL_OK;
 	} else {
 		Tcl_AppendResult(interp, "bad option \"", args[1], "\": should be atime, dirname, executable, exists, ", "extension, isdirectory, isfile, lstat, mtime, owned, ", "readable, ",
 #ifdef S_IFLNK
@@ -508,10 +509,10 @@ badStat:
 		//	mode = (geteuid() == statBuf.st_uid);
 		break;
 	case 1:
-		//	mode = S_ISREG(statBuf.st_mode);
+		mode = S_ISREG(statBuf.st_mode);
 		break;
 	case 2:
-		//	mode = S_ISDIR(statBuf.st_mode);
+		mode = S_ISDIR(statBuf.st_mode);
 		break;
 	}
 	if (mode) {

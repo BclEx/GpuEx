@@ -4,7 +4,7 @@
 # and initially implemented by Mary Ann May-Pumphrey of Sun Microsystems.
 
 set VERBOSE 1
-set TESTS {"file-2.27"}
+set TESTS {}
 set auto_noexec 1
 set auto_noload 1
 catch {rename unknown ""}
