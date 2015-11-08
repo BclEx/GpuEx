@@ -1,12 +1,13 @@
 #include "Tcl+Int.h"
 #if OS_WIN
 #include "Tcl+Win.h"
+#include <io.h>
 
 // Data structures of the following type are used by Tcl_Fork and Tcl_WaitPids to keep track of child processes.
 #define WAIT_STATUS_TYPE int
 
 typedef struct {
-	int pid;					// Process id of child.
+	HANDLE pid;					// Process id of child.
 	WAIT_STATUS_TYPE status;	// Status returned when child exited or suspended.
 	int flags;					// Various flag bits;  see below for definitions.
 } WaitInfo;
@@ -341,9 +342,10 @@ int Tcl_WaitPids(int numPids, int *pidPtr, int *statusPtr)
 *
 *----------------------------------------------------------------------
 */
-void Tcl_DetachPids(int numPids, int *pidPtr)
+void Tcl_DetachPids(int numPids, HANDLE *pidPtr)
 {
-	int count, pid;
+	int count;
+	HANDLE pid;
 	register WaitInfo *waitPtr;
 	for (int i = 0; i < numPids; i++) {
 		pid = pidPtr[i];
@@ -377,7 +379,7 @@ void mktemp(char *buf, int size)
 		_panic("mktemp failed");
 }
 
-static int TclPipe(int pipefd[2])
+static int TclPipe(HANDLE pipefd[2])
 {
 	if (CreatePipe(&pipefd[0], &pipefd[1], NULL, 0)) {
 		return 0;
@@ -385,14 +387,19 @@ static int TclPipe(int pipefd[2])
 	return -1;
 }
 
-static int TclDup(int fd)
+static HANDLE TclDupFd(HANDLE fd)
 {
 	HANDLE dupfd;
 	HANDLE pid = GetCurrentProcess();
 	if (DuplicateHandle(pid, fd, pid, &dupfd, 0, TRUE, DUPLICATE_SAME_ACCESS)) {
-		return (int)dupfd;
+		return dupfd;
 	}
-	return -1;
+	return INVALID_HANDLE_VALUE;
+}
+
+static HANDLE TclFileno(FILE *f)
+{
+    return (HANDLE)_get_osfhandle(_fileno(f));
 }
 
 #define TclClose CloseHandle
@@ -417,19 +424,19 @@ static int TclDup(int fd)
 *
 *----------------------------------------------------------------------
 */
-int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr)
+__device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], HANDLE **pidArrayPtr, HANDLE *inPipePtr, HANDLE *outPipePtr, HANDLE *errFilePtr)
 {
 	if (inPipePtr) {
-		*inPipePtr = -1;
+		*inPipePtr = INVALID_HANDLE_VALUE;
 	}
 	if (outPipePtr) {
-		*outPipePtr = -1;
+		*outPipePtr = INVALID_HANDLE_VALUE;
 	}
 	if (errFilePtr) {
-		*errFilePtr = -1;
+		*errFilePtr = INVALID_HANDLE_VALUE;
 	}
-	int pipeIds[2]; // File ids for pipe that's being created.
-	pipeIds[0] = pipeIds[1] = -1;
+	HANDLE pipeIds[2]; // File ids for pipe that's being created.
+	pipeIds[0] = pipeIds[1] = INVALID_HANDLE_VALUE;
 	int numPids = 0; // Actual number of processes that exist at *pidPtr right now.
 
 	// First, scan through all the arguments to figure out the structure of the pipeline.  Count the number of distinct processes (it's the number of "|" arguments).
@@ -517,14 +524,15 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 	}
 
 	// Set up the redirected input source for the pipeline, if so requested.
-	int inputId = -1; // Readable file id input to current command in pipeline (could be file or pipe).  -1 means use stdin.
+	HANDLE inputId = INVALID_HANDLE_VALUE; // Readable file id input to current command in pipeline (could be file or pipe).  -1 means use stdin.
 	if (input != NULL) {
 		if (inputFile == 0) {
 			// Immediate data in command.  Create temporary file and put data into file.
 			char inName[MAX_PATH];
 			mktemp(inName, sizeof(inName));
 			FILE *inputF = fopen(inName, "w+");
-			inputId = _fileno(inputF);
+			inputId = TclFileno(inputF);
+			//TclFdOpenForWrite(TclDupFd(handle))
 			if (inputId < 0) {
 				Tcl_AppendResult(interp, "couldn't create input file for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -548,10 +556,10 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for reading", (char *)NULL);
 				goto error;
 			}
-			inputId = TclDup(_fileno(filePtr->f2 ? nullptr : filePtr->f));
+			inputId = TclDupFd(TclFileno(filePtr->f2 ? nullptr : filePtr->f));
 		} else {
 			// File redirection.  Just open the file.
-			inputId = _fileno(fopen(input, "rb"));
+			inputId = TclFileno(fopen(input, "rb"));
 			if (!inputId) {
 				Tcl_AppendResult(interp, "couldn't read file \"", input, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -568,7 +576,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 	}
 
 	// Set up the redirected output sink for the pipeline from one of two places, if requested.
-	int lastOutputId = -1; // Write file id for output from last command in pipeline (could be file or pipe). -1 means use stdout.
+	HANDLE lastOutputId = INVALID_HANDLE_VALUE; // Write file id for output from last command in pipeline (could be file or pipe). -1 means use stdout.
 	if (output != NULL) {
 		if (outputFile == 2) {
 			OpenFile_ *filePtr;
@@ -580,7 +588,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 				goto error;
 			}
 			fflush(filePtr->f2 ? nullptr : filePtr->f);
-			lastOutputId = TclDup(_fileno(filePtr->f2 ? nullptr : filePtr->f));
+			lastOutputId = TclDupFd(TclFileno(filePtr->f2 ? nullptr : filePtr->f));
 		}
 		else {
 			// Output is to go to a file.
@@ -588,7 +596,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 			if (outputFile == 1) {
 				mode = "w+";
 			}
-			lastOutputId = _fileno(fopen(output, mode));
+			lastOutputId = TclFileno(fopen(output, mode));
 			if (lastOutputId < 0) {
 				Tcl_AppendResult(interp, "couldn't write file \"", output, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -605,7 +613,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 		pipeIds[0] = pipeIds[1] = NULL;
 	}
 	// If we are redirecting stderr with 2>filename or 2>@fileId, then we ignore errFilePtr
-	int errorId = -1; // Writable file id for all standard error output from all commands in pipeline.  -1 means use stderr.
+	HANDLE errorId = INVALID_HANDLE_VALUE; // Writable file id for all standard error output from all commands in pipeline.  -1 means use stderr.
 	if (error != NULL) {
 		if (errorFile == 2) {
 			OpenFile_ *filePtr;
@@ -617,7 +625,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 				goto error;
 			}
 			fflush(filePtr->f2 ? nullptr : filePtr->f);
-			errorId = TclDup(_fileno(filePtr->f2 ? nullptr : filePtr->f));
+			errorId = TclDupFd(TclFileno(filePtr->f2 ? nullptr : filePtr->f));
 		}
 		else {
 			// Output is to go to a file.
@@ -625,7 +633,7 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 			if (errorFile == 1) {
 				mode = "w+";
 			}
-			errorId = _fileno(fopen(error, mode));
+			errorId = TclFileno(fopen(error, mode));
 			if (errorId < 0) {
 				Tcl_AppendResult(interp, "couldn't write file \"", error, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -637,13 +645,13 @@ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **p
 		// to complete before reading stderr, and processes couldn't complete because stderr was backed up.
 		char errName[MAX_PATH];
 		mktemp(errName, sizeof(errName));
-		errorId = _fileno(fopen(errName, "w"));
+		errorId = TclFileno(fopen(errName, "w"));
 		if (errorId < 0) {
 errFileError:
 			Tcl_AppendResult(interp, "couldn't create error file for command: ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
 		}
-		*errFilePtr = _fileno(fopen(errName, "rb"));
+		*errFilePtr = TclFileno(fopen(errName, "rb"));
 		if (*errFilePtr < 0) {
 			goto errFileError;
 		}
@@ -654,11 +662,11 @@ errFileError:
 	}
 
 	// Scan through the argc array, forking off a process for each group of arguments between "|" arguments.
-	int *pidPtr = (int *)_allocFast((unsigned)(cmdCount * sizeof(int))); // Points to malloc-ed array holding all the pids of child processes.
+	HANDLE *pidPtr = (HANDLE *)_allocFast((unsigned)(cmdCount * sizeof(HANDLE))); // Points to malloc-ed array holding all the pids of child processes.
 	for (i = 0; i < numPids; i++) {
-		pidPtr[i] = -1;
+		pidPtr[i] = INVALID_HANDLE_VALUE;
 	}
-	int outputId = -1; // Writable file id for output from current command in pipeline (could be file or pipe). -1 means use stdout.
+	HANDLE outputId = INVALID_HANDLE_VALUE; // Writable file id for output from current command in pipeline (could be file or pipe). -1 means use stdout.
 	int lastArg;
 	for (int firstArg = 0; firstArg < argc; numPids++, firstArg = lastArg+1) {
 		for (lastArg = firstArg; lastArg < argc; lastArg++) {
@@ -751,7 +759,7 @@ error:
 	}
 	if (pidPtr != NULL) {
 		for (i = 0; i < numPids; i++) {
-			if (pidPtr[i] != -1) {
+			if (pidPtr[i] != INVALID_HANDLE_VALUE) {
 				Tcl_DetachPids(1, &pidPtr[i]);
 			}
 		}

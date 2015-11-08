@@ -209,7 +209,7 @@
     <None Include="tests\glob.test_">
       <Filter>tests</Filter>
     </None>
-    <None Include="tests\file.test">
+    <None Include="tests\file.test.win">
       <Filter>tests</Filter>
     </None>
   </ItemGroup>

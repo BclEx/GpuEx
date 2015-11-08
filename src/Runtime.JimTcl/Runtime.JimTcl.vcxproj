@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <LD>
+    </LD>
+    <LC>35</LC>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug.cpu|x64">
+      <Configuration>Debug.cpu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug.cu|x64">
+      <Configuration>Debug.cu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cpu|x64">
+      <Configuration>Release.cpu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cu|x64">
+      <Configuration>Release.cu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{602F49D0-3A63-459E-AD6D-81CF59C44A3A}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>System</RootNamespace>
+    <ProjectName>Runtime.JimTcl</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName).$(LC)$(LD)D</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>_LIB;_TEST;TCL_MEM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RTcl.cu.obj" -o "$(OutDir)Runtime.JimTcl.$(LC)$(LD)D.lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;cudart.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RTcl.obj" -o "$(OutDir)Runtime.JimTcl.$(LC)$(LD).lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Jim.h" />
+    <ClInclude Include="Jim+EventLoop.h" />
+    <ClInclude Include="Jim+Signal.h" />
+    <ClInclude Include="Jim+Subcmd.h" />
+    <ClInclude Include="Jim+Win32compat.h" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
+    <None Include="RTcl.cu" />
+    <ClCompile Include="Jim.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Aio.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Array.cu" />
+    <ClCompile Include="Jim+Clock.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+EventLoop.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Exec.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+File.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Format.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+History.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Interactive.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Load.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Namespace.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Pack.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Package.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Posix.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Readdir.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Readline.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Regexp.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Sdl.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Signal.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Sqlite3.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Subcmd.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Syslog.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+TclPrefix.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Win32.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Jim+Win32compat.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="JimSh.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <CudaCompile Include="RTcl.cu" />
+    <None Include="Jim.cu" />
+    <None Include="Jim+Aio.cu" />
+    <None Include="Jim+Array.cu" />
+    <None Include="Jim+Clock.cu" />
+    <None Include="Jim+EventLoop.cu" />
+    <None Include="Jim+Exec.cu" />
+    <None Include="Jim+File.cu" />
+    <None Include="Jim+Format.cu" />
+    <None Include="Jim+History.cu" />
+    <None Include="Jim+Interactive.cu" />
+    <None Include="Jim+Load.cu" />
+    <None Include="Jim+Namespace.cu" />
+    <None Include="Jim+Pack.cu" />
+    <None Include="Jim+Package.cu" />
+    <None Include="Jim+Posix.cu" />
+    <None Include="Jim+Readdir.cu" />
+    <None Include="Jim+Readline.cu" />
+    <None Include="Jim+Regexp.cu" />
+    <None Include="Jim+Sdl.cu" />
+    <None Include="Jim+Signal.cu" />
+    <None Include="Jim+Sqlite3.cu" />
+    <None Include="Jim+Subcmd.cu" />
+    <None Include="Jim+Syslog.cu" />
+    <None Include="Jim+TclPrefix.cu" />
+    <None Include="Jim+Win32.cu" />
+    <None Include="Jim+Win32Compat.cu" />
+    <None Include="JimSh.cu" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.targets" />
+  </ImportGroup>
+</Project>

@@ -38,15 +38,17 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Core\SysEx+Random.cs" />
-    <Compile Include="Core\SysEx+Utf.cs" />
     <Compile Include="Core\VAlloc.cs" />
+    <Compile Include="Core\VFile+.JournalVFile.cs" />
+    <Compile Include="Core\VFile+MemoryVFile.cs" />
+    <Compile Include="Core\VFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Core\SysEx.cs" />
     <Compile Include="Core\RC.cs" />
-    <Compile Include="Core\IO\IO.VFile.cs" />
     <Compile Include="Core\VSystem.cs" />
-    <Compile Include="Core\IO\IO.MemoryVFile.cs" />
     <Compile Include="Core\VSystem-win.cs" />
+    <Content Include="Core\VFile.cu.h" />
+    <Content Include="Core\VSystem+Sentinel.cu.h" />
     <Content Include="Core\VSystem.cu.h" />
     <Content Include="Core\RC.cu.h" />
     <None Include="Core\SysEx+Random.cu" />
@@ -54,13 +56,13 @@
     <Content Include="Core\Core.cu.h" />
     <Content Include="Core\VSystem.cu" />
     <Content Include="Core\SysEx.cu" />
-    <Compile Include="Core\IO\IO.JournalVFile.cs" />
-    <Content Include="Core\IO\IO.VFile.cu.h" />
-    <Content Include="Core\IO\IO.JournalVFile.cu" />
-    <Content Include="Core\IO\IO.MemoryVFile.cu" />
-    <Content Include="Core\IO\IO.VFile.cu" />
-    <None Include="Core\SysEx+Utf.cu" />
+    <None Include="Core\VFile+JournalVFile.cu" />
+    <None Include="Core\VFile+MemoryVFile.cu" />
+    <None Include="Core\VFile.cu" />
+    <None Include="Core\VSystem+Sentinel.cu" />
     <None Include="Core\VSystem-gpu.cu" />
+    <None Include="Core\VSystem-map.cu" />
+    <None Include="Core\VSystem-unix.cu" />
     <None Include="Core\VSystem-win.cu" />
   </ItemGroup>
   <ItemGroup>

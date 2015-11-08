@@ -7,7 +7,7 @@
 static char *currentDir = NULL;
 
 // Prototypes for local procedures defined in this file:
-static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidPtr, FILE *errorId);
+static int CleanupChildren(Tcl_Interp *interp, int numPids, HANDLE *pidPtr, HANDLE errorId);
 static char *GetFileType(int mode);
 static int StoreStatData(Tcl_Interp *interp, char *varName, struct stat *statPtr);
 
@@ -145,15 +145,19 @@ int Tcl_EofCmd(ClientData notUsed, Tcl_Interp *interp, int argc, const char *arg
 *
 *----------------------------------------------------------------------
 */
+static FILE *TclFdOpenForRead(HANDLE fd)
+{
+	return _fdopen(_open_osfhandle((int)fd, 0), "r");
+}
 int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
-	int *pidPtr;
+	HANDLE *pidPtr;
 	int numPids;
 	// See if the command is to be run in background;  if so, create the command, detach it, and return.
 	if (args[argc-1][0] == '&' && args[argc-1][1] == 0) {
 		argc--;
-		args[argc] = NULL;
-		numPids = Tcl_CreatePipeline(interp, argc-1, args+1, &pidPtr, (FILE **)NULL, (FILE **)NULL, (FILE **)NULL);
+		args[argc] = nullptr;
+		numPids = Tcl_CreatePipeline(interp, argc-1, args+1, &pidPtr, nullptr, nullptr, nullptr);
 		if (numPids < 0) {
 			return TCL_ERROR;
 		}
@@ -163,20 +167,24 @@ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args
 	}
 
 	// Create the command's pipeline.
-	FILE *outputId; // File id for output pipe.  -1 means command overrode.
-	FILE *errorId; // File id for temporary file containing error output.
-	numPids = Tcl_CreatePipeline(interp, argc-1, args+1, &pidPtr, (FILE **)NULL, &outputId, &errorId);
+	HANDLE outputId; // File id for output pipe.  -1 means command overrode.
+	HANDLE errorId; // File id for temporary file containing error output.
+	numPids = Tcl_CreatePipeline(interp, argc-1, args+1, &pidPtr, nullptr, &outputId, &errorId);
 	if (numPids < 0) {
 		return TCL_ERROR;
 	}
 
 	// Read the child's output (if any) and put it into the result.
 	int result = TCL_OK;
-	if (outputId) {
+	if (outputId != INVALID_HANDLE_VALUE) {
+		FILE *outputFd = TclFdOpenForRead(outputId);
+		if (!outputFd) {
+			return TCL_ERROR;
+		}
 		while (true) {
 #define BUFFER_SIZE 1000
 			char buffer[BUFFER_SIZE+1];
-			int count = (int)fread(buffer, BUFFER_SIZE, 1, outputId);
+			int count = (int)fread(buffer, BUFFER_SIZE, 1, outputFd);
 			if (count == 0) {
 				break;
 			}
@@ -189,7 +197,49 @@ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args
 			buffer[count] = 0;
 			Tcl_AppendResult(interp, buffer, (char *)NULL);
 		}
-		fclose(outputId);
+		fclose(outputFd);
+	}
+
+
+	//if (errorId != TclInvalidHandle) {
+	//	int ret;
+	//	JimRewindFd(errorId);
+	//	ret = JimAppendStreamToString(interp, errorId, Jim_GetResult(interp));
+	//	if (ret < 0) {
+	//		Jim_SetResultErrno(interp, "error reading from error pipe");
+	//		result = JIM_ERR;
+	//	}
+	//	else if (ret > 0) {
+	//		child_siginfo = 0;
+	//	}
+	//}
+
+	// Read the child's error output (if any) and put it into the result.
+	//
+	// Note that unlike Tcl, the presence of stderr output does not cause exec to return an error.
+	if (errorId != INVALID_HANDLE_VALUE) {
+		SetFilePointer(errorId, 0, NULL, FILE_BEGIN);
+		FILE *errorF = TclFdOpenForRead(errorId);
+		if (!errorF) {
+			return TCL_ERROR;
+		}
+		while (true) {
+#define BUFFER_SIZE 1000
+			char buffer[BUFFER_SIZE+1];
+			int count = (int)fread(buffer, BUFFER_SIZE, 1, errorF);
+			if (count == 0) {
+				break;
+			}
+			if (count < 0) {
+				Tcl_ResetResult(interp);
+				Tcl_AppendResult(interp, "error reading from output pipe: ", Tcl_OSError(interp), (char *)NULL);
+				result = TCL_ERROR;
+				break;
+			}
+			buffer[count] = 0;
+			Tcl_AppendResult(interp, buffer, (char *)NULL);
+		}
+		fclose(errorF);
 	}
 
 	if (CleanupChildren(interp, numPids, pidPtr, errorId) != TCL_OK) {
@@ -827,35 +877,35 @@ badAccess:
 		if (Tcl_SplitList(interp, (char *)args[1]+1, &cmdArgc, &cmdArgs) != TCL_OK) {
 			goto error;
 		}
-		FILE *inPipe = NULL, *outPipe = NULL;
-		FILE **inPipePtr = (filePtr->writable ? &inPipe : NULL);
-		FILE **outPipePtr = (filePtr->readable ? &outPipe : NULL);
+		HANDLE inPipe = INVALID_HANDLE_VALUE, outPipe = INVALID_HANDLE_VALUE;
+		HANDLE *inPipePtr = (filePtr->writable ? &inPipe : NULL);
+		HANDLE *outPipePtr = (filePtr->readable ? &outPipe : NULL);
 		filePtr->numPids = Tcl_CreatePipeline(interp, cmdArgc, cmdArgs, &filePtr->pidPtr, inPipePtr, outPipePtr, &filePtr->errorId);
 		_freeFast((char *)cmdArgs);
 		if (filePtr->numPids < 0) {
 			goto error;
 		}
-		//if (filePtr->readable) {
-		//	if (!outPipe) {
-		//		if (inPipe) {
-		//			fclose(inPipe);
-		//		}
-		//		Tcl_AppendResult(interp, "can't read output from command:", " standard output was redirected", (char *)NULL);
-		//		goto error;
-		//	}
-		//	filePtr->f = fopen(outPipe, "rb");
-		//}
-		//if (filePtr->writable) {
-		//	if (!inPipe) {
-		//		Tcl_AppendResult(interp, "can't write input to command:", " standard input was redirected", (char *)NULL);
-		//		goto error;
-		//	}
-		//	if (filePtr->f != NULL) {
-		//		filePtr->f2 = fopen(inPipe, "w");
-		//	} else {
-		//		filePtr->f = fopen(inPipe, "w");
-		//	}
-		//}
+		if (filePtr->readable) {
+			if (!outPipe) {
+				if (inPipe) {
+					close((int)inPipe);
+				}
+				Tcl_AppendResult(interp, "can't read output from command:", " standard output was redirected", (char *)NULL);
+				goto error;
+			}
+			filePtr->f = fdopen((int)outPipe, "rb");
+		}
+		if (filePtr->writable) {
+			if (!inPipe) {
+				Tcl_AppendResult(interp, "can't write input to command:", " standard input was redirected", (char *)NULL);
+				goto error;
+			}
+			if (filePtr->f != NULL) {
+				filePtr->f2 = fdopen((int)inPipe, "w");
+			} else {
+				filePtr->f = fdopen((int)inPipe, "w");
+			}
+		}
 	}
 
 	// Enter this new OpenFile_ structure in the table for the interpreter.  May have to expand the table to do this.
@@ -882,7 +932,7 @@ error:
 	}
 #endif
 	if (filePtr->errorId) {
-		fclose(filePtr->errorId);
+		close((int)filePtr->errorId);
 	}
 	_freeFast((char *)filePtr);
 	return TCL_ERROR;
@@ -1242,7 +1292,7 @@ int Tcl_TimeCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args
 *
 *----------------------------------------------------------------------
 */
-static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidPtr, FILE *errorId)
+static int CleanupChildren(Tcl_Interp *interp, int numPids, HANDLE *pidPtr, HANDLE errorId)
 {
 	//	int result = TCL_OK;
 	//	int i, pid;

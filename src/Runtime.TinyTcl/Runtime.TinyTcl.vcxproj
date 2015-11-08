@@ -246,7 +246,7 @@
     <None Include="tests\eval.test" />
     <None Include="tests\exec.test_" />
     <None Include="tests\expr.test" />
-    <None Include="tests\file.test" />
+    <None Include="tests\file.test.win" />
     <None Include="tests\for.test" />
     <None Include="tests\format.test" />
     <None Include="tests\glob.test_" />

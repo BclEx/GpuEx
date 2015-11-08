@@ -178,7 +178,8 @@ extern __device__ Tcl_CmdBuf Tcl_CreateCmdBuf();
 extern __device__ void Tcl_CreateCommand(Tcl_Interp *interp, char *cmdName, Tcl_CmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc);
 extern __device__ Tcl_Interp *Tcl_CreateInterp();
 #if !OS_UNIX
-extern __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **pidArrayPtr, FILE **inPipePtr, FILE **outPipePtr, FILE **errFilePtr);
+typedef void *HANDLE;
+extern __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], HANDLE **pidArrayPtr, HANDLE *inPipePtr, HANDLE *outPipePtr, HANDLE *errFilePtr);
 #else
 extern __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args[], int **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr);
 #endif
@@ -187,7 +188,7 @@ extern __device__ void Tcl_DeleteCmdBuf(Tcl_CmdBuf buffer);
 extern __device__ int Tcl_DeleteCommand(Tcl_Interp *interp, char *cmdName);
 extern __device__ void Tcl_DeleteInterp(Tcl_Interp *interp);
 extern __device__ void Tcl_DeleteTrace(Tcl_Interp *interp, Tcl_Trace trace);
-extern __device__ void Tcl_DetachPids(int numPids, int *pidPtr);
+extern __device__ void Tcl_DetachPids(int numPids, HANDLE *pidPtr);
 extern __device__ char *Tcl_ErrnoId();
 extern __device__ int Tcl_Eval(Tcl_Interp *interp, char *cmd, int flags, char **termPtr);
 extern __device__ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName);
