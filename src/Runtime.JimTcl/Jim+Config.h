@@ -1,2 +1,2 @@
 /* Public autoconf settings */
-@DEFINE_HAVE_LONG_LONG@
+#define JIM_VERSION 1

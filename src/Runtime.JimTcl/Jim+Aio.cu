@@ -39,7 +39,7 @@
  **/
 #pragma endregion
 
-#include "jimautoconf.h"
+//#include "jimautoconf.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +50,7 @@
 #include <sys/stat.h>
 #endif
 
-#include "jim.h"
+#include "Jim.h"
 
 #if defined(HAVE_SYS_SOCKET_H) && defined(HAVE_SELECT) && defined(HAVE_NETINET_IN_H) && defined(HAVE_NETDB_H) && defined(HAVE_ARPA_INET_H)
 #include <sys/socket.h>
@@ -313,7 +313,7 @@ static void JimAioSetError(Jim_Interp *interp, Jim_Obj *name)
 
 static void JimAioDelProc(Jim_Interp *interp, void *privData)
 {
-    AioFile *af = privData;
+    AioFile *af = (AioFile *)privData;
 
     JIM_NOTUSED(interp);
 
@@ -357,7 +357,7 @@ static int JimCheckStreamError(Jim_Interp *interp, AioFile *af)
 
 static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
     char buf[AIO_BUF_LEN];
     Jim_Obj *objPtr;
     int nonewline = 0;
@@ -420,7 +420,7 @@ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
     jim_wide count = 0;
     jim_wide maxlen = JIM_WIDE_MAX;
     FILE *outfh = Jim_AioFilehandle(interp, argv[0]);
@@ -463,7 +463,7 @@ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
     char buf[AIO_BUF_LEN];
     Jim_Obj *objPtr;
     int len;
@@ -519,7 +519,7 @@ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
     int wlen;
     const char *wdata;
     Jim_Obj *strObj;
@@ -663,7 +663,7 @@ static int aio_cmd_listen(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_flush(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
     if (fflush(af->fp) == EOF) {
         JimAioSetError(interp, af->filename);
@@ -674,7 +674,7 @@ static int aio_cmd_flush(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_eof(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
     Jim_SetResultInt(interp, feof(af->fp));
     return JIM_OK;
@@ -707,7 +707,7 @@ static int aio_cmd_close(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
     int orig = SEEK_SET;
     jim_wide offset;
 
@@ -734,7 +734,7 @@ static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_tell(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
     Jim_SetResultInt(interp, ftello(af->fp));
     return JIM_OK;
@@ -742,7 +742,7 @@ static int aio_cmd_tell(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_filename(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
     Jim_SetResult(interp, af->filename);
     return JIM_OK;
@@ -787,7 +787,7 @@ static int aio_cmd_sync(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    AioFile *af = Jim_CmdPrivData(interp);
+    AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
     static const char * const options[] = {
         "none",
@@ -1136,7 +1136,7 @@ static int JimMakeChannel(Jim_Interp *interp, FILE *fh, int fd, Jim_Obj *filenam
     }
 
     /* Create the file command */
-    af = Jim_Alloc(sizeof(*af));
+    af = (AioFile *)Jim_Alloc(sizeof(*af));
     memset(af, 0, sizeof(*af));
     af->fp = fh;
     af->fd = fileno(fh);
@@ -1460,7 +1460,7 @@ static int JimAioSockCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
  * On success, leaves the filename in the interpreter result, otherwise
  * leaves an error message.
  */
-int Jim_MakeTempFile(Jim_Interp *interp, const char *template)
+int Jim_MakeTempFile(Jim_Interp *interp, const char *template_)
 {
 #ifdef HAVE_MKSTEMP
     int fd;

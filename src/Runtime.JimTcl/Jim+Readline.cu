@@ -1,3 +1,4 @@
+#pragma region License
 /*
  * Jim - Readline bindings for Jim
  *
@@ -31,8 +32,9 @@
  * are those of the authors and should not be interpreted as representing
  * official policies, either expressed or implied, of the Jim Tcl Project.
  */
+#pragma endregion
 
-#include <jim.h>
+#include "Jim.h"
 
 #include <readline/readline.h>
 #include <readline/history.h>

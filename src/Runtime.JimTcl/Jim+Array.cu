@@ -53,14 +53,14 @@
 
 #include "Jim+Subcmd.h"
 
-static int array_cmd_exists(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int array_cmd_exists(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	/* Just a regular [info exists] */
 	Jim_SetResultInt(interp, Jim_GetVariable(interp, argv[0], 0) != 0);
 	return JIM_OK;
 }
 
-static int array_cmd_get(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int array_cmd_get(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *objPtr = Jim_GetVariable(interp, argv[0], JIM_NONE);
 	Jim_Obj *patternObj;
@@ -84,7 +84,7 @@ static int array_cmd_get(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return Jim_DictValues(interp, objPtr, patternObj);
 }
 
-static int array_cmd_names(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int array_cmd_names(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *objPtr = Jim_GetVariable(interp, argv[0], JIM_NONE);
 
@@ -95,7 +95,7 @@ static int array_cmd_names(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return Jim_DictKeys(interp, objPtr, argc == 1 ? NULL : argv[1]);
 }
 
-static int array_cmd_unset(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int array_cmd_unset(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int i;
 	int len;
@@ -134,7 +134,7 @@ static int array_cmd_unset(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int array_cmd_size(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int array_cmd_size(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *objPtr;
 	int len = 0;
@@ -153,7 +153,7 @@ static int array_cmd_size(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int array_cmd_stat(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int array_cmd_stat(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *objPtr = Jim_GetVariable(interp, argv[0], JIM_NONE);
 	if (objPtr) {
@@ -163,7 +163,7 @@ static int array_cmd_stat(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_ERR;
 }
 
-static int array_cmd_set(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int array_cmd_set(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int i;
 	int len;
@@ -201,61 +201,18 @@ static int array_cmd_set(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return Jim_SetVariable(interp, argv[0], dictObj);
 }
 
-static const jim_subcmd_type array_command_table[] = {
-	{       "exists",
-	"arrayName",
-	array_cmd_exists,
-	1,
-	1,
-	/* Description: Does array exist? */
-	},
-	{       "get",
-	"arrayName ?pattern?",
-	array_cmd_get,
-	1,
-	2,
-	/* Description: Array contents as name value list */
-	},
-	{       "names",
-	"arrayName ?pattern?",
-	array_cmd_names,
-	1,
-	2,
-	/* Description: Array keys as a list */
-	},
-	{       "set",
-	"arrayName list",
-	array_cmd_set,
-	2,
-	2,
-	/* Description: Set array from list */
-	},
-	{       "size",
-	"arrayName",
-	array_cmd_size,
-	1,
-	1,
-	/* Description: Number of elements in array */
-	},
-	{       "stat",
-	"arrayName",
-	array_cmd_stat,
-	1,
-	1,
-	/* Description: Print statistics about an array */
-	},
-	{       "unset",
-	"arrayName ?pattern?",
-	array_cmd_unset,
-	1,
-	2,
-	/* Description: Unset elements of an array */
-	},
-	{       NULL
-	}
+__constant__ static const jim_subcmd_type array_command_table[] = {
+	{ "exists", "arrayName", array_cmd_exists, 1, 1, }, /* Description: Does array exist? */
+	{ "get", "arrayName ?pattern?", array_cmd_get, 1, 2, }, /* Description: Array contents as name value list */
+	{ "names", "arrayName ?pattern?", array_cmd_names, 1, 2, }, /* Description: Array keys as a list */
+	{ "set", "arrayName list", array_cmd_set, 2, 2, }, /* Description: Set array from list */
+	{ "size", "arrayName", array_cmd_size, 1, 1, }, /* Description: Number of elements in array */
+	{ "stat", "arrayName", array_cmd_stat, 1, 1, }, /* Description: Print statistics about an array */
+	{ "unset", "arrayName ?pattern?", array_cmd_unset, 1, 2, }, /* Description: Unset elements of an array */
+	{ NULL }
 };
 
-int Jim_arrayInit(Jim_Interp *interp)
+__device__ int Jim_arrayInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "array", "1.0", JIM_ERRMSG))
 		return JIM_ERR;

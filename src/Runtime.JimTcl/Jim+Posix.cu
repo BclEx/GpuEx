@@ -1,3 +1,4 @@
+#pragma region License
 /*
  * Jim - POSIX extension
  *
@@ -31,6 +32,7 @@
  * are those of the authors and should not be interpreted as representing
  * official policies, either expressed or implied, of the Jim Tcl Project.
  */
+#pragma endregion
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -40,8 +42,8 @@
 #include <signal.h>
 #include <errno.h>
 
-#include "jimautoconf.h"
-#include <jim.h>
+//#include "jimautoconf.h"
+#include "Jim.h"
 
 #ifdef HAVE_SYS_SYSINFO_H
 #include <sys/sysinfo.h>
