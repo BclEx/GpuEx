@@ -1,5 +1,6 @@
 #include "Jim.h"
 //#include "jimautoconf.h"
+#define HAVE_DLOPEN_COMPAT
 #include <errno.h>
 
 #if defined(_WIN32) || defined(WIN32)
@@ -19,7 +20,7 @@ void *dlopen(const char *path, int mode)
 
 int dlclose(void *handle)
 {
-	FreeLibrary((HANDLE)handle);
+	FreeLibrary((HMODULE)handle);
 	return 0;
 }
 

@@ -470,14 +470,14 @@ extern "C" {
 		int inUse;           /* Reference count */
 		int isproc;          /* Is this a procedure? */
 		struct Jim_Cmd *prevCmd;    /* Previous command defn if cmd created 'local' */
-		union {
-			struct {
+		union a_ {
+			struct b_ {
 				/* native (C) command */
 				Jim_CmdProc *cmdProc; /* The command implementation */
 				Jim_DelCmdProc *delProc; /* Called when the command is deleted if != NULL */
 				void *privData; /* command-private data available via Jim_CmdPrivData() */
 			} native;
-			struct {
+			struct c_ {
 				/* Tcl procedure */
 				Jim_Obj *argListObjPtr;
 				Jim_Obj *bodyObjPtr;

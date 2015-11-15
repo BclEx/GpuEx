@@ -37,10 +37,10 @@
 #include "Jim.h"
 
 /* Apparently windows.h and cygwin don't mix, but we seem to get away with it here. Use at your own risk under cygwin */
-#if defined(__CYGWIN__)
+//#if defined(__CYGWIN__)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif
+//#endif
 
 #include <shellapi.h>
 #include <lmcons.h>
@@ -54,8 +54,7 @@
 #pragma comment(lib, "psapi")
 #endif /* _MSC_VER >= 1000 */
 
-static Jim_Obj *
-	Win32ErrorObj(Jim_Interp *interp, const char * szPrefix, DWORD dwError)
+static Jim_Obj *Win32ErrorObj(Jim_Interp *interp, const char * szPrefix, DWORD dwError)
 {
 	Jim_Obj *msgObj = NULL;
 	char * lpBuffer = NULL;
@@ -109,10 +108,9 @@ static int Win32_ShellExecute(Jim_Interp *interp, int objc, Jim_Obj *const *objv
 
 
 /* win32.FindWindow title ?class? */
-static int
-	Win32_FindWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_FindWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
-	const char *title = NULL, *class = NULL;
+	const char *title = NULL, *class_ = NULL;
 	HWND hwnd = NULL;
 	int r = JIM_OK;
 
@@ -122,8 +120,8 @@ static int
 	}
 	title = Jim_String(objv[1]);
 	if (objc == 3)
-	class = Jim_String(objv[2]);
-	hwnd = FindWindowA(class, title);
+	class_ = Jim_String(objv[2]);
+	hwnd = FindWindowA(class_, title);
 
 	if (hwnd == NULL) {
 		Jim_SetResult(interp,
@@ -136,8 +134,7 @@ static int
 }
 
 /* win32.CloseWindow windowHandle */
-static int
-	Win32_CloseWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_CloseWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	long hwnd;
 
@@ -155,15 +152,13 @@ static int
 	return JIM_OK;
 }
 
-static int
-	Win32_GetActiveWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetActiveWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	Jim_SetResult(interp, Jim_NewIntObj(interp, (DWORD)GetActiveWindow()));
 	return JIM_OK;
 }
 
-static int
-	Win32_SetActiveWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_SetActiveWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	HWND hwnd, old;
 	int r = JIM_OK;
@@ -186,8 +181,7 @@ static int
 	return r;
 }
 
-static int
-	Win32_SetForegroundWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_SetForegroundWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	HWND hwnd;
 	int r = JIM_OK;
@@ -207,8 +201,7 @@ static int
 	return r;
 }
 
-static int
-	Win32_Beep(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_Beep(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	long freq, duration;
 	int r = JIM_OK;
@@ -232,8 +225,7 @@ static int
 	return r;
 }
 
-static int
-	Win32_GetComputerName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetComputerName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	char name[MAX_COMPUTERNAME_LENGTH + 1];
 	DWORD size = MAX_COMPUTERNAME_LENGTH;
@@ -256,8 +248,7 @@ static int
 	return r;
 }
 
-static int
-	Win32_GetUserName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetUserName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	char name[UNLEN + 1];
 	DWORD size = UNLEN;
@@ -280,8 +271,7 @@ static int
 	return r;
 }
 
-static int
-	Win32_GetModuleFileName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetModuleFileName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	HMODULE hModule = NULL;
 	char path[MAX_PATH];
@@ -311,22 +301,19 @@ static int
 	return JIM_OK;
 }
 
-static int
-	Win32_GetVersion(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetVersion(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	Jim_SetResult(interp, Jim_NewIntObj(interp, GetVersion()));
 	return JIM_OK;
 }
 
-static int
-	Win32_GetTickCount(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetTickCount(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	Jim_SetResult(interp, Jim_NewIntObj(interp, GetTickCount()));
 	return JIM_OK;
 }
 
-static int
-	Win32_GetSystemTime(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetSystemTime(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	Jim_Obj *a[16];
 	size_t n = 0;
@@ -354,8 +341,7 @@ static int
 /* function not available on mingw or cygwin */
 #if !defined(__MINGW32__) && !defined(__CYGWIN__)
 // FIX ME: win2k+ so should do version checks really.
-static int
-	Win32_GetPerformanceInfo(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetPerformanceInfo(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	Jim_Obj *a[26];
 	size_t n = 0;
@@ -391,8 +377,7 @@ static int
 }
 #endif
 
-static int
-	Win32_SetComputerName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_SetComputerName(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	int r = JIM_OK;
 	const char *name;
@@ -409,8 +394,7 @@ static int
 	return r;
 }
 
-static int
-	Win32_GetModuleHandle(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_GetModuleHandle(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	HMODULE hModule = NULL;
 	const char *name = NULL;
@@ -431,8 +415,7 @@ static int
 	return JIM_OK;
 }
 
-static int
-	Win32_LoadLibrary(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_LoadLibrary(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	HMODULE hLib = NULL;
 	if (objc != 2) {
@@ -449,8 +432,7 @@ static int
 	return JIM_OK;
 }
 
-static int
-	Win32_FreeLibrary(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_FreeLibrary(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	HMODULE hModule = NULL;
 	int r = JIM_OK;
@@ -475,8 +457,7 @@ static int
 
 /* ---------------------------------------------------------------------- */
 
-int
-	Jim_win32Init(Jim_Interp *interp)
+int Jim_win32Init(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "win32", "1.0", JIM_ERRMSG))
 		return JIM_ERR;

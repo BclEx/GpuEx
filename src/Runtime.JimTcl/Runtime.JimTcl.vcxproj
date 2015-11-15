@@ -166,11 +166,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Jim+TclPrefix.cu" />
-    <ClCompile Include="Jim+Win32.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Jim+Win32.cu" />
     <ClCompile Include="Jim+Win32compat.cu" />
     <ClCompile Include="JimSh.cu" />
+    <None Include="initjimsh.tcl" />
+    <ClCompile Include="initjimsh.cu" />
+    <ClCompile Include="Utf8.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <CudaCompile Include="RTcl.cu" />
@@ -201,6 +202,9 @@
     <None Include="Jim+Win32.cu" />
     <None Include="Jim+Win32Compat.cu" />
     <None Include="JimSh.cu" />
+    <None Include="initjimsh.tcl" />
+    <None Include="initjimsh.cu" />
+    <None Include="Utf8.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

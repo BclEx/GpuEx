@@ -39,8 +39,9 @@
  **/
 #pragma endregion
 
-//#include "jimautoconf.h"
+#ifdef jim_ext_aio
 
+//#include "jimautoconf.h"
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -1530,3 +1531,5 @@ int Jim_aioInit(Jim_Interp *interp)
 
     return JIM_OK;
 }
+
+#endif /* jim_ext_aio */

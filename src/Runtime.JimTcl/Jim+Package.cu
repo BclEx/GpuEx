@@ -1,3 +1,5 @@
+#ifdef jim_ext_package
+
 #include <string.h>
 
 //#include "jimautoconf.h"
@@ -251,3 +253,5 @@ int Jim_packageInit(Jim_Interp *interp)
 	Jim_CreateCommand(interp, "package", Jim_SubCmdProc, (void *)package_command_table, NULL);
 	return JIM_OK;
 }
+
+#endif /* jim_ext_package */
