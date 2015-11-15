@@ -820,8 +820,8 @@ __device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size
 	return p;
 }
 
-//__device__ char *_strdup(const char *z);
-__device__ __forceinline char *_strdup(const char *z)
+//__device__ char *__strdup(const char *z);
+__device__ __forceinline char *__strdup(const char *z)
 {
 	if (z == nullptr) return nullptr;
 	size_t n = _strlen(z) + 1;

@@ -5,6 +5,7 @@ properties {
   $release_dir = "$base_dir\Release"
   $sln_file = "$base_dir\GpuEx.sln"
   $tools_dir = "$base_dir\tools"
+  $src_dir = "$base_dir\src"
   $version = "1.0.0"
   $config_cpu = "Release.cpu"
   $config_cpuD = "Debug.cpu"
@@ -27,22 +28,31 @@ task Init -depends Clean {
 }
 
 task Compile -depends Init {
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpu\;Configuration=$config_cpu;LC=cpu;LD=" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpuD\;Configuration=$config_cpuD;LC=cpu;LD=" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpuV\;Configuration=$config_cpu;LC=cpu;LD=V" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpuVD\;Configuration=$config_cpuD;LC=cpu;LD=V" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11\;Configuration=$config_cu;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11D\;Configuration=$config_cuD;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11V\;Configuration=$config_cu;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11VD\;Configuration=$config_cuD;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20\;Configuration=$config_cu;LC=20;LD=" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20D\;Configuration=$config_cuD;LC=20;LD=" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20V\;Configuration=$config_cu;LC=20;LD=V" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20VD\;Configuration=$config_cuD;LC=20;LD=V" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.30\;Configuration=$config_cu;LC=30;LD=" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.30V\;Configuration=$config_cu;LC=30;LD=V" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.35\;Configuration=$config_cu;LC=35;LD=" /m
-	#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.35V\;Configuration=$config_cu;LC=35;LD=V" /m
+	# cpu
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpu\;Configuration=$config_cpu;Platform=x64;LC=cpu;LD=" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpuD\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD=" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpuV\;Configuration=$config_cpu;Platform=x64;LC=cpu;LD=V" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.cpuVD\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD=V" /m
+	# 11
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11\;Configuration=$config_cu;Platform=x64;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11D\;Configuration=$config_cuDPlatform=x64;;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11V\;Configuration=$config_cu;Platform=x64;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.11VD\;Configuration=$config_cuD;Platform=x64;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+	# 20
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20\;Configuration=$config_cu;Platform=x64;LC=20;LD=" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20D\;Configuration=$config_cuD;Platform=x64;LC=20;LD=" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20V\;Configuration=$config_cu;Platform=x64;LC=20;LD=V" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.20VD\;Configuration=$config_cuD;Platform=x64;LC=20;LD=V" /m
+	# 30
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.30\;Configuration=$config_cu;Platform=x64;LC=30;LD="
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.30D\;Configuration=$config_cuD;Platform=x64;LC=30;LD=" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.30V\;Configuration=$config_cu;Platform=x64;LC=30;LD=D" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.30VD\;Configuration=$config_cuD;Platform=x64;LC=30;LD=V" /m
+	# 35
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.35\;Configuration=$config_cu;Platform=x64;LC=35;LD=" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.35D\;Configuration=$config_cuD;Platform=x64;LC=35;LD=" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.35V\;Configuration=$config_cu;Platform=x64;LC=35;LD=V" /m
+	#msbuild $sln_file /p:"OutDir=$build_dir\;IntDir=$build_dir\obj.35VD\;Configuration=$config_cuD;Platform=x64;LC=35;LD=V" /m
 }
 
 task Test -depends Compile -precondition { return $run_tests } {
@@ -76,12 +86,15 @@ task Package -depends Dependency, Compile, Test {
 		& $tools_dir\NuGet.exe pack $spec.FullName -o $release_dir -Symbols -BasePath $base_dir
 	}
 
-	$spec_files = @(Get-ChildItem $packageinfo_dir -include *.autopkg -recurse)
+	$old = pwd
+	cd $build_dir
+	$spec_files = @(Get-ChildItem $src_dir -include *.autopkg -recurse)
 	foreach ($spec in $spec_files)
 	{
 		Write-Host $spec.FullName
 		Write-NuGetPackage $spec.FullName
 	}
+	cd $old
 }
 
 task Push -depends Package {

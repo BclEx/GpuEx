@@ -6,14 +6,14 @@ nuget {
 		authors: {Contoso};
 		owners: {Contoso};
 		licenseUrl: "http://www.opensource.org/licenses/mit-license.php";
-		iconUrl: "http://www.techsmith.com/favicon.ico";
 		requireLicenseAcceptance: false;
-		summary: Sample Native NuGet Package;
+		summary: GpuEx Runtime;
 		description: "This package contains GPU data structures, and should be used as a simple runtime.";
 		releaseNotes: "";
-		projectUrl: "https://www.techsmith.com";
+		projectUrl: "https://github.com/BclEx/GpuEx";
+		iconUrl: "https://github.com/BclEx/GpuEx";
 		copyright: Copyright 2010;
-		tags: { native, c++, cuda, gpu, gpgpu, datastructures, runtime };
+		tags: { native, cuda, gpu, gpgpu, datastructures, runtime };
 	};
 
 	files {
@@ -21,7 +21,7 @@ nuget {
 
 		// The release here works for any config that contains release
 		// Examples : Release ENU,  RELEASE-ENU,  Release DEU
-		[x86,v120,release] {
+		[x64,v110,release] {
 			lib:     { Release\*.lib; }
 			symbols: { Release\*.pdb; }
 			bin:     { Release\*.dll; }
@@ -29,7 +29,7 @@ nuget {
 
 		// The debug here works for any config that contains debug
 		// Examples : Debug ENU,  DEBUG-ENU,  Debug DEU
-		[x86,v120,debug] {
+		[x64,v110,debug] {
 			lib:     { Debug\*.lib;  }
 			symbols: { Debug\*.pdb; }
 			bin:     { Debug\*.dll; }

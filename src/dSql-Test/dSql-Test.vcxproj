@@ -129,8 +129,6 @@
     <CudaCompile Include="Program.cu" />
     <CudaCompile Include="TclContext.cu" />
     <CudaCompile Include="TclContext+Test.cu" />
-    <CudaCompile Include="TclContext.cu" />
-    <CudaCompile Include="TclContext+Test.cu" />
     <CudaCompile Include="Test_Autoext.cu" />
     <CudaCompile Include="Test_Backup.cu" />
     <CudaCompile Include="Test_Btree.cu" />
