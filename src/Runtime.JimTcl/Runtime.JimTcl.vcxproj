@@ -206,6 +206,10 @@
     <None Include="initjimsh.cu" />
     <None Include="Utf8.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="GpuEx-Runtime.JimTcl.Native.nuspec" />
+    <None Include="GpuEx-Runtime.JimTcl.Native.targets" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.targets" />

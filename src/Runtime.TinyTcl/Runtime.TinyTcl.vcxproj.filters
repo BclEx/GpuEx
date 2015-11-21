@@ -212,6 +212,8 @@
     <None Include="tests\file.test.win">
       <Filter>tests</Filter>
     </None>
+    <None Include="GpuEx-Runtime.TinyTcl.Native.nuspec" />
+    <None Include="GpuEx-Runtime.TinyTcl.Native.targets" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tcl_sys">

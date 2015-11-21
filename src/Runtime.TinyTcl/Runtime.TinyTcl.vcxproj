@@ -228,6 +228,8 @@
     <None Include="TclMod.cu" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="GpuEx-Runtime.TinyTcl.Native.nuspec" />
+    <None Include="GpuEx-Runtime.TinyTcl.Native.targets" />
     <None Include="library\init.tcl" />
     <None Include="library\mkindex.tcl" />
     <None Include="library\parray.tcl" />

@@ -64,6 +64,7 @@
     <None Include="Core\VSystem-map.cu" />
     <None Include="Core\VSystem-unix.cu" />
     <None Include="Core\VSystem-win.cu" />
+    <None Include="GpuEx-System.nuspec_" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Runtime.net\Runtime.net.csproj">
