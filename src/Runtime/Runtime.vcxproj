@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <LD></LD>
+    <LD>
+    </LD>
     <LC>35</LC>
     <!--<LC>cpu</LC>-->
   </PropertyGroup>
@@ -104,6 +105,10 @@
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="GpuEx-Runtime.Native.nuspec" />
+    <None Include="GpuEx-Runtime.Native.targets" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{821AFA21-3738-4DFC-985B-0F5C080E15E4}</ProjectGuid>
     <RootNamespace>Runtime</RootNamespace>
@@ -135,7 +140,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>$(ProjectName).$(LC)$(LD)D</TargetName>
+    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -168,7 +173,7 @@
       <Keep>true</Keep>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)Runtime+Sentinel.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD)D.lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RT.cu.obj" "$(IntDir)Runtime+Sentinel.cu.obj" "$(IntDir)RuntimeHost.obj" "$(IntDir)VisualHost.obj" -o "$(OutDir)Runtime.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">

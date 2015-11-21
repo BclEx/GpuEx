@@ -48,6 +48,8 @@
     <Compile Include="Random.cs" />
     <Compile Include="Runtime+Utf.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="GpuEx-Runtime.nuspec_" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

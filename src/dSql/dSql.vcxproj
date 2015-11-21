@@ -60,6 +60,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -76,7 +82,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;System.$(LC)$(LD)D.lib;System.Data.$(LC)$(LD)D.lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;System.$(LC)$(LD).lib;System.Data.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>

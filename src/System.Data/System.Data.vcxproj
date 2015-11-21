@@ -232,7 +232,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>$(ProjectName).$(LC)$(LD)D</TargetName>
+    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -253,7 +253,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;Runtime.Tclite.$(LC)$(LD)D.lib;System.$(LC)$(LD)D.lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;Runtime.Tclite.$(LC)$(LD).lib;System.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
@@ -269,7 +269,7 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD)D.lib"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">

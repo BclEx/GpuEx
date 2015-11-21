@@ -4570,7 +4570,7 @@ freepage_out:
 				sizeCell[cells] = size;
 				uint8 *temp = &space1[space1Idx];
 				space1Idx += size;
-				_assert(size <= bt->MaxLocal + 23);
+				_assert(size <= bt->MaxLocal + 23U);
 				_assert(space1Idx <= (int)bt->PageSize);
 				_memcpy(temp, divs[i], size);
 				cell[cells] = temp + leafCorrection;
@@ -5825,7 +5825,7 @@ cleardatabasepage_out:
 
 		// Check that the page exists
 		BtShared *bt = check->Bt;
-		int usableSize = bt->UsableSize;
+		uint usableSize = bt->UsableSize;
 		if (pageID == 0) return 0;
 		if (CheckRef(check, pageID, parentContext)) return 0;
 		RC rc;
@@ -5957,7 +5957,7 @@ cleardatabasepage_out:
 				if ((int)(pc + sizeCell - 1) >= usableSize)
 					CheckAppendMsg(check, nullptr, "Corruption detected in cell %d on page %d", i, pageID);
 				else
-					for (int j = pc + sizeCell - 1; j >= pc; j--) hit[j]++;
+					for (uint j = pc + sizeCell - 1; j >= pc; j--) hit[j]++;
 			}
 			i = _convert_get2(&data[hdr + 1]);
 			while (i > 0)

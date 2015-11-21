@@ -26,44 +26,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\System.net\Core\VSystem-unix.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VSystem-win.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\SysEx+Random.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\SysEx.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VSystem.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VSystem-map.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VFile+JournalVFile.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VFile+MemoryVFile.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VFile.cu">
-      <Filter>Core</Filter>
-    </None>
-    <None Include="..\System.net\Core\VSystem-gpu.cu">
-      <Filter>Core</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="System.cu" />
+    <None Include="System.cu" />
+    <None Include="GpuEx-System.Native.nuspec" />
+    <None Include="GpuEx-System.Native.targets" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\System.net\Core\VSystem+Sentinel.cu">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Program.cu" />
+    <ClCompile Include="..\System.net\Core\SysEx.cu" />
+    <ClCompile Include="..\System.net\Core\SysEx+Random.cu" />
+    <ClCompile Include="..\System.net\Core\VFile+JournalVFile.cu" />
+    <ClCompile Include="..\System.net\Core\VFile+MemoryVFile.cu" />
+    <ClCompile Include="..\System.net\Core\VFile.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-gpu.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-map.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
 </Project>

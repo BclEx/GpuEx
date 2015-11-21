@@ -227,7 +227,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine>MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD)D.lib;System.$(LC)$(LD)D.lib;System.Data.$(LC)$(LD)D.lib;Runtime.TinyTcl.$(LC)$(LD)D.lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;System.$(LC)$(LD).lib;System.Data.$(LC)$(LD).lib;Runtime.TinyTcl.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package>
   <metadata>
-    <id>GpuEx-Runtime</id>
+    <id>GpuEx-System.Native</id>
     <version>1.0.0</version>
-    <title>GpuEx Runtime</title>
+    <title>GpuEx System</title>
     <authors>Contoso</authors>
     <owners>Contoso</owners>
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
@@ -11,14 +11,17 @@
     <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2010</copyright>
-    <tags>c++ cuda gpu gpgpu datastructures runtime</tags>
+    <tags>native cuda gpu sql</tags>
     <language>en-US</language>
+    <dependencies>
+      <dependency id="GpuEx-Runtime.Native" version="1.0.0" />
+    </dependencies>
   </metadata>
   <files>
-    <file src="build\Runtime.*.lib" target="lib\native" />
-    <file src="src\Runtime\**\*.h" target="include" />
-    <file src="src\Runtime\**\*.cpp" target="src" />
-    <file src="src\Runtime\**\*.cu" target="src" />
-    <file src="src\Runtime\**\*.h" target="src" />
+    <file src="_build\**\System.*.lib" target="lib\native" />
+    <file src="src\System\*.targets" target="build\native" />
+    <file src="src\System\**\*.h" target="lib\native\include" />
+    <file src="src\System\**\*.cu" target="src" />
+    <file src="src\System\**\*.h" target="src" />
   </files>
 </package>

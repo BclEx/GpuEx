@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>GpuEx-Runtime.JimTcl.Native</id>
+    <version>1.0.0</version>
+    <title>GpuEx Runtime JimTcl</title>
+    <authors>Contoso</authors>
+    <owners>Contoso</owners>
+    <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2010</copyright>
+    <tags>native cuda gpu tcl jimtcl</tags>
+    <language>en-US</language>
+    <dependencies>
+      <dependency id="GpuEx-Runtime.Native" version="1.0.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="_build\**\Runtime.JimTcl.*.lib" target="lib\native" />
+    <file src="src\Runtime.JimTcl\*.targets" target="build\native" />
+    <file src="src\Runtime.JimTcl\**\*.h" target="lib\native\include" />
+    <file src="src\Runtime.JimTcl\**\*.cu" target="src" />
+    <file src="src\Runtime.JimTcl\**\*.h" target="src" />
+    <file src="src\Runtime.JimTcl\**\*.tcl" target="src" />
+  </files>
+</package>
