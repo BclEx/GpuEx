@@ -1266,15 +1266,19 @@ extern "C" __device__ inline static int __snprintf(const char *buf, size_t bufLe
 #pragma region FPRINTF
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 200
-#undef stdin
-#undef stdout
-#undef stderr
+//#undef stdin
+//#undef stdout
+//#undef stderr
 extern __constant__ FILE _stdin_file;
 extern __constant__ FILE _stdout_file;
 extern __constant__ FILE _stderr_file;
-#define stdin &_stdin_file
-#define stdout &_stdout_file
-#define stderr &_stderr_file
+#define _stdin &_stdin_file
+#define _stdout &_stdout_file
+#define _stderr &_stderr_file
+#else
+#define _stdin stdin
+#define _stdout stdout
+#define _stderr stderr
 #endif
 
 #if 0 && OS_MAP

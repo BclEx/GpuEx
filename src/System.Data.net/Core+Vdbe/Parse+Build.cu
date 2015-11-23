@@ -122,7 +122,7 @@ namespace CORE_NAME
 		if (v && _ALWAYS(Errs == 0) && !ctx->MallocFailed)
 		{
 #ifdef _DEBUG
-			FILE *trace = ((ctx->Flags & BContext::FLAG_VdbeTrace) != 0 ? stdout : nullptr);
+			FILE *trace = ((ctx->Flags & BContext::FLAG_VdbeTrace) != 0 ? _stdout : nullptr);
 			v->set_Trace(trace);
 #endif
 			_assert(CacheLevel == 0);  // Disables and re-enables match

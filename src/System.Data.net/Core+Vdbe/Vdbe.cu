@@ -334,7 +334,7 @@ namespace CORE_NAME
 			_printf("VDBE Program Listing:\n");
 			PrintSql();
 			for (int i = 0; i < Ops.length; i++)
-				PrintOp(stdout, i, &ops[i]);
+				PrintOp(_stdout, i, &ops[i]);
 		}
 		_benignalloc_end();
 #endif

@@ -668,7 +668,7 @@ __device__ void Vdbe::Leave()
 #if defined(VDBE_PROFILE) || defined(_DEBUG)
 __device__ void Vdbe::PrintOp(FILE *out_, int pc, Vdbe::VdbeOp *op)
 {
-	if (!out_) out_ = stdout;
+	if (!out_) out_ = _stdout;
 	char ptr[50];
 	char *p4 = DisplayP4(op, ptr, sizeof(ptr));
 #ifdef _DEBUG
