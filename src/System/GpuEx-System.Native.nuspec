@@ -8,20 +8,21 @@
     <owners>Contoso</owners>
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
+    <description>This package contains an operating system base layer abstraction, and should be used as a simple core library.</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2010</copyright>
-    <tags>native cuda gpu sql</tags>
+    <tags>native cuda gpu os filesystem</tags>
     <language>en-US</language>
     <dependencies>
       <dependency id="GpuEx-Runtime.Native" version="1.0.0" />
     </dependencies>
   </metadata>
   <files>
-    <file src="_build\**\System.*.lib" target="lib\native" />
+    <file src="_build\**\System.*.lib" exclude="_build\**\System.Data.*.lib;_build\**\System.Fea.*.lib" target="build\native\lib" />
     <file src="src\System\*.targets" target="build\native" />
-    <file src="src\System\**\*.h" target="lib\native\include" />
-    <file src="src\System\**\*.cu" target="src" />
-    <file src="src\System\**\*.h" target="src" />
+    <file src="src\System.net\**\*.h" target="build\native\include" />
+    <file src="src\System\_content\*" target="content" />
+    <file src="src\System.net\**\*.cu" target="src" />
+    <file src="src\System.net\**\*.h" target="src" />
   </files>
 </package>

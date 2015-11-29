@@ -24,6 +24,9 @@
     <Filter Include="Core">
       <UniqueIdentifier>{410a113c-944f-4028-9f63-868bf8f28459}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_content">
+      <UniqueIdentifier>{c68ed35e-7ecf-4380-a388-f294241ede2f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="GpuEx-System.Native.nuspec" />
@@ -38,6 +41,9 @@
     <None Include="..\System.net\Core\VSystem-map.cu" />
     <None Include="..\System.net\Core\VSystem-unix.cu" />
     <None Include="..\System.net\Core\VSystem-win.cu" />
+    <None Include="_content\system.sample.cu">
+      <Filter>_content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\System.net\Core\VSystem+Sentinel.cu">

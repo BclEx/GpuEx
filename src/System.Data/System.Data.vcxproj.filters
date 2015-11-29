@@ -13,6 +13,9 @@
     <Filter Include="Core+Vdbe\Command">
       <UniqueIdentifier>{6cb83c07-6ccc-4e1d-9d8a-83b562198464}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_content">
+      <UniqueIdentifier>{541cfd8a-687b-482f-837a-a628504c8681}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\System.Data.net\Core+Btree\BContext.cu.h">
@@ -114,51 +117,11 @@
     <None Include="..\System.Data.net\Core+Vdbe\Walker.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Where.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Autoext.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Backup.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Btree.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Config.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_DemoVfs.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_DevSym.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_FS.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Func.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Fuzzer.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_HexIO.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Init.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_IntArray.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Journal.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_LoadExt.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Malloc.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Multiplex.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Mutex.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_OneFile.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_OSInst.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_PCache.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Quota.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_RegExp.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Schema.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Server.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SpellFix.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SqlLog.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Stat.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SuperLock.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SysCall.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_TclVar.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Thread.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Vfs.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_VfsTrace.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_WholeNumber.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Wsd.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test1.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test2.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test3.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test4.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test5.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test6.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test7.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test8.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test9.cu" />
-    <None Include="..\System.Data.net\Core+Test\TestCtx.cu" />
+    <None Include="GpuEx-System.Data.Native.nuspec" />
+    <None Include="GpuEx-System.Data.Native.targets" />
+    <None Include="_content\system.data.cu.sample">
+      <Filter>_content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="System.Data.cu" />

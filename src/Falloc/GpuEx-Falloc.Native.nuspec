@@ -8,10 +8,10 @@
     <owners>Contoso</owners>
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
+    <description>This package contains a small footprint, forward only, memory allocation library.</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2010</copyright>
-    <tags>native cuda gpu falloc</tags>
+    <tags>native cuda gpu malloc falloc</tags>
     <language>en-US</language>
   </metadata>
   <files>

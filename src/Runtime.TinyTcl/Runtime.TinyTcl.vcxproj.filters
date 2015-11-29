@@ -222,8 +222,14 @@
     <Filter Include="library">
       <UniqueIdentifier>{ade0f6bd-05e7-406f-a51d-438d9be114b3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_content">
+      <UniqueIdentifier>{9cd66cb2-55ef-411e-8dac-aa4051e2129d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RTcl.cu" />
+    <CudaCompile Include="_content\runtime.tinytcl.cu.sample">
+      <Filter>_content</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

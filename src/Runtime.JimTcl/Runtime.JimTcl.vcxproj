@@ -35,7 +35,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="UserMacros">
-    <LD></LD>
+    <LD>
+    </LD>
     <LC>30</LC>
     <!--<LC>cpu</LC>-->
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
@@ -227,6 +228,7 @@
   <ItemGroup>
     <None Include="GpuEx-Runtime.JimTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.JimTcl.Native.targets" />
+    <None Include="_content\runtime.jimtcl.cu.sample" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

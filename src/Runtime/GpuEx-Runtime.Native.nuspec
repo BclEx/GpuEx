@@ -8,7 +8,7 @@
     <owners>Contoso</owners>
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
+    <description>This package contains GPU structures, and should be used as a simple runtime libary.</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2010</copyright>
     <tags>native cuda gpu runtime</tags>
@@ -17,9 +17,10 @@
   <files>
     <file src="_build\**\Runtime.*.lib" exclude="_build\**\Runtime.TinyTcl.*.lib;_build\**\Runtime.JimTcl.*.lib;" target="build\native\lib" />
     <file src="src\Runtime\*.targets" target="build\native" />
-    <file src="src\Runtime\**\*.h" target="build\native\include" />
-    <file src="src\Runtime\**\*.cpp" exclude="src\Runtime\x64\**\*" target="src" />
-    <file src="src\Runtime\**\*.cu" target="src" />
-    <file src="src\Runtime\**\*.h" target="src" />
+    <file src="src\Runtime\**\*.h" exclude="src\Runtime\_*\*" target="build\native\include" />
+    <file src="src\Runtime\_content\*" target="content" />
+    <file src="src\Runtime\**\*.cpp" exclude="src\Runtime\Debug.*\*;src\Runtime\Release.*\*;src\Runtime\x64\**\*" target="src" />
+    <file src="src\Runtime\**\*.cu" exclude="src\Runtime\_*\*" target="src" />
+    <file src="src\Runtime\**\*.h" exclude="src\Runtime\_*\*" target="src" />
   </files>
 </package>

@@ -35,7 +35,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="UserMacros">
-    <LD></LD>
+    <LD>
+    </LD>
     <LC>30</LC>
     <!--<LC>cpu</LC>-->
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
@@ -171,6 +172,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu" />
+    <None Include="GpuEx-System.Data.Native.nuspec" />
+    <None Include="GpuEx-System.Data.Native.targets" />
+    <None Include="_content\system.data.cu.sample" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AADAB731-E71B-406B-B023-6A3FD7957591}</ProjectGuid>

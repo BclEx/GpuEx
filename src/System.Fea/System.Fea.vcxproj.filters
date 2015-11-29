@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="System.Fea.cu" />
+    <CudaCompile Include="Program.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GpuEx-System.Fea.Native.nuspec" />
+    <None Include="GpuEx-System.Fea.Native.targets" />
+    <None Include="_content\system.fea.cu.sample">
+      <Filter>_content</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="_content">
+      <UniqueIdentifier>{ddde3936-3900-494a-b4dd-3c0b089dde4a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

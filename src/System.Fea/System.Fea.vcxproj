@@ -35,7 +35,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="UserMacros">
-    <LD></LD>
+    <LD>
+    </LD>
     <LC>30</LC>
     <!--<LC>cpu</LC>-->
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
@@ -48,6 +49,11 @@
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="System.Fea.cu" />
     <CudaCompile Include="Program.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GpuEx-System.Fea.Native.nuspec" />
+    <None Include="GpuEx-System.Fea.Native.targets" />
+    <None Include="_content\system.fea.cu.sample" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E12FCAFC-B881-41D2-BA5B-72A5AF25E655}</ProjectGuid>

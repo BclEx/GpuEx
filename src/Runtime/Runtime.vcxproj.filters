@@ -49,6 +49,9 @@
     <None Include="RuntimeEx.cu" />
     <None Include="RuntimeOS.cu" />
     <None Include="GpuEx-Runtime.Native.targets" />
+    <None Include="_content\runtime.sample.cu">
+      <Filter>_content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Regex.1">
@@ -56,6 +59,9 @@
     </Filter>
     <Filter Include="Regex.2">
       <UniqueIdentifier>{7901ad92-e5d7-45d0-b0df-2622c3a86cbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_content">
+      <UniqueIdentifier>{ef2be218-740b-4db9-879c-c266469963f5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

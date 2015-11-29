@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="RTcl.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Jim.h" />
+    <ClInclude Include="Jim+Config.h" />
+    <ClInclude Include="Jim+EventLoop.h" />
+    <ClInclude Include="Jim+Signal.h" />
+    <ClInclude Include="Jim+Subcmd.h" />
+    <ClInclude Include="Jim+Win32compat.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Jim.cu" />
+    <None Include="Jim+Aio.cu" />
+    <None Include="Jim+Array.cu" />
+    <None Include="Jim+Clock.cu" />
+    <None Include="Jim+EventLoop.cu" />
+    <None Include="Jim+Exec.cu" />
+    <None Include="Jim+File.cu" />
+    <None Include="Jim+Format.cu" />
+    <None Include="Jim+History.cu" />
+    <None Include="Jim+Interactive.cu" />
+    <None Include="Jim+Load.cu" />
+    <None Include="Jim+Namespace.cu" />
+    <None Include="Jim+Pack.cu" />
+    <None Include="Jim+Package.cu" />
+    <None Include="Jim+Posix.cu" />
+    <None Include="Jim+Readdir.cu" />
+    <None Include="Jim+Readline.cu" />
+    <None Include="Jim+Regexp.cu" />
+    <None Include="Jim+Sdl.cu" />
+    <None Include="Jim+Signal.cu" />
+    <None Include="Jim+Sqlite3.cu" />
+    <None Include="Jim+Subcmd.cu" />
+    <None Include="Jim+Syslog.cu" />
+    <None Include="Jim+TclPrefix.cu" />
+    <None Include="Jim+Win32.cu" />
+    <None Include="Jim+Win32Compat.cu" />
+    <None Include="JimSh.cu" />
+    <None Include="initjimsh.tcl" />
+    <None Include="initjimsh.cu" />
+    <None Include="Utf8.cu" />
+    <None Include="GpuEx-Runtime.JimTcl.Native.nuspec" />
+    <None Include="GpuEx-Runtime.JimTcl.Native.targets" />
+    <None Include="_content\runtime.jimtcl.cu.sample">
+      <Filter>_content</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="_content">
+      <UniqueIdentifier>{e6c64b94-e930-45c7-bfc5-67ce4f76f125}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

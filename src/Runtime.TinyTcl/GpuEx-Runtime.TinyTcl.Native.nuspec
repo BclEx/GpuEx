@@ -3,12 +3,12 @@
   <metadata>
     <id>GpuEx-Runtime.TinyTcl.Native</id>
     <version>1.0.0</version>
-    <title>GpuEx Runtime TinyTcl</title>
+    <title>GpuEx TinyTcl</title>
     <authors>Contoso</authors>
     <owners>Contoso</owners>
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
+    <description>This package contains an embeded TinyTcl engine.</description>
     <releaseNotes></releaseNotes>
     <copyright>Copyright 2010</copyright>
     <tags>native cuda gpu tcl tinytcl</tags>
@@ -18,11 +18,12 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="_build\**\Runtime.TinyTcl.*.lib" target="lib\native" />
+    <file src="_build\**\Runtime.TinyTcl.*.lib" target="build\native\lib" />
     <file src="src\Runtime.TinyTcl\*.targets" target="build\native" />
-    <file src="src\Runtime.TinyTcl\**\*.h" target="lib\native\include" />
-    <file src="src\Runtime.TinyTcl\**\*.cu" target="src" />
-    <file src="src\Runtime.TinyTcl\**\*.h" target="src" />
+    <file src="src\Runtime.TinyTcl\**\*.h" exclude="src\Runtime.TinyTcl\_*\*" target="build\native\include" />
+    <file src="src\Runtime.TinyTcl\_content\*" target="content" />
+    <file src="src\Runtime.TinyTcl\**\*.cu" exclude="src\Runtime.TinyTcl\_*\*" target="src" />
+    <file src="src\Runtime.TinyTcl\**\*.h" exclude="src\Runtime.TinyTcl\_*\*" target="src" />
     <file src="src\Runtime.TinyTcl\**\*.tcl" target="src" />
   </files>
 </package>
