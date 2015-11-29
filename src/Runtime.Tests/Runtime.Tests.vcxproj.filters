@@ -18,5 +18,6 @@
     <CudaCompile Include="Tests/RuntimeTest.cu">
       <Filter>Tests</Filter>
     </CudaCompile>
+    <CudaCompile Include="TestRuntimeEx.cu" />
   </ItemGroup>
 </Project>

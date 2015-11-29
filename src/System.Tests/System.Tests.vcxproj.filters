@@ -12,8 +12,8 @@
     <CudaCompile Include="Tests/IOTest.cu">
       <Filter>Tests</Filter>
     </CudaCompile>
-    <CudaCompile Include="Tests/IOTestH.cpp">
-      <Filter>Tests</Filter>
-    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Tests/IOTestH.cpp" />
   </ItemGroup>
 </Project>

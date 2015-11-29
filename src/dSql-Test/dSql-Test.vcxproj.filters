@@ -1,54 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="TclContext.cu" />
-    <ClCompile Include="TclContext+Test.cu" />
-    <ClCompile Include="Test1.cu" />
-    <ClCompile Include="Test2.cu" />
-    <ClCompile Include="Test3.cu" />
-    <ClCompile Include="Test4.cu" />
-    <ClCompile Include="Test5.cu" />
-    <ClCompile Include="Test6.cu" />
-    <ClCompile Include="Test7.cu" />
-    <ClCompile Include="Test_Autoext.cu" />
-    <ClCompile Include="Test_Backup.cu" />
-    <ClCompile Include="Test_Btree.cu" />
-    <ClCompile Include="Test_Config.cu" />
-    <ClCompile Include="Test_DemoVfs.cu" />
-    <ClCompile Include="Test_DevSym.cu" />
-    <ClCompile Include="Test_FS.cu" />
-    <ClCompile Include="Test_Func.cu" />
-    <ClCompile Include="Test_Fuzzer.cu" />
-    <ClCompile Include="Test_HexIO.cu" />
-    <ClCompile Include="Test_Init.cu" />
-    <ClCompile Include="Test_IntArray.cu" />
-    <ClCompile Include="Test_Journal.cu" />
-    <ClCompile Include="Test_LoadExt.cu" />
-    <ClCompile Include="Test_Malloc.cu" />
-    <ClCompile Include="Test_Multiplex.cu" />
-    <ClCompile Include="Test_Mutex.cu" />
-    <ClCompile Include="Test_OneFile.cu" />
-    <ClCompile Include="Test_OSInst.cu" />
-    <ClCompile Include="Test_PCache.cu" />
-    <ClCompile Include="Test_Quota.cu" />
-    <ClCompile Include="Test_RegExp.cu" />
-    <ClCompile Include="Test_Schema.cu" />
-    <ClCompile Include="Test_Server.cu" />
-    <ClCompile Include="Test_SqlLog.cu" />
-    <ClCompile Include="Test_Stat.cu" />
-    <ClCompile Include="Test_SuperLock.cu" />
-    <ClCompile Include="Test_SysCall.cu" />
-    <ClCompile Include="Test_TclVar.cu" />
-    <ClCompile Include="Test_Thread.cu" />
-    <ClCompile Include="Test_Vfs.cu" />
-    <ClCompile Include="Test_VfsTrace.cu" />
-    <ClCompile Include="Test_WholeNumber.cu" />
-    <ClCompile Include="Test_Wsd.cu" />
-    <ClCompile Include="Test8.cu" />
-    <ClCompile Include="Test9.cu" />
-    <ClCompile Include="Test_SpellFix.cu.inc" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="tclsqlite.c" />
     <None Include="test\all.test">
       <Filter>test</Filter>
@@ -74,5 +26,54 @@
     <Filter Include="test">
       <UniqueIdentifier>{459cb18a-44b4-408a-ae20-051c3d31411c}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="Program.cu" />
+    <CudaCompile Include="TclContext.cu" />
+    <CudaCompile Include="TclContext+Test.cu" />
+    <CudaCompile Include="Test_Autoext.cu" />
+    <CudaCompile Include="Test_Backup.cu" />
+    <CudaCompile Include="Test_Btree.cu" />
+    <CudaCompile Include="Test_Config.cu" />
+    <CudaCompile Include="Test_DemoVfs.cu" />
+    <CudaCompile Include="Test_DevSym.cu" />
+    <CudaCompile Include="Test_FS.cu" />
+    <CudaCompile Include="Test_Func.cu" />
+    <CudaCompile Include="Test_Fuzzer.cu" />
+    <CudaCompile Include="Test_HexIO.cu" />
+    <CudaCompile Include="Test_Init.cu" />
+    <CudaCompile Include="Test_IntArray.cu" />
+    <CudaCompile Include="Test_Journal.cu" />
+    <CudaCompile Include="Test_LoadExt.cu" />
+    <CudaCompile Include="Test_Malloc.cu" />
+    <CudaCompile Include="Test_Multiplex.cu" />
+    <CudaCompile Include="Test_Mutex.cu" />
+    <CudaCompile Include="Test_OneFile.cu" />
+    <CudaCompile Include="Test_OSInst.cu" />
+    <CudaCompile Include="Test_PCache.cu" />
+    <CudaCompile Include="Test_Quota.cu" />
+    <CudaCompile Include="Test_RegExp.cu" />
+    <CudaCompile Include="Test_Schema.cu" />
+    <CudaCompile Include="Test_Server.cu" />
+    <CudaCompile Include="Test_SpellFix.cu" />
+    <CudaCompile Include="Test_SqlLog.cu" />
+    <CudaCompile Include="Test_Stat.cu" />
+    <CudaCompile Include="Test_SuperLock.cu" />
+    <CudaCompile Include="Test_SysCall.cu" />
+    <CudaCompile Include="Test_TclVar.cu" />
+    <CudaCompile Include="Test_Thread.cu" />
+    <CudaCompile Include="Test_Vfs.cu" />
+    <CudaCompile Include="Test_VfsTrace.cu" />
+    <CudaCompile Include="Test_WholeNumber.cu" />
+    <CudaCompile Include="Test_Wsd.cu" />
+    <CudaCompile Include="Test1.cu" />
+    <CudaCompile Include="Test2.cu" />
+    <CudaCompile Include="Test3.cu" />
+    <CudaCompile Include="Test4.cu" />
+    <CudaCompile Include="Test5.cu" />
+    <CudaCompile Include="Test6.cu" />
+    <CudaCompile Include="Test7.cu" />
+    <CudaCompile Include="Test8.cu" />
+    <CudaCompile Include="Test9.cu" />
   </ItemGroup>
 </Project>

@@ -6,12 +6,15 @@
       <PreprocessorDefinitions>HASRUNTIME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies Condition="'%(Arch)'==''">Runtime.cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(Arch)'=='compute_11'">Runtime.11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(Arch)'=='compute_20'">Runtime.20.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(Arch)'=='compute_30'">Runtime.30.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(Arch)'=='compute_35'">Runtime.35.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='cpu'">Runtime.cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_11'">Runtime.11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_20'">Runtime.20.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'==''">Runtime.30.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_35'">Runtime.35.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)lib\$(Platform).$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
   </ItemDefinitionGroup>
 </Project>

@@ -1,28 +1,46 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <LD>
-    </LD>
-    <LC>35</LC>
-  </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug.cpu|Win32">
+      <Configuration>Debug.cpu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug.cpu|x64">
       <Configuration>Debug.cpu</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug.cu|Win32">
+      <Configuration>Debug.cu</Configuration>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug.cu|x64">
       <Configuration>Debug.cu</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cpu|Win32">
+      <Configuration>Release.cpu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release.cpu|x64">
       <Configuration>Release.cpu</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cu|Win32">
+      <Configuration>Release.cu</Configuration>
+      <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release.cu|x64">
       <Configuration>Release.cu</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup Label="UserMacros">
+    <LD></LD>
+    <LC>35</LC>
+    <!--<LC>cpu</LC>-->
+    <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
+    <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>
+  </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="..\System.Data.net\Opcodes.h" />
     <ClInclude Include="..\System.Data.net\KeywordHash.h" />
@@ -41,7 +59,7 @@
     <ClInclude Include="..\System.Data.net\Core+Vdbe\Vdbe.cu.h" />
     <ClInclude Include="..\System.Data.net\Core+Vdbe\VdbeInt.cu.h" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cpu|x64'">
+  <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
     <None Include="System.Data.cu" />
     <None Include="System.Data+Vdbe.cu" />
     <ClCompile Include="Program.cu" />
@@ -96,7 +114,7 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Where.cu" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+  <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="System.Data.cu" />
     <CudaCompile Include="System.Data+Vdbe.cu" />
     <CudaCompile Include="Program.cu" />
@@ -150,51 +168,6 @@
     <None Include="..\System.Data.net\Core+Vdbe\Walker.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Walker+Resolve.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Where.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Autoext.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Backup.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Btree.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Config.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_DemoVfs.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_DevSym.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_FS.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Func.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Fuzzer.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_HexIO.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Init.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_IntArray.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Journal.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_LoadExt.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Malloc.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Multiplex.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Mutex.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_OneFile.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_OSInst.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_PCache.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Quota.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_RegExp.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Schema.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Server.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SpellFix.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SqlLog.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Stat.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SuperLock.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_SysCall.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_TclVar.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Thread.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Vfs.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_VfsTrace.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_WholeNumber.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test_Wsd.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test1.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test2.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test3.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test4.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test5.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test6.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test7.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test8.cu" />
-    <None Include="..\System.Data.net\Core+Test\Test9.cu" />
-    <None Include="..\System.Data.net\Core+Test\TestCtx.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu" />
@@ -206,13 +179,13 @@
     <ProjectName>System.Data</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
@@ -223,22 +196,22 @@
   <ImportGroup Label="ExtensionSettings">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+  <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64' Or '$(Configuration)|$(Platform)'=='Debug.cu|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -246,19 +219,19 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_LIB;_TEST;ENABLE_IOTRACE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.Tclite;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <TargetMachine>MachineX64</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(LC)$(LD).lib;Runtime.Tclite.$(LC)$(LD).lib;System.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);$(SolutionDir)packages\glew.1.9.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
     </Link>
-    <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">
-      <TargetMachinePlatform>64</TargetMachinePlatform>
+    <CudaCompile>
+      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
@@ -269,10 +242,10 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)'=='Debug.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release.cpu|x64' Or '$(Configuration)|$(Platform)'=='Release.cu|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MinSpace</Optimization>
@@ -282,7 +255,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>NDEBUG;_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.Tclite;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -290,13 +263,13 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>MachineX64</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(LC)$(LD).lib;Runtime.Tclite.$(LC)$(LD).lib;System.$(LC)$(LD).lib;cudart.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\GpuStructs.1.0.0\lib\native;$(SolutionDir)packages\freeglut.2.8.0\lib\$(PlatformName);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
     </Link>
-    <CudaCompile Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">
-      <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_$(LC),sm_$(LC);compute_$(LC),sm_52</CodeGeneration>
+    <CudaCompile>
+      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
+      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
       <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
       <Keep>true</Keep>
@@ -305,7 +278,7 @@
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release.cu|x64'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)'=='Release.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>GpuEx-SystemL</id>
+    <version>1.0.0</version>
+    <title>GpuEx SystemL</title>
+    <authors>Contoso</authors>
+    <owners>Contoso</owners>
+    <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>This package contains GPU data structures, and should be used as a simple runtime.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2010</copyright>
+    <tags>c++ cuda gpu gpgpu datastructures runtime</tags>
+    <language>en-US</language>
+    <dependencies>
+      <group>
+        <dependency id="GpuEx-Runtime" version="1.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="build\SystemL.*.dll" target="lib\net40" />
+    <file src="build\SystemL.*.lib" target="lib\native" exclude="build\SystemL.lib;build\SystemL.Data.lib" />
+    <file src="src\SystemL.net\**\*.h" target="include" />
+    <file src="src\SystemL.net\**\*.cs" target="src" exclude="src\SystemL.net\AssemblyInfo.cs;src\SystemL.net\Program.cs" />
+    <file src="src\SystemL.net\**\*.cpp" target="src" />
+    <file src="src\SystemL.net\**\*.cu" target="src" />
+    <file src="src\SystemL.net\**\*.h" target="src" />
+    <file src="src\SystemL.Data.net\**\*.h" target="include" />
+    <file src="src\SystemL.Data.net\**\*.cs" target="src" exclude="src\SystemL.Data.net\AssemblyInfo.cs;src\SystemL.Data.net\Program.cs" />
+    <file src="src\SystemL.Data.net\**\*.cpp" target="src" />
+    <file src="src\SystemL.Data.net\**\*.cu" target="src" />
+    <file src="src\SystemL.Data.net\**\*.h" target="src" />
+  </files>
+</package>

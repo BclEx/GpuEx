@@ -1,50 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="dos.cu" />
-    <ClCompile Include="regex_compat.cu" />
-    <ClCompile Include="Tcl+Alloc.cu" />
-    <ClCompile Include="Tcl+Assem.cu" />
-    <ClCompile Include="Tcl+Basic.cu" />
-    <ClCompile Include="Tcl+CmdAH.cu" />
-    <ClCompile Include="Tcl+CmdIL.cu" />
-    <ClCompile Include="Tcl+CmdMZ.cu" />
-    <ClCompile Include="Tcl+Expr.cu" />
-    <ClCompile Include="Tcl+Get.cu" />
-    <ClCompile Include="Tcl+Glob.cu" />
-    <ClCompile Include="Tcl+GpuAZ.cu" />
-    <ClCompile Include="Tcl+GpuEnv.cu" />
-    <ClCompile Include="Tcl+GpuStr.cu" />
-    <ClCompile Include="Tcl+GpuUtil.cu" />
-    <ClCompile Include="Tcl+Hash.cu" />
-    <ClCompile Include="Tcl+History.cu" />
-    <ClCompile Include="Tcl+Load.cu" />
-    <ClCompile Include="Tcl+Load-noop.cu" />
-    <ClCompile Include="Tcl+Load-unix.cu" />
-    <ClCompile Include="Tcl+Load-win.cu" />
-    <ClCompile Include="Tcl+Main-embed.cu" />
-    <ClCompile Include="Tcl+Main.cu" />
-    <ClCompile Include="Tcl+Obj.cu" />
-    <ClCompile Include="Tcl+Parse.cu" />
-    <ClCompile Include="Tcl+Proc.cu" />
-    <ClCompile Include="Tcl+UnixAZ.cu" />
-    <ClCompile Include="Tcl+UnixEnv.cu" />
-    <ClCompile Include="Tcl+UnixStr.cu" />
-    <ClCompile Include="Tcl+UnixUtil.cu" />
-    <ClCompile Include="Tcl+WinAZ.cu" />
-    <ClCompile Include="Tcl+WinEnv.cu" />
-    <ClCompile Include="Tcl+WinStr.cu" />
-    <ClCompile Include="Tcl+WinUtil.cu" />
-    <ClCompile Include="Tcl+Util.cu" />
-    <ClCompile Include="Tcl+Var.cu" />
-    <ClCompile Include="TclEx+Dbg.cu" />
-    <ClCompile Include="TclEx+Extensions.cu" />
-    <ClCompile Include="TclEx+Gen.cu" />
-    <ClCompile Include="TclEx+Main.cu" />
-    <ClCompile Include="TclEx+UnixReaddir.cu" />
-    <ClCompile Include="TclMod.cu" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="regex_compat.h" />
     <ClInclude Include="Tcl.h" />
     <ClInclude Include="Tcl+Gpu.h" />
@@ -58,7 +14,6 @@
     <ClInclude Include="TclMod.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="RTcl.cu" />
     <None Include="tcl_sys\autoinit.tcl">
       <Filter>tcl_sys</Filter>
     </None>
@@ -214,6 +169,48 @@
     </None>
     <None Include="GpuEx-Runtime.TinyTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.TinyTcl.Native.targets" />
+    <None Include="dos.cu" />
+    <None Include="regex_compat.cu" />
+    <None Include="Tcl+Alloc.cu" />
+    <None Include="Tcl+Assem.cu" />
+    <None Include="Tcl+Basic.cu" />
+    <None Include="Tcl+CmdAH.cu" />
+    <None Include="Tcl+CmdIL.cu" />
+    <None Include="Tcl+CmdMZ.cu" />
+    <None Include="Tcl+Expr.cu" />
+    <None Include="Tcl+Get.cu" />
+    <None Include="Tcl+Glob.cu" />
+    <None Include="Tcl+GpuAZ.cu" />
+    <None Include="Tcl+GpuEnv.cu" />
+    <None Include="Tcl+GpuStr.cu" />
+    <None Include="Tcl+GpuUtil.cu" />
+    <None Include="Tcl+Hash.cu" />
+    <None Include="Tcl+History.cu" />
+    <None Include="Tcl+Load.cu" />
+    <None Include="Tcl+Load-noop.cu" />
+    <None Include="Tcl+Load-unix.cu" />
+    <None Include="Tcl+Load-win.cu" />
+    <None Include="Tcl+Main-embed.cu" />
+    <None Include="Tcl+Main.cu" />
+    <None Include="Tcl+Obj.cu" />
+    <None Include="Tcl+Parse.cu" />
+    <None Include="Tcl+Proc.cu" />
+    <None Include="Tcl+UnixAZ.cu" />
+    <None Include="Tcl+UnixEnv.cu" />
+    <None Include="Tcl+UnixStr.cu" />
+    <None Include="Tcl+UnixUtil.cu" />
+    <None Include="Tcl+WinAZ.cu" />
+    <None Include="Tcl+WinEnv.cu" />
+    <None Include="Tcl+WinStr.cu" />
+    <None Include="Tcl+WinUtil.cu" />
+    <None Include="Tcl+Util.cu" />
+    <None Include="Tcl+Var.cu" />
+    <None Include="TclEx+Dbg.cu" />
+    <None Include="TclEx+Extensions.cu" />
+    <None Include="TclEx+Gen.cu" />
+    <None Include="TclEx+Main.cu" />
+    <None Include="TclEx+UnixReaddir.cu" />
+    <None Include="TclMod.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tcl_sys">
@@ -225,5 +222,8 @@
     <Filter Include="library">
       <UniqueIdentifier>{ade0f6bd-05e7-406f-a51d-438d9be114b3}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="RTcl.cu" />
   </ItemGroup>
 </Project>
