@@ -36,7 +36,7 @@
   </ItemGroup>
   <PropertyGroup Label="UserMacros">
     <LD></LD>
-    <LC>35</LC>
+    <LC>30</LC>
     <!--<LC>cpu</LC>-->
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
     <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>

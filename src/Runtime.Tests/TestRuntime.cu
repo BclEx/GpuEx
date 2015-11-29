@@ -177,25 +177,25 @@ __global__ static void runtime12(void *r)
 {
 	_runtimeSetHeap(r);
 	char buf[100];
-	int a0 = __snprintf(buf, sizeof(buf), "t0\n"); _assert(a0 == 2);
-	int a1 = __snprintf(buf, sizeof(buf), "t1 %s\n", "1"); _assert(a1 == 4);
-	int a2 = __snprintf(buf, sizeof(buf), "t2 %s %d\n", "1", 2); _assert(a2 == 6);
+	int a0 = __snprintf(buf, sizeof(buf), "t0\n"); _assert(a0 == 3);
+	int a1 = __snprintf(buf, sizeof(buf), "t1 %s\n", "1"); _assert(a1 == 5);
+	int a2 = __snprintf(buf, sizeof(buf), "t2 %s %d\n", "1", 2); _assert(a2 == 7);
 	int a3 = __snprintf(buf, sizeof(buf), "t3 %s %d %d\n", "1", 2, 3); _assert(a3 = 8);
-	int a4 = __snprintf(buf, sizeof(buf), "t4 %s %d %d %d\n", "1", 2, 3, 4); _assert(a4 == 10);
-	int a5 = __snprintf(buf, sizeof(buf), "t5 %s %d %d %d %d\n", "1", 2, 3, 4, 5); _assert(a5 == 12);
-	int a6 = __snprintf(buf, sizeof(buf), "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(a6 == 14);
-	int a7 = __snprintf(buf, sizeof(buf), "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(a7 == 16);
-	int a8 = __snprintf(buf, sizeof(buf), "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(a8 == 18);
-	int a9 = __snprintf(buf, sizeof(buf), "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(a9 == 20);
-	int aA = __snprintf(buf, sizeof(buf), "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(aA == 22);
+	int a4 = __snprintf(buf, sizeof(buf), "t4 %s %d %d %d\n", "1", 2, 3, 4); _assert(a4 == 11);
+	int a5 = __snprintf(buf, sizeof(buf), "t5 %s %d %d %d %d\n", "1", 2, 3, 4, 5); _assert(a5 == 13);
+	int a6 = __snprintf(buf, sizeof(buf), "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(a6 == 15);
+	int a7 = __snprintf(buf, sizeof(buf), "t7 %s %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7); _assert(a7 == 17);
+	int a8 = __snprintf(buf, sizeof(buf), "t8 %s %d %d %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6, 7, 8); _assert(a8 == 19);
+	int a9 = __snprintf(buf, sizeof(buf), "t9 %s %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, "9"); _assert(a9 == 21);
+	int aA = __snprintf(buf, sizeof(buf), "ta %s %d %d %d %d %d %d %d %d %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A"); _assert(aA == 23);
 	// extended
-	int aB = __snprintf(buf, sizeof(buf), "tb %s %d %d %d %d %d %d %d %d %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B"); _assert(aB == 24);
-	int aC = __snprintf(buf, sizeof(buf), "tc %s %d %d %d %d %d %d %d %d %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C"); _assert(aC == 26);
-	int aD = __snprintf(buf, sizeof(buf), "td %s %d %d %d %d %d %d %d %d %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D"); _assert(aD == 28);
-	int aE = __snprintf(buf, sizeof(buf), "te %s %d %d %d %d %d %d %d %d %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E"); _assert(aE == 30);
-	int aF = __snprintf(buf, sizeof(buf), "tf %s %d %d %d %d %d %d %d %d %s %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"); _assert(aF == 32);
+	int aB = __snprintf(buf, sizeof(buf), "tb %s %d %d %d %d %d %d %d %d %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B"); _assert(aB == 25);
+	int aC = __snprintf(buf, sizeof(buf), "tc %s %d %d %d %d %d %d %d %d %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C"); _assert(aC == 27);
+	int aD = __snprintf(buf, sizeof(buf), "td %s %d %d %d %d %d %d %d %d %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D"); _assert(aD == 29);
+	int aE = __snprintf(buf, sizeof(buf), "te %s %d %d %d %d %d %d %d %d %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E"); _assert(aE == 31);
+	int aF = __snprintf(buf, sizeof(buf), "tf %s %d %d %d %d %d %d %d %d %s %s %s %s %s %s\n", "1", 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"); _assert(aF == 33);
 	//
-	int b0 = _sprintf(buf, "t0\n"); _assert(b0 == 2);
+	int b0 = _sprintf(buf, "t0\n"); _assert(b0 == 3);
 	printf("Example: 12\n");
 }
 
