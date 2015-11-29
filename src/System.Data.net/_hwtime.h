@@ -2,7 +2,7 @@
 #ifndef _HWTIME_H_
 #define _HWTIME_H_
 
-#if __CUDA_ARCH__
+#if defined(__CUDACC__) || defined(__CUDA_ARCH__)
 
 __device__ __inline__ uint64 _hwtime() { return ((uint64)0); }
 

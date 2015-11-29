@@ -36,7 +36,7 @@ _TEST(0) {
 _TEST(1) {
 	auto vfs = VSystem::FindVfs("gpu");
 	auto file = (VFile *)_alloc(vfs->SizeOsFile);
-	auto rc = vfs->Open("C:\\T_\\Test.db", file, (VSystem::OPEN)((int)VSystem::OPEN_CREATE | (int)VSystem::OPEN_READWRITE | (int)VSystem::OPEN_MAIN_DB), nullptr);
+	auto rc = vfs->Open("\\T_\\Test.db", file, (VSystem::OPEN)((int)VSystem::OPEN_CREATE | (int)VSystem::OPEN_READWRITE | (int)VSystem::OPEN_MAIN_DB), nullptr);
 	_printf("%d\n", rc);
 	file->Write4(0, 123145);
 	file->Close();
