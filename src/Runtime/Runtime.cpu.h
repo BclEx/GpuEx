@@ -79,6 +79,7 @@ cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return 0; }
 #pragma region PRINTF
 
 #define _printf printf
+#define _putchar(c) putchar(c)
 #if 0
 __device__ __forceinline  int _printf(const char *fmt) { return printf(fmt); }
 template <typename T1> __device__ __forceinline  int _printf(const char *fmt, T1 arg1) { return printf(fmt, arg1); }

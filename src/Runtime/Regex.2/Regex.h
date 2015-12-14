@@ -1,3 +1,4 @@
+#if 0
 #ifndef __REGEX_H__
 #define __REGEX_H__
 
@@ -17,4 +18,5 @@ _API __device__ bool reg_searchrange(regex_t* exp, const char_t* text_begin, con
 _API __device__ int reg_getsubexpcount(regex_t* exp);
 _API __device__ bool reg_getsubexp(regex_t* exp, int n, regmatch_t *subexp);
 
+#endif
 #endif

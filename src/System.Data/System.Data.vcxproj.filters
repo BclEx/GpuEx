@@ -119,7 +119,7 @@
     <None Include="..\System.Data.net\Core+Vdbe\Where.cu" />
     <None Include="GpuEx-System.Data.Native.nuspec" />
     <None Include="GpuEx-System.Data.Native.targets" />
-    <None Include="_content\system.data.cu.sample">
+    <None Include="_content\system.data.sample.cu">
       <Filter>_content</Filter>
     </None>
   </ItemGroup>

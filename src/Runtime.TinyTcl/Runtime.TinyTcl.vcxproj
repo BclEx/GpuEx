@@ -302,9 +302,7 @@
   <ItemGroup>
     <None Include="GpuEx-Runtime.TinyTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.TinyTcl.Native.targets" />
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="_content\runtime.tinytcl.cu.sample" />
+    <None Include="_content\runtime.tinytcl.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

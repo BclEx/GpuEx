@@ -568,12 +568,12 @@ __device__ static int JimELVwaitCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	return JIM_OK;
 }
 
+__constant__ static const char *const JimELUpdateCommand_options[] = {
+	"idletasks", NULL
+};
 __device__ static int JimELUpdateCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_EventLoop *eventLoop = (Jim_EventLoop *)Jim_CmdPrivData(interp);
-	static const char *const options[] = {
-		"idletasks", NULL
-	};
 	enum { UPDATE_IDLE, UPDATE_NONE };
 	int option = UPDATE_NONE;
 	int flags = JIM_TIME_EVENTS;
@@ -581,7 +581,7 @@ __device__ static int JimELUpdateCommand(Jim_Interp *interp, int argc, Jim_Obj *
 	if (argc == 1) {
 		flags = JIM_ALL_EVENTS;
 	}
-	else if (argc > 2 || Jim_GetEnum(interp, argv[1], options, &option, NULL, JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
+	else if (argc > 2 || Jim_GetEnum(interp, argv[1], JimELUpdateCommand_options, &option, NULL, JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
 		Jim_WrongNumArgs(interp, 1, argv, "?idletasks?");
 		return JIM_ERR;
 	}
@@ -608,16 +608,16 @@ __device__ static void JimAfterTimeEventFinalizer(Jim_Interp *interp, void *clie
 	Jim_DecrRefCount(interp, objPtr);
 }
 
+__constant__ static const char *const JimELAfterCommand_options[] = {
+	"cancel", "info", "idle", NULL
+};
+enum
+{ AFTER_CANCEL, AFTER_INFO, AFTER_IDLE, AFTER_RESTART, AFTER_EXPIRE, AFTER_CREATE };
 __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_EventLoop *eventLoop = (Jim_EventLoop *)Jim_CmdPrivData(interp);
 	jim_wide ms = 0, id;
 	Jim_Obj *objPtr, *idObjPtr;
-	static const char * const options[] = {
-		"cancel", "info", "idle", NULL
-	};
-	enum
-	{ AFTER_CANCEL, AFTER_INFO, AFTER_IDLE, AFTER_RESTART, AFTER_EXPIRE, AFTER_CREATE };
 	int option = AFTER_CREATE;
 
 	if (argc < 2) {
@@ -625,7 +625,7 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 		return JIM_ERR;
 	}
 	if (Jim_GetWide(interp, argv[1], &ms) != JIM_OK) {
-		if (Jim_GetEnum(interp, argv[1], options, &option, "argument", JIM_ERRMSG) != JIM_OK) {
+		if (Jim_GetEnum(interp, argv[1], JimELAfterCommand_options, &option, "argument", JIM_ERRMSG) != JIM_OK) {
 			return JIM_ERR;
 		}
 		Jim_SetEmptyResult(interp);
@@ -691,7 +691,7 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 			const char *fmt = "after#%" JIM_WIDE_MODIFIER;
 
 			while (te) {
-				snprintf(buf, sizeof(buf), fmt, te->id);
+				_snprintf(buf, sizeof(buf), fmt, te->id);
 				Jim_ListAppendElement(interp, listObj, Jim_NewStringObj(interp, buf, -1));
 				te = te->next;
 			}

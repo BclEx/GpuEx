@@ -174,7 +174,7 @@
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu" />
     <None Include="GpuEx-System.Data.Native.nuspec" />
     <None Include="GpuEx-System.Data.Native.targets" />
-    <None Include="_content\system.data.cu.sample" />
+    <None Include="_content\system.data.sample.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AADAB731-E71B-406B-B023-6A3FD7957591}</ProjectGuid>

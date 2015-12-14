@@ -232,6 +232,7 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 #pragma region PRINTF
 
 #define _printf printf
+#define _putchar(c) printf("%c", c)
 #if 0
 #define PRINTF_PREAMBLE \
 	char *start, *end, *bufptr, *fmtstart; \

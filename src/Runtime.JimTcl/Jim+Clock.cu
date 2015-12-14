@@ -1,8 +1,10 @@
+#pragma region License
 /*
 * jim-clock.c
 *
 * Implements the clock command
 */
+#pragma endregion
 
 /* For strptime() */
 #ifndef _XOPEN_SOURCE

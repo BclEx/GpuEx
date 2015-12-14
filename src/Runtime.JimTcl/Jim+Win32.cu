@@ -120,7 +120,7 @@ static int Win32_FindWindow(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 	}
 	title = Jim_String(objv[1]);
 	if (objc == 3)
-	class_ = Jim_String(objv[2]);
+		class_ = Jim_String(objv[2]);
 	hwnd = FindWindowA(class_, title);
 
 	if (hwnd == NULL) {

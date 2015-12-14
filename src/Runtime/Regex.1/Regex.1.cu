@@ -1,3 +1,4 @@
+#if 0
 //#include <stdio.h>
 //#include <ctype.h>
 //#include <string.h>
@@ -426,3 +427,4 @@ __device__ char *reg_replace(const char *regex, const char *buf, const char *sub
 	} while (len > 0);
 	return s;
 }
+#endif

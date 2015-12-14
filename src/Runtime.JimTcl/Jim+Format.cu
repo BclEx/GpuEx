@@ -41,6 +41,7 @@
 * this file, and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #pragma endregion
+
 #include <ctype.h>
 #include <string.h>
 
@@ -55,12 +56,12 @@
 *
 * Returns a new object with zero reference count if OK, or NULL on error.
 */
-Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int objc, Jim_Obj *const *objv)
+__constant__ static const char *const _mixedXPG = "cannot mix \"%\" and \"%n$\" conversion specifiers";
+__constant__ static const char *const _badIndex[2] = { "not enough arguments for all format specifiers", "\"%n$\" argument index out of range" };
+__device__ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int objc, Jim_Obj *const *objv)
 {
 	const char *span, *format, *formatEnd, *msg;
 	int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
-	static const char * const mixedXPG = "cannot mix \"%\" and \"%n$\" conversion specifiers";
-	static const char * const badIndex[2] = { "not enough arguments for all format specifiers", "\"%n$\" argument index out of range" };
 	int formatLen;
 	Jim_Obj *resultPtr;
 
@@ -132,19 +133,19 @@ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int objc, Jim_
 		}
 		if (newXpg) {
 			if (gotSequential) {
-				msg = mixedXPG;
+				msg = _mixedXPG;
 				goto errorMsg;
 			}
 			gotXpg = 1;
 		} else {
 			if (gotXpg) {
-				msg = mixedXPG;
+				msg = _mixedXPG;
 				goto errorMsg;
 			}
 			gotSequential = 1;
 		}
 		if ((objIndex < 0) || (objIndex >= objc)) {
-			msg = badIndex[gotXpg];
+			msg = _badIndex[gotXpg];
 			goto errorMsg;
 		}
 
@@ -188,7 +189,7 @@ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int objc, Jim_
 			step = utf8_tounicode(format, &ch);
 		} else if (ch == '*') {
 			if (objIndex >= objc - 1) {
-				msg = badIndex[gotXpg];
+				msg = _badIndex[gotXpg];
 				goto errorMsg;
 			}
 			if (Jim_GetLong(interp, objv[objIndex], &width) != JIM_OK) {
@@ -222,7 +223,7 @@ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int objc, Jim_
 			step = utf8_tounicode(format, &ch);
 		} else if (ch == '*') {
 			if (objIndex >= objc - 1) {
-				msg = badIndex[gotXpg];
+				msg = _badIndex[gotXpg];
 				goto errorMsg;
 			}
 			if (Jim_GetLong(interp, objv[objIndex], &precision) != JIM_OK) {

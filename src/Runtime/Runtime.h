@@ -192,6 +192,17 @@ extern "C" __device__ void _runtime_utfselftest();
 //#define _printf printf
 #endif
 
+// No utf-8 support. 1 byte = 1 char
+#define utf8_strlen(S, B) ((B) < 0 ? _strlen(S) : (B))
+#define utf8_tounicode(S, CP) (*(CP) = (unsigned char)*(S), 1)
+#define utf8_getchars(CP, C) (*(CP) = (C), 1)
+#define utf8_upper(C) __toupper(C)
+#define utf8_title(C) __toupper(C)
+#define utf8_lower(C) __tolower(C)
+#define utf8_index(C, I) (I)
+#define utf8_charlen(C) 1
+#define utf8_prev_len(S, L) 1
+
 #pragma endregion
 
 //////////////////////

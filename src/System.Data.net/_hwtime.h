@@ -60,7 +60,14 @@ __inline__ uint64 _hwtime()
 
 #else
 
-#error Need implementation of sqlite3Hwtime() for your platform.
+#include <intrin.h>
+__inline uint64 __cdecl _hwtime()
+{
+	return __rdtsc();
+}
+
+//#error Need implementation of sqlite3Hwtime() for your platform.
+
 
 // To compile without implementing sqlite3Hwtime() for your platform, you can remove the above #error and use the following
 // stub function.  You will lose timing support for many of the debugging and testing utilities, but it should at

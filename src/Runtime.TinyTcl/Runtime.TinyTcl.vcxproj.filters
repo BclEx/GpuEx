@@ -228,7 +228,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RTcl.cu" />
-    <CudaCompile Include="_content\runtime.tinytcl.cu.sample">
+    <CudaCompile Include="_content\runtime.tinytcl.cu">
       <Filter>_content</Filter>
     </CudaCompile>
   </ItemGroup>

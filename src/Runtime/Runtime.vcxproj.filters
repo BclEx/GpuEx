@@ -14,9 +14,6 @@
     <ClInclude Include="VisualHost.h" />
     <ClInclude Include="Runtime.h" />
     <ClInclude Include="RuntimeTypes.h" />
-    <ClInclude Include="Regex.2\Regex.h">
-      <Filter>Regex.2</Filter>
-    </ClInclude>
     <ClInclude Include="Regex.h" />
     <ClInclude Include="RuntimeEx.h" />
     <ClInclude Include="RuntimeOS.h" />
@@ -24,8 +21,6 @@
   <ItemGroup>
     <None Include="GpuEx-Runtime.Native.nuspec" />
     <None Include="CompileTime.cu" />
-    <None Include="Regex.1\Regex.1.cu" />
-    <None Include="Regex.2\Regex.2.cu" />
     <None Include="Regex.cu" />
     <None Include="Runtime.cu" />
     <None Include="Runtime+Alloc.cu" />
@@ -52,14 +47,11 @@
     <None Include="_content\runtime.sample.cu">
       <Filter>_content</Filter>
     </None>
+    <None Include="_content\runtime.ganging.sample.cu">
+      <Filter>_content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Regex.1">
-      <UniqueIdentifier>{fe5cdbf7-c628-4e86-925a-78b13c95222d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Regex.2">
-      <UniqueIdentifier>{7901ad92-e5d7-45d0-b0df-2622c3a86cbf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="_content">
       <UniqueIdentifier>{ef2be218-740b-4db9-879c-c266469963f5}</UniqueIdentifier>
     </Filter>

@@ -45,6 +45,8 @@
 */
 #pragma endregion
 
+#ifdef jim_ext_namespace
+
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -334,3 +336,4 @@ int Jim_namespaceInit(Jim_Interp *interp)
 	return JIM_OK;
 }
 
+#endif

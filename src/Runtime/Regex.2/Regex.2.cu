@@ -1,3 +1,4 @@
+#if 0
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -670,3 +671,4 @@ __device__ bool reg_getsubexp(regex_t* exp, int n, regmatch_t *subexp)
 //	} while (len > 0);
 //	return s;
 //}
+#endif

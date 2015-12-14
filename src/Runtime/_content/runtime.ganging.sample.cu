@@ -41,6 +41,7 @@ void addWithCuda(int *c, const int *a, const int *b, unsigned int size)
     cudaErrorCheckF(cudaSetDevice(0), goto Error);
 
 	deviceHeap = cudaDeviceHeapCreate();
+	cudaDeviceHeapSelect(deviceHeap);
 
     // Allocate GPU buffers for three vectors (two input, one output)    .
     cudaErrorCheckF(cudaMalloc((void**)&dev_c, size * sizeof(int)), goto Error);

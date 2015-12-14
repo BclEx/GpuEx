@@ -43,9 +43,6 @@
     <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="..\System.Data.Tests.net\_Tester.cu.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Hosts.cpp" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
@@ -55,7 +52,6 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="Program.cu" />
-    <CudaCompile Include="..\System.Data.Tests.net\_Tester.cu" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="xunit">

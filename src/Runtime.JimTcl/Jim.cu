@@ -42,8 +42,9 @@
 * official policies, either expressed or implied, of the Jim Tcl Project.
 **/
 #pragma endregion
-#define JIM_OPTIMIZATION        /* comment to avoid optimizations and reduce size */
+#define JIM_OPTIMIZATION // comment to avoid optimizations and reduce size
 
+#include "RuntimeEx.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -70,13 +71,13 @@
 #include <crt_externs.h>
 #endif
 
-/* For INFINITY, even if math functions are not enabled */
+// For INFINITY, even if math functions are not enabled
 #include <math.h>
 
-/* We may decide to switch to using $[...] after all, so leave it as an option */
+// We may decide to switch to using $[...] after all, so leave it as an option
 /*#define EXPRSUGAR_BRACKET*/
 
-/* For the no-autoconf case */
+// For the no-autoconf case
 #ifndef TCL_LIBRARY
 #define TCL_LIBRARY "."
 #endif
@@ -100,12 +101,10 @@
 #define JIM_DEBUG_COMMAND
 #define JIM_DEBUG_PANIC
 #endif
-/* Enable this (in conjunction with valgrind) to help debug
-* reference counting issues
-*/
+// Enable this (in conjunction with valgrind) to help debug reference counting issues
 /*#define JIM_DISABLE_OBJECT_POOL*/
 
-/* Maximum size of an integer */
+// Maximum size of an integer
 #define JIM_INTEGER_SPACE 24
 
 const char *jim_tt_name(int type);
@@ -117,40 +116,35 @@ static void JimPanicDump(int fail_condition, const char *fmt, ...);
 #define JimPanic(X)
 #endif
 
-/* -----------------------------------------------------------------------------
-* Global variables
-* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
+// Global variables
+// -----------------------------------------------------------------------------
 
-/* A shared empty string for the objects string representation.
-* Jim_InvalidateStringRep knows about it and doesn't try to free it. */
-static char JimEmptyStringRep[] = "";
+// A shared empty string for the objects string representation. Jim_InvalidateStringRep knows about it and doesn't try to free it.
+__constant__ static char JimEmptyStringRep[] = "";
 
-/* -----------------------------------------------------------------------------
-* Required prototypes of not exported functions
-* ---------------------------------------------------------------------------*/
-static void JimFreeCallFrame(Jim_Interp *interp, Jim_CallFrame *cf, int action);
-static int ListSetIndex(Jim_Interp *interp, Jim_Obj *listPtr, int listindex, Jim_Obj *newObjPtr,
-						int flags);
-static int JimDeleteLocalProcs(Jim_Interp *interp, Jim_Stack *localCommands);
-static Jim_Obj *JimExpandDictSugar(Jim_Interp *interp, Jim_Obj *objPtr);
-static void SetDictSubstFromAny(Jim_Interp *interp, Jim_Obj *objPtr);
-static Jim_Obj **JimDictPairs(Jim_Obj *dictPtr, int *len);
-static void JimSetFailedEnumResult(Jim_Interp *interp, const char *arg, const char *badtype,
-								   const char *prefix, const char *const *tablePtr, const char *name);
-static int JimCallProcedure(Jim_Interp *interp, Jim_Cmd *cmd, int argc, Jim_Obj *const *argv);
-static int JimGetWideNoErr(Jim_Interp *interp, Jim_Obj *objPtr, jim_wide * widePtr);
-static int JimSign(jim_wide w);
-static int JimValidName(Jim_Interp *interp, const char *type, Jim_Obj *nameObjPtr);
-static void JimPrngSeed(Jim_Interp *interp, unsigned char *seed, int seedLen);
-static void JimRandomBytes(Jim_Interp *interp, void *dest, unsigned int len);
+// -----------------------------------------------------------------------------
+// Required prototypes of not exported functions
+// -----------------------------------------------------------------------------
+__device__ static void JimFreeCallFrame(Jim_Interp *interp, Jim_CallFrame *cf, int action);
+__device__ static int ListSetIndex(Jim_Interp *interp, Jim_Obj *listPtr, int listindex, Jim_Obj *newObjPtr, int flags);
+__device__ static int JimDeleteLocalProcs(Jim_Interp *interp, Jim_Stack *localCommands);
+__device__ static Jim_Obj *JimExpandDictSugar(Jim_Interp *interp, Jim_Obj *objPtr);
+__device__ static void SetDictSubstFromAny(Jim_Interp *interp, Jim_Obj *objPtr);
+__device__ static Jim_Obj **JimDictPairs(Jim_Obj *dictPtr, int *len);
+__device__ static void JimSetFailedEnumResult(Jim_Interp *interp, const char *arg, const char *badtype, const char *prefix, const char *const *tablePtr, const char *name);
+__device__ static int JimCallProcedure(Jim_Interp *interp, Jim_Cmd *cmd, int argc, Jim_Obj *const *argv);
+__device__ static int JimGetWideNoErr(Jim_Interp *interp, Jim_Obj *objPtr, jim_wide * widePtr);
+__device__ static int JimSign(jim_wide w);
+__device__ static int JimValidName(Jim_Interp *interp, const char *type, Jim_Obj *nameObjPtr);
+__device__ static void JimPrngSeed(Jim_Interp *interp, unsigned char *seed, int seedLen);
+__device__ static void JimRandomBytes(Jim_Interp *interp, void *dest, unsigned int len);
 
-
-/* Fast access to the int (wide) value of an object which is known to be of int type */
+// Fast access to the int (wide) value of an object which is known to be of int type
 #define JimWideValue(objPtr) (objPtr)->internalRep.wideValue
-
 #define JimObjTypeName(O) ((O)->typePtr ? (O)->typePtr->name : "none")
 
-static int utf8_tounicode_case(const char *s, int *uc, int upper)
+__device__ static int utf8_tounicode_case(const char *s, int *uc, int upper)
 {
 	int l = utf8_tounicode(s, uc);
 	if (upper) {
@@ -159,322 +153,225 @@ static int utf8_tounicode_case(const char *s, int *uc, int upper)
 	return l;
 }
 
-/* These can be used in addition to JIM_CASESENS/JIM_NOCASE */
+// These can be used in addition to JIM_CASESENS/JIM_NOCASE
 #define JIM_CHARSET_SCAN 2
 #define JIM_CHARSET_GLOB 0
 
-/**
-* pattern points to a string like "[^a-z\ub5]"
-*
-* The pattern may contain trailing chars, which are ignored.
-*
-* The pattern is matched against unicode char 'c'.
-*
-* If (flags & JIM_NOCASE), case is ignored when matching.
-* If (flags & JIM_CHARSET_SCAN), the considers ^ and ] special at the start
-* of the charset, per scan, rather than glob/string match.
-*
-* If the unicode char 'c' matches that set, returns a pointer to the ']' character,
-* or the null character if the ']' is missing.
-*
-* Returns NULL on no match.
-*/
-static const char *JimCharsetMatch(const char *pattern, int c, int flags)
+// pattern points to a string like "[^a-z\ub5]"
+// The pattern may contain trailing chars, which are ignored.
+// The pattern is matched against unicode char 'c'.
+// If (flags & JIM_NOCASE), case is ignored when matching.
+// If (flags & JIM_CHARSET_SCAN), the considers ^ and ] special at the start of the charset, per scan, rather than glob/string match.
+// If the unicode char 'c' matches that set, returns a pointer to the ']' character, or the null character if the ']' is missing.
+// Returns NULL on no match.
+__device__ static const char *JimCharsetMatch(const char *pattern, int c, int flags)
 {
 	int not = 0;
 	int pchar;
 	int match = 0;
 	int nocase = 0;
-
 	if (flags & JIM_NOCASE) {
 		nocase++;
 		c = utf8_upper(c);
 	}
-
 	if (flags & JIM_CHARSET_SCAN) {
 		if (*pattern == '^') {
 			not++;
 			pattern++;
 		}
-
-		/* Special case. If the first char is ']', it is part of the set */
-		if (*pattern == ']') {
+		// Special case. If the first char is ']', it is part of the set
+		if (*pattern == ']')
 			goto first;
-		}
 	}
-
 	while (*pattern && *pattern != ']') {
-		/* Exact match */
+		// Exact match
 		if (pattern[0] == '\\') {
 first:
 			pattern += utf8_tounicode_case(pattern, &pchar, nocase);
 		}
 		else {
-			/* Is this a range? a-z */
+			// Is this a range? a-z
 			int start;
 			int end;
-
 			pattern += utf8_tounicode_case(pattern, &start, nocase);
 			if (pattern[0] == '-' && pattern[1]) {
-				/* skip '-' */
+				// skip '-'
 				pattern += utf8_tounicode(pattern, &pchar);
 				pattern += utf8_tounicode_case(pattern, &end, nocase);
 
-				/* Handle reversed range too */
-				if ((c >= start && c <= end) || (c >= end && c <= start)) {
+				// Handle reversed range too
+				if ((c >= start && c <= end) || (c >= end && c <= start))
 					match = 1;
-				}
 				continue;
 			}
 			pchar = start;
 		}
-
-		if (pchar == c) {
+		if (pchar == c)
 			match = 1;
-		}
 	}
-	if (not) {
+	if (not)
 		match = !match;
-	}
-
-	return match ? pattern : NULL;
+	return (match ? pattern : nullptr);
 }
 
-/* Glob-style pattern matching. */
+// Glob-style pattern matching.
 
-/* Note: string *must* be valid UTF-8 sequences
-*/
-static int JimGlobMatch(const char *pattern, const char *string, int nocase)
+// Note: string *must* be valid UTF-8 sequences
+__device__ static int JimGlobMatch(const char *pattern, const char *string, int nocase)
 {
 	int c;
 	int pchar;
 	while (*pattern) {
 		switch (pattern[0]) {
 		case '*':
-			while (pattern[1] == '*') {
+			while (pattern[1] == '*')
 				pattern++;
-			}
 			pattern++;
-			if (!pattern[0]) {
-				return 1;   /* match */
-			}
+			if (!pattern[0])
+				return 1; // match
 			while (*string) {
-				/* Recursive call - Does the remaining pattern match anywhere? */
+				// Recursive call - Does the remaining pattern match anywhere?
 				if (JimGlobMatch(pattern, string, nocase))
-					return 1;       /* match */
+					return 1; // match
 				string += utf8_tounicode(string, &c);
 			}
-			return 0;       /* no match */
-
+			return 0; // no match
 		case '?':
 			string += utf8_tounicode(string, &c);
 			break;
-
 		case '[': {
 			string += utf8_tounicode(string, &c);
 			pattern = JimCharsetMatch(pattern + 1, c, nocase ? JIM_NOCASE : 0);
-			if (!pattern) {
+			if (!pattern)
 				return 0;
-			}
-			if (!*pattern) {
-				/* Ran out of pattern (no ']') */
-				continue;
-			}
-			break;
-				  }
+			if (!*pattern)
+				continue; // Ran out of pattern (no ']')
+			break; }
 		case '\\':
-			if (pattern[1]) {
+			if (pattern[1])
 				pattern++;
-			}
-			/* fall through */
+			// fall through
 		default:
 			string += utf8_tounicode_case(string, &c, nocase);
 			utf8_tounicode_case(pattern, &pchar, nocase);
-			if (pchar != c) {
+			if (pchar != c)
 				return 0;
-			}
 			break;
 		}
 		pattern += utf8_tounicode_case(pattern, &pchar, nocase);
 		if (!*string) {
-			while (*pattern == '*') {
+			while (*pattern == '*')
 				pattern++;
-			}
 			break;
 		}
 	}
-	if (!*pattern && !*string) {
-		return 1;
-	}
-	return 0;
+	return (!*pattern && !*string : 1 : 0);
 }
 
-/**
-* string comparison. Works on binary data.
-*
-* Returns -1, 0 or 1
-*
-* Note that the lengths are byte lengths, not char lengths.
-*/
-static int JimStringCompare(const char *s1, int l1, const char *s2, int l2)
+// string comparison. Works on binary data.
+// Returns -1, 0 or 1
+// Note that the lengths are byte lengths, not char lengths.
+__device__ static int JimStringCompare(const char *s1, int l1, const char *s2, int l2)
 {
-	if (l1 < l2) {
-		return memcmp(s1, s2, l1) <= 0 ? -1 : 1;
-	}
-	else if (l2 < l1) {
-		return memcmp(s1, s2, l2) >= 0 ? 1 : -1;
-	}
-	else {
-		return JimSign(memcmp(s1, s2, l1));
-	}
+	if (l1 < l2) return (_memcmp(s1, s2, l1) <= 0 ? -1 : 1);
+	else if (l2 < l1) return (_memcmp(s1, s2, l2) >= 0 ? 1 : -1);
+	else return JimSign(memcmp(s1, s2, l1));
 }
 
-/**
-* Compare null terminated strings, up to a maximum of 'maxchars' characters,
-* (or end of string if 'maxchars' is -1).
-*
-* Returns -1, 0, 1 for s1 < s2, s1 == s2, s1 > s2 respectively.
-*
-* Note: does not support embedded nulls.
-*/
-static int JimStringCompareLen(const char *s1, const char *s2, int maxchars, int nocase)
+// Compare null terminated strings, up to a maximum of 'maxchars' characters, (or end of string if 'maxchars' is -1).
+// Returns -1, 0, 1 for s1 < s2, s1 == s2, s1 > s2 respectively.
+// Note: does not support embedded nulls.
+__device__ static int JimStringCompareLen(const char *s1, const char *s2, int maxchars, int nocase)
 {
 	while (*s1 && *s2 && maxchars) {
 		int c1, c2;
 		s1 += utf8_tounicode_case(s1, &c1, nocase);
 		s2 += utf8_tounicode_case(s2, &c2, nocase);
-		if (c1 != c2) {
+		if (c1 != c2)
 			return JimSign(c1 - c2);
-		}
 		maxchars--;
 	}
-	if (!maxchars) {
+	if (!maxchars)
 		return 0;
-	}
-	/* One string or both terminated */
-	if (*s1) {
+	// One string or both terminated
+	if (*s1)
 		return 1;
-	}
-	if (*s2) {
+	if (*s2)
 		return -1;
-	}
 	return 0;
 }
 
-/* Search 's1' inside 's2', starting to search from char 'index' of 's2'.
-* The index of the first occurrence of s1 in s2 is returned.
-* If s1 is not found inside s2, -1 is returned. */
-static int JimStringFirst(const char *s1, int l1, const char *s2, int l2, int idx)
+// Search 's1' inside 's2', starting to search from char 'index' of 's2'. The index of the first occurrence of s1 in s2 is returned.
+// If s1 is not found inside s2, -1 is returned.
+__device__ static int JimStringFirst(const char *s1, int l1, const char *s2, int l2, int idx)
 {
-	int i;
-	int l1bytelen;
-
-	if (!l1 || !l2 || l1 > l2) {
+	if (!l1 || !l2 || l1 > l2)
 		return -1;
-	}
 	if (idx < 0)
 		idx = 0;
 	s2 += utf8_index(s2, idx);
-
-	l1bytelen = utf8_index(s1, l1);
-
-	for (i = idx; i <= l2 - l1; i++) {
-		int c;
-		if (memcmp(s2, s1, l1bytelen) == 0) {
+	int l1bytelen = utf8_index(s1, l1);
+	for (int i = idx; i <= l2 - l1; i++) {
+		if (!_memcmp(s2, s1, l1bytelen))
 			return i;
-		}
+		int c;
 		s2 += utf8_tounicode(s2, &c);
 	}
 	return -1;
 }
 
-/**
-* Note: Lengths and return value are in bytes, not chars.
-*/
-static int JimStringLast(const char *s1, int l1, const char *s2, int l2)
+// Note: Lengths and return value are in bytes, not chars.
+__device__ static int JimStringLast(const char *s1, int l1, const char *s2, int l2)
 {
-	const char *p;
-
 	if (!l1 || !l2 || l1 > l2)
 		return -1;
-
-	/* Now search for the needle */
-	for (p = s2 + l2 - 1; p != s2 - 1; p--) {
-		if (*p == *s1 && memcmp(s1, p, l1) == 0) {
+	// Now search for the needle
+	for (const char *p = s2 + l2 - 1; p != s2 - 1; p--)
+		if (*p == *s1 && !memcmp(s1, p, l1))
 			return (int)(p - s2);
-		}
-	}
 	return -1;
 }
 
 #ifdef JIM_UTF8
-/**
-* Note: Lengths and return value are in chars.
-*/
-static int JimStringLastUtf8(const char *s1, int l1, const char *s2, int l2)
+// Note: Lengths and return value are in chars.
+__device__ static int JimStringLastUtf8(const char *s1, int l1, const char *s2, int l2)
 {
 	int n = JimStringLast(s1, utf8_index(s1, l1), s2, utf8_index(s2, l2));
-	if (n > 0) {
+	if (n > 0)
 		n = utf8_strlen(s2, n);
-	}
 	return n;
 }
 #endif
 
-/**
-* After an strtol()/strtod()-like conversion,
-* check whether something was converted and that
-* the only thing left is white space.
-*
-* Returns JIM_OK or JIM_ERR.
-*/
-static int JimCheckConversion(const char *str, const char *endptr)
+// After an strtol()/strtod()-like conversion, check whether something was converted and that the only thing left is white space.
+// Returns JIM_OK or JIM_ERR.
+__device__ static int JimCheckConversion(const char *str, const char *endptr)
 {
-	if (str[0] == '\0' || str == endptr) {
+	if (str[0] == '\0' || str == endptr)
 		return JIM_ERR;
-	}
-
 	if (endptr[0] != '\0') {
 		while (*endptr) {
-			if (!isspace(UCHAR(*endptr))) {
+			if (!_isspace((unsigned char)*endptr))
 				return JIM_ERR;
-			}
 			endptr++;
 		}
 	}
 	return JIM_OK;
 }
 
-/* Parses the front of a number to determine it's sign and base
-* Returns the index to start parsing according to the given base
-*/
-static int JimNumberBase(const char *str, int *base, int *sign)
+// Parses the front of a number to determine it's sign and base
+// Returns the index to start parsing according to the given base
+__device__ static int JimNumberBase(const char *str, int *base, int *sign)
 {
 	int i = 0;
-
 	*base = 10;
-
-	while (isspace(UCHAR(str[i]))) {
+	while (_isspace(str[i]))
 		i++;
-	}
-
-	if (str[i] == '-') {
-		*sign = -1;
-		i++;
-	}
-	else {
-		if (str[i] == '+') {
-			i++;
-		}
-		*sign = 1;
-	}
-
-	if (str[i] != '0') {
-		/* base 10 */
-		return 0;
-	}
-
-	/* We have 0<x>, so see if we can convert it */
+	if (str[i] == '-') { *sign = -1; i++; }
+	else { if (str[i] == '+') { i++; } *sign = 1; }
+	if (str[i] != '0')
+		return 0; // base 10
+	// We have 0<x>, so see if we can convert it
 	switch (str[i + 1]) {
 	case 'x': case 'X': *base = 16; break;
 	case 'o': case 'O': *base = 8; break;
@@ -482,124 +379,93 @@ static int JimNumberBase(const char *str, int *base, int *sign)
 	default: return 0;
 	}
 	i += 2;
-	/* Ensure that (e.g.) 0x-5 fails to parse */
-	if (str[i] != '-' && str[i] != '+' && !isspace(UCHAR(str[i]))) {
-		/* Parse according to this base */
+	// Ensure that (e.g.) 0x-5 fails to parse
+	if (str[i] != '-' && str[i] != '+' && !_isspace(str[i])) // Parse according to this base
 		return i;
-	}
-	/* Parse as base 10 */
+	// Parse as base 10
 	*base = 10;
 	return 0;
 }
 
-/* Converts a number as per strtol(..., 0) except leading zeros do *not*
-* imply octal. Instead, decimal is assumed unless the number begins with 0x, 0o or 0b
-*/
-static long jim_strtol(const char *str, char **endptr)
+// Converts a number as per strtol(..., 0) except leading zeros do *not* imply octal. Instead, decimal is assumed unless the number begins with 0x, 0o or 0b
+__device__ static long jim_strtol(const char *str, char **endptr)
 {
 	int sign;
 	int base;
 	int i = JimNumberBase(str, &base, &sign);
-
 	if (base != 10) {
-		long value = strtol(str + i, endptr, base);
-		if (endptr == NULL || *endptr != str + i) {
+		long value = _strtol(str + i, endptr, base);
+		if (endptr == NULL || *endptr != str + i)
 			return value * sign;
-		}
 	}
-
-	/* Can just do a regular base-10 conversion */
-	return strtol(str, endptr, 10);
+	// Can just do a regular base-10 conversion
+	return _strtol(str, endptr, 10);
 }
 
-
-/* Converts a number as per strtoull(..., 0) except leading zeros do *not*
-* imply octal. Instead, decimal is assumed unless the number begins with 0x, 0o or 0b
-*/
-static jim_wide jim_strtoull(const char *str, char **endptr)
+// Converts a number as per strtoull(..., 0) except leading zeros do *not* imply octal. Instead, decimal is assumed unless the number begins with 0x, 0o or 0b
+__device__ static jim_wide jim_strtoull(const char *str, char **endptr)
 {
 #ifdef HAVE_LONG_LONG
 	int sign;
 	int base;
 	int i = JimNumberBase(str, &base, &sign);
-
 	if (base != 10) {
-		jim_wide value = strtoull(str + i, endptr, base);
-		if (endptr == NULL || *endptr != str + i) {
+		jim_wide value = _strtoull(str + i, endptr, base);
+		if (endptr == NULL || *endptr != str + i)
 			return value * sign;
-		}
 	}
-
-	/* Can just do a regular base-10 conversion */
-	return strtoull(str, endptr, 10);
+	// Can just do a regular base-10 conversion
+	return _strtoull(str, endptr, 10);
 #else
 	return (unsigned long)jim_strtol(str, endptr);
 #endif
 }
 
-int Jim_StringToWide(const char *str, jim_wide * widePtr, int base)
+__device__ int Jim_StringToWide(const char *str, jim_wide * widePtr, int base)
 {
 	char *endptr;
-
-	if (base) {
-		*widePtr = strtoull(str, &endptr, base);
-	}
-	else {
-		*widePtr = jim_strtoull(str, &endptr);
-	}
-
+	*widePtr = (base ? strtoull(str, &endptr, base) : jim_strtoull(str, &endptr));
 	return JimCheckConversion(str, endptr);
 }
 
-int Jim_StringToDouble(const char *str, double *doublePtr)
+__device__ int Jim_StringToDouble(const char *str, double *doublePtr)
 {
 	char *endptr;
-
-	/* Callers can check for underflow via ERANGE */
+	// Callers can check for underflow via ERANGE
 	errno = 0;
-
-	*doublePtr = strtod(str, &endptr);
-
+	*doublePtr = _strtod(str, &endptr);
 	return JimCheckConversion(str, endptr);
 }
 
-static jim_wide JimPowWide(jim_wide b, jim_wide e)
+__device__ static jim_wide JimPowWide(jim_wide b, jim_wide e)
 {
 	jim_wide i, res = 1;
-
-	if ((b == 0 && e != 0) || (e < 0))
+	if ((b == 0 && e != 0) || e < 0)
 		return 0;
-	for (i = 0; i < e; i++) {
+	for (i = 0; i < e; i++)
 		res *= b;
-	}
 	return res;
 }
 
-/* -----------------------------------------------------------------------------
-* Special functions
-* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
+// Special functions
+// -----------------------------------------------------------------------------
 #ifdef JIM_DEBUG_PANIC
-static void JimPanicDump(int condition, const char *fmt, ...)
+__device__ static void JimPanicDump(int condition, const char *fmt, ...)
 {
 	va_list ap;
-
-	if (!condition) {
+	if (!condition)
 		return;
-	}
-
 	va_start(ap, fmt);
-
 	fprintf(stderr, "\nJIM INTERPRETER PANIC: ");
 	vfprintf(stderr, fmt, ap);
 	fprintf(stderr, "\n\n");
 	va_end(ap);
-
 #ifdef HAVE_BACKTRACE
 	{
 		void *array[40];
 		int size, i;
 		char **strings;
-
 		size = backtrace(array, 40);
 		strings = backtrace_symbols(array, size);
 		for (i = 0; i < size; i++)
@@ -608,7 +474,6 @@ static void JimPanicDump(int condition, const char *fmt, ...)
 		fprintf(stderr, "[backtrace] of 'nm <executable>' in the bug report.\n");
 	}
 #endif
-
 	exit(1);
 }
 #endif
@@ -617,32 +482,31 @@ static void JimPanicDump(int condition, const char *fmt, ...)
 * Memory allocation
 * ---------------------------------------------------------------------------*/
 
-void *Jim_Alloc(int size)
+__device__ void *Jim_Alloc(int size)
 {
-	return size ? malloc(size) : NULL;
+	return (size ? _alloc(size) : nullptr);
 }
 
-void Jim_Free(void *ptr)
+__device__ void Jim_Free(void *ptr)
 {
-	free(ptr);
+	_free(ptr);
 }
 
-void *Jim_Realloc(void *ptr, int size)
+__device__ void *Jim_Realloc(void *ptr, int size)
 {
-	return realloc(ptr, size);
+	return _realloc(ptr, size);
 }
 
-char *Jim_StrDup(const char *s)
+__device__ char *Jim_StrDup(const char *s)
 {
-	return strdup(s);
+	return _strdup(s);
 }
 
-char *Jim_StrDupLen(const char *s, int l)
+__device__ char *Jim_StrDupLen(const char *s, int l)
 {
 	char *copy = (char *)Jim_Alloc(l + 1);
-
-	memcpy(copy, s, l + 1);
-	copy[l] = 0;                /* Just to be sure, original could be substring */
+	_memcpy(copy, s, l + 1);
+	copy[l] = 0; // Just to be sure, original could be substring
 	return copy;
 }
 
@@ -650,28 +514,27 @@ char *Jim_StrDupLen(const char *s, int l)
 * Time related functions
 * ---------------------------------------------------------------------------*/
 
-/* Returns current time in microseconds */
-static jim_wide JimClock(void)
+// Returns current time in microseconds
+__device__ static jim_wide JimClock()
 {
 	struct timeval tv;
-
 	gettimeofday(&tv, NULL);
-	return (jim_wide) tv.tv_sec * 1000000 + tv.tv_usec;
+	return (jim_wide)(tv.tv_sec * 1000000 + tv.tv_usec);
 }
 
-/* -----------------------------------------------------------------------------
-* Hash Tables
-* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
+// Hash Tables
+// -----------------------------------------------------------------------------
 
-/* -------------------------- private prototypes ---------------------------- */
-static void JimExpandHashTableIfNeeded(Jim_HashTable *ht);
-static unsigned int JimHashTableNextPower(unsigned int size);
-static Jim_HashEntry *JimInsertHashEntry(Jim_HashTable *ht, const void *key, int replace);
+// -------------------------- private prototypes ----------------------------
+__device__ static void JimExpandHashTableIfNeeded(Jim_HashTable *ht);
+__device__ static unsigned int JimHashTableNextPower(unsigned int size);
+__device__ static Jim_HashEntry *JimInsertHashEntry(Jim_HashTable *ht, const void *key, int replace);
 
-/* -------------------------- hash functions -------------------------------- */
+// -------------------------- hash functions --------------------------------
 
-/* Thomas Wang's 32 bit Mix Function */
-unsigned int Jim_IntHashFunction(unsigned int key)
+// Thomas Wang's 32 bit Mix Function
+__device__ unsigned int Jim_IntHashFunction(unsigned int key)
 {
 	key += ~(key << 15);
 	key ^= (key >> 10);
@@ -682,12 +545,10 @@ unsigned int Jim_IntHashFunction(unsigned int key)
 	return key;
 }
 
-/* Generic hash function (we are using to multiply by 9 and add the byte
-* as Tcl) */
-unsigned int Jim_GenHashFunction(const unsigned char *buf, int len)
+// Generic hash function (we are using to multiply by 9 and add the byte as Tcl)
+__device__ unsigned int Jim_GenHashFunction(const unsigned char *buf, int len)
 {
 	unsigned int h = 0;
-
 	while (len--)
 		h += (h << 3) + *buf++;
 	return h;
@@ -695,8 +556,8 @@ unsigned int Jim_GenHashFunction(const unsigned char *buf, int len)
 
 /* ----------------------------- API implementation ------------------------- */
 
-/* reset a hashtable already initialized */
-static void JimResetHashTable(Jim_HashTable *ht)
+// reset a hashtable already initialized
+__device__ static void JimResetHashTable(Jim_HashTable *ht)
 {
 	ht->table = NULL;
 	ht->size = 0;
@@ -704,16 +565,14 @@ static void JimResetHashTable(Jim_HashTable *ht)
 	ht->used = 0;
 	ht->collisions = 0;
 #ifdef JIM_RANDOMISE_HASH
-	/* This is initialised to a random value to avoid a hash collision attack.
-	* See: n.runs-SA-2011.004
-	*/
+	// This is initialised to a random value to avoid a hash collision attack. See: n.runs-SA-2011.004
 	ht->uniq = (rand() ^ time(NULL) ^ clock());
 #else
 	ht->uniq = 0;
 #endif
 }
 
-static void JimInitHashTableIterator(Jim_HashTable *ht, Jim_HashTableIterator *iter)
+__device__ static void JimInitHashTableIterator(Jim_HashTable *ht, Jim_HashTableIterator *iter)
 {
 	iter->ht = ht;
 	iter->index = -1;
@@ -721,8 +580,8 @@ static void JimInitHashTableIterator(Jim_HashTable *ht, Jim_HashTableIterator *i
 	iter->nextEntry = NULL;
 }
 
-/* Initialize the hash table */
-int Jim_InitHashTable(Jim_HashTable *ht, const Jim_HashTableType *type, void *privDataPtr)
+// Initialize the hash table
+__device__ int Jim_InitHashTable(Jim_HashTable *ht, const Jim_HashTableType *type, void *privDataPtr)
 {
 	JimResetHashTable(ht);
 	ht->type = type;
@@ -730,102 +589,85 @@ int Jim_InitHashTable(Jim_HashTable *ht, const Jim_HashTableType *type, void *pr
 	return JIM_OK;
 }
 
-/* Resize the table to the minimal size that contains all the elements,
-* but with the invariant of a USER/BUCKETS ration near to <= 1 */
-void Jim_ResizeHashTable(Jim_HashTable *ht)
+// Resize the table to the minimal size that contains all the elements, but with the invariant of a USER/BUCKETS ration near to <= 1
+__device__ void Jim_ResizeHashTable(Jim_HashTable *ht)
 {
 	int minimal = ht->used;
-
 	if (minimal < JIM_HT_INITIAL_SIZE)
 		minimal = JIM_HT_INITIAL_SIZE;
 	Jim_ExpandHashTable(ht, minimal);
 }
 
-/* Expand or create the hashtable */
-void Jim_ExpandHashTable(Jim_HashTable *ht, unsigned int size)
+// Expand or create the hashtable
+__device__ void Jim_ExpandHashTable(Jim_HashTable *ht, unsigned int size)
 {
-	Jim_HashTable n;            /* the new hashtable */
+	Jim_HashTable n; // the new hashtable
 	unsigned int realsize = JimHashTableNextPower(size), i;
 
-	/* the size is invalid if it is smaller than the number of
-	* elements already inside the hashtable */
+	// the size is invalid if it is smaller than the number of elements already inside the hashtable
 	if (size <= ht->used)
 		return;
-
 	Jim_InitHashTable(&n, ht->type, ht->privdata);
 	n.size = realsize;
 	n.sizemask = realsize - 1;
 	n.table = (Jim_HashEntry **)Jim_Alloc(realsize * sizeof(Jim_HashEntry *));
-	/* Keep the same 'uniq' as the original */
+	// Keep the same 'uniq' as the original
 	n.uniq = ht->uniq;
+	// Initialize all the pointers to NULL
+	_memset(n.table, 0, realsize * sizeof(Jim_HashEntry *));
 
-	/* Initialize all the pointers to NULL */
-	memset(n.table, 0, realsize * sizeof(Jim_HashEntry *));
-
-	/* Copy all the elements from the old to the new table:
-	* note that if the old hash table is empty ht->used is zero,
-	* so Jim_ExpandHashTable just creates an empty hash table. */
+	// Copy all the elements from the old to the new table: note that if the old hash table is empty ht->used is zero, so Jim_ExpandHashTable just creates an empty hash table.
 	n.used = ht->used;
 	for (i = 0; ht->used > 0; i++) {
 		Jim_HashEntry *he, *nextHe;
-
 		if (ht->table[i] == NULL)
 			continue;
-
-		/* For each hash entry on this slot... */
+		// For each hash entry on this slot...
 		he = ht->table[i];
 		while (he) {
 			unsigned int h;
-
 			nextHe = he->next;
-			/* Get the new element index */
+			// Get the new element index
 			h = Jim_HashKey(ht, he->key) & n.sizemask;
 			he->next = n.table[h];
 			n.table[h] = he;
 			ht->used--;
-			/* Pass to the next element */
+			// Pass to the next element
 			he = nextHe;
 		}
 	}
-	assert(ht->used == 0);
+	_assert(ht->used == 0);
 	Jim_Free(ht->table);
 
-	/* Remap the new hashtable in the old */
+	// Remap the new hashtable in the old
 	*ht = n;
 }
 
-/* Add an element to the target hash table */
-int Jim_AddHashEntry(Jim_HashTable *ht, const void *key, void *val)
+// Add an element to the target hash table
+__device__ int Jim_AddHashEntry(Jim_HashTable *ht, const void *key, void *val)
 {
 	Jim_HashEntry *entry;
-
-	/* Get the index of the new element, or -1 if
-	* the element already exists. */
+	// Get the index of the new element, or -1 if the element already exists.
 	entry = JimInsertHashEntry(ht, key, 0);
 	if (entry == NULL)
 		return JIM_ERR;
-
-	/* Set the hash entry fields. */
+	// Set the hash entry fields.
 	Jim_SetHashKey(ht, entry, key);
 	Jim_SetHashVal(ht, entry, val);
 	return JIM_OK;
 }
 
-/* Add an element, discarding the old if the key already exists */
-int Jim_ReplaceHashEntry(Jim_HashTable *ht, const void *key, void *val)
+// Add an element, discarding the old if the key already exists
+__device__ int Jim_ReplaceHashEntry(Jim_HashTable *ht, const void *key, void *val)
 {
 	int existed;
 	Jim_HashEntry *entry;
-
-	/* Get the index of the new element, or -1 if
-	* the element already exists. */
+	// Get the index of the new element, or -1 if the element already exists.
 	entry = JimInsertHashEntry(ht, key, 1);
-	if (entry->key) {
-		/* It already exists, so only replace the value.
-		* Note if both a destructor and a duplicate function exist,
-		* need to dup before destroy. perhaps they are the same
-		* reference counted object
-		*/
+	if (entry->key)
+	{
+		// It already exists, so only replace the value. Note if both a destructor and a duplicate function exist,
+		// need to dup before destroy. perhaps they are the same reference counted object
 		if (ht->type->valDestructor && ht->type->valDup) {
 			void *newval = ht->type->valDup(ht->privdata, val);
 			ht->type->valDestructor(ht->privdata, entry->u.val);
@@ -838,30 +680,27 @@ int Jim_ReplaceHashEntry(Jim_HashTable *ht, const void *key, void *val)
 		existed = 1;
 	}
 	else {
-		/* Doesn't exist, so set the key */
+		// Doesn't exist, so set the key
 		Jim_SetHashKey(ht, entry, key);
 		Jim_SetHashVal(ht, entry, val);
 		existed = 0;
 	}
-
 	return existed;
 }
 
-/* Search and remove an element */
-int Jim_DeleteHashEntry(Jim_HashTable *ht, const void *key)
+// Search and remove an element
+__device__ int Jim_DeleteHashEntry(Jim_HashTable *ht, const void *key)
 {
 	unsigned int h;
 	Jim_HashEntry *he, *prevHe;
-
 	if (ht->used == 0)
 		return JIM_ERR;
 	h = Jim_HashKey(ht, key) & ht->sizemask;
 	he = ht->table[h];
-
 	prevHe = NULL;
 	while (he) {
 		if (Jim_CompareHashKeys(ht, key, he->key)) {
-			/* Unlink the element from the list */
+			// Unlink the element from the list
 			if (prevHe)
 				prevHe->next = he->next;
 			else
@@ -875,18 +714,16 @@ int Jim_DeleteHashEntry(Jim_HashTable *ht, const void *key)
 		prevHe = he;
 		he = he->next;
 	}
-	return JIM_ERR;             /* not found */
+	return JIM_ERR; // not found
 }
 
-/* Destroy an entire hash table and leave it ready for reuse */
-int Jim_FreeHashTable(Jim_HashTable *ht)
+// Destroy an entire hash table and leave it ready for reuse
+__device__ int Jim_FreeHashTable(Jim_HashTable *ht)
 {
 	unsigned int i;
-
-	/* Free all the elements */
+	// Free all the elements
 	for (i = 0; ht->used > 0; i++) {
 		Jim_HashEntry *he, *nextHe;
-
 		if ((he = ht->table[i]) == NULL)
 			continue;
 		while (he) {
@@ -898,18 +735,17 @@ int Jim_FreeHashTable(Jim_HashTable *ht)
 			he = nextHe;
 		}
 	}
-	/* Free the table and the allocated cache structure */
+	// Free the table and the allocated cache structure
 	Jim_Free(ht->table);
-	/* Re-initialize the table */
+	// Re-initialize the table
 	JimResetHashTable(ht);
-	return JIM_OK;              /* never fails */
+	return JIM_OK; // never fails
 }
 
-Jim_HashEntry *Jim_FindHashEntry(Jim_HashTable *ht, const void *key)
+__device__ Jim_HashEntry *Jim_FindHashEntry(Jim_HashTable *ht, const void *key)
 {
 	Jim_HashEntry *he;
 	unsigned int h;
-
 	if (ht->used == 0)
 		return NULL;
 	h = Jim_HashKey(ht, key) & ht->sizemask;
@@ -922,14 +758,14 @@ Jim_HashEntry *Jim_FindHashEntry(Jim_HashTable *ht, const void *key)
 	return NULL;
 }
 
-Jim_HashTableIterator *Jim_GetHashTableIterator(Jim_HashTable *ht)
+__device__ Jim_HashTableIterator *Jim_GetHashTableIterator(Jim_HashTable *ht)
 {
 	Jim_HashTableIterator *iter = (Jim_HashTableIterator *)Jim_Alloc(sizeof(*iter));
 	JimInitHashTableIterator(ht, iter);
 	return iter;
 }
 
-Jim_HashEntry *Jim_NextHashEntry(Jim_HashTableIterator *iter)
+__device__ Jim_HashEntry *Jim_NextHashEntry(Jim_HashTableIterator *iter)
 {
 	while (1) {
 		if (iter->entry == NULL) {
@@ -938,12 +774,10 @@ Jim_HashEntry *Jim_NextHashEntry(Jim_HashTableIterator *iter)
 				break;
 			iter->entry = iter->ht->table[iter->index];
 		}
-		else {
+		else
 			iter->entry = iter->nextEntry;
-		}
 		if (iter->entry) {
-			/* We need to save the 'next' here, the iterator user
-			* may delete the entry we are returning. */
+			// We need to save the 'next' here, the iterator user may delete the entry we are returning.
 			iter->nextEntry = iter->entry->next;
 			return iter->entry;
 		}
@@ -951,24 +785,22 @@ Jim_HashEntry *Jim_NextHashEntry(Jim_HashTableIterator *iter)
 	return NULL;
 }
 
-/* ------------------------- private functions ------------------------------ */
+// ------------------------- private functions ------------------------------
 
-/* Expand the hash table if needed */
-static void JimExpandHashTableIfNeeded(Jim_HashTable *ht)
+// Expand the hash table if needed
+__device__ static void JimExpandHashTableIfNeeded(Jim_HashTable *ht)
 {
-	/* If the hash table is empty expand it to the intial size,
-	* if the table is "full" dobule its size. */
+	// If the hash table is empty expand it to the intial size, if the table is "full" dobule its size.
 	if (ht->size == 0)
 		Jim_ExpandHashTable(ht, JIM_HT_INITIAL_SIZE);
 	if (ht->size == ht->used)
 		Jim_ExpandHashTable(ht, ht->size * 2);
 }
 
-/* Our hash table capability is a power of two */
-static unsigned int JimHashTableNextPower(unsigned int size)
+// Our hash table capability is a power of two
+__device__ static unsigned int JimHashTableNextPower(unsigned int size)
 {
 	unsigned int i = JIM_HT_INITIAL_SIZE;
-
 	if (size >= 2147483648U)
 		return 2147483648U;
 	while (1) {
@@ -978,66 +810,59 @@ static unsigned int JimHashTableNextPower(unsigned int size)
 	}
 }
 
-/* Returns the index of a free slot that can be populated with
-* a hash entry for the given 'key'.
-* If the key already exists, -1 is returned. */
-static Jim_HashEntry *JimInsertHashEntry(Jim_HashTable *ht, const void *key, int replace)
+// Returns the index of a free slot that can be populated with a hash entry for the given 'key'.
+// If the key already exists, -1 is returned.
+__device__ static Jim_HashEntry *JimInsertHashEntry(Jim_HashTable *ht, const void *key, int replace)
 {
-	unsigned int h;
-	Jim_HashEntry *he;
-
-	/* Expand the hashtable if needed */
+	// Expand the hashtable if needed
 	JimExpandHashTableIfNeeded(ht);
-
-	/* Compute the key hash value */
-	h = Jim_HashKey(ht, key) & ht->sizemask;
-	/* Search if this slot does not already contain the given key */
-	he = ht->table[h];
+	// Compute the key hash value
+	unsigned int h = Jim_HashKey(ht, key) & ht->sizemask;
+	// Search if this slot does not already contain the given key
+	Jim_HashEntry *he = ht->table[h];
 	while (he) {
 		if (Jim_CompareHashKeys(ht, key, he->key))
-			return replace ? he : NULL;
+			return (replace ? he : NULL);
 		he = he->next;
 	}
-
-	/* Allocates the memory and stores key */
+	// Allocates the memory and stores key
 	he = (Jim_HashEntry *)Jim_Alloc(sizeof(*he));
 	he->next = ht->table[h];
 	ht->table[h] = he;
 	ht->used++;
 	he->key = NULL;
-
 	return he;
 }
 
-/* ----------------------- StringCopy Hash Table Type ------------------------*/
+// ----------------------- StringCopy Hash Table Type ------------------------
 
-static unsigned int JimStringCopyHTHashFunction(const void *key)
+__device__ static unsigned int JimStringCopyHTHashFunction(const void *key)
 {
 	return Jim_GenHashFunction((const unsigned char *)key, _strlen((const char *)key));
 }
 
-static void *JimStringCopyHTDup(void *privdata, const void *key)
+__device__ static void *JimStringCopyHTDup(void *privdata, const void *key)
 {
 	return Jim_StrDup((const char *)key);
 }
 
-static int JimStringCopyHTKeyCompare(void *privdata, const void *key1, const void *key2)
+__device__ static int JimStringCopyHTKeyCompare(void *privdata, const void *key1, const void *key2)
 {
 	return !_strcmp(key1, key2);
 }
 
-static void JimStringCopyHTKeyDestructor(void *privdata, void *key)
+__device__ static void JimStringCopyHTKeyDestructor(void *privdata, void *key)
 {
 	Jim_Free(key);
 }
 
-static const Jim_HashTableType JimPackageHashTableType = {
-	JimStringCopyHTHashFunction,     /* hash function */
-	JimStringCopyHTDup,              /* key dup */
-	NULL,                            /* val dup */
-	JimStringCopyHTKeyCompare,       /* key compare */
-	JimStringCopyHTKeyDestructor,    /* key destructor */
-	NULL                             /* val destructor */
+__device__ static const Jim_HashTableType JimPackageHashTableType = {
+	JimStringCopyHTHashFunction,     // hash function
+	JimStringCopyHTDup,              // key dup
+	NULL,                            // val dup
+	JimStringCopyHTKeyCompare,       // key compare
+	JimStringCopyHTKeyDestructor,    // key destructor
+	NULL                             // val destructor
 };
 
 typedef struct AssocDataValue
@@ -1046,58 +871,55 @@ typedef struct AssocDataValue
 	void *data;
 } AssocDataValue;
 
-static void JimAssocDataHashTableValueDestructor(void *privdata, void *data)
+__device__ static void JimAssocDataHashTableValueDestructor(void *privdata, void *data)
 {
-	AssocDataValue *assocPtr = (AssocDataValue *) data;
-
+	AssocDataValue *assocPtr = (AssocDataValue *)data;
 	if (assocPtr->delProc != NULL)
 		assocPtr->delProc((Jim_Interp *)privdata, assocPtr->data);
 	Jim_Free(data);
 }
 
 static const Jim_HashTableType JimAssocDataHashTableType = {
-	JimStringCopyHTHashFunction,    /* hash function */
-	JimStringCopyHTDup,             /* key dup */
-	NULL,                           /* val dup */
-	JimStringCopyHTKeyCompare,      /* key compare */
-	JimStringCopyHTKeyDestructor,   /* key destructor */
-	JimAssocDataHashTableValueDestructor        /* val destructor */
+	JimStringCopyHTHashFunction,    // hash function
+	JimStringCopyHTDup,             // key dup
+	NULL,                           // val dup
+	JimStringCopyHTKeyCompare,      // key compare
+	JimStringCopyHTKeyDestructor,   // key destructor
+	JimAssocDataHashTableValueDestructor	// val destructor
 };
 
-/* -----------------------------------------------------------------------------
-* Stack - This is a simple generic stack implementation. It is used for
-* example in the 'expr' expression compiler.
-* ---------------------------------------------------------------------------*/
-void Jim_InitStack(Jim_Stack *stack)
+// -----------------------------------------------------------------------------
+// Stack - This is a simple generic stack implementation. It is used for example in the 'expr' expression compiler.
+// -----------------------------------------------------------------------------
+__device__ void Jim_InitStack(Jim_Stack *stack)
 {
 	stack->len = 0;
 	stack->maxlen = 0;
 	stack->vector = NULL;
 }
 
-void Jim_FreeStack(Jim_Stack *stack)
+__device__ void Jim_FreeStack(Jim_Stack *stack)
 {
 	Jim_Free(stack->vector);
 }
 
-int Jim_StackLen(Jim_Stack *stack)
+__device__ int Jim_StackLen(Jim_Stack *stack)
 {
 	return stack->len;
 }
 
-void Jim_StackPush(Jim_Stack *stack, void *element)
+__device__ void Jim_StackPush(Jim_Stack *stack, void *element)
 {
 	int neededLen = stack->len + 1;
-
 	if (neededLen > stack->maxlen) {
-		stack->maxlen = neededLen < 20 ? 20 : neededLen * 2;
+		stack->maxlen = (neededLen < 20 ? 20 : neededLen * 2);
 		stack->vector = (void **)Jim_Realloc(stack->vector, sizeof(void *) * stack->maxlen);
 	}
 	stack->vector[stack->len] = element;
 	stack->len++;
 }
 
-void *Jim_StackPop(Jim_Stack *stack)
+__device__ void *Jim_StackPop(Jim_Stack *stack)
 {
 	if (stack->len == 0)
 		return NULL;
@@ -1105,101 +927,94 @@ void *Jim_StackPop(Jim_Stack *stack)
 	return stack->vector[stack->len];
 }
 
-void *Jim_StackPeek(Jim_Stack *stack)
+__device__ void *Jim_StackPeek(Jim_Stack *stack)
 {
 	if (stack->len == 0)
 		return NULL;
 	return stack->vector[stack->len - 1];
 }
 
-void Jim_FreeStackElements(Jim_Stack *stack, void (*freeFunc) (void *ptr))
+__device__ void Jim_FreeStackElements(Jim_Stack *stack, void (*freeFunc)(void*ptr))
 {
-	int i;
-
-	for (i = 0; i < stack->len; i++)
+	for (int i = 0; i < stack->len; i++)
 		freeFunc(stack->vector[i]);
 }
 
-/* -----------------------------------------------------------------------------
-* Tcl Parser
-* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
+// Tcl Parser
+// -----------------------------------------------------------------------------
 
-/* Token types */
-#define JIM_TT_NONE    0          /* No token returned */
-#define JIM_TT_STR     1          /* simple string */
-#define JIM_TT_ESC     2          /* string that needs escape chars conversion */
-#define JIM_TT_VAR     3          /* var substitution */
-#define JIM_TT_DICTSUGAR   4      /* Syntax sugar for [dict get], $foo(bar) */
-#define JIM_TT_CMD     5          /* command substitution */
-/* Note: Keep these three together for TOKEN_IS_SEP() */
-#define JIM_TT_SEP     6          /* word separator (white space) */
-#define JIM_TT_EOL     7          /* line separator */
-#define JIM_TT_EOF     8          /* end of script */
+// Token types
+#define JIM_TT_NONE    0          // No token returned
+#define JIM_TT_STR     1          // simple string
+#define JIM_TT_ESC     2          // string that needs escape chars conversion
+#define JIM_TT_VAR     3          // var substitution
+#define JIM_TT_DICTSUGAR   4      // Syntax sugar for [dict get], $foo(bar)
+#define JIM_TT_CMD     5          // command substitution
+// Note: Keep these three together for TOKEN_IS_SEP()
+#define JIM_TT_SEP     6          // word separator (white space)
+#define JIM_TT_EOL     7          // line separator
+#define JIM_TT_EOF     8          // end of script
 
-#define JIM_TT_LINE    9          /* special 'start-of-line' token. arg is # of arguments to the command. -ve if {*} */
-#define JIM_TT_WORD   10          /* special 'start-of-word' token. arg is # of tokens to combine. -ve if {*} */
+#define JIM_TT_LINE    9          // special 'start-of-line' token. arg is # of arguments to the command. -ve if {*}
+#define JIM_TT_WORD   10          // special 'start-of-word' token. arg is # of tokens to combine. -ve if {*}
 
-/* Additional token types needed for expressions */
+// Additional token types needed for expressions
 #define JIM_TT_SUBEXPR_START  11
 #define JIM_TT_SUBEXPR_END    12
 #define JIM_TT_SUBEXPR_COMMA  13
 #define JIM_TT_EXPR_INT       14
 #define JIM_TT_EXPR_DOUBLE    15
+#define JIM_TT_EXPRSUGAR      16  // $(expression)
 
-#define JIM_TT_EXPRSUGAR      16  /* $(expression) */
-
-/* Operator token types start here */
+// Operator token types start here
 #define JIM_TT_EXPR_OP        20
 
 #define TOKEN_IS_SEP(type) (type >= JIM_TT_SEP && type <= JIM_TT_EOF)
 
-/* Parser states */
-#define JIM_PS_DEF 0            /* Default state */
-#define JIM_PS_QUOTE 1          /* Inside "" */
-#define JIM_PS_DICTSUGAR 2      /* Tokenising abc(def) into 4 separate tokens */
+// Parser states
+#define JIM_PS_DEF 0            // Default state
+#define JIM_PS_QUOTE 1          // Inside ""
+#define JIM_PS_DICTSUGAR 2      // Tokenising abc(def) into 4 separate tokens
 
-/**
-* Results of missing quotes, braces, etc. from parsing.
-*/
-struct JimParseMissing {
-	int ch;             /* At end of parse, ' ' if complete or '{', '[', '"', '\\' , '{' if incomplete */
-	int line;           /* Line number starting the missing token */
+// Results of missing quotes, braces, etc. from parsing.
+struct JimParseMissing
+{
+	int ch;             // At end of parse, ' ' if complete or '{', '[', '"', '\\' , '{' if incomplete
+	int line;           // Line number starting the missing token
 };
 
-/* Parser context structure. The same context is used both to parse
-* Tcl scripts and lists. */
+// Parser context structure. The same context is used both to parse Tcl scripts and lists.
 struct JimParserCtx
 {
-	const char *p;              /* Pointer to the point of the program we are parsing */
-	int len;                    /* Remaining length */
-	int linenr;                 /* Current line number */
+	const char *p;              // Pointer to the point of the program we are parsing
+	int len;                    // Remaining length
+	int linenr;                 // Current line number
 	const char *tstart;
-	const char *tend;           /* Returned token is at tstart-tend in 'prg'. */
-	int tline;                  /* Line number of the returned token */
-	int tt;                     /* Token type */
-	int eof;                    /* Non zero if EOF condition is true. */
-	int state;                  /* Parser state */
-	int comment;                /* Non zero if the next chars may be a comment. */
-	struct JimParseMissing missing;   /* Details of any missing quotes, etc. */
+	const char *tend;           // Returned token is at tstart-tend in 'prg'.
+	int tline;                  // Line number of the returned token
+	int tt;                     // Token type
+	int eof;                    // Non zero if EOF condition is true.
+	int state;                  // Parser state
+	int comment;                // Non zero if the next chars may be a comment.
+	struct JimParseMissing missing;   // Details of any missing quotes, etc.
 };
 
-static int JimParseScript(struct JimParserCtx *pc);
-static int JimParseSep(struct JimParserCtx *pc);
-static int JimParseEol(struct JimParserCtx *pc);
-static int JimParseCmd(struct JimParserCtx *pc);
-static int JimParseQuote(struct JimParserCtx *pc);
-static int JimParseVar(struct JimParserCtx *pc);
-static int JimParseBrace(struct JimParserCtx *pc);
-static int JimParseStr(struct JimParserCtx *pc);
-static int JimParseComment(struct JimParserCtx *pc);
-static void JimParseSubCmd(struct JimParserCtx *pc);
-static int JimParseSubQuote(struct JimParserCtx *pc);
-static Jim_Obj *JimParserGetTokenObj(Jim_Interp *interp, struct JimParserCtx *pc);
+__device__ static int JimParseScript(struct JimParserCtx *pc);
+__device__ static int JimParseSep(struct JimParserCtx *pc);
+__device__ static int JimParseEol(struct JimParserCtx *pc);
+__device__ static int JimParseCmd(struct JimParserCtx *pc);
+__device__ static int JimParseQuote(struct JimParserCtx *pc);
+__device__ static int JimParseVar(struct JimParserCtx *pc);
+__device__ static int JimParseBrace(struct JimParserCtx *pc);
+__device__ static int JimParseStr(struct JimParserCtx *pc);
+__device__ static int JimParseComment(struct JimParserCtx *pc);
+__device__ static void JimParseSubCmd(struct JimParserCtx *pc);
+__device__ static int JimParseSubQuote(struct JimParserCtx *pc);
+__device__ static Jim_Obj *JimParserGetTokenObj(Jim_Interp *interp, struct JimParserCtx *pc);
 
-/* Initialize a parser context.
-* 'prg' is a pointer to the program text, linenr is the line
-* number of the first line contained in the program. */
-static void JimParserInit(struct JimParserCtx *pc, const char *prg, int len, int linenr)
+// Initialize a parser context. 'prg' is a pointer to the program text, linenr is the line number of the first line contained in the program.
+__device__ static void JimParserInit(struct JimParserCtx *pc, const char *prg, int len, int linenr)
 {
 	pc->p = prg;
 	pc->len = len;
@@ -1215,9 +1030,9 @@ static void JimParserInit(struct JimParserCtx *pc, const char *prg, int len, int
 	pc->missing.line = linenr;
 }
 
-static int JimParseScript(struct JimParserCtx *pc)
+__device__ static int JimParseScript(struct JimParserCtx *pc)
 {
-	while (1) {                 /* the while is used to reiterate with continue if needed */
+	while (1) { // the while is used to reiterate with continue if needed
 		if (!pc->len) {
 			pc->tstart = pc->p;
 			pc->tend = pc->p - 1;
@@ -1228,9 +1043,8 @@ static int JimParseScript(struct JimParserCtx *pc)
 		}
 		switch (*(pc->p)) {
 		case '\\':
-			if (*(pc->p + 1) == '\n' && pc->state == JIM_PS_DEF) {
+			if (*(pc->p + 1) == '\n' && pc->state == JIM_PS_DEF)
 				return JimParseSep(pc);
-			}
 			pc->comment = 0;
 			return JimParseStr(pc);
 		case ' ':
@@ -1253,7 +1067,7 @@ static int JimParseScript(struct JimParserCtx *pc)
 		case '$':
 			pc->comment = 0;
 			if (JimParseVar(pc) == JIM_ERR) {
-				/* An orphan $. Create as a separate token */
+				// An orphan $. Create as a separate token
 				pc->tstart = pc->tend = pc->p++;
 				pc->len--;
 				pc->tt = JIM_TT_ESC;
@@ -1273,14 +1087,13 @@ static int JimParseScript(struct JimParserCtx *pc)
 	}
 }
 
-static int JimParseSep(struct JimParserCtx *pc)
+__device__ static int JimParseSep(struct JimParserCtx *pc)
 {
 	pc->tstart = pc->p;
 	pc->tline = pc->linenr;
-	while (isspace(UCHAR(*pc->p)) || (*pc->p == '\\' && *(pc->p + 1) == '\n')) {
-		if (*pc->p == '\n') {
+	while (_isspace(*pc->p) || (*pc->p == '\\' && *(pc->p + 1) == '\n')) {
+		if (*pc->p == '\n')
 			break;
-		}
 		if (*pc->p == '\\') {
 			pc->p++;
 			pc->len--;
@@ -1294,11 +1107,11 @@ static int JimParseSep(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-static int JimParseEol(struct JimParserCtx *pc)
+__device__ static int JimParseEol(struct JimParserCtx *pc)
 {
 	pc->tstart = pc->p;
 	pc->tline = pc->linenr;
-	while (isspace(UCHAR(*pc->p)) || *pc->p == ';') {
+	while (_isspace(*pc->p) || *pc->p == ';') {
 		if (*pc->p == '\n')
 			pc->linenr++;
 		pc->p++;
@@ -1331,34 +1144,26 @@ static int JimParseEol(struct JimParserCtx *pc)
 ** For everything, backslash escapes the next char, newline increments current line
 */
 
-/**
-* Parses a braced expression starting at pc->p.
-*
-* Positions the parser at the end of the braced expression,
-* sets pc->tend and possibly pc->missing.
-*/
-static void JimParseSubBrace(struct JimParserCtx *pc)
+// Parses a braced expression starting at pc->p.
+// Positions the parser at the end of the braced expression, sets pc->tend and possibly pc->missing.
+__device__ static void JimParseSubBrace(struct JimParserCtx *pc)
 {
 	int level = 1;
-
-	/* Skip the brace */
+	// Skip the brace
 	pc->p++;
 	pc->len--;
 	while (pc->len) {
 		switch (*pc->p) {
 		case '\\':
 			if (pc->len > 1) {
-				if (*++pc->p == '\n') {
+				if (*++pc->p == '\n')
 					pc->linenr++;
-				}
 				pc->len--;
 			}
 			break;
-
 		case '{':
 			level++;
 			break;
-
 		case '}':
 			if (--level == 0) {
 				pc->tend = pc->p - 1;
@@ -1367,7 +1172,6 @@ static void JimParseSubBrace(struct JimParserCtx *pc)
 				return;
 			}
 			break;
-
 		case '\n':
 			pc->linenr++;
 			break;
@@ -1380,51 +1184,38 @@ static void JimParseSubBrace(struct JimParserCtx *pc)
 	pc->tend = pc->p - 1;
 }
 
-/**
-* Parses a quoted expression starting at pc->p.
-*
-* Positions the parser at the end of the quoted expression,
-* sets pc->tend and possibly pc->missing.
-*
-* Returns the type of the token of the string,
-* either JIM_TT_ESC (if it contains values which need to be [subst]ed)
-* or JIM_TT_STR.
-*/
-static int JimParseSubQuote(struct JimParserCtx *pc)
+// Parses a quoted expression starting at pc->p.
+// Positions the parser at the end of the quoted expression, sets pc->tend and possibly pc->missing.
+// Returns the type of the token of the string, either JIM_TT_ESC (if it contains values which need to be [subst]ed) or JIM_TT_STR.
+__device__ static int JimParseSubQuote(struct JimParserCtx *pc)
 {
 	int tt = JIM_TT_STR;
 	int line = pc->tline;
-
-	/* Skip the quote */
+	// Skip the quote
 	pc->p++;
 	pc->len--;
 	while (pc->len) {
 		switch (*pc->p) {
 		case '\\':
 			if (pc->len > 1) {
-				if (*++pc->p == '\n') {
+				if (*++pc->p == '\n')
 					pc->linenr++;
-				}
 				pc->len--;
 				tt = JIM_TT_ESC;
 			}
 			break;
-
 		case '"':
 			pc->tend = pc->p - 1;
 			pc->p++;
 			pc->len--;
 			return tt;
-
 		case '[':
 			JimParseSubCmd(pc);
 			tt = JIM_TT_ESC;
 			continue;
-
 		case '\n':
 			pc->linenr++;
 			break;
-
 		case '$':
 			tt = JIM_TT_ESC;
 			break;
@@ -1438,36 +1229,28 @@ static int JimParseSubQuote(struct JimParserCtx *pc)
 	return tt;
 }
 
-/**
-* Parses a [command] expression starting at pc->p.
-*
-* Positions the parser at the end of the command expression,
-* sets pc->tend and possibly pc->missing.
-*/
-static void JimParseSubCmd(struct JimParserCtx *pc)
+// Parses a [command] expression starting at pc->p.
+// Positions the parser at the end of the command expression, sets pc->tend and possibly pc->missing.
+__device__ static void JimParseSubCmd(struct JimParserCtx *pc)
 {
 	int level = 1;
 	int startofword = 1;
 	int line = pc->tline;
-
-	/* Skip the bracket */
+	// Skip the bracket
 	pc->p++;
 	pc->len--;
 	while (pc->len) {
 		switch (*pc->p) {
 		case '\\':
 			if (pc->len > 1) {
-				if (*++pc->p == '\n') {
+				if (*++pc->p == '\n')
 					pc->linenr++;
-				}
 				pc->len--;
 			}
 			break;
-
 		case '[':
 			level++;
 			break;
-
 		case ']':
 			if (--level == 0) {
 				pc->tend = pc->p - 1;
@@ -1476,24 +1259,21 @@ static void JimParseSubCmd(struct JimParserCtx *pc)
 				return;
 			}
 			break;
-
 		case '"':
 			if (startofword) {
 				JimParseSubQuote(pc);
 				continue;
 			}
 			break;
-
 		case '{':
 			JimParseSubBrace(pc);
 			startofword = 0;
 			continue;
-
 		case '\n':
 			pc->linenr++;
 			break;
 		}
-		startofword = isspace(UCHAR(*pc->p));
+		startofword = _isspace(*pc->p);
 		pc->p++;
 		pc->len--;
 	}
@@ -1502,7 +1282,7 @@ static void JimParseSubCmd(struct JimParserCtx *pc)
 	pc->tend = pc->p - 1;
 }
 
-static int JimParseBrace(struct JimParserCtx *pc)
+__device__ static int JimParseBrace(struct JimParserCtx *pc)
 {
 	pc->tstart = pc->p + 1;
 	pc->tline = pc->linenr;
@@ -1511,7 +1291,7 @@ static int JimParseBrace(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-static int JimParseCmd(struct JimParserCtx *pc)
+__device__ static int JimParseCmd(struct JimParserCtx *pc)
 {
 	pc->tstart = pc->p + 1;
 	pc->tline = pc->linenr;
@@ -1520,7 +1300,7 @@ static int JimParseCmd(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-static int JimParseQuote(struct JimParserCtx *pc)
+__device__ static int JimParseQuote(struct JimParserCtx *pc)
 {
 	pc->tstart = pc->p + 1;
 	pc->tline = pc->linenr;
@@ -1528,21 +1308,19 @@ static int JimParseQuote(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-static int JimParseVar(struct JimParserCtx *pc)
+__device__ static int JimParseVar(struct JimParserCtx *pc)
 {
-	/* skip the $ */
+	// skip the $
 	pc->p++;
 	pc->len--;
-
 #ifdef EXPRSUGAR_BRACKET
 	if (*pc->p == '[') {
-		/* Parse $[...] expr shorthand syntax */
+		// Parse $[...] expr shorthand syntax
 		JimParseCmd(pc);
 		pc->tt = JIM_TT_EXPRSUGAR;
 		return JIM_OK;
 	}
 #endif
-
 	pc->tstart = pc->p;
 	pc->tt = JIM_TT_VAR;
 	pc->tline = pc->linenr;
@@ -1552,9 +1330,8 @@ static int JimParseVar(struct JimParserCtx *pc)
 		pc->len--;
 
 		while (pc->len && *pc->p != '}') {
-			if (*pc->p == '\n') {
+			if (*pc->p == '\n')
 				pc->linenr++;
-			}
 			pc->p++;
 			pc->len--;
 		}
@@ -1566,7 +1343,7 @@ static int JimParseVar(struct JimParserCtx *pc)
 	}
 	else {
 		while (1) {
-			/* Skip double colon, but not single colon! */
+			// Skip double colon, but not single colon!
 			if (pc->p[0] == ':' && pc->p[1] == ':') {
 				while (*pc->p == ':') {
 					pc->p++;
@@ -1574,23 +1351,19 @@ static int JimParseVar(struct JimParserCtx *pc)
 				}
 				continue;
 			}
-			/* Note that any char >= 0x80 must be part of a utf-8 char.
-			* We consider all unicode points outside of ASCII as letters
-			*/
-			if (isalnum(UCHAR(*pc->p)) || *pc->p == '_' || UCHAR(*pc->p) >= 0x80) {
+			// Note that any char >= 0x80 must be part of a utf-8 char. We consider all unicode points outside of ASCII as letters
+			if (_isalnum(*pc->p) || *pc->p == '_' || (unsigned char)(*pc->p) >= 0x80) {
 				pc->p++;
 				pc->len--;
 				continue;
 			}
 			break;
 		}
-		/* Parse [dict get] syntax sugar. */
+		// Parse [dict get] syntax sugar.
 		if (*pc->p == '(') {
 			int count = 1;
 			const char *paren = NULL;
-
 			pc->tt = JIM_TT_DICTSUGAR;
-
 			while (count && pc->len) {
 				pc->p++;
 				pc->len--;
@@ -1598,9 +1371,8 @@ static int JimParseVar(struct JimParserCtx *pc)
 					pc->p++;
 					pc->len--;
 				}
-				else if (*pc->p == '(') {
+				else if (*pc->p == '(')
 					count++;
-				}
 				else if (*pc->p == ')') {
 					paren = pc->p;
 					count--;
@@ -1611,7 +1383,7 @@ static int JimParseVar(struct JimParserCtx *pc)
 				pc->len--;
 			}
 			else if (paren) {
-				/* Did not find a matching paren. Back up */
+				// Did not find a matching paren. Back up
 				paren++;
 				pc->len += (int)(pc->p - paren);
 				pc->p = paren;
@@ -1624,10 +1396,7 @@ static int JimParseVar(struct JimParserCtx *pc)
 		}
 		pc->tend = pc->p - 1;
 	}
-	/* Check if we parsed just the '$' character.
-	* That's not a variable so an error is returned
-	* to tell the state machine to consider this '$' just
-	* a string. */
+	// Check if we parsed just the '$' character. That's not a variable so an error is returned to tell the state machine to consider this '$' just a string. */
 	if (pc->tstart == pc->p) {
 		pc->p--;
 		pc->len++;
@@ -1636,29 +1405,26 @@ static int JimParseVar(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-static int JimParseStr(struct JimParserCtx *pc)
+__device__ static int JimParseStr(struct JimParserCtx *pc)
 {
-	if (pc->tt == JIM_TT_SEP || pc->tt == JIM_TT_EOL ||
-		pc->tt == JIM_TT_NONE || pc->tt == JIM_TT_STR) {
-			/* Starting a new word */
-			if (*pc->p == '{') {
-				return JimParseBrace(pc);
-			}
-			if (*pc->p == '"') {
-				pc->state = JIM_PS_QUOTE;
-				pc->p++;
-				pc->len--;
-				/* In case the end quote is missing */
-				pc->missing.line = pc->tline;
-			}
+	if (pc->tt == JIM_TT_SEP || pc->tt == JIM_TT_EOL || pc->tt == JIM_TT_NONE || pc->tt == JIM_TT_STR) {
+		// Starting a new word
+		if (*pc->p == '{')
+			return JimParseBrace(pc);
+		if (*pc->p == '"') {
+			pc->state = JIM_PS_QUOTE;
+			pc->p++;
+			pc->len--;
+			// In case the end quote is missing
+			pc->missing.line = pc->tline;
+		}
 	}
 	pc->tstart = pc->p;
 	pc->tline = pc->linenr;
 	while (1) {
 		if (pc->len == 0) {
-			if (pc->state == JIM_PS_QUOTE) {
+			if (pc->state == JIM_PS_QUOTE)
 				pc->missing.ch = '"';
-			}
 			pc->tend = pc->p - 1;
 			pc->tt = JIM_TT_ESC;
 			return JIM_OK;
@@ -1671,27 +1437,24 @@ static int JimParseStr(struct JimParserCtx *pc)
 				return JIM_OK;
 			}
 			if (pc->len >= 2) {
-				if (*(pc->p + 1) == '\n') {
+				if (*(pc->p + 1) == '\n')
 					pc->linenr++;
-				}
 				pc->p++;
 				pc->len--;
 			}
-			else if (pc->len == 1) {
-				/* End of script with trailing backslash */
+			// End of script with trailing backslash
+			else if (pc->len == 1)
 				pc->missing.ch = '\\';
-			}
 			break;
 		case '(':
-			/* If the following token is not '$' just keep going */
-			if (pc->len > 1 && pc->p[1] != '$') {
+			// If the following token is not '$' just keep going
+			if (pc->len > 1 && pc->p[1] != '$')
 				break;
-			}
 		case ')':
-			/* Only need a separate ')' token if the previous was a var */
+			// Only need a separate ')' token if the previous was a var
 			if (*pc->p == '(' || pc->tt == JIM_TT_VAR) {
 				if (pc->p == pc->tstart) {
-					/* At the start of the token, so just return this char */
+					// At the start of the token, so just return this char
 					pc->p++;
 					pc->len--;
 				}
@@ -1700,7 +1463,6 @@ static int JimParseStr(struct JimParserCtx *pc)
 				return JIM_OK;
 			}
 			break;
-
 		case '$':
 		case '[':
 			pc->tend = pc->p - 1;
@@ -1717,9 +1479,8 @@ static int JimParseStr(struct JimParserCtx *pc)
 				pc->tt = JIM_TT_ESC;
 				return JIM_OK;
 			}
-			else if (*pc->p == '\n') {
+			else if (*pc->p == '\n')
 				pc->linenr++;
-			}
 			break;
 		case '"':
 			if (pc->state == JIM_PS_QUOTE) {
@@ -1735,10 +1496,10 @@ static int JimParseStr(struct JimParserCtx *pc)
 		pc->p++;
 		pc->len--;
 	}
-	return JIM_OK;              /* unreached */
+	return JIM_OK; // unreached
 }
 
-static int JimParseComment(struct JimParserCtx *pc)
+__device__ static int JimParseComment(struct JimParserCtx *pc)
 {
 	while (*pc->p) {
 		if (*pc->p == '\\') {
@@ -1748,9 +1509,8 @@ static int JimParseComment(struct JimParserCtx *pc)
 				pc->missing.ch = '\\';
 				return JIM_OK;
 			}
-			if (*pc->p == '\n') {
+			if (*pc->p == '\n')
 				pc->linenr++;
-			}
 		}
 		else if (*pc->p == '\n') {
 			pc->p++;
@@ -1764,40 +1524,30 @@ static int JimParseComment(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-/* xdigitval and odigitval are helper functions for JimEscape() */
-static int xdigitval(int c)
+// xdigitval and odigitval are helper functions for JimEscape()
+__device__ static int xdigitval(int c)
 {
-	if (c >= '0' && c <= '9')
-		return c - '0';
-	if (c >= 'a' && c <= 'f')
-		return c - 'a' + 10;
-	if (c >= 'A' && c <= 'F')
-		return c - 'A' + 10;
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
 	return -1;
 }
 
-static int odigitval(int c)
+__device__ static int odigitval(int c)
 {
-	if (c >= '0' && c <= '7')
-		return c - '0';
+	if (c >= '0' && c <= '7') return c - '0';
 	return -1;
 }
 
-/* Perform Tcl escape substitution of 's', storing the result
-* string into 'dest'. The escaped string is guaranteed to
-* be the same length or shorted than the source string.
-* Slen is the length of the string at 's', if it's -1 the string
-* length will be calculated by the function.
-*
-* The function returns the length of the resulting string. */
-static int JimEscape(char *dest, const char *s, int slen)
+// Perform Tcl escape substitution of 's', storing the result string into 'dest'. The escaped string is guaranteed to
+// be the same length or shorted than the source string. Slen is the length of the string at 's', if it's -1 the string length will be calculated by the function.
+// The function returns the length of the resulting string.
+__device__ static int JimEscape(char *dest, const char *s, int slen)
 {
 	char *p = dest;
 	int i, len;
-
 	if (slen == -1)
 		slen = _strlen(s);
-
 	for (i = 0; i < slen; i++) {
 		switch (s[i]) {
 		case '\\':
@@ -1829,64 +1579,54 @@ static int JimEscape(char *dest, const char *s, int slen)
 			case 'u':
 			case 'U':
 			case 'x':
-				/* A unicode or hex sequence.
-				* \x Expect 1-2 hex chars and convert to hex.
-				* \u Expect 1-4 hex chars and convert to utf-8.
-				* \U Expect 1-8 hex chars and convert to utf-8.
-				* \u{NNN} supports 1-6 hex chars and convert to utf-8.
-				* An invalid sequence means simply the escaped char.
-				*/
+				// A unicode or hex sequence.
+				// \x Expect 1-2 hex chars and convert to hex.
+				// \u Expect 1-4 hex chars and convert to utf-8.
+				// \U Expect 1-8 hex chars and convert to utf-8.
+				// \u{NNN} supports 1-6 hex chars and convert to utf-8.
+				// An invalid sequence means simply the escaped char.
 				{
 					unsigned val = 0;
 					int k;
 					int maxchars = 2;
-
 					i++;
-
-					if (s[i] == 'U') {
+					if (s[i] == 'U')
 						maxchars = 8;
-					}
 					else if (s[i] == 'u') {
 						if (s[i + 1] == '{') {
 							maxchars = 6;
 							i++;
 						}
-						else {
+						else
 							maxchars = 4;
-						}
 					}
-
 					for (k = 0; k < maxchars; k++) {
 						int c = xdigitval(s[i + k + 1]);
-						if (c == -1) {
+						if (c == -1)
 							break;
-						}
 						val = (val << 4) | c;
 					}
-					/* The \u{nnn} syntax supports up to 21 bit codepoints. */
+					// The \u{nnn} syntax supports up to 21 bit codepoints.
 					if (s[i] == '{') {
 						if (k == 0 || val > 0x1fffff || s[i + k + 1] != '}') {
-							/* Back up */
+							// Back up
 							i--;
 							k = 0;
 						}
-						else {
-							/* Skip the closing brace */
+						// Skip the closing brace
+						else
 							k++;
-						}
 					}
 					if (k) {
-						/* Got a valid sequence, so convert */
-						if (s[i] == 'x') {
+						// Got a valid sequence, so convert
+						if (s[i] == 'x')
 							*p++ = val;
-						}
-						else {
+						else
 							p += utf8_fromunicode(p, val);
-						}
 						i += k;
 						break;
 					}
-					/* Not a valid codepoint, just an escaped char */
+					// Not a valid codepoint, just an escaped char
 					*p++ = s[i];
 				}
 				break;
@@ -1899,11 +1639,9 @@ static int JimEscape(char *dest, const char *s, int slen)
 				i++;
 				break;
 			case '\n':
-				/* Replace all spaces and tabs after backslash newline with a single space*/
+				// Replace all spaces and tabs after backslash newline with a single space
 				*p++ = ' ';
-				do {
-					i++;
-				} while (s[i + 1] == ' ' || s[i + 1] == '\t');
+				do { i++; } while (s[i + 1] == ' ' || s[i + 1] == '\t');
 				break;
 			case '0':
 			case '1':
@@ -1913,11 +1651,10 @@ static int JimEscape(char *dest, const char *s, int slen)
 			case '5':
 			case '6':
 			case '7':
-				/* octal escape */
+				// octal escape
 				{
 					int val = 0;
 					int c = odigitval(s[i + 1]);
-
 					val = c;
 					c = odigitval(s[i + 2]);
 					if (c == -1) {
@@ -1953,34 +1690,20 @@ static int JimEscape(char *dest, const char *s, int slen)
 	return len;
 }
 
-/* Returns a dynamically allocated copy of the current token in the
-* parser context. The function performs conversion of escapes if
-* the token is of type JIM_TT_ESC.
-*
-* Note that after the conversion, tokens that are grouped with
-* braces in the source code, are always recognizable from the
-* identical string obtained in a different way from the type.
-*
-* For example the string:
-*
-* {*}$a
-*
-* will return as first token "*", of type JIM_TT_STR
-*
-* While the string:
-*
-* *$a
-*
-* will return as first token "*", of type JIM_TT_ESC
-*/
-static Jim_Obj *JimParserGetTokenObj(Jim_Interp *interp, struct JimParserCtx *pc)
+// Returns a dynamically allocated copy of the current token in the parser context. The function performs conversion of escapes if the token is of type JIM_TT_ESC.
+// Note that after the conversion, tokens that are grouped with braces in the source code, are always recognizable from the identical string obtained in a different way from the type.
+// For example the string:
+// {*}$a
+// will return as first token "*", of type JIM_TT_STR
+// While the string:
+// *$a
+// will return as first token "*", of type JIM_TT_ESC
+__device__ static Jim_Obj *JimParserGetTokenObj(Jim_Interp *interp, struct JimParserCtx *pc)
 {
-	const char *start, *end;
 	char *token;
 	int len;
-
-	start = pc->tstart;
-	end = pc->tend;
+	const char *start = pc->tstart;
+	const char *end = pc->tend;
 	if (start > end) {
 		len = 0;
 		token = (char *)Jim_Alloc(1);
@@ -1990,71 +1713,57 @@ static Jim_Obj *JimParserGetTokenObj(Jim_Interp *interp, struct JimParserCtx *pc
 		len = (int)(end - start) + 1;
 		token = (char *)Jim_Alloc(len + 1);
 		if (pc->tt != JIM_TT_ESC) {
-			/* No escape conversion needed? Just copy it. */
-			memcpy(token, start, len);
+			// No escape conversion needed? Just copy it.
+			_memcpy(token, start, len);
 			token[len] = '\0';
 		}
-		else {
-			/* Else convert the escape chars. */
+		// Else convert the escape chars.
+		else
 			len = JimEscape(token, start, len);
-		}
 	}
-
 	return Jim_NewStringObjNoAlloc(interp, token, len);
 }
 
-/* Parses the given string to determine if it represents a complete script.
-*
-* This is useful for interactive shells implementation, for [info complete].
-*
-* If 'stateCharPtr' != NULL, the function stores ' ' on complete script,
-* '{' on scripts incomplete missing one or more '}' to be balanced.
-* '[' on scripts incomplete missing one or more ']' to be balanced.
-* '"' on scripts incomplete missing a '"' char.
-* '\\' on scripts with a trailing backslash.
-*
-* If the script is complete, 1 is returned, otherwise 0.
-*/
-int Jim_ScriptIsComplete(const char *s, int len, char *stateCharPtr)
+// Parses the given string to determine if it represents a complete script.
+// This is useful for interactive shells implementation, for [info complete].
+// If 'stateCharPtr' != NULL, the function stores ' ' on complete script,
+// '{' on scripts incomplete missing one or more '}' to be balanced.
+// '[' on scripts incomplete missing one or more ']' to be balanced.
+// '"' on scripts incomplete missing a '"' char.
+// '\\' on scripts with a trailing backslash.
+// If the script is complete, 1 is returned, otherwise 0.
+__device__ int Jim_ScriptIsComplete(const char *s, int len, char *stateCharPtr)
 {
 	struct JimParserCtx parser;
-
 	JimParserInit(&parser, s, len, 1);
-	while (!parser.eof) {
+	while (!parser.eof)
 		JimParseScript(&parser);
-	}
-	if (stateCharPtr) {
+	if (stateCharPtr)
 		*stateCharPtr = parser.missing.ch;
-	}
-	return parser.missing.ch == ' ';
+	return (parser.missing.ch == ' ');
 }
 
-/* -----------------------------------------------------------------------------
-* Tcl Lists parsing
-* ---------------------------------------------------------------------------*/
-static int JimParseListSep(struct JimParserCtx *pc);
-static int JimParseListStr(struct JimParserCtx *pc);
-static int JimParseListQuote(struct JimParserCtx *pc);
+// -----------------------------------------------------------------------------
+// Tcl Lists parsing
+// -----------------------------------------------------------------------------
+__device__ static int JimParseListSep(struct JimParserCtx *pc);
+__device__ static int JimParseListStr(struct JimParserCtx *pc);
+__device__ static int JimParseListQuote(struct JimParserCtx *pc);
 
-static int JimParseList(struct JimParserCtx *pc)
+__device__ static int JimParseList(struct JimParserCtx *pc)
 {
-	if (isspace(UCHAR(*pc->p))) {
+	if (_isspace(*pc->p))
 		return JimParseListSep(pc);
-	}
 	switch (*pc->p) {
 	case '"':
 		return JimParseListQuote(pc);
-
 	case '{':
 		return JimParseBrace(pc);
-
 	default:
-		if (pc->len) {
+		if (pc->len)
 			return JimParseListStr(pc);
-		}
 		break;
 	}
-
 	pc->tstart = pc->tend = pc->p;
 	pc->tline = pc->linenr;
 	pc->tt = JIM_TT_EOL;
@@ -2062,14 +1771,13 @@ static int JimParseList(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-static int JimParseListSep(struct JimParserCtx *pc)
+__device__ static int JimParseListSep(struct JimParserCtx *pc)
 {
 	pc->tstart = pc->p;
 	pc->tline = pc->linenr;
-	while (isspace(UCHAR(*pc->p))) {
-		if (*pc->p == '\n') {
+	while (_isspace(*pc->p)) {
+		if (*pc->p == '\n')
 			pc->linenr++;
-		}
 		pc->p++;
 		pc->len--;
 	}
@@ -2078,21 +1786,19 @@ static int JimParseListSep(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-static int JimParseListQuote(struct JimParserCtx *pc)
+__device__ static int JimParseListQuote(struct JimParserCtx *pc)
 {
 	pc->p++;
 	pc->len--;
-
 	pc->tstart = pc->p;
 	pc->tline = pc->linenr;
 	pc->tt = JIM_TT_STR;
-
 	while (pc->len) {
 		switch (*pc->p) {
 		case '\\':
 			pc->tt = JIM_TT_ESC;
 			if (--pc->len == 0) {
-				/* Trailing backslash */
+				// Trailing backslash
 				pc->tend = pc->p;
 				return JIM_OK;
 			}
@@ -2110,25 +1816,23 @@ static int JimParseListQuote(struct JimParserCtx *pc)
 		pc->p++;
 		pc->len--;
 	}
-
 	pc->tend = pc->p - 1;
 	return JIM_OK;
 }
 
-static int JimParseListStr(struct JimParserCtx *pc)
+__device__ static int JimParseListStr(struct JimParserCtx *pc)
 {
 	pc->tstart = pc->p;
 	pc->tline = pc->linenr;
 	pc->tt = JIM_TT_STR;
-
 	while (pc->len) {
-		if (isspace(UCHAR(*pc->p))) {
+		if (_isspace(*pc->p)) {
 			pc->tend = pc->p - 1;
 			return JIM_OK;
 		}
 		if (*pc->p == '\\') {
 			if (--pc->len == 0) {
-				/* Trailing backslash */
+				// Trailing backslash
 				pc->tend = pc->p;
 				return JIM_OK;
 			}
@@ -2142,61 +1846,49 @@ static int JimParseListStr(struct JimParserCtx *pc)
 	return JIM_OK;
 }
 
-/* -----------------------------------------------------------------------------
-* Jim_Obj related functions
-* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
+// Jim_Obj related functions
+// -----------------------------------------------------------------------------
 
-/* Return a new initialized object. */
-Jim_Obj *Jim_NewObj(Jim_Interp *interp)
+// Return a new initialized object.
+__device__ Jim_Obj *Jim_NewObj(Jim_Interp *interp)
 {
 	Jim_Obj *objPtr;
-
-	/* -- Check if there are objects in the free list -- */
+	// Check if there are objects in the free list
 	if (interp->freeList != NULL) {
-		/* -- Unlink the object from the free list -- */
+		// Unlink the object from the free list
 		objPtr = interp->freeList;
 		interp->freeList = objPtr->nextObjPtr;
 	}
-	else {
-		/* -- No ready to use objects: allocate a new one -- */
+	// No ready to use objects: allocate a new one
+	else
 		objPtr = (Jim_Obj *)Jim_Alloc(sizeof(*objPtr));
-	}
 
-	/* Object is returned with refCount of 0. Every
-	* kind of GC implemented should take care to don't try
-	* to scan objects with refCount == 0. */
+	// Object is returned with refCount of 0. Every kind of GC implemented should take care to don't try to scan objects with refCount == 0.
 	objPtr->refCount = 0;
-	/* All the other fields are left not initialized to save time.
-	* The caller will probably want to set them to the right
-	* value anyway. */
+	// All the other fields are left not initialized to save time. The caller will probably want to set them to the right value anyway.
 
-	/* -- Put the object into the live list -- */
+	// Put the object into the live list
 	objPtr->prevObjPtr = NULL;
 	objPtr->nextObjPtr = interp->liveList;
 	if (interp->liveList)
 		interp->liveList->prevObjPtr = objPtr;
 	interp->liveList = objPtr;
-
 	return objPtr;
 }
 
-/* Free an object. Actually objects are never freed, but
-* just moved to the free objects list, where they will be
-* reused by Jim_NewObj(). */
-void Jim_FreeObj(Jim_Interp *interp, Jim_Obj *objPtr)
+// Free an object. Actually objects are never freed, but just moved to the free objects list, where they will be reused by Jim_NewObj().
+__device__ void Jim_FreeObj(Jim_Interp *interp, Jim_Obj *objPtr)
 {
-	/* Check if the object was already freed, panic. */
-	JimPanic((objPtr->refCount != 0, "!!!Object %p freed with bad refcount %d, type=%s", objPtr,
-		objPtr->refCount, objPtr->typePtr ? objPtr->typePtr->name : "<none>"));
-
-	/* Free the internal representation */
+	// Check if the object was already freed, panic.
+	JimPanic((objPtr->refCount != 0, "!!!Object %p freed with bad refcount %d, type=%s", objPtr, objPtr->refCount, objPtr->typePtr ? objPtr->typePtr->name : "<none>"));
+	// Free the internal representation
 	Jim_FreeIntRep(interp, objPtr);
-	/* Free the string representation */
-	if (objPtr->bytes != NULL) {
+	// Free the string representation
+	if (objPtr->bytes != NULL)
 		if (objPtr->bytes != JimEmptyStringRep)
 			Jim_Free(objPtr->bytes);
-	}
-	/* Unlink the object from the live objects list */
+	// Unlink the object from the live objects list
 	if (objPtr->prevObjPtr)
 		objPtr->prevObjPtr->nextObjPtr = objPtr->nextObjPtr;
 	if (objPtr->nextObjPtr)
@@ -2206,7 +1898,7 @@ void Jim_FreeObj(Jim_Interp *interp, Jim_Obj *objPtr)
 #ifdef JIM_DISABLE_OBJECT_POOL
 	Jim_Free(objPtr);
 #else
-	/* Link the object into the free objects list */
+	// Link the object into the free objects list
 	objPtr->prevObjPtr = NULL;
 	objPtr->nextObjPtr = interp->freeList;
 	if (interp->freeList)
@@ -2216,28 +1908,23 @@ void Jim_FreeObj(Jim_Interp *interp, Jim_Obj *objPtr)
 #endif
 }
 
-/* Invalidate the string representation of an object. */
-void Jim_InvalidateStringRep(Jim_Obj *objPtr)
+// Invalidate the string representation of an object.
+__device__ void Jim_InvalidateStringRep(Jim_Obj *objPtr)
 {
-	if (objPtr->bytes != NULL) {
+	if (objPtr->bytes != NULL)
 		if (objPtr->bytes != JimEmptyStringRep)
 			Jim_Free(objPtr->bytes);
-	}
 	objPtr->bytes = NULL;
 }
 
-/* Duplicate an object. The returned object has refcount = 0. */
-Jim_Obj *Jim_DuplicateObj(Jim_Interp *interp, Jim_Obj *objPtr)
+// Duplicate an object. The returned object has refcount = 0.
+__device__ Jim_Obj *Jim_DuplicateObj(Jim_Interp *interp, Jim_Obj *objPtr)
 {
-	Jim_Obj *dupPtr;
-
-	dupPtr = Jim_NewObj(interp);
-	if (objPtr->bytes == NULL) {
-		/* Object does not have a valid string representation. */
-		dupPtr->bytes = NULL;
-	}
+	Jim_Obj *dupPtr = Jim_NewObj(interp);
+	if (objPtr->bytes == NULL)
+		dupPtr->bytes = NULL; // Object does not have a valid string representation.
 	else if (objPtr->length == 0) {
-		/* Zero length, so don't even bother with the type-specific dup, since all zero length objects look the same */
+		// Zero length, so don't even bother with the type-specific dup, since all zero length objects look the same
 		dupPtr->bytes = JimEmptyStringRep;
 		dupPtr->length = 0;
 		dupPtr->typePtr = NULL;
@@ -2246,32 +1933,25 @@ Jim_Obj *Jim_DuplicateObj(Jim_Interp *interp, Jim_Obj *objPtr)
 	else {
 		dupPtr->bytes = (char *)Jim_Alloc(objPtr->length + 1);
 		dupPtr->length = objPtr->length;
-		/* Copy the null byte too */
-		memcpy(dupPtr->bytes, objPtr->bytes, objPtr->length + 1);
+		_memcpy(dupPtr->bytes, objPtr->bytes, objPtr->length + 1); // Copy the null byte too
 	}
 
-	/* By default, the new object has the same type as the old object */
+	// By default, the new object has the same type as the old object
 	dupPtr->typePtr = objPtr->typePtr;
 	if (objPtr->typePtr != NULL) {
-		if (objPtr->typePtr->dupIntRepProc == NULL) {
+		if (objPtr->typePtr->dupIntRepProc == NULL)
 			dupPtr->internalRep = objPtr->internalRep;
-		}
-		else {
-			/* The dup proc may set a different type, e.g. NULL */
-			objPtr->typePtr->dupIntRepProc(interp, objPtr, dupPtr);
-		}
+		else
+			objPtr->typePtr->dupIntRepProc(interp, objPtr, dupPtr); // The dup proc may set a different type, e.g. NULL
 	}
 	return dupPtr;
 }
 
-/* Return the string representation for objPtr. If the object's
-* string representation is invalid, calls the updateStringProc method to create
-* a new one from the internal representation of the object.
-*/
-const char *Jim_GetString(Jim_Obj *objPtr, int *lenPtr)
+// Return the string representation for objPtr. If the object's string representation is invalid, calls the updateStringProc method to create a new one from the internal representation of the object.
+__device__ const char *Jim_GetString(Jim_Obj *objPtr, int *lenPtr)
 {
 	if (objPtr->bytes == NULL) {
-		/* Invalid string repr. Generate it. */
+		// Invalid string repr. Generate it.
 		JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
 		objPtr->typePtr->updateStringProc(objPtr);
 	}
@@ -2280,22 +1960,22 @@ const char *Jim_GetString(Jim_Obj *objPtr, int *lenPtr)
 	return objPtr->bytes;
 }
 
-/* Just returns the length of the object's string rep */
-int Jim_Length(Jim_Obj *objPtr)
+// Just returns the length of the object's string rep
+__device__ int Jim_Length(Jim_Obj *objPtr)
 {
 	if (objPtr->bytes == NULL) {
-		/* Invalid string repr. Generate it. */
+		// Invalid string repr. Generate it.
 		JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
 		objPtr->typePtr->updateStringProc(objPtr);
 	}
 	return objPtr->length;
 }
 
-/* Just returns object's string rep */
-const char *Jim_String(Jim_Obj *objPtr)
+// Just returns object's string rep
+__device__ const char *Jim_String(Jim_Obj *objPtr)
 {
 	if (objPtr->bytes == NULL) {
-		/* Invalid string repr. Generate it. */
+		// Invalid string repr. Generate it.
 		JimPanic((objPtr->typePtr == NULL, "UpdateStringProc called against typeless value."));
 		JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
 		objPtr->typePtr->updateStringProc(objPtr);
@@ -2303,16 +1983,16 @@ const char *Jim_String(Jim_Obj *objPtr)
 	return objPtr->bytes;
 }
 
-static void JimSetStringBytes(Jim_Obj *objPtr, const char *str)
+__device__ static void JimSetStringBytes(Jim_Obj *objPtr, const char *str)
 {
 	objPtr->bytes = Jim_StrDup(str);
 	objPtr->length = _strlen(str);
 }
 
-static void FreeDictSubstInternalRep(Jim_Interp *interp, Jim_Obj *objPtr);
-static void DupDictSubstInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr);
+__device__ static void FreeDictSubstInternalRep(Jim_Interp *interp, Jim_Obj *objPtr);
+__device__ static void DupDictSubstInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr);
 
-static const Jim_ObjType dictSubstObjType = {
+__constant__ static const Jim_ObjType _dictSubstObjType = {
 	"dict-substitution",
 	FreeDictSubstInternalRep,
 	DupDictSubstInternalRep,
@@ -2320,12 +2000,12 @@ static const Jim_ObjType dictSubstObjType = {
 	JIM_TYPE_NONE,
 };
 
-static void FreeInterpolatedInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
+__device__ static void FreeInterpolatedInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
 {
 	Jim_DecrRefCount(interp, objPtr->internalRep.dictSubstValue.indexObjPtr);
 }
 
-static const Jim_ObjType interpolatedObjType = {
+__constant__ static const Jim_ObjType interpolatedObjType = {
 	"interpolated",
 	FreeInterpolatedInternalRep,
 	NULL,
@@ -2333,13 +2013,13 @@ static const Jim_ObjType interpolatedObjType = {
 	JIM_TYPE_NONE,
 };
 
-/* -----------------------------------------------------------------------------
-* String Object
-* ---------------------------------------------------------------------------*/
-static void DupStringInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr);
-static int SetStringFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr);
+// -----------------------------------------------------------------------------
+// String Object
+// -----------------------------------------------------------------------------
+__device__ static void DupStringInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr);
+__device__ static int SetStringFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr);
 
-static const Jim_ObjType stringObjType = {
+__constant__ static const Jim_ObjType _stringObjType = {
 	"string",
 	NULL,
 	DupStringInternalRep,
@@ -2347,174 +2027,144 @@ static const Jim_ObjType stringObjType = {
 	JIM_TYPE_REFERENCES,
 };
 
-static void DupStringInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
+__device__ static void DupStringInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
 	JIM_NOTUSED(interp);
-
-	/* This is a bit subtle: the only caller of this function
-	* should be Jim_DuplicateObj(), that will copy the
-	* string representaion. After the copy, the duplicated
-	* object will not have more room in the buffer than
-	* srcPtr->length bytes. So we just set it to length. */
+	// This is a bit subtle: the only caller of this function should be Jim_DuplicateObj(), that will copy the string representaion. After the copy, the duplicated
+	// object will not have more room in the buffer than srcPtr->length bytes. So we just set it to length.
 	dupPtr->internalRep.strValue.maxLength = srcPtr->length;
 	dupPtr->internalRep.strValue.charLength = srcPtr->internalRep.strValue.charLength;
 }
 
-static int SetStringFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
+__device__ static int SetStringFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 {
-	if (objPtr->typePtr != &stringObjType) {
-		/* Get a fresh string representation. */
+	if (objPtr->typePtr != &_stringObjType) {
+		// Get a fresh string representation.
 		if (objPtr->bytes == NULL) {
-			/* Invalid string repr. Generate it. */
+			// Invalid string repr. Generate it.
 			JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
 			objPtr->typePtr->updateStringProc(objPtr);
 		}
-		/* Free any other internal representation. */
+		// Free any other internal representation.
 		Jim_FreeIntRep(interp, objPtr);
-		/* Set it as string, i.e. just set the maxLength field. */
-		objPtr->typePtr = &stringObjType;
+		// Set it as string, i.e. just set the maxLength field.
+		objPtr->typePtr = &_stringObjType;
 		objPtr->internalRep.strValue.maxLength = objPtr->length;
-		/* Don't know the utf-8 length yet */
+		// Don't know the utf-8 length yet
 		objPtr->internalRep.strValue.charLength = -1;
 	}
 	return JIM_OK;
 }
 
-/**
-* Returns the length of the object string in chars, not bytes.
-*
-* These may be different for a utf-8 string.
-*/
-int Jim_Utf8Length(Jim_Interp *interp, Jim_Obj *objPtr)
+// Returns the length of the object string in chars, not bytes.
+// These may be different for a utf-8 string.
+__device__ int Jim_Utf8Length(Jim_Interp *interp, Jim_Obj *objPtr)
 {
 #ifdef JIM_UTF8
 	SetStringFromAny(interp, objPtr);
-
-	if (objPtr->internalRep.strValue.charLength < 0) {
+	if (objPtr->internalRep.strValue.charLength < 0)
 		objPtr->internalRep.strValue.charLength = utf8_strlen(objPtr->bytes, objPtr->length);
-	}
 	return objPtr->internalRep.strValue.charLength;
 #else
 	return Jim_Length(objPtr);
 #endif
 }
 
-/* len is in bytes -- see also Jim_NewStringObjUtf8() */
-Jim_Obj *Jim_NewStringObj(Jim_Interp *interp, const char *s, int len)
+// len is in bytes -- see also Jim_NewStringObjUtf8()
+__device__ Jim_Obj *Jim_NewStringObj(Jim_Interp *interp, const char *s, int len)
 {
 	Jim_Obj *objPtr = Jim_NewObj(interp);
-
-	/* Need to find out how many bytes the string requires */
+	// Need to find out how many bytes the string requires
 	if (len == -1)
 		len = _strlen(s);
-	/* Alloc/Set the string rep. */
-	if (len == 0) {
+	// Alloc/Set the string rep.
+	if (len == 0)
 		objPtr->bytes = JimEmptyStringRep;
-	}
 	else {
 		objPtr->bytes = (char *)Jim_Alloc(len + 1);
 		memcpy(objPtr->bytes, s, len);
 		objPtr->bytes[len] = '\0';
 	}
 	objPtr->length = len;
-
-	/* No typePtr field for the vanilla string object. */
+	// No typePtr field for the vanilla string object.
 	objPtr->typePtr = NULL;
 	return objPtr;
 }
 
-/* charlen is in characters -- see also Jim_NewStringObj() */
-Jim_Obj *Jim_NewStringObjUtf8(Jim_Interp *interp, const char *s, int charlen)
+// charlen is in characters -- see also Jim_NewStringObj()
+__device__ Jim_Obj *Jim_NewStringObjUtf8(Jim_Interp *interp, const char *s, int charlen)
 {
 #ifdef JIM_UTF8
-	/* Need to find out how many bytes the string requires */
+	// Need to find out how many bytes the string requires
 	int bytelen = utf8_index(s, charlen);
-
 	Jim_Obj *objPtr = Jim_NewStringObj(interp, s, bytelen);
-
-	/* Remember the utf8 length, so set the type */
+	// Remember the utf8 length, so set the type
 	objPtr->typePtr = &stringObjType;
 	objPtr->internalRep.strValue.maxLength = bytelen;
 	objPtr->internalRep.strValue.charLength = charlen;
-
 	return objPtr;
 #else
 	return Jim_NewStringObj(interp, s, charlen);
 #endif
 }
 
-/* This version does not try to duplicate the 's' pointer, but
-* use it directly. */
-Jim_Obj *Jim_NewStringObjNoAlloc(Jim_Interp *interp, char *s, int len)
+// This version does not try to duplicate the 's' pointer, but use it directly.
+__device__ Jim_Obj *Jim_NewStringObjNoAlloc(Jim_Interp *interp, char *s, int len)
 {
 	Jim_Obj *objPtr = Jim_NewObj(interp);
-
 	objPtr->bytes = s;
-	objPtr->length = (len == -1) ? _strlen(s) : len;
+	objPtr->length = (len == -1 ? _strlen(s) : len);
 	objPtr->typePtr = NULL;
 	return objPtr;
 }
 
-/* Low-level string append. Use it only against unshared objects
-* of type "string". */
-static void StringAppendString(Jim_Obj *objPtr, const char *str, int len)
+// Low-level string append. Use it only against unshared objects of type "string".
+__device__ static void StringAppendString(Jim_Obj *objPtr, const char *str, int len)
 {
-	int needlen;
-
 	if (len == -1)
 		len = _strlen(str);
-	needlen = objPtr->length + len;
-	if (objPtr->internalRep.strValue.maxLength < needlen ||
-		objPtr->internalRep.strValue.maxLength == 0) {
-			needlen *= 2;
-			/* Inefficient to malloc() for less than 8 bytes */
-			if (needlen < 7) {
-				needlen = 7;
-			}
-			if (objPtr->bytes == JimEmptyStringRep) {
-				objPtr->bytes = (char *)Jim_Alloc(needlen + 1);
-			}
-			else {
-				objPtr->bytes = (char *)Jim_Realloc(objPtr->bytes, needlen + 1);
-			}
-			objPtr->internalRep.strValue.maxLength = needlen;
+	int needlen = objPtr->length + len;
+	if (objPtr->internalRep.strValue.maxLength < needlen || objPtr->internalRep.strValue.maxLength == 0) {
+		needlen *= 2;
+		// Inefficient to malloc() for less than 8 bytes
+		if (needlen < 7)
+			needlen = 7;
+		if (objPtr->bytes == JimEmptyStringRep)
+			objPtr->bytes = (char *)Jim_Alloc(needlen + 1);
+		else
+			objPtr->bytes = (char *)Jim_Realloc(objPtr->bytes, needlen + 1);
+		objPtr->internalRep.strValue.maxLength = needlen;
 	}
-	memcpy(objPtr->bytes + objPtr->length, str, len);
+	_memcpy(objPtr->bytes + objPtr->length, str, len);
 	objPtr->bytes[objPtr->length + len] = '\0';
 
-	if (objPtr->internalRep.strValue.charLength >= 0) {
-		/* Update the utf-8 char length */
+	if (objPtr->internalRep.strValue.charLength >= 0) // Update the utf-8 char length
 		objPtr->internalRep.strValue.charLength += utf8_strlen(objPtr->bytes + objPtr->length, len);
-	}
 	objPtr->length += len;
 }
 
-/* Higher level API to append strings to objects.
-* Object must not be unshared for each of these.
-*/
-void Jim_AppendString(Jim_Interp *interp, Jim_Obj *objPtr, const char *str, int len)
+// Higher level API to append strings to objects. Object must not be unshared for each of these.
+__device__ void Jim_AppendString(Jim_Interp *interp, Jim_Obj *objPtr, const char *str, int len)
 {
 	JimPanic((Jim_IsShared(objPtr), "Jim_AppendString called with shared object"));
 	SetStringFromAny(interp, objPtr);
 	StringAppendString(objPtr, str, len);
 }
 
-void Jim_AppendObj(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *appendObjPtr)
+__device__ void Jim_AppendObj(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *appendObjPtr)
 {
 	int len;
 	const char *str = Jim_GetString(appendObjPtr, &len);
 	Jim_AppendString(interp, objPtr, str, len);
 }
 
-void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, ...)
+__device__ void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, ...)
 {
 	va_list ap;
-
 	SetStringFromAny(interp, objPtr);
 	va_start(ap, objPtr);
 	while (1) {
 		const char *s = va_arg(ap, const char *);
-
 		if (s == NULL)
 			break;
 		Jim_AppendString(interp, objPtr, s, -1);
@@ -2522,82 +2172,60 @@ void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, ...)
 	va_end(ap);
 }
 
-int Jim_StringEqObj(Jim_Obj *aObjPtr, Jim_Obj *bObjPtr)
+__device__ int Jim_StringEqObj(Jim_Obj *aObjPtr, Jim_Obj *bObjPtr)
 {
-	if (aObjPtr == bObjPtr) {
+	if (aObjPtr == bObjPtr)
 		return 1;
-	}
 	else {
 		int Alen, Blen;
 		const char *sA = Jim_GetString(aObjPtr, &Alen);
 		const char *sB = Jim_GetString(bObjPtr, &Blen);
-
-		return Alen == Blen && memcmp(sA, sB, Alen) == 0;
+		return (Alen == Blen && !_memcmp(sA, sB, Alen));
 	}
 }
 
-/**
-* Note. Does not support embedded nulls in either the pattern or the object.
-*/
-int Jim_StringMatchObj(Jim_Interp *interp, Jim_Obj *patternObjPtr, Jim_Obj *objPtr, int nocase)
+// Note. Does not support embedded nulls in either the pattern or the object.
+__device__ int Jim_StringMatchObj(Jim_Interp *interp, Jim_Obj *patternObjPtr, Jim_Obj *objPtr, int nocase)
 {
 	return JimGlobMatch(Jim_String(patternObjPtr), Jim_String(objPtr), nocase);
 }
 
-/*
-* Note: does not support embedded nulls for the nocase option.
-*/
-int Jim_StringCompareObj(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *secondObjPtr, int nocase)
+// Note: does not support embedded nulls for the nocase option.
+__device__ int Jim_StringCompareObj(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *secondObjPtr, int nocase)
 {
 	int l1, l2;
 	const char *s1 = Jim_GetString(firstObjPtr, &l1);
 	const char *s2 = Jim_GetString(secondObjPtr, &l2);
-
-	if (nocase) {
-		/* Do a character compare for nocase */
-		return JimStringCompareLen(s1, s2, -1, nocase);
-	}
+	if (nocase)
+		return JimStringCompareLen(s1, s2, -1, nocase); // Do a character compare for nocase
 	return JimStringCompare(s1, l1, s2, l2);
 }
 
-/**
-* Like Jim_StringCompareObj() except compares to a maximum of the length of firstObjPtr.
-*
-* Note: does not support embedded nulls
-*/
-int Jim_StringCompareLenObj(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *secondObjPtr, int nocase)
+// Like Jim_StringCompareObj() except compares to a maximum of the length of firstObjPtr.
+// Note: does not support embedded nulls
+__device__ int Jim_StringCompareLenObj(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *secondObjPtr, int nocase)
 {
 	const char *s1 = Jim_String(firstObjPtr);
 	const char *s2 = Jim_String(secondObjPtr);
-
 	return JimStringCompareLen(s1, s2, Jim_Utf8Length(interp, firstObjPtr), nocase);
 }
 
-/* Convert a range, as returned by Jim_GetRange(), into
-* an absolute index into an object of the specified length.
-* This function may return negative values, or values
-* greater than or equal to the length of the list if the index
-* is out of range. */
-static int JimRelToAbsIndex(int len, int idx)
+// Convert a range, as returned by Jim_GetRange(), into an absolute index into an object of the specified length.
+// This function may return negative values, or values greater than or equal to the length of the list if the index
+// is out of range.
+__device__ static int JimRelToAbsIndex(int len, int idx)
 {
-	if (idx < 0)
-		return len + idx;
-	return idx;
+	return (idx < 0 ? len + idx : idx);
 }
 
-/* Convert a pair of indexes (*firstPtr, *lastPtr) as normalized by JimRelToAbsIndex(),
-* into a form suitable for implementation of commands like [string range] and [lrange].
-*
-* The resulting range is guaranteed to address valid elements of
-* the structure.
-*/
-static void JimRelToAbsRange(int len, int *firstPtr, int *lastPtr, int *rangeLenPtr)
+// Convert a pair of indexes (*firstPtr, *lastPtr) as normalized by JimRelToAbsIndex(), into a form suitable for implementation of commands like [string range] and [lrange].
+// The resulting range is guaranteed to address valid elements of the structure.
+//
+__device__ static void JimRelToAbsRange(int len, int *firstPtr, int *lastPtr, int *rangeLenPtr)
 {
 	int rangeLen;
-
-	if (*firstPtr > *lastPtr) {
+	if (*firstPtr > *lastPtr)
 		rangeLen = 0;
-	}
 	else {
 		rangeLen = *lastPtr - *firstPtr + 1;
 		if (rangeLen) {
@@ -2613,112 +2241,76 @@ static void JimRelToAbsRange(int len, int *firstPtr, int *lastPtr, int *rangeLen
 	}
 	if (rangeLen < 0)
 		rangeLen = 0;
-
 	*rangeLenPtr = rangeLen;
 }
 
-static int JimStringGetRange(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr,
-							 int len, int *first, int *last, int *range)
+__device__ static int JimStringGetRange(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr, int len, int *first, int *last, int *range)
 {
-	if (Jim_GetIndex(interp, firstObjPtr, first) != JIM_OK) {
+	if (Jim_GetIndex(interp, firstObjPtr, first) != JIM_OK)
 		return JIM_ERR;
-	}
-	if (Jim_GetIndex(interp, lastObjPtr, last) != JIM_OK) {
+	if (Jim_GetIndex(interp, lastObjPtr, last) != JIM_OK)
 		return JIM_ERR;
-	}
 	*first = JimRelToAbsIndex(len, *first);
 	*last = JimRelToAbsIndex(len, *last);
 	JimRelToAbsRange(len, first, last, range);
 	return JIM_OK;
 }
 
-Jim_Obj *Jim_StringByteRangeObj(Jim_Interp *interp,
-								Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr)
+__device__ Jim_Obj *Jim_StringByteRangeObj(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr)
 {
 	int first, last;
-	const char *str;
 	int rangeLen;
 	int bytelen;
-
-	str = Jim_GetString(strObjPtr, &bytelen);
-
-	if (JimStringGetRange(interp, firstObjPtr, lastObjPtr, bytelen, &first, &last, &rangeLen) != JIM_OK) {
+	const char *str = Jim_GetString(strObjPtr, &bytelen);
+	if (JimStringGetRange(interp, firstObjPtr, lastObjPtr, bytelen, &first, &last, &rangeLen) != JIM_OK)
 		return NULL;
-	}
-
-	if (first == 0 && rangeLen == bytelen) {
+	if (first == 0 && rangeLen == bytelen)
 		return strObjPtr;
-	}
 	return Jim_NewStringObj(interp, str + first, rangeLen);
 }
 
-Jim_Obj *Jim_StringRangeObj(Jim_Interp *interp,
-							Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr)
+__device__ Jim_Obj *Jim_StringRangeObj(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr)
 {
 #ifdef JIM_UTF8
 	int first, last;
 	const char *str;
 	int len, rangeLen;
 	int bytelen;
-
 	str = Jim_GetString(strObjPtr, &bytelen);
 	len = Jim_Utf8Length(interp, strObjPtr);
-
-	if (JimStringGetRange(interp, firstObjPtr, lastObjPtr, len, &first, &last, &rangeLen) != JIM_OK) {
+	if (JimStringGetRange(interp, firstObjPtr, lastObjPtr, len, &first, &last, &rangeLen) != JIM_OK)
 		return NULL;
-	}
-
-	if (first == 0 && rangeLen == len) {
+	if (first == 0 && rangeLen == len)
 		return strObjPtr;
-	}
-	if (len == bytelen) {
-		/* ASCII optimisation */
-		return Jim_NewStringObj(interp, str + first, rangeLen);
-	}
+	if (len == bytelen)
+		return Jim_NewStringObj(interp, str + first, rangeLen); // ASCII optimisation
 	return Jim_NewStringObjUtf8(interp, str + utf8_index(str, first), rangeLen);
 #else
 	return Jim_StringByteRangeObj(interp, strObjPtr, firstObjPtr, lastObjPtr);
 #endif
 }
 
-Jim_Obj *JimStringReplaceObj(Jim_Interp *interp,
-							 Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr, Jim_Obj *newStrObj)
+__device__ Jim_Obj *JimStringReplaceObj(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr, Jim_Obj *newStrObj)
 {
-	int first, last;
-	const char *str;
-	int len, rangeLen;
-	Jim_Obj *objPtr;
-
-	len = Jim_Utf8Length(interp, strObjPtr);
-
-	if (JimStringGetRange(interp, firstObjPtr, lastObjPtr, len, &first, &last, &rangeLen) != JIM_OK) {
+	int len = Jim_Utf8Length(interp, strObjPtr);
+	int first, last, rangeLen;
+	if (JimStringGetRange(interp, firstObjPtr, lastObjPtr, len, &first, &last, &rangeLen) != JIM_OK)
 		return NULL;
-	}
-
-	if (last < first) {
+	if (last < first)
 		return strObjPtr;
-	}
-
-	str = Jim_String(strObjPtr);
-
-	/* Before part */
-	objPtr = Jim_NewStringObjUtf8(interp, str, first);
-
-	/* Replacement */
-	if (newStrObj) {
+	const char *str = Jim_String(strObjPtr);
+	// Before part
+	Jim_Obj *objPtr = Jim_NewStringObjUtf8(interp, str, first);
+	// Replacement
+	if (newStrObj)
 		Jim_AppendObj(interp, objPtr, newStrObj);
-	}
-
-	/* After part */
+	// After part
 	Jim_AppendString(interp, objPtr, str + utf8_index(str, last + 1), len - last - 1);
-
 	return objPtr;
 }
 
-/**
-* Note: does not support embedded nulls.
-*/
-static void JimStrCopyUpperLower(char *dest, const char *str, int uc)
+// Note: does not support embedded nulls.
+__device__ static void JimStrCopyUpperLower(char *dest, const char *str, int uc)
 {
 	while (*str) {
 		int c;
@@ -2728,291 +2320,209 @@ static void JimStrCopyUpperLower(char *dest, const char *str, int uc)
 	*dest = 0;
 }
 
-/**
-* Note: does not support embedded nulls.
-*/
-static Jim_Obj *JimStringToLower(Jim_Interp *interp, Jim_Obj *strObjPtr)
+// Note: does not support embedded nulls.
+__device__ static Jim_Obj *JimStringToLower(Jim_Interp *interp, Jim_Obj *strObjPtr)
 {
-	char *buf;
-	int len;
-	const char *str;
-
 	SetStringFromAny(interp, strObjPtr);
-
-	str = Jim_GetString(strObjPtr, &len);
-
+	int len;
+	const char *str = Jim_GetString(strObjPtr, &len);
 #ifdef JIM_UTF8
-	/* Case mapping can change the utf-8 length of the string.
-	* But at worst it will be by one extra byte per char
-	*/
+	// Case mapping can change the utf-8 length of the string. But at worst it will be by one extra byte per char
 	len *= 2;
 #endif
-	buf = (char *)Jim_Alloc(len + 1);
+	char *buf = (char *)Jim_Alloc(len + 1);
 	JimStrCopyUpperLower(buf, str, 0);
 	return Jim_NewStringObjNoAlloc(interp, buf, -1);
 }
 
-/**
-* Note: does not support embedded nulls.
-*/
-static Jim_Obj *JimStringToUpper(Jim_Interp *interp, Jim_Obj *strObjPtr)
+// Note: does not support embedded nulls.
+__device__ static Jim_Obj *JimStringToUpper(Jim_Interp *interp, Jim_Obj *strObjPtr)
 {
-	char *buf;
-	const char *str;
-	int len;
-
-	if (strObjPtr->typePtr != &stringObjType) {
+	if (strObjPtr->typePtr != &_stringObjType)
 		SetStringFromAny(interp, strObjPtr);
-	}
-
-	str = Jim_GetString(strObjPtr, &len);
-
+	int len;
+	const char *str = Jim_GetString(strObjPtr, &len);
 #ifdef JIM_UTF8
-	/* Case mapping can change the utf-8 length of the string.
-	* But at worst it will be by one extra byte per char
-	*/
+	// Case mapping can change the utf-8 length of the string. But at worst it will be by one extra byte per char
 	len *= 2;
 #endif
-	buf = (char *)Jim_Alloc(len + 1);
+	char *buf = (char *)Jim_Alloc(len + 1);
 	JimStrCopyUpperLower(buf, str, 1);
 	return Jim_NewStringObjNoAlloc(interp, buf, -1);
 }
 
-/**
-* Note: does not support embedded nulls.
-*/
-static Jim_Obj *JimStringToTitle(Jim_Interp *interp, Jim_Obj *strObjPtr)
+// Note: does not support embedded nulls.
+__device__ static Jim_Obj *JimStringToTitle(Jim_Interp *interp, Jim_Obj *strObjPtr)
 {
-	char *buf, *p;
 	int len;
-	int c;
-	const char *str;
-
-	str = Jim_GetString(strObjPtr, &len);
-	if (len == 0) {
+	const char *str = Jim_GetString(strObjPtr, &len);
+	if (len == 0)
 		return strObjPtr;
-	}
 #ifdef JIM_UTF8
-	/* Case mapping can change the utf-8 length of the string.
-	* But at worst it will be by one extra byte per char
-	*/
+	// Case mapping can change the utf-8 length of the string. But at worst it will be by one extra byte per char
 	len *= 2;
 #endif
+	char *buf, *p;
 	buf = p = (char *)Jim_Alloc(len + 1);
-
+	int c;
 	str += utf8_tounicode(str, &c);
 	p += utf8_getchars(p, utf8_title(c));
-
 	JimStrCopyUpperLower(p, str, 0);
-
 	return Jim_NewStringObjNoAlloc(interp, buf, -1);
 }
 
-/* Similar to memchr() except searches a UTF-8 string 'str' of byte length 'len'
-* for unicode character 'c'.
-* Returns the position if found or NULL if not
-*/
-static const char *utf8_memchr(const char *str, int len, int c)
+// Similar to memchr() except searches a UTF-8 string 'str' of byte length 'len' for unicode character 'c'. Returns the position if found or NULL if not
+__device__ static const char *utf8_memchr(const char *str, int len, int c)
 {
 #ifdef JIM_UTF8
 	while (len) {
 		int sc;
 		int n = utf8_tounicode(str, &sc);
-		if (sc == c) {
+		if (sc == c)
 			return str;
-		}
 		str += n;
 		len -= n;
 	}
 	return NULL;
 #else
-	return (const char *)memchr(str, c, len);
+	return (const char *)_memchr(str, c, len);
 #endif
 }
 
-/**
-* Searches for the first non-trim char in string (str, len)
-*
-* If none is found, returns just past the last char.
-*
-* Lengths are in bytes.
-*/
-static const char *JimFindTrimLeft(const char *str, int len, const char *trimchars, int trimlen)
+// Searches for the first non-trim char in string (str, len)
+// If none is found, returns just past the last char.
+// Lengths are in bytes.
+__device__ static const char *JimFindTrimLeft(const char *str, int len, const char *trimchars, int trimlen)
 {
 	while (len) {
 		int c;
 		int n = utf8_tounicode(str, &c);
-
-		if (utf8_memchr(trimchars, trimlen, c) == NULL) {
-			/* Not a trim char, so stop */
+		if (utf8_memchr(trimchars, trimlen, c) == NULL) // Not a trim char, so stop
 			break;
-		}
 		str += n;
 		len -= n;
 	}
 	return str;
 }
 
-/**
-* Searches backwards for a non-trim char in string (str, len).
-*
-* Returns a pointer to just after the non-trim char, or NULL if not found.
-*
-* Lengths are in bytes.
-*/
-static const char *JimFindTrimRight(const char *str, int len, const char *trimchars, int trimlen)
+// Searches backwards for a non-trim char in string (str, len).
+// Returns a pointer to just after the non-trim char, or NULL if not found.
+// Lengths are in bytes.
+__device__ static const char *JimFindTrimRight(const char *str, int len, const char *trimchars, int trimlen)
 {
 	str += len;
-
 	while (len) {
 		int c;
 		int n = utf8_prev_len(str, len);
-
 		len -= n;
 		str -= n;
-
 		n = utf8_tounicode(str, &c);
-
-		if (utf8_memchr(trimchars, trimlen, c) == NULL) {
+		if (utf8_memchr(trimchars, trimlen, c) == NULL)
 			return str + n;
-		}
 	}
-
 	return NULL;
 }
 
-static const char default_trim_chars[] = " \t\n\r";
-/* sizeof() here includes the null byte */
-static int default_trim_chars_len = sizeof(default_trim_chars);
+__constant__ static const char _default_trim_chars[] = " \t\n\r";
+// sizeof() here includes the null byte
+__constant__ static int default_trim_chars_len = sizeof(_default_trim_chars);
 
-static Jim_Obj *JimStringTrimLeft(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
+__device__ static Jim_Obj *JimStringTrimLeft(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
 {
 	int len;
 	const char *str = Jim_GetString(strObjPtr, &len);
-	const char *trimchars = default_trim_chars;
+	const char *trimchars = _default_trim_chars;
 	int trimcharslen = default_trim_chars_len;
 	const char *newstr;
-
-	if (trimcharsObjPtr) {
+	if (trimcharsObjPtr)
 		trimchars = Jim_GetString(trimcharsObjPtr, &trimcharslen);
-	}
-
 	newstr = JimFindTrimLeft(str, len, trimchars, trimcharslen);
-	if (newstr == str) {
+	if (newstr == str)
 		return strObjPtr;
-	}
-
 	return Jim_NewStringObj(interp, newstr, len - (int)(newstr - str));
 }
 
-static Jim_Obj *JimStringTrimRight(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
+__device__ static Jim_Obj *JimStringTrimRight(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
 {
 	int len;
-	const char *trimchars = default_trim_chars;
+	const char *trimchars = _default_trim_chars;
 	int trimcharslen = default_trim_chars_len;
 	const char *nontrim;
-
-	if (trimcharsObjPtr) {
+	if (trimcharsObjPtr)
 		trimchars = Jim_GetString(trimcharsObjPtr, &trimcharslen);
-	}
-
 	SetStringFromAny(interp, strObjPtr);
-
 	len = Jim_Length(strObjPtr);
 	nontrim = JimFindTrimRight(strObjPtr->bytes, len, trimchars, trimcharslen);
-
-	if (nontrim == NULL) {
-		/* All trim, so return a zero-length string */
-		return Jim_NewEmptyStringObj(interp);
-	}
-	if (nontrim == strObjPtr->bytes + len) {
-		/* All non-trim, so return the original object */
-		return strObjPtr;
-	}
-
-	if (Jim_IsShared(strObjPtr)) {
+	if (nontrim == NULL)
+		return Jim_NewEmptyStringObj(interp); // All trim, so return a zero-length string
+	if (nontrim == strObjPtr->bytes + len)
+		return strObjPtr; // All non-trim, so return the original object
+	if (Jim_IsShared(strObjPtr))
 		strObjPtr = Jim_NewStringObj(interp, strObjPtr->bytes, (int)(nontrim - strObjPtr->bytes));
-	}
 	else {
-		/* Can modify this string in place */
+		// Can modify this string in place
 		strObjPtr->bytes[nontrim - strObjPtr->bytes] = 0;
 		strObjPtr->length = (int)(nontrim - strObjPtr->bytes);
 	}
-
 	return strObjPtr;
 }
 
-static Jim_Obj *JimStringTrim(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
+__device__ static Jim_Obj *JimStringTrim(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
 {
-	/* First trim left. */
+	// First trim left.
 	Jim_Obj *objPtr = JimStringTrimLeft(interp, strObjPtr, trimcharsObjPtr);
-
-	/* Now trim right */
+	// Now trim right
 	strObjPtr = JimStringTrimRight(interp, objPtr, trimcharsObjPtr);
-
-	/* Note: refCount check is needed since objPtr may be emptyObj */
-	if (objPtr != strObjPtr && objPtr->refCount == 0) {
-		/* We don't want this object to be leaked */
-		Jim_FreeNewObj(interp, objPtr);
-	}
-
+	// Note: refCount check is needed since objPtr may be emptyObj
+	if (objPtr != strObjPtr && objPtr->refCount == 0)
+		Jim_FreeNewObj(interp, objPtr); // We don't want this object to be leaked
 	return strObjPtr;
 }
 
-/* Some platforms don't have isascii - need a non-macro version */
+// Some platforms don't have isascii - need a non-macro version
 #ifdef HAVE_ISASCII
 #define jim_isascii isascii
 #else
-static int jim_isascii(int c)
+__device__ static int jim_isascii(int c)
 {
 	return !(c & ~0x7f);
 }
 #endif
 
-static int JimStringIs(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *strClass, int strict)
+__constant__ static const char *const _strclassnames[] = {
+	"integer", "alpha", "alnum", "ascii", "digit",
+	"double", "lower", "upper", "space", "xdigit",
+	"control", "print", "graph", "punct",
+	NULL
+};
+enum {
+	STR_IS_INTEGER, STR_IS_ALPHA, STR_IS_ALNUM, STR_IS_ASCII, STR_IS_DIGIT,
+	STR_IS_DOUBLE, STR_IS_LOWER, STR_IS_UPPER, STR_IS_SPACE, STR_IS_XDIGIT,
+	STR_IS_CONTROL, STR_IS_PRINT, STR_IS_GRAPH, STR_IS_PUNCT
+};
+
+__device__ static int JimStringIs(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *strClass, int strict)
 {
-	static const char * const strclassnames[] = {
-		"integer", "alpha", "alnum", "ascii", "digit",
-		"double", "lower", "upper", "space", "xdigit",
-		"control", "print", "graph", "punct",
-		NULL
-	};
-	enum {
-		STR_IS_INTEGER, STR_IS_ALPHA, STR_IS_ALNUM, STR_IS_ASCII, STR_IS_DIGIT,
-		STR_IS_DOUBLE, STR_IS_LOWER, STR_IS_UPPER, STR_IS_SPACE, STR_IS_XDIGIT,
-		STR_IS_CONTROL, STR_IS_PRINT, STR_IS_GRAPH, STR_IS_PUNCT
-	};
 	int strclass;
-	int len;
 	int i;
-	const char *str;
 	int (*isclassfunc)(int c) = NULL;
-
-	if (Jim_GetEnum(interp, strClass, strclassnames, &strclass, "class", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
+	if (Jim_GetEnum(interp, strClass, _strclassnames, &strclass, "class", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK)
 		return JIM_ERR;
-	}
-
-	str = Jim_GetString(strObjPtr, &len);
+	int len;
+	const char *str = Jim_GetString(strObjPtr, &len);
 	if (len == 0) {
 		Jim_SetResultBool(interp, !strict);
 		return JIM_OK;
 	}
-
 	switch (strclass) {
-	case STR_IS_INTEGER:
-		{
-			jim_wide w;
-			Jim_SetResultBool(interp, JimGetWideNoErr(interp, strObjPtr, &w) == JIM_OK);
-			return JIM_OK;
-		}
-
-	case STR_IS_DOUBLE:
-		{
-			double d;
-			Jim_SetResultBool(interp, Jim_GetDouble(interp, strObjPtr, &d) == JIM_OK && errno != ERANGE);
-			return JIM_OK;
-		}
-
+	case STR_IS_INTEGER: {
+		jim_wide w;
+		Jim_SetResultBool(interp, JimGetWideNoErr(interp, strObjPtr, &w) == JIM_OK);
+		return JIM_OK; }
+	case STR_IS_DOUBLE: {
+		double d;
+		Jim_SetResultBool(interp, Jim_GetDouble(interp, strObjPtr, &d) == JIM_OK && errno != ERANGE);
+		return JIM_OK; }
 	case STR_IS_ALPHA: isclassfunc = isalpha; break;
 	case STR_IS_ALNUM: isclassfunc = isalnum; break;
 	case STR_IS_ASCII: isclassfunc = jim_isascii; break;
@@ -3028,7 +2538,6 @@ static int JimStringIs(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *strClass
 	default:
 		return JIM_ERR;
 	}
-
 	for (i = 0; i < len; i++) {
 		if (!isclassfunc(str[i])) {
 			Jim_SetResultBool(interp, 0);
@@ -3039,22 +2548,17 @@ static int JimStringIs(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *strClass
 	return JIM_OK;
 }
 
-/* -----------------------------------------------------------------------------
-* Compared String Object
-* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
+// Compared String Object
+// -----------------------------------------------------------------------------
 
-/* This is strange object that allows comparison of a C literal string
-* with a Jim object in a very short time if the same comparison is done
-* multiple times. For example every time the [if] command is executed,
-* Jim has to check if a given argument is "else".
-* If the code has no errors, this comparison is true most of the time,
-* so we can cache the pointer of the string of the last matching
-* comparison inside the object. Because most C compilers perform literal sharing,
-* so that: char *x = "foo", char *y = "foo", will lead to x == y,
-* this works pretty well even if comparisons are at different places
-* inside the C code. */
+// This is strange object that allows comparison of a C literal string with a Jim object in a very short time if the same comparison is done
+// multiple times. For example every time the [if] command is executed, Jim has to check if a given argument is "else".
+// If the code has no errors, this comparison is true most of the time, so we can cache the pointer of the string of the last matching
+// comparison inside the object. Because most C compilers perform literal sharing, so that: char *x = "foo", char *y = "foo", will lead to x == y,
+// this works pretty well even if comparisons are at different places inside the C code.
 
-static const Jim_ObjType comparedStringObjType = {
+__constant__ static const Jim_ObjType _comparedStringObjType = {
 	"compared-string",
 	NULL,
 	NULL,
@@ -3062,64 +2566,52 @@ static const Jim_ObjType comparedStringObjType = {
 	JIM_TYPE_REFERENCES,
 };
 
-/* The only way this object is exposed to the API is via the following
-* function. Returns true if the string and the object string repr.
-* are the same, otherwise zero is returned.
-*
-* Note: this isn't binary safe, but it hardly needs to be.*/
-int Jim_CompareStringImmediate(Jim_Interp *interp, Jim_Obj *objPtr, const char *str)
+// The only way this object is exposed to the API is via the following function. Returns true if the string and the object string repr.
+// are the same, otherwise zero is returned.
+// Note: this isn't binary safe, but it hardly needs to be.*/
+__device__ int Jim_CompareStringImmediate(Jim_Interp *interp, Jim_Obj *objPtr, const char *str)
 {
-	if (objPtr->typePtr == &comparedStringObjType && objPtr->internalRep.ptr == str) {
+	if (objPtr->typePtr == &_comparedStringObjType && objPtr->internalRep.ptr == str)
 		return 1;
-	}
 	else {
 		const char *objStr = Jim_String(objPtr);
-
 		if (strcmp(str, objStr) != 0)
 			return 0;
-
-		if (objPtr->typePtr != &comparedStringObjType) {
+		if (objPtr->typePtr != &_comparedStringObjType) {
 			Jim_FreeIntRep(interp, objPtr);
-			objPtr->typePtr = &comparedStringObjType;
+			objPtr->typePtr = &_comparedStringObjType;
 		}
-		objPtr->internalRep.ptr = (char *)str;  /*ATTENTION: const cast */
+		objPtr->internalRep.ptr = (char *)str;  // ATTENTION: const cast
 		return 1;
 	}
 }
 
-static int qsortCompareStringPointers(const void *a, const void *b)
+__device__ static int qsortCompareStringPointers(const void *a, const void *b)
 {
 	char *const *sa = (char *const *)a;
 	char *const *sb = (char *const *)b;
-
 	return strcmp(*sa, *sb);
 }
 
 
-/* -----------------------------------------------------------------------------
-* Source Object
-*
-* This object is just a string from the language point of view, but
-* the internal representation contains the filename and line number
-* where this token was read. This information is used by
-* Jim_EvalObj() if the object passed happens to be of type "source".
-*
-* This allows propagation of the information about line numbers and file
-* names and gives error messages with absolute line numbers.
-*
-* Note that this object uses the internal representation of the Jim_Object,
-* so there is almost no memory overhead. (One Jim_Obj for each filename).
-*
-* Also the object will be converted to something else if the given
-* token it represents in the source file is not something to be
-* evaluated (not a script), and will be specialized in some other way,
-* so the time overhead is also almost zero.
-* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
+// Source Object
+//
+// This object is just a string from the language point of view, but the internal representation contains the filename and line number
+// where this token was read. This information is used by Jim_EvalObj() if the object passed happens to be of type "source".
+//
+// This allows propagation of the information about line numbers and file names and gives error messages with absolute line numbers.
+//
+// Note that this object uses the internal representation of the Jim_Object, so there is almost no memory overhead. (One Jim_Obj for each filename).
+//
+// Also the object will be converted to something else if the given token it represents in the source file is not something to be
+// evaluated (not a script), and will be specialized in some other way, so the time overhead is also almost zero.
+// -----------------------------------------------------------------------------
 
-static void FreeSourceInternalRep(Jim_Interp *interp, Jim_Obj *objPtr);
-static void DupSourceInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr);
+__device__ static void FreeSourceInternalRep(Jim_Interp *interp, Jim_Obj *objPtr);
+__device__ static void DupSourceInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr);
 
-static const Jim_ObjType sourceObjType = {
+__constant__ static const Jim_ObjType sourceObjType = {
 	"source",
 	FreeSourceInternalRep,
 	DupSourceInternalRep,
@@ -3127,19 +2619,18 @@ static const Jim_ObjType sourceObjType = {
 	JIM_TYPE_REFERENCES,
 };
 
-void FreeSourceInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
+__device__ void FreeSourceInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
 {
 	Jim_DecrRefCount(interp, objPtr->internalRep.sourceValue.fileNameObj);
 }
 
-void DupSourceInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
+__device__ void DupSourceInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
 	dupPtr->internalRep.sourceValue = srcPtr->internalRep.sourceValue;
 	Jim_IncrRefCount(dupPtr->internalRep.sourceValue.fileNameObj);
 }
 
-static void JimSetSourceInfo(Jim_Interp *interp, Jim_Obj *objPtr,
-							 Jim_Obj *fileNameObj, int lineNumber)
+__device__ static void JimSetSourceInfo(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *fileNameObj, int lineNumber)
 {
 	JimPanic((Jim_IsShared(objPtr), "JimSetSourceInfo called with shared object"));
 	JimPanic((objPtr->typePtr != NULL, "JimSetSourceInfo called with typed object"));
@@ -3149,14 +2640,10 @@ static void JimSetSourceInfo(Jim_Interp *interp, Jim_Obj *objPtr,
 	objPtr->typePtr = &sourceObjType;
 }
 
-/* -----------------------------------------------------------------------------
-* ScriptLine Object
-*
-* This object is used only in the Script internal represenation.
-* For each line of the script, it holds the number of tokens on the line
-* and the source line number.
-*/
-static const Jim_ObjType scriptLineObjType = {
+// -----------------------------------------------------------------------------
+// ScriptLine Object
+// This object is used only in the Script internal represenation. For each line of the script, it holds the number of tokens on the line and the source line number.
+__constant__ static const Jim_ObjType scriptLineObjType = {
 	"scriptline",
 	NULL,
 	NULL,
@@ -3164,10 +2651,9 @@ static const Jim_ObjType scriptLineObjType = {
 	JIM_NONE,
 };
 
-static Jim_Obj *JimNewScriptLineObj(Jim_Interp *interp, int argc, int line)
+__device__ static Jim_Obj *JimNewScriptLineObj(Jim_Interp *interp, int argc, int line)
 {
 	Jim_Obj *objPtr;
-
 #ifdef DEBUG_SHOW_SCRIPT
 	char buf[100];
 	snprintf(buf, sizeof(buf), "line=%d, argc=%d", line, argc);
@@ -3178,7 +2664,6 @@ static Jim_Obj *JimNewScriptLineObj(Jim_Interp *interp, int argc, int line)
 	objPtr->typePtr = &scriptLineObjType;
 	objPtr->internalRep.scriptLineValue.argc = argc;
 	objPtr->internalRep.scriptLineValue.line = line;
-
 	return objPtr;
 }
 
@@ -4317,7 +3802,7 @@ static int SetVariableFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
 		}
 		/* Need to re-resolve the variable in the updated callframe */
 	}
-	else if (objPtr->typePtr == &dictSubstObjType) {
+	else if (objPtr->typePtr == &_dictSubstObjType) {
 		return JIM_DICT_SUGAR;
 	}
 	else if (JimValidName(interp, "variable", objPtr) != JIM_OK) {
@@ -4831,13 +4316,13 @@ void DupDictSubstInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPt
 	dupPtr->internalRep.dictSubstValue.varNameObjPtr =
 		srcPtr->internalRep.dictSubstValue.varNameObjPtr;
 	dupPtr->internalRep.dictSubstValue.indexObjPtr = srcPtr->internalRep.dictSubstValue.indexObjPtr;
-	dupPtr->typePtr = &dictSubstObjType;
+	dupPtr->typePtr = &_dictSubstObjType;
 }
 
 /* Note: The object *must* be in dict-sugar format */
 static void SetDictSubstFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 {
-	if (objPtr->typePtr != &dictSubstObjType) {
+	if (objPtr->typePtr != &_dictSubstObjType) {
 		Jim_Obj *varObjPtr, *keyObjPtr;
 
 		if (objPtr->typePtr == &interpolatedObjType) {
@@ -15440,23 +14925,31 @@ void Jim_SetResultFormatted(Jim_Interp *interp, const char *format, ...)
 
 /* stubs */
 #ifndef jim_ext_package
+
 int Jim_PackageProvide(Jim_Interp *interp, const char *name, const char *ver, int flags)
 {
 	return JIM_OK;
 }
+
 #endif
 #ifndef jim_ext_aio
+
 FILE *Jim_AioFilehandle(Jim_Interp *interp, Jim_Obj *fhObj)
 {
 	Jim_SetResultString(interp, "aio not enabled", -1);
 	return NULL;
 }
+
+int Jim_MakeTempFile(Jim_Interp *interp, const char *template_)
+{
+	Jim_SetResultString(interp, "platform has no tempfile support", -1);
+	return -1;
+}
+
 #endif
 
+int Jim_InitStaticExtensions(Jim_Interp *interp)
+{
+	return JIM_OK;
+}
 
-/*
-* Local Variables: ***
-* c-basic-offset: 4 ***
-* tab-width: 4 ***
-* End: ***
-*/
