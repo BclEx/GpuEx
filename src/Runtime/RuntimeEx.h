@@ -33,12 +33,14 @@ extern __device__ int __errno;
 __device__ unsigned long _strtol_(const char *str, char **endptr, register int base, bool signed_);
 #define _strtol(str, endptr, base) (long)_strtol_(str, endptr, base, true)
 #define _strtoul(str, endptr, base) (unsigned long)_strtol_(str, endptr, base, false)
+#define _strtoull(str, endptr, base) (unsigned long)_strtoll_(str, endptr, base, false)
 __device__ u_quad_t _strtoq_(const char *str, char **endptr, register int base, bool signed_);
 #define _strtoq(str, endptr, base) (long)_strtoq_(str, endptr, base, true)
 #define _strtouq(str, endptr, base) (unsigned long)_strtoq_(str, endptr, base, false)
 #else
 #define _strtol(str, endptr, base) strtol(str, endptr, base)
 #define _strtoul(str, endptr, base) strtoul(str, endptr, base)
+#define _strtoull(str, endptr, base) strtoull(str, endptr, base)
 #define _strtoq(str, endptr) strtod(str, endptr)
 #define _strtouq(str, endptr) strtod(str, endptr)
 #endif
@@ -135,13 +137,13 @@ __device__ char *_getenv(const char *name);
 #if OS_UNIX
 #else
 typedef struct DIR DIR;
-struct dirent
+struct _dirent
 {
 	char *d_name;
 };
 __device__ DIR *_opendir(const char *);
 __device__ int _closedir(DIR *);
-__device__ struct dirent *_readdir(DIR *);
+__device__ struct _dirent *_readdir(DIR *);
 __device__ void _rewinddir(DIR *);
 #endif
 

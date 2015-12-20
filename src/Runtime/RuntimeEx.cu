@@ -932,7 +932,7 @@ __device__ int _closedir(DIR *)
 {
 	return 0;
 }
-__device__ struct dirent *_readdir(DIR *)
+__device__ struct _dirent *_readdir(DIR *)
 {
 	return nullptr;
 }
@@ -948,7 +948,7 @@ struct DIR
 {
 	handle_type handle; // -1 for failed rewind
 	struct _finddata_t info;
-	struct dirent result; // d_name null iff first time
+	struct _dirent result; // d_name null iff first time
 	char *name;  // null-terminated char string
 };
 
@@ -998,9 +998,9 @@ int _closedir(DIR *dir)
 	return result;
 }
 
-struct dirent *_readdir(DIR *dir)
+struct _dirent *_readdir(DIR *dir)
 {
-	struct dirent *result = 0;
+	struct _dirent *result = 0;
 	if (dir && dir->handle != -1)
 	{
 		if (!dir->result.d_name || _findnext(dir->handle, &dir->info) != -1)

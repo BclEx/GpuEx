@@ -662,13 +662,33 @@ template <typename T> __device__ __forceinline void _memset(T *dest, const char 
 #endif
 
 // memchr
-template <typename T> __device__ __forceinline const T *_memchr(const T *src, char character)
+template <typename T> __device__ __forceinline const T *_memchr(const T *src, char character, size_t length)
 {
-	register unsigned char *a = (unsigned char *)src;
-	register unsigned char b = (unsigned char)character;
-	while (*a && *a != b) { a++; }
-	return (const T *)*a;
+	if (length != 0) {
+		register const unsigned char *p = (const unsigned char *)src;
+		do {
+			if (*p++ == character)
+				return (const T *)(p - 1);
+		} while (--length != 0);
+	}
+	return nullptr;
+	//register unsigned char *a = (unsigned char *)src;
+	//register unsigned char b = (unsigned char)character;
+	//while (--length > 0 && *a && *a != b) { a++; }
+	//return (const T *)*a;
 }
+
+//__device__ void *_memchr(const void *s, register unsigned char c, register size_t n)
+//{
+//	if (n != 0) {
+//		register const unsigned char *p = (const unsigned char *)s;
+//		do {
+//			if (*p++ == c)
+//				return ((void *)(p - 1));
+//		} while (--n != 0);
+//	}
+//	return nullptr;
+//}
 
 // memcmp
 template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__restrict__ left, Y *__restrict__ right, size_t length)

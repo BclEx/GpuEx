@@ -134,7 +134,7 @@ __global__ static void runtime9(void *r)
 	int a3 = _strncmp("Tesa", "Tesb", 3); _assert(!a3);
 	_memcpy(buf, "Test", 5); int a4 = _memcmp(buf, "Test", 5); _assert(!a4);
 	_memset(buf, 0, sizeof(buf)); int a5 = _memcmp(buf, "\0\0\0\0", 4); _assert(!a5);
-	const char *a6 = _memchr("Test", 'e'); _assert(a6);
+	const char *a6 = _memchr("Test", 'e', 4); _assert(a6);
 	int a7 = _memcmp("Test", "Test", 5); _assert(!a7);
 	_memmove(buf, "Test", 5); int a8 = _memcmp(buf, "Test", 5); _assert(!a8);
 	int a9 = _strlen("Test"); _assert(a9 == 4);

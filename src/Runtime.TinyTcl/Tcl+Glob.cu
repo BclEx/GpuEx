@@ -192,7 +192,7 @@ __device__ static int DoGlob(Tcl_Interp *interp, char *dir, char *rem)
 		pattern[l2] = '\0';
 		result = TCL_OK;
 		while (true) {
-			struct dirent *entryPtr = _readdir(d);
+			struct _dirent *entryPtr = _readdir(d);
 			if (entryPtr == NULL) {
 				break;
 			}
