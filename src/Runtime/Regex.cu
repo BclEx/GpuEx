@@ -623,8 +623,7 @@ de_fault:
 		*flagp |= HASWIDTH;
 		if (added == 1)
 			*flagp |= SIMPLE;
-		break;
-			 } break;
+		break; }
 	}
 	return ret;
 }
@@ -1278,9 +1277,9 @@ __device__ static void regdump(regex_t *preg)
 }
 
 // regprop - printable representation of opcode
+__device__ static char _regprop_buf[50];
 __device__ static const char *regprop(int op)
 {
-	char buf[50];
 	switch (op)
 	{
 	case OP_BOL: return "BOL";
@@ -1302,10 +1301,10 @@ __device__ static const char *regprop(int op)
 	case OP_OPENNC: return "OPEN";
 	case OP_CLOSENC: return "CLOSE";
 	default:
-		if (op >= OP_OPEN && op < OP_CLOSE) __snprintf(buf, sizeof(buf), "OPEN%d", op-OP_OPEN);
-		else if (op >= OP_CLOSE && op < OP_CLOSE_END) __snprintf(buf, sizeof(buf), "CLOSE%d", op-OP_CLOSE);
-		else __snprintf(buf, sizeof(buf), "?%d?\n", op);
-		return buf;
+		if (op >= OP_OPEN && op < OP_CLOSE) __snprintf(_regprop_buf, sizeof(_regprop_buf), "OPEN%d", op-OP_OPEN);
+		else if (op >= OP_CLOSE && op < OP_CLOSE_END) __snprintf(_regprop_buf, sizeof(_regprop_buf), "CLOSE%d", op-OP_CLOSE);
+		else __snprintf(_regprop_buf, sizeof(_regprop_buf), "?%d?\n", op);
+		return _regprop_buf;
 	}
 }
 #endif

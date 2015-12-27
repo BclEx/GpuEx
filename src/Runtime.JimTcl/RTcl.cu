@@ -1,3 +1,4 @@
+#include "Jim.cu"
 #include "Jim+Aio.cu"
 #include "Jim+Array.cu"
 #include "Jim+Clock.cu"
@@ -5,6 +6,7 @@
 #include "Jim+Exec.cu"
 #include "Jim+File.cu"
 #include "Jim+Format.cu"
+#include "Jim+Gpu.cu"
 #include "Jim+History.cu"
 #include "Jim+Interactive.cu"
 #include "Jim+Load.cu"
@@ -21,6 +23,8 @@
 #include "Jim+Subcmd.cu"
 //#include "Jim+Syslog.cu"
 #include "Jim+TclPrefix.cu"
-#include "Jim+Win32.cu"
-#include "Jim+Win32compat.cu"
+//#include "Jim+Win32.cu"
+//#include "Jim+Win32compat.cu"
+#include "Utf8.cu"
+#include "JimSh.cu"
 

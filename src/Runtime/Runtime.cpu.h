@@ -71,6 +71,14 @@ cudaError_t cudaDeviceHeapSelect(cudaDeviceHeap &host) { return 0; }
 #define _va_start va_start
 #define _va_arg va_arg
 #define _va_end va_end
+#define COMMA ,
+//__device__ void name##_(__VA_ARGS__, _va_list &args);
+#define STDARGvoid(name, paramN, params1, ...) \
+__device__ inline void name(__VA_ARGS__, ...) { _va_list args; _va_start(args, paramN); name##_(params1, args); _va_end(args); }
+#define STDARG(ret, name, paramN, params1, ...) \
+	__device__ inline ret name(__VA_ARGS__, ...) { _va_list args; _va_start(args, paramN); ret r = name##_(params1, args); _va_end(args); return r; }
+#define STDARGEXvoid(name, paramN, params1, ...)
+#define STDARGEX(ret, name, paramN, params1, ...)
 
 #pragma endregion
 

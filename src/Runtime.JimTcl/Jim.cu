@@ -56,7 +56,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
-#include <setjmp.h>
 #include "Jim.h"
 //#include "jimautoconf.h"
 #include "Utf8.h"
@@ -110,10 +109,10 @@
 const char *jim_tt_name(int type);
 
 #ifdef JIM_DEBUG_PANIC
-static void JimPanicDump(int fail_condition, const char *fmt, ...);
-#define JimPanic(X) JimPanicDump X
+__device__ static void JimPanicDump_(int condition, const char *fmt, _va_list &args);
+#define JimPanic JimPanicDump
 #else
-#define JimPanic(X)
+#define JimPanic
 #endif
 
 #pragma endregion
@@ -282,7 +281,7 @@ __device__ static int JimStringCompare(const char *s1, int l1, const char *s2, i
 {
 	if (l1 < l2) return (_memcmp(s1, s2, l1) <= 0 ? -1 : 1);
 	else if (l2 < l1) return (_memcmp(s1, s2, l2) >= 0 ? 1 : -1);
-	else return JimSign(memcmp(s1, s2, l1));
+	else return JimSign(_memcmp(s1, s2, l1));
 }
 
 // Compare null terminated strings, up to a maximum of 'maxchars' characters, (or end of string if 'maxchars' is -1).
@@ -334,7 +333,7 @@ __device__ static int JimStringLast(const char *s1, int l1, const char *s2, int 
 		return -1;
 	// Now search for the needle
 	for (const char *p = s2 + l2 - 1; p != s2 - 1; p--)
-		if (*p == *s1 && !memcmp(s1, p, l1))
+		if (*p == *s1 && !_memcmp(s1, p, l1))
 			return (int)(p - s2);
 	return -1;
 }
@@ -431,7 +430,7 @@ __device__ static jim_wide jim_strtoull(const char *str, char **endptr)
 __device__ int Jim_StringToWide(const char *str, jim_wide * widePtr, int base)
 {
 	char *endptr;
-	*widePtr = (base ? strtoull(str, &endptr, base) : jim_strtoull(str, &endptr));
+	*widePtr = (base ? _strtoull(str, &endptr, base) : jim_strtoull(str, &endptr));
 	return JimCheckConversion(str, endptr);
 }
 
@@ -439,7 +438,7 @@ __device__ int Jim_StringToDouble(const char *str, double *doublePtr)
 {
 	char *endptr;
 	// Callers can check for underflow via ERANGE
-	errno = 0;
+	__errno = 0;
 	*doublePtr = _strtod(str, &endptr);
 	return JimCheckConversion(str, endptr);
 }
@@ -462,16 +461,13 @@ __device__ static jim_wide JimPowWide(jim_wide b, jim_wide e)
 #pragma region Special functions
 
 #ifdef JIM_DEBUG_PANIC
-__device__ static void JimPanicDump(int condition, const char *fmt, ...)
+__device__ static void JimPanicDump_(int condition, const char *fmt, _va_list &args)
 {
-	va_list ap;
 	if (!condition)
 		return;
-	va_start(ap, fmt);
-	fprintf(stderr, "\nJIM INTERPRETER PANIC: ");
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n\n");
-	va_end(ap);
+	printf("\nJIM INTERPRETER PANIC: ");
+	printf(_vmprintf(fmt, &args));
+	printf("\n\n");
 #ifdef HAVE_BACKTRACE
 	{
 		void *array[40];
@@ -480,13 +476,14 @@ __device__ static void JimPanicDump(int condition, const char *fmt, ...)
 		size = backtrace(array, 40);
 		strings = backtrace_symbols(array, size);
 		for (i = 0; i < size; i++)
-			fprintf(stderr, "[backtrace] %s\n", strings[i]);
-		fprintf(stderr, "[backtrace] Include the above lines and the output\n");
-		fprintf(stderr, "[backtrace] of 'nm <executable>' in the bug report.\n");
+			fprintf(_stderr, "[backtrace] %s\n", strings[i]);
+		fprintf(_stderr, "[backtrace] Include the above lines and the output\n");
+		fprintf(_stderr, "[backtrace] of 'nm <executable>' in the bug report.\n");
 	}
 #endif
-	exit(1);
+	_exit(1);
 }
+STDARGvoid(JimPanicDump, fmt, condition COMMA fmt, int condition, const char *fmt);
 #endif
 
 #pragma endregion
@@ -513,7 +510,7 @@ __device__ void *Jim_Realloc(void *ptr, int size)
 
 __device__ char *Jim_StrDup(const char *s)
 {
-	return _strdup(s);
+	return __strdup(s);
 }
 
 __device__ char *Jim_StrDupLen(const char *s, int l)
@@ -535,7 +532,7 @@ __device__ char *Jim_StrDupLen(const char *s, int l)
 __device__ static jim_wide JimClock()
 {
 	struct timeval tv;
-	gettimeofday(&tv, NULL);
+	_gettimeofday(&tv, NULL);
 	return (jim_wide)(tv.tv_sec * 1000000 + tv.tv_usec);
 }
 
@@ -586,7 +583,7 @@ __device__ static void JimResetHashTable(Jim_HashTable *ht)
 	ht->collisions = 0;
 #ifdef JIM_RANDOMISE_HASH
 	// This is initialised to a random value to avoid a hash collision attack. See: n.runs-SA-2011.004
-	ht->uniq = (rand() ^ time(NULL) ^ clock());
+	ht->uniq = (rand() ^ _time(NULL) ^ clock());
 #else
 	ht->uniq = 0;
 #endif
@@ -899,7 +896,7 @@ __device__ static void JimAssocDataHashTableValueDestructor(void *privdata, void
 	Jim_Free(data);
 }
 
-static const Jim_HashTableType JimAssocDataHashTableType = {
+__constant__ static const Jim_HashTableType JimAssocDataHashTableType = {
 	JimStringCopyHTHashFunction,    // hash function
 	JimStringCopyHTDup,             // key dup
 	NULL,                           // val dup
@@ -1913,7 +1910,7 @@ __device__ Jim_Obj *Jim_NewObj(Jim_Interp *interp)
 __device__ void Jim_FreeObj(Jim_Interp *interp, Jim_Obj *objPtr)
 {
 	// Check if the object was already freed, panic.
-	JimPanic((objPtr->refCount != 0, "!!!Object %p freed with bad refcount %d, type=%s", objPtr, objPtr->refCount, objPtr->typePtr ? objPtr->typePtr->name : "<none>"));
+	JimPanic(objPtr->refCount != 0, "!!!Object %p freed with bad refcount %d, type=%s", objPtr, objPtr->refCount, objPtr->typePtr ? objPtr->typePtr->name : "<none>");
 	// Free the internal representation
 	Jim_FreeIntRep(interp, objPtr);
 	// Free the string representation
@@ -1984,7 +1981,7 @@ __device__ const char *Jim_GetString(Jim_Obj *objPtr, int *lenPtr)
 {
 	if (objPtr->bytes == NULL) {
 		// Invalid string repr. Generate it.
-		JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
+		JimPanic(objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name);
 		objPtr->typePtr->updateStringProc(objPtr);
 	}
 	if (lenPtr)
@@ -1997,7 +1994,7 @@ __device__ int Jim_Length(Jim_Obj *objPtr)
 {
 	if (objPtr->bytes == NULL) {
 		// Invalid string repr. Generate it.
-		JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
+		JimPanic(objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name);
 		objPtr->typePtr->updateStringProc(objPtr);
 	}
 	return objPtr->length;
@@ -2008,8 +2005,8 @@ __device__ const char *Jim_String(Jim_Obj *objPtr)
 {
 	if (objPtr->bytes == NULL) {
 		// Invalid string repr. Generate it.
-		JimPanic((objPtr->typePtr == NULL, "UpdateStringProc called against typeless value."));
-		JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
+		JimPanic(objPtr->typePtr == NULL, "UpdateStringProc called against typeless value.");
+		JimPanic(objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name);
 		objPtr->typePtr->updateStringProc(objPtr);
 	}
 	return objPtr->bytes;
@@ -2078,7 +2075,7 @@ __device__ static int SetStringFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 		// Get a fresh string representation.
 		if (objPtr->bytes == NULL) {
 			// Invalid string repr. Generate it.
-			JimPanic((objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name));
+			JimPanic(objPtr->typePtr->updateStringProc == NULL, "UpdateStringProc called against '%s' type.", objPtr->typePtr->name);
 			objPtr->typePtr->updateStringProc(objPtr);
 		}
 		// Free any other internal representation.
@@ -2182,7 +2179,7 @@ __device__ static void StringAppendString(Jim_Obj *objPtr, const char *str, int 
 // Higher level API to append strings to objects. Object must not be unshared for each of these.
 __device__ void Jim_AppendString(Jim_Interp *interp, Jim_Obj *objPtr, const char *str, int len)
 {
-	JimPanic((Jim_IsShared(objPtr), "Jim_AppendString called with shared object"));
+	JimPanic(Jim_IsShared(objPtr), "Jim_AppendString called with shared object");
 	SetStringFromAny(interp, objPtr);
 	StringAppendString(objPtr, str, len);
 }
@@ -2194,18 +2191,15 @@ __device__ void Jim_AppendObj(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *appe
 	Jim_AppendString(interp, objPtr, str, len);
 }
 
-__device__ void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, ...)
+__device__ void Jim_AppendStrings_(Jim_Interp *interp, Jim_Obj *objPtr, _va_list &args)
 {
-	va_list ap;
 	SetStringFromAny(interp, objPtr);
-	va_start(ap, objPtr);
 	while (1) {
-		const char *s = va_arg(ap, const char *);
+		const char *s = _va_arg(args, const char *);
 		if (s == NULL)
 			break;
 		Jim_AppendString(interp, objPtr, s, -1);
 	}
-	va_end(ap);
 }
 
 __device__ int Jim_StringEqObj(Jim_Obj *aObjPtr, Jim_Obj *bObjPtr)
@@ -2557,8 +2551,25 @@ __device__ static int JimStringIs(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Ob
 		return JIM_OK; }
 	case STR_IS_DOUBLE: {
 		double d;
-		Jim_SetResultBool(interp, Jim_GetDouble(interp, strObjPtr, &d) == JIM_OK && errno != ERANGE);
+		Jim_SetResultBool(interp, Jim_GetDouble(interp, strObjPtr, &d) == JIM_OK && __errno != ERANGE);
 		return JIM_OK; }
+#if __CUDACC__
+	case STR_IS_ALPHA: for (i = 0; i < len; i++) if (!_isalpha(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_ALNUM: for (i = 0; i < len; i++) if (!_isalnum(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_ASCII: for (i = 0; i < len; i++) if (!jim_isascii(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_DIGIT: for (i = 0; i < len; i++) if (!_isdigit(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_LOWER: for (i = 0; i < len; i++) if (!_islower(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_UPPER: for (i = 0; i < len; i++) if (!_isupper(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_SPACE: for (i = 0; i < len; i++) if (!_isspace(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_XDIGIT: for (i = 0; i < len; i++) if (!_isxdigit(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_CONTROL: for (i = 0; i < len; i++) if (!_iscntrl(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	case STR_IS_PRINT: for (i = 0; i < len; i++) if (!_isprint(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+		//case STR_IS_GRAPH: for (i = 0; i < len; i++) if (!_isgraph(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+		//case STR_IS_PUNCT: for (i = 0; i < len; i++) if (!_ispunct(str[i])) { Jim_SetResultBool(interp, 0); return JIM_OK; } break;
+	default:
+		return JIM_ERR;
+	}
+#else
 	case STR_IS_ALPHA: isclassfunc = isalpha; break;
 	case STR_IS_ALNUM: isclassfunc = isalnum; break;
 	case STR_IS_ASCII: isclassfunc = jim_isascii; break;
@@ -2580,6 +2591,7 @@ __device__ static int JimStringIs(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Ob
 			return JIM_OK;
 		}
 	}
+#endif
 	Jim_SetResultBool(interp, 1);
 	return JIM_OK;
 }
@@ -2614,7 +2626,7 @@ __device__ int Jim_CompareStringImmediate(Jim_Interp *interp, Jim_Obj *objPtr, c
 		return 1;
 	else {
 		const char *objStr = Jim_String(objPtr);
-		if (strcmp(str, objStr) != 0)
+		if (_strcmp(str, objStr) != 0)
 			return 0;
 		if (objPtr->typePtr != &_comparedStringObjType) {
 			Jim_FreeIntRep(interp, objPtr);
@@ -2629,7 +2641,7 @@ __device__ static int qsortCompareStringPointers(const void *a, const void *b)
 {
 	char *const *sa = (char *const *)a;
 	char *const *sb = (char *const *)b;
-	return strcmp(*sa, *sb);
+	return _strcmp(*sa, *sb);
 }
 
 #pragma endregion
@@ -2673,8 +2685,8 @@ __device__ void DupSourceInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Ob
 
 __device__ static void JimSetSourceInfo(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *fileNameObj, int lineNumber)
 {
-	JimPanic((Jim_IsShared(objPtr), "JimSetSourceInfo called with shared object"));
-	JimPanic((objPtr->typePtr != NULL, "JimSetSourceInfo called with typed object"));
+	JimPanic(Jim_IsShared(objPtr), "JimSetSourceInfo called with shared object");
+	JimPanic(objPtr->typePtr != NULL, "JimSetSourceInfo called with typed object");
 	Jim_IncrRefCount(fileNameObj);
 	objPtr->internalRep.sourceValue.fileNameObj = fileNameObj;
 	objPtr->internalRep.sourceValue.lineNumber = lineNumber;
@@ -2701,7 +2713,7 @@ __device__ static Jim_Obj *JimNewScriptLineObj(Jim_Interp *interp, int argc, int
 	Jim_Obj *objPtr;
 #ifdef DEBUG_SHOW_SCRIPT
 	char buf[100];
-	snprintf(buf, sizeof(buf), "line=%d, argc=%d", line, argc);
+	__snprintf(buf, sizeof(buf), "line=%d, argc=%d", line, argc);
 	objPtr = Jim_NewStringObj(interp, buf, -1);
 #else
 	objPtr = Jim_NewEmptyStringObj(interp);
@@ -2990,7 +3002,7 @@ __device__ static void ScriptObjAddTokens(Jim_Interp *interp, struct ScriptObj *
 	if (lineargs == 0)
 		token--;
 	script->len = (int)(token - script->token);
-	JimPanic((script->len >= count, "allocated script array is too short"));
+	JimPanic(script->len >= count, "allocated script array is too short");
 
 #ifdef DEBUG_SHOW_SCRIPT
 	printf("==== Script (%s) ====\n", Jim_String(script->fileNameObj));
@@ -3321,7 +3333,7 @@ __device__ static void JimUpdateProcNamespace(Jim_Interp *interp, Jim_Cmd *cmdPt
 {
 #ifdef jim_ext_namespace
 	if (cmdPtr->isproc) {
-		const char *pt = _strrchr(cmdname, ':'); // XXX: Really need JimNamespaceSplit()
+		const char *pt = _strrchr((char *)cmdname, ':'); // XXX: Really need JimNamespaceSplit()
 		if (pt && pt != cmdname && pt[-1] == ':') {
 			Jim_DecrRefCount(interp, cmdPtr->u.proc.nsObj);
 			cmdPtr->u.proc.nsObj = Jim_NewStringObj(interp, cmdname, pt - cmdname - 1);
@@ -3897,7 +3909,7 @@ __device__ static void JimDictSugarParseVarKey(Jim_Interp *interp, Jim_Obj *objP
 	int len;
 	const char *str = Jim_GetString(objPtr, &len);
 	const char *p = _strchr(str, '(');
-	JimPanic((p == NULL, "JimDictSugarParseVarKey() called for non-dict-sugar (%s)", str));
+	JimPanic(p == NULL, "JimDictSugarParseVarKey() called for non-dict-sugar (%s)", str);
 	Jim_Obj *varObjPtr = Jim_NewStringObj(interp, str, (int)(p - str));
 	p++;
 	int keyLen = (int)(str + len - p);
@@ -4248,7 +4260,7 @@ __device__ static int SetReferenceFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 	refId[20] = '\0';
 	// Try to convert the ID into an unsigned long
 	char *endptr;
-	unsigned long value = strtoul(refId, &endptr, 10);
+	unsigned long value = _strtoul(refId, &endptr, 10);
 	if (JimCheckConversion(refId, endptr) != JIM_OK)
 		goto badformat;
 	// Check if the reference really exists!
@@ -4440,7 +4452,7 @@ __device__ int Jim_Collect(Jim_Interp *interp)
 	}
 	Jim_FreeHashTable(&marks);
 	interp->lastCollectId = interp->referenceNextId;
-	interp->lastCollectTime = time(NULL);
+	interp->lastCollectTime = _time(NULL);
 #endif // JIM_BOOTSTRAP
 	return collected;
 }
@@ -4450,7 +4462,7 @@ __device__ int Jim_Collect(Jim_Interp *interp)
 __device__ void Jim_CollectIfNeeded(Jim_Interp *interp)
 {
 	unsigned long elapsedId = interp->referenceNextId - interp->lastCollectId;
-	int elapsedTime = time(NULL) - interp->lastCollectTime;
+	int elapsedTime = _time(NULL) - interp->lastCollectTime;
 	if (elapsedId > JIM_COLLECT_ID_PERIOD || elapsedTime > JIM_COLLECT_TIME_PERIOD)
 		Jim_Collect(interp);
 }
@@ -4478,7 +4490,7 @@ __device__ Jim_Interp *Jim_CreateInterp()
 	_memset(i, 0, sizeof(*i));
 	i->maxCallFrameDepth = JIM_MAX_CALLFRAME_DEPTH;
 	i->maxEvalDepth = JIM_MAX_EVAL_DEPTH;
-	i->lastCollectTime = time(NULL);
+	i->lastCollectTime = _time(NULL);
 	// Note that we can create objects only after the interpreter liveList and freeList pointers are initialized to NULL.
 	Jim_InitHashTable(&i->commands, &JimCommandsHashTableType, i);
 #ifdef JIM_REFERENCES
@@ -4563,7 +4575,7 @@ __device__ void Jim_FreeInterp(Jim_Interp *i)
 			objPtr = objPtr->nextObjPtr;
 		}
 		printf("-------------------------------------\n\n");
-		JimPanic((1, "Live list non empty freeing the interpreter! Leak?"));
+		JimPanic(1, "Live list non empty freeing the interpreter! Leak?");
 	}
 #endif
 	// Free all the freed objects.
@@ -4794,7 +4806,7 @@ __device__ static int SetIntFromAny(Jim_Interp *interp, Jim_Obj *objPtr, int fla
 			Jim_SetResultFormatted(interp, "expected integer but got \"%#s\"", objPtr);
 		return JIM_ERR;
 	}
-	if ((wideValue == JIM_WIDE_MIN || wideValue == JIM_WIDE_MAX) && errno == ERANGE) {
+	if ((wideValue == JIM_WIDE_MIN || wideValue == JIM_WIDE_MAX) && __errno == ERANGE) {
 		Jim_SetResultString(interp, "Integer value too big to be represented", -1);
 		return JIM_ERR;
 	}
@@ -4901,7 +4913,7 @@ __device__ static void UpdateStringOfDouble(struct Jim_Obj *objPtr)
 			if (buf[i] == '.' || buf[i] == 'e') {
 #ifdef JIM_SPRINTF_DOUBLE_NEEDS_FIX
 				// If 'buf' ends in e-0nn or e+0nn, remove the 0 after the + or - and reduce the length by 1
-				char *e = strchr(buf, 'e');
+				char *e = (char *)_strchr(buf, 'e');
 				if (e && (e[1] == '-' || e[1] == '+') && e[2] == '0') {
 					// Move it up
 					e += 2;
@@ -5355,7 +5367,7 @@ __device__ static int ListSortIndexHelper(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
 	Jim_Obj *lObj, *rObj;
 	if (Jim_ListIndex(sort_info->interp, *lhsObj, sort_info->index, &lObj, JIM_ERRMSG) != JIM_OK || Jim_ListIndex(sort_info->interp, *rhsObj, sort_info->index, &rObj, JIM_ERRMSG) != JIM_OK)
-		longjmp(sort_info->jmpbuf, JIM_ERR);
+		_longjmp(sort_info->jmpbuf, JIM_ERR);
 	return sort_info->subfn(&lObj, &rObj);
 }
 
@@ -5374,7 +5386,7 @@ __device__ static int ListSortInteger(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
 	jim_wide lhs = 0, rhs = 0;
 	if (Jim_GetWide(sort_info->interp, *lhsObj, &lhs) != JIM_OK || Jim_GetWide(sort_info->interp, *rhsObj, &rhs) != JIM_OK)
-		longjmp(sort_info->jmpbuf, JIM_ERR);
+		_longjmp(sort_info->jmpbuf, JIM_ERR);
 	return JimSign(lhs - rhs) * sort_info->order;
 }
 
@@ -5382,7 +5394,7 @@ __device__ static int ListSortReal(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
 	double lhs = 0, rhs = 0;
 	if (Jim_GetDouble(sort_info->interp, *lhsObj, &lhs) != JIM_OK || Jim_GetDouble(sort_info->interp, *rhsObj, &rhs) != JIM_OK)
-		longjmp(sort_info->jmpbuf, JIM_ERR);
+		_longjmp(sort_info->jmpbuf, JIM_ERR);
 	if (lhs == rhs)
 		return 0;
 	if (lhs > rhs)
@@ -5399,7 +5411,7 @@ __device__ static int ListSortCommand(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 	int rc = Jim_EvalObj(sort_info->interp, compare_script);
 	jim_wide ret = 0;
 	if (rc != JIM_OK || Jim_GetWide(sort_info->interp, Jim_GetResult(sort_info->interp), &ret) != JIM_OK)
-		longjmp(sort_info->jmpbuf, rc);
+		_longjmp(sort_info->jmpbuf, rc);
 	return JimSign(ret) * sort_info->order;
 }
 
@@ -5428,7 +5440,7 @@ __device__ static void ListRemoveDuplicates(Jim_Obj *listObjPtr, int (*comp)(Jim
 // Sort a list *in place*. MUST be called with a non-shared list.
 __device__ static int ListSortElements(Jim_Interp *interp, Jim_Obj *listObjPtr, struct lsort_info *info)
 {
-	JimPanic((Jim_IsShared(listObjPtr), "ListSortElements called with shared object"));
+	JimPanic(Jim_IsShared(listObjPtr), "ListSortElements called with shared object");
 	SetListFromAny(interp, listObjPtr);
 	// Allow lsort to be called reentrantly
 	struct lsort_info *prev_info = sort_info;
@@ -5445,7 +5457,7 @@ __device__ static int ListSortElements(Jim_Interp *interp, Jim_Obj *listObjPtr, 
 	case lsort_info::JIM_LSORT_COMMAND: fn = ListSortCommand; break;
 	default:
 		fn = NULL; // avoid warning
-		JimPanic((1, "ListSort called with invalid sort type"));
+		JimPanic(1, "ListSort called with invalid sort type");
 	}
 	if (info->indexed) {
 		// Need to interpose a "list index" function
@@ -5453,7 +5465,7 @@ __device__ static int ListSortElements(Jim_Interp *interp, Jim_Obj *listObjPtr, 
 		fn = ListSortIndexHelper;
 	}
 	int rc;
-	if ((rc = setjmp(info->jmpbuf)) == 0) {
+	if ((rc = _setjmp(info->jmpbuf)) == 0) {
 		_qsort(vector, len, sizeof(Jim_Obj *), (qsort_comparator *)fn);
 		if (info->unique && len > 1)
 			ListRemoveDuplicates(listObjPtr, fn);
@@ -5505,7 +5517,7 @@ __device__ static void ListAppendList(Jim_Obj *listPtr, Jim_Obj *appendListPtr)
 
 __device__ void Jim_ListAppendElement(Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *objPtr)
 {
-	JimPanic((Jim_IsShared(listPtr), "Jim_ListAppendElement called with shared object"));
+	JimPanic(Jim_IsShared(listPtr), "Jim_ListAppendElement called with shared object");
 	SetListFromAny(interp, listPtr);
 	Jim_InvalidateStringRep(listPtr);
 	ListAppendElement(listPtr, objPtr);
@@ -5513,7 +5525,7 @@ __device__ void Jim_ListAppendElement(Jim_Interp *interp, Jim_Obj *listPtr, Jim_
 
 __device__ void Jim_ListAppendList(Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *appendListPtr)
 {
-	JimPanic((Jim_IsShared(listPtr), "Jim_ListAppendList called with shared object"));
+	JimPanic(Jim_IsShared(listPtr), "Jim_ListAppendList called with shared object");
 	SetListFromAny(interp, listPtr);
 	SetListFromAny(interp, appendListPtr);
 	Jim_InvalidateStringRep(listPtr);
@@ -5528,7 +5540,7 @@ __device__ int Jim_ListLength(Jim_Interp *interp, Jim_Obj *objPtr)
 
 __device__ void Jim_ListInsertElements(Jim_Interp *interp, Jim_Obj *listPtr, int idx, int objc, Jim_Obj *const *objVec)
 {
-	JimPanic((Jim_IsShared(listPtr), "Jim_ListInsertElement called with shared object"));
+	JimPanic(Jim_IsShared(listPtr), "Jim_ListInsertElement called with shared object");
 	SetListFromAny(interp, listPtr);
 	if (idx >= 0 && idx > listPtr->internalRep.listValue.len)
 		idx = listPtr->internalRep.listValue.len;
@@ -5842,7 +5854,7 @@ __device__ static int DictAddElement(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Ob
 // If valueObjPtr == NULL, the key is removed if it exists.
 __device__ int Jim_DictAddElement(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *keyObjPtr, Jim_Obj *valueObjPtr)
 {
-	JimPanic((Jim_IsShared(objPtr), "Jim_DictAddElement called with shared object"));
+	JimPanic(Jim_IsShared(objPtr), "Jim_DictAddElement called with shared object");
 	if (SetDictFromAny(interp, objPtr) != JIM_OK)
 		return JIM_ERR;
 	Jim_InvalidateStringRep(objPtr);
@@ -5851,7 +5863,7 @@ __device__ int Jim_DictAddElement(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *
 
 __device__ Jim_Obj *Jim_NewDictObj(Jim_Interp *interp, Jim_Obj *const *elements, int len)
 {
-	JimPanic((len % 2, "Jim_NewDictObj() 'len' argument must be even"));
+	JimPanic(len % 2, "Jim_NewDictObj() 'len' argument must be even");
 	Jim_Obj *objPtr = Jim_NewObj(interp);
 	objPtr->typePtr = &_dictObjType;
 	objPtr->bytes = NULL;
@@ -6264,7 +6276,7 @@ __device__ static int JimExprOpNumUnary(Jim_Interp *interp, struct JimExprState 
 		case JIM_EXPROP_FUNC_ABS: wC = (wA >= 0 ? wA : -wA); break;
 		case JIM_EXPROP_UNARYMINUS: wC = -wA; break;
 		case JIM_EXPROP_NOT: wC = !wA; break;
-		default: abort();
+		default: _abort();
 	}
 	else if ((rc = Jim_GetDouble(interp, A, &dA)) == JIM_OK)
 		switch (e->opcode) {
@@ -6276,7 +6288,7 @@ __device__ static int JimExprOpNumUnary(Jim_Interp *interp, struct JimExprState 
 		case JIM_EXPROP_FUNC_ABS: dC = (dA >= 0 ? dA : -dA); intresult = 0; break;
 		case JIM_EXPROP_UNARYMINUS: dC = -dA; intresult = 0; break;
 		case JIM_EXPROP_NOT: wC = !dA; break;
-		default: abort();
+		default: _abort();
 	}
 	if (rc == JIM_OK)
 		if (intresult)
@@ -6309,7 +6321,7 @@ __device__ static int JimExprOpIntUnary(Jim_Interp *interp, struct JimExprState 
 			ExprPush(e, Jim_NewDoubleObj(interp, JimRandDouble(interp)));
 			break;
 		default:
-			abort();
+			_abort();
 	}
 	Jim_DecrRefCount(interp, A);
 	return rc;
@@ -6317,7 +6329,7 @@ __device__ static int JimExprOpIntUnary(Jim_Interp *interp, struct JimExprState 
 
 __device__ static int JimExprOpNone(Jim_Interp *interp, struct JimExprState *e)
 {
-	JimPanic((e->opcode != JIM_EXPROP_FUNC_RAND, "JimExprOpNone only support rand()"));
+	JimPanic(e->opcode != JIM_EXPROP_FUNC_RAND, "JimExprOpNone only support rand()");
 	ExprPush(e, Jim_NewDoubleObj(interp, JimRandDouble(interp)));
 	return JIM_OK;
 }
@@ -6405,7 +6417,7 @@ __device__ static int JimExprOpIntBin(Jim_Interp *interp, struct JimExprState *e
 				uB = S - uB;
 			wC = (unsigned long)(uA << uB) | (uA >> (S - uB));
 			break; }
-		default: abort();
+		default: _abort();
 		}
 		ExprPush(e, Jim_NewIntObj(interp, wC));
 	}
@@ -6455,7 +6467,7 @@ __device__ static int JimExprOpBin(Jim_Interp *interp, struct JimExprState *e)
 		case JIM_EXPROP_GTE: wC = wA >= wB; break;
 		case JIM_EXPROP_NUMEQ: wC = wA == wB; break;
 		case JIM_EXPROP_NUMNE: wC = wA != wB; break;
-		default: abort();
+		default: _abort();
 	}
 	else if (Jim_GetDouble(interp, A, &dA) == JIM_OK && Jim_GetDouble(interp, B, &dB) == JIM_OK) {
 		intresult = 0;
@@ -6489,7 +6501,7 @@ __device__ static int JimExprOpBin(Jim_Interp *interp, struct JimExprState *e)
 		case JIM_EXPROP_GTE: wC = dA >= dB; intresult = 1; break;
 		case JIM_EXPROP_NUMEQ: wC = dA == dB; intresult = 1; break;
 		case JIM_EXPROP_NUMNE: wC = dA != dB; intresult = 1; break;
-		default: abort();
+		default: _abort();
 		}
 	}
 	else {
@@ -6539,7 +6551,7 @@ __device__ static int JimExprOpStrBin(Jim_Interp *interp, struct JimExprState *e
 		break;
 	case JIM_EXPROP_STRIN: wC = JimSearchList(interp, B, A); break;
 	case JIM_EXPROP_STRNI: wC = !JimSearchList(interp, B, A); break;
-	default: abort();
+	default: _abort();
 	}
 	ExprPush(e, Jim_NewIntObj(interp, wC));
 	Jim_DecrRefCount(interp, A);
@@ -6868,7 +6880,7 @@ __device__ static int JimParseExprOperator(struct JimParserCtx *pc)
 		const int oplen = Jim_ExprOperators[i].namelen;
 		if (opname == NULL || opname[0] != pc->p[0])
 			continue;
-		if (oplen > bestLen && strncmp(opname, pc->p, oplen) == 0) {
+		if (oplen > bestLen && !_strncmp(opname, pc->p, oplen)) {
 			bestIdx = i + JIM_TT_EXPR_OP;
 			bestLen = oplen;
 		}
@@ -7229,7 +7241,7 @@ strexpr:
 			if (t->type == JIM_TT_EXPR_INT)
 				token->objPtr = Jim_NewIntObj(interp, jim_strtoull(t->token, &endptr));
 			else
-				token->objPtr = Jim_NewDoubleObj(interp, strtod(t->token, &endptr));
+				token->objPtr = Jim_NewDoubleObj(interp, _strtod(t->token, &endptr));
 			if (endptr != t->token + t->len) {
 				// Conversion failed, so just store it as a string
 				Jim_FreeNewObj(interp, token->objPtr);
@@ -7714,7 +7726,7 @@ __device__ static int SetScanFmtFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 		else
 			fmtObj->convCount++; // Otherwise count as assign-conversion
 		// Check if next token is a number (could be width or pos
-		if (__sscanf(fmt, "%d%n", &width, &skip) == 1) {
+		if (_sscanf(fmt, "%d%n", &width, &skip) == 1) {
 			fmt += skip;
 			// Was the number a XPG3 position specifier?
 			if (descr->pos != -1 && *fmt == '$') {
@@ -7737,7 +7749,7 @@ __device__ static int SetScanFmtFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 					}
 				}
 				// Try to find a width after the XPG3 specifier
-				if (sscanf(fmt, "%d%n", &width, &skip) == 1) {
+				if (_sscanf(fmt, "%d%n", &width, &skip) == 1) {
 					descr->width = width;
 					fmt += skip;
 				}
@@ -7784,7 +7796,7 @@ __device__ static int SetScanFmtFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 		else {
 			// Remember any valid modifier if given
 			if (_strchr("hlL", *fmt) != 0)
-				descr->modifier = tolower((int)*fmt++);
+				descr->modifier = __tolower((int)*fmt++);
 			descr->type = *fmt;
 			if (!_strchr("efgcsndoxui", *fmt)) {
 				fmtObj->error = "bad scan conversion character";
@@ -7920,7 +7932,7 @@ __device__ static int ScanOneEntry(Jim_Interp *interp, const char *str, int pos,
 		case 'f':
 		case 'g': {
 			char *endp;
-			double value = strtod(tok, &endp);
+			double value = _strtod(tok, &endp);
 			if (endp != tok) {
 				// There was some number sucessfully scanned!
 				*valObjPtr = Jim_NewDoubleObj(interp, value);
@@ -7950,7 +7962,7 @@ __device__ Jim_Obj *Jim_ScanString(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_O
 	Jim_Obj *emptyStr = 0;
 
 	// This should never happen. The format object should already be of the correct type
-	JimPanic((fmtObjPtr->typePtr != &_scanFmtStringObjType, "Jim_ScanString() for non-scan format"));
+	JimPanic(fmtObjPtr->typePtr != &_scanFmtStringObjType, "Jim_ScanString() for non-scan format");
 	ScanFmtStringObj *fmtObj = (ScanFmtStringObj *)fmtObjPtr->internalRep.ptr;
 	// Check if format specification was valid
 	if (fmtObj->error != 0) {
@@ -8032,11 +8044,11 @@ err:
 __device__ static void JimPrngInit(Jim_Interp *interp)
 {
 #define PRNG_SEED_SIZE 256
-	time_t t = time(NULL);
+	time_t t = _time(NULL);
 	interp->prngState = (Jim_PrngState *)Jim_Alloc(sizeof(Jim_PrngState));
 	unsigned int *seed = (unsigned int *)Jim_Alloc(PRNG_SEED_SIZE * sizeof(*seed));
 	for (int i = 0; i < PRNG_SEED_SIZE; i++)
-		seed[i] = (rand() ^ t ^ clock());
+		seed[i] = (_rand() ^ t ^ clock());
 	JimPrngSeed(interp, (unsigned char *)seed, PRNG_SEED_SIZE * sizeof(*seed));
 	Jim_Free(seed);
 }
@@ -8264,7 +8276,7 @@ __device__ static int JimSubstOneToken(Jim_Interp *interp, const ScriptToken *to
 		}
 		break;
 	default:
-		JimPanic((1, "default token type (%d) reached " "in Jim_SubstObj().", token->type));
+		JimPanic(1, "default token type (%d) reached " "in Jim_SubstObj().", token->type);
 		objPtr = NULL;
 		break;
 	}
@@ -8353,7 +8365,7 @@ __device__ static Jim_Obj *JimInterpolateTokens(Jim_Interp *interp, const Script
 __device__ static int JimEvalObjList(Jim_Interp *interp, Jim_Obj *listPtr)
 {
 	int retcode = JIM_OK;
-	JimPanic((Jim_IsList(listPtr) == 0, "JimEvalObjList() invoked on non-list."));
+	JimPanic(Jim_IsList(listPtr) == 0, "JimEvalObjList() invoked on non-list.");
 	if (listPtr->internalRep.listValue.len) {
 		Jim_IncrRefCount(listPtr);
 		retcode = JimInvokeCommand(interp, listPtr->internalRep.listValue.len, listPtr->internalRep.listValue.ele);
@@ -8455,7 +8467,7 @@ __device__ int Jim_EvalObj(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
 					if (retcode == JIM_OK)
 						wordObjPtr = Jim_GetResult(interp);
 					break;
-				default: JimPanic((1, "default token type reached " "in Jim_EvalObj()."));
+				default: JimPanic(1, "default token type reached " "in Jim_EvalObj().");
 			}
 			// For interpolation we call a helper function to do the work for us.
 			else wordObjPtr = JimInterpolateTokens(interp, token + i, wordtokens, JIM_NONE);
@@ -8787,24 +8799,24 @@ __device__ int Jim_EvalFile(Jim_Interp *interp, const char *filename)
 {
 	FILE *fp;
 	struct stat sb;
-	if (stat(filename, &sb) != 0 || (fp = fopen(filename, "rt")) == NULL) {
-		Jim_SetResultFormatted(interp, "couldn't read file \"%s\": %s", filename, strerror(errno));
+	if (__stat(filename, &sb) != 0 || (fp = _fopen(filename, "rt")) == NULL) {
+		Jim_SetResultFormatted(interp, "couldn't read file \"%s\": %s", filename, __strerror(__errno));
 		return JIM_ERR;
 	}
 	if (sb.st_size == 0) {
-		fclose(fp);
+		_fclose(fp);
 		return JIM_OK;
 	}
 
 	char *buf = (char *)Jim_Alloc(sb.st_size + 1);
-	int readlen = fread(buf, 1, sb.st_size, fp);
-	if (ferror(fp)) {
-		fclose(fp);
+	int readlen = _fread(buf, 1, sb.st_size, fp);
+	if (_ferror(fp)) {
+		_fclose(fp);
 		Jim_Free(buf);
-		Jim_SetResultFormatted(interp, "failed to load file \"%s\": %s", filename, strerror(errno));
+		Jim_SetResultFormatted(interp, "failed to load file \"%s\": %s", filename, __strerror(__errno));
 		return JIM_ERR;
 	}
-	fclose(fp);
+	_fclose(fp);
 	buf[readlen] = 0;
 
 	Jim_Obj *scriptObjPtr = Jim_NewStringObjNoAlloc(interp, buf, readlen);
@@ -8967,7 +8979,7 @@ __device__ void Jim_WrongNumArgs(Jim_Interp *interp, int argc, Jim_Obj *const *a
 // May add the key and/or value to the list.
 typedef void JimHashtableIteratorCallbackType(Jim_Interp *interp, Jim_Obj *listObjPtr, Jim_HashEntry *he, int type);
 
-#define JimTrivialMatch(pattern) (strpbrk((pattern), "*[?\\") == NULL)
+#define JimTrivialMatch(pattern) (_strpbrk((pattern), "*[?\\") == NULL)
 
 // For each key of the hash table 'ht' (with string keys) which matches the glob pattern (all if NULL), invoke the callback to add entries to a list. Returns the list.
 __device__ static Jim_Obj *JimHashtablePatternMatch(Jim_Interp *interp, Jim_HashTable *ht, Jim_Obj *patternObjPtr, JimHashtableIteratorCallbackType *callback, int type)
@@ -9125,7 +9137,7 @@ trydouble:
 }
 
 /* Helper for [-] and [/] */
-static int JimSubDivHelper(Jim_Interp *interp, int argc, Jim_Obj *const *argv, int op)
+__device__ static int JimSubDivHelper(Jim_Interp *interp, int argc, Jim_Obj *const *argv, int op)
 {
 	jim_wide wideValue, res = 0;
 	double doubleValue, doubleRes = 0;
@@ -10044,7 +10056,7 @@ __device__ static int Jim_LsetCoreCommand(Jim_Interp *interp, int argc, Jim_Obj 
 }
 
 // [lsort]
-static const char * const _lsort_options[] = {
+__constant__ static const char * const _lsort_options[] = {
 	"-ascii", "-nocase", "-increasing", "-decreasing", "-command", "-integer", "-real", "-index", "-unique", NULL
 };
 __device__ static int Jim_LsortCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const argv[])
@@ -10461,12 +10473,12 @@ __device__ static int Jim_TailcallCoreCommand(Jim_Interp *interp, int argc, Jim_
 		Jim_Cmd *cmdPtr = Jim_GetCommand(interp, argv[1], JIM_ERRMSG);
 		if (cmdPtr == NULL)
 			return JIM_ERR;
-		JimPanic((cf->tailcallCmd != NULL, "Already have a tailcallCmd"));
+		JimPanic(cf->tailcallCmd != NULL, "Already have a tailcallCmd");
 		// And stash this pre-resolved command
 		JimIncrCmdRefCount(cmdPtr);
 		cf->tailcallCmd = cmdPtr;
 		// And stash the command list
-		JimPanic((cf->tailcallObj != NULL, "Already have a tailcallobj"));
+		JimPanic(cf->tailcallObj != NULL, "Already have a tailcallobj");
 		cf->tailcallObj = Jim_NewListObj(interp, argv + 1, argc - 1);
 		Jim_IncrRefCount(cf->tailcallObj);
 		// When the stack unwinds to the previous proc, the stashed command will be evaluated
@@ -11018,7 +11030,7 @@ __device__ static int Jim_CatchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj
 {
 	// Which return codes are ignored (passed through)? By default, only exit, eval and signal
 	jim_wide ignore_mask = (1 << JIM_EXIT) | (1 << JIM_EVAL) | (1 << JIM_SIGNAL);
-	static const int max_ignore_code = sizeof(ignore_mask) * 8;
+	const int max_ignore_code = sizeof(ignore_mask) * 8;
 	// Reset the error code before catch. Note that this is not strictly correct.
 	Jim_SetGlobalVariableStr(interp, "errorCode", Jim_NewStringObj(interp, "NONE", -1));
 	int i;
@@ -11947,6 +11959,9 @@ __device__ static int Jim_LrepeatCoreCommand(Jim_Interp *interp, int argc, Jim_O
 
 __device__ char **Jim_GetEnviron()
 {
+#if __CUDACC__
+	return nullptr;
+#else
 #ifdef HAVE__NSGETENVIRON
 	return *_NSGetEnviron();
 #else
@@ -11955,10 +11970,14 @@ __device__ char **Jim_GetEnviron()
 #endif
 	return environ;
 #endif
+#endif
 }
 
 __device__ void Jim_SetEnviron(char **env)
 {
+#if __CUDACC__
+	return;
+#else
 #ifdef HAVE__NSGETENVIRON
 	*_NSGetEnviron() = env;
 #else
@@ -11966,6 +11985,7 @@ __device__ void Jim_SetEnviron(char **env)
 	extern char **environ;
 #endif
 	environ = env;
+#endif
 #endif
 }
 
@@ -11976,7 +11996,7 @@ __device__ static int Jim_EnvCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *
 		char **e = Jim_GetEnviron();
 		Jim_Obj *listObjPtr = Jim_NewListObj(interp, NULL, 0);
 		for (int i = 0; e[i]; i++) {
-			const char *equals = strchr(e[i], '=');
+			const char *equals = _strchr(e[i], '=');
 			if (equals) {
 				Jim_ListAppendElement(interp, listObjPtr, Jim_NewStringObj(interp, e[i], equals - e[i]));
 				Jim_ListAppendElement(interp, listObjPtr, Jim_NewStringObj(interp, equals + 1, -1));
@@ -11990,7 +12010,7 @@ __device__ static int Jim_EnvCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *
 		return JIM_ERR;
 	}
 	const char *key = Jim_String(argv[1]);
-	const char *val = getenv(key);
+	const char *val = _getenv(key);
 	if (val == NULL) {
 		if (argc < 3) {
 			Jim_SetResultFormatted(interp, "environment variable \"%#s\" does not exist", argv[1]);
@@ -12305,23 +12325,21 @@ __device__ int Jim_IsList(Jim_Obj *objPtr)
 // e.g. Jim_SetResultFormatted(interp, "Bad option \"%#s\" in proc \"%#s\"", optionObjPtr, procNamePtr);
 //
 // Note: We take advantage of the fact that printf has the same behaviour for both %s and %#s
-__device__ void Jim_SetResultFormatted(Jim_Interp *interp, const char *format, ...)
+__device__ void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, _va_list &args)
 {
 	// Initial space needed
 	int len = _strlen(format);
 	int extra = 0;
 	int n = 0;
 	const char *params[5];
-	va_list args;
-	va_start(args, format);
 	for (int i = 0; i < len && n < 5; i++) {
 		int l;
 		if (!_strncmp(format + i, "%s", 2)) {
-			params[n] = va_arg(args, char *);
+			params[n] = _va_arg(args, char *);
 			l = _strlen(params[n]);
 		}
 		else if (!_strncmp(format + i, "%#s", 3)) {
-			Jim_Obj *objPtr = va_arg(args, Jim_Obj *);
+			Jim_Obj *objPtr = _va_arg(args, Jim_Obj *);
 			params[n] = Jim_GetString(objPtr, &l);
 		}
 		else {
@@ -12334,8 +12352,7 @@ __device__ void Jim_SetResultFormatted(Jim_Interp *interp, const char *format, .
 	}
 	len += extra;
 	char *buf = (char *)Jim_Alloc(len + 1);
-	len = _snprintf(buf, len + 1, format, params[0], params[1], params[2], params[3], params[4]);
-	va_end(args);
+	len = __snprintf(buf, len + 1, format, params[0], params[1], params[2], params[3], params[4]);
 	Jim_SetResult(interp, Jim_NewStringObjNoAlloc(interp, buf, len));
 }
 

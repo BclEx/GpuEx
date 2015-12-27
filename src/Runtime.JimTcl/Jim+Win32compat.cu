@@ -39,19 +39,18 @@ char *dlerror(void)
 
 #ifdef _MSC_VER
 
-#include <sys/timeb.h>
-
-/* POSIX gettimeofday() compatibility for WIN32 */
-int gettimeofday(struct timeval *tv, void *unused)
-{
-	struct _timeb tb;
-
-	_ftime(&tb);
-	tv->tv_sec = tb.time;
-	tv->tv_usec = tb.millitm * 1000;
-
-	return 0;
-}
+//#include <sys/timeb.h>
+///* POSIX gettimeofday() compatibility for WIN32 */
+//int gettimeofday(struct timeval *tv, void *unused)
+//{
+//	struct _timeb tb;
+//
+//	_ftime(&tb);
+//	tv->tv_sec = tb.time;
+//	tv->tv_usec = tb.millitm * 1000;
+//
+//	return 0;
+//}
 
 /* Posix dirent.h compatiblity layer for WIN32.
 * Copyright Kevlin Henney, 1997, 2003. All rights reserved.

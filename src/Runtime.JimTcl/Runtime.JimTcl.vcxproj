@@ -146,6 +146,7 @@
     <ClInclude Include="Jim+Signal.h" />
     <ClInclude Include="Jim+Subcmd.h" />
     <ClInclude Include="Jim+Win32compat.h" />
+    <ClInclude Include="Utf8.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
     <None Include="RTcl.cu" />
@@ -157,6 +158,7 @@
     <ClCompile Include="Jim+Exec.cu" />
     <ClCompile Include="Jim+File.cu" />
     <ClCompile Include="Jim+Format.cu" />
+    <ClCompile Include="Jim+Gpu.cu" />
     <ClCompile Include="Jim+History.cu" />
     <ClCompile Include="Jim+Interactive.cu" />
     <ClCompile Include="Jim+Load.cu" />
@@ -202,6 +204,7 @@
     <None Include="Jim+Exec.cu" />
     <None Include="Jim+File.cu" />
     <None Include="Jim+Format.cu" />
+    <None Include="Jim+Gpu.cu" />
     <None Include="Jim+History.cu" />
     <None Include="Jim+Interactive.cu" />
     <None Include="Jim+Load.cu" />

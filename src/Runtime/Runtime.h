@@ -1338,6 +1338,8 @@ extern "C" __device__ inline int _ferror(FILE *f) { }
 extern "C" __device__ inline void _clearerr(FILE *f) { }
 extern "C" __device__ inline int _rename(const char *a, const char *b) { }
 extern "C" __device__ inline int _unlink(const char *a) { }
+extern "C" __device__ inline int __close(int a) { }
+extern "C" __device__ inline int _system(const char *c) { }
 #else
 #define _fprintfR _fprintf
 #define _fflushR _fflush
@@ -1348,6 +1350,7 @@ extern "C" __device__ inline int _unlink(const char *a) { }
 #define __fileno(f) (int)-1
 #define _fprintf(f, ...) printf(__VA_ARGS__)
 #define _fprintf(f, ...) printf(__VA_ARGS__)
+#define _setvbuf(f, b, m, s) (int)0
 #define _fopen(f, m) (FILE *)0
 #define _fflush(f) (int)0
 #define _fclose(f) (int)0
@@ -1364,9 +1367,12 @@ extern "C" __device__ inline int _unlink(const char *a) { }
 #define _clearerr(f) (void)0
 #define _rename(a, b) (int)0
 #define _unlink(a) (int)0
+#define __close(a) (int)0
+#define _system(c) (int)0
 #else
 #define __fileno(f) fileno(f)
 #define _fprintf(f, ...) fprintf(f, __VA_ARGS__)
+#define _setvbuf(f, b, m, s) setvbuf(f, b, m, s)
 #define _fopen(f, m) fopen(f, m)
 #define _fflush(f) fflush(f)
 #define _fclose(f) fclose(f)
@@ -1383,6 +1389,8 @@ extern "C" __device__ inline int _unlink(const char *a) { }
 #define _clearerr(f) clearerr(f)
 #define _rename(a, b) rename(a, b)
 #define _unlink(a) remove(a)
+#define __close(a) close(a)
+#define _system(c) system(c)
 #endif
 #endif
 

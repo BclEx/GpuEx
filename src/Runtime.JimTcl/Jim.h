@@ -72,11 +72,11 @@
 extern "C" {
 #endif
 
-//#include <time.h>
-//#include <limits.h>
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <stdarg.h>
+	//#include <time.h>
+	//#include <limits.h>
+	//#include <stdio.h>
+	//#include <stdlib.h>
+	//#include <stdarg.h>
 
 	// -----------------------------------------------------------------------------
 	// System configuration autoconf (configure) will set these
@@ -546,7 +546,7 @@ extern "C" {
 	JIM_EXPORT __device__ Jim_Obj *Jim_NewStringObjNoAlloc(Jim_Interp *interp, char *s, int len);
 	JIM_EXPORT __device__ void Jim_AppendString(Jim_Interp *interp, Jim_Obj *objPtr, const char *str, int len);
 	JIM_EXPORT __device__ void Jim_AppendObj(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *appendObjPtr);
-	JIM_EXPORT __device__ void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, ...);
+	JIM_EXPORT __device__ void Jim_AppendStrings_(Jim_Interp *interp, Jim_Obj *objPtr, _va_list &args);
 	JIM_EXPORT __device__ int Jim_StringEqObj(Jim_Obj *aObjPtr, Jim_Obj *bObjPtr);
 	JIM_EXPORT __device__ int Jim_StringMatchObj(Jim_Interp *interp, Jim_Obj *patternObjPtr, Jim_Obj *objPtr, int nocase);
 	JIM_EXPORT __device__ Jim_Obj *Jim_StringRangeObj (Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr);
@@ -568,7 +568,7 @@ extern "C" {
 	JIM_EXPORT __device__ void Jim_FreeInterp(Jim_Interp *i);
 	JIM_EXPORT __device__ int Jim_GetExitCode(Jim_Interp *interp);
 	JIM_EXPORT __device__ const char *Jim_ReturnCode(int code);
-	JIM_EXPORT __device__ void Jim_SetResultFormatted(Jim_Interp *interp, const char *format, ...);
+	JIM_EXPORT __device__ void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, _va_list &args);
 
 	// commands
 	JIM_EXPORT __device__ void Jim_RegisterCoreCommands(Jim_Interp *interp);
@@ -693,5 +693,40 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+STDARGvoid(Jim_AppendStrings, objPtr, interp COMMA objPtr, Jim_Interp *interp, Jim_Obj *objPtr);
+STDARGvoid(Jim_SetResultFormatted, format, interp COMMA format, Jim_Interp *interp, const char *format);
+
+//#if __CUDACC__
+//__device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr) { _va_list args; _va_start(args); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3, typename T4> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//#else
+//__device__ inline void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, ...) { _va_list args; _va_start(args, objPtr); Jim_AppendStrings_(interp, objPtr, args); _va_end(args); }
+//#endif
+
+//#if __CUDACC__
+//	__device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format) { _va_list args; _va_start(args); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1) { va_list1<T1> args; _va_start(args, arg1); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2) { va_list2<T1,T2> args; _va_start(args, arg1, arg2); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3) { va_list3<T1,T2,T3> args; _va_start(args, arg1, arg2, arg3); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3, typename T4> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3, T4 arg4) { va_list4<T1,T2,T3,T4> args; _va_start(args, arg1, arg2, arg3, arg4); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3, typename T4, typename T5> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) { va_list5<T1,T2,T3,T4,T5> args; _va_start(args, arg1, arg2, arg3, arg4, arg5); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) { va_list6<T1,T2,T3,T4,T5,T6> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) { va_list7<T1,T2,T3,T4,T5,T6,T7> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) { va_list8<T1,T2,T3,T4,T5,T6,T7,T8> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ inline void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//#else
+//	__device__ inline void Jim_SetResultFormatted(Jim_Interp *interp, const char *format, ...) { _va_list args; _va_start(args, format); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
+//#endif
 
 #endif /* __JIM__H */

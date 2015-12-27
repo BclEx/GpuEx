@@ -49,76 +49,56 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <RuntimeEx.h>
 #include "Jim.h"
 //#include "jimautoconf.h"
-
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
 
-/*
-*-----------------------------------------------------------------------------
-*
-* Jim_ReaddirCmd --
-*     Implements the rename TCL command:
-*         readdir ?-nocomplain? dirPath
-*
-* Results:
-*      Standard TCL result.
-*-----------------------------------------------------------------------------
-*/
-int Jim_ReaddirCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+// Jim_ReaddirCmd --
+//     Implements the rename TCL command: readdir ?-nocomplain? dirPath
+// Results:
+//      Standard TCL result.
+__device__ int Jim_ReaddirCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	const char *dirPath;
-	DIR *dirPtr;
-	struct dirent *entryPtr;
 	int nocomplain = 0;
-
-	if (argc == 3 && Jim_CompareStringImmediate(interp, argv[1], "-nocomplain")) {
+	if (argc == 3 && Jim_CompareStringImmediate(interp, argv[1], "-nocomplain"))
 		nocomplain = 1;
-	}
 	if (argc != 2 && !nocomplain) {
 		Jim_WrongNumArgs(interp, 1, argv, "?-nocomplain? dirPath");
 		return JIM_ERR;
 	}
-
-	dirPath = Jim_String(argv[1 + nocomplain]);
-
-	dirPtr = opendir(dirPath);
+	const char *dirPath = Jim_String(argv[1 + nocomplain]);
+	DIR *dirPtr = _opendir(dirPath);
 	if (dirPtr == NULL) {
-		if (nocomplain) {
+		if (nocomplain)
 			return JIM_OK;
-		}
-		Jim_SetResultString(interp, strerror(errno), -1);
+		Jim_SetResultString(interp, __strerror(__errno), -1);
 		return JIM_ERR;
 	}
 	else {
 		Jim_Obj *listObj = Jim_NewListObj(interp, NULL, 0);
-
-		while ((entryPtr = readdir(dirPtr)) != NULL) {
+		struct _dirent *entryPtr;
+		while ((entryPtr = _readdir(dirPtr)) != NULL) {
 			if (entryPtr->d_name[0] == '.') {
-				if (entryPtr->d_name[1] == '\0') {
+				if (entryPtr->d_name[1] == '\0')
 					continue;
-				}
-				if ((entryPtr->d_name[1] == '.') && (entryPtr->d_name[2] == '\0'))
+				if (entryPtr->d_name[1] == '.' && entryPtr->d_name[2] == '\0')
 					continue;
 			}
 			Jim_ListAppendElement(interp, listObj, Jim_NewStringObj(interp, entryPtr->d_name, -1));
 		}
-		closedir(dirPtr);
-
+		_closedir(dirPtr);
 		Jim_SetResult(interp, listObj);
-
 		return JIM_OK;
 	}
 }
 
-int Jim_readdirInit(Jim_Interp *interp)
+__device__ int Jim_readdirInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "readdir", "1.0", JIM_ERRMSG))
 		return JIM_ERR;
-
 	Jim_CreateCommand(interp, "readdir", Jim_ReaddirCmd, NULL, NULL);
 	return JIM_OK;
 }

@@ -51,6 +51,7 @@
 #include <sys/stat.h>
 #endif
 
+#include <RuntimeEx.h>
 #include "Jim.h"
 
 #if defined(HAVE_SYS_SOCKET_H) && defined(HAVE_SELECT) && defined(HAVE_NETINET_IN_H) && defined(HAVE_NETDB_H) && defined(HAVE_ARPA_INET_H)
@@ -72,10 +73,10 @@
 #define AIO_BUF_LEN 256     /* Can keep this small and rely on stdio buffering */
 
 #ifndef HAVE_FTELLO
-#define ftello ftell
+#define ftello _ftell
 #endif
 #ifndef HAVE_FSEEKO
-#define fseeko fseek
+#define fseeko _fseek
 #endif
 
 #define AIO_KEEPOPEN 1
@@ -300,17 +301,17 @@ static int JimFormatIpAddress(Jim_Interp *interp, Jim_Obj *varObjPtr, const unio
 
 #endif /* JIM_BOOTSTRAP */
 
-static void JimAioSetError(Jim_Interp *interp, Jim_Obj *name)
+__device__ static void JimAioSetError(Jim_Interp *interp, Jim_Obj *name)
 {
 	if (name) {
-		Jim_SetResultFormatted(interp, "%#s: %s", name, strerror(errno));
+		Jim_SetResultFormatted(interp, "%#s: %s", name, __strerror(__errno));
 	}
 	else {
-		Jim_SetResultString(interp, strerror(errno), -1);
+		Jim_SetResultString(interp, __strerror(__errno), -1);
 	}
 }
 
-static void JimAioDelProc(Jim_Interp *interp, void *privData)
+__device__ static void JimAioDelProc(Jim_Interp *interp, void *privData)
 {
 	AioFile *af = (AioFile *)privData;
 
@@ -324,29 +325,29 @@ static void JimAioDelProc(Jim_Interp *interp, void *privData)
 #endif
 
 	if (!(af->openFlags & AIO_KEEPOPEN)) {
-		fclose(af->fp);
+		_fclose(af->fp);
 	}
 
 	Jim_Free(af);
 }
 
-static int JimCheckStreamError(Jim_Interp *interp, AioFile *af)
+__device__ static int JimCheckStreamError(Jim_Interp *interp, AioFile *af)
 {
-	if (!ferror(af->fp)) {
+	if (!_ferror(af->fp)) {
 		return JIM_OK;
 	}
-	clearerr(af->fp);
+	_clearerr(af->fp);
 	/* EAGAIN and similar are not error conditions. Just treat them like eof */
-	if (feof(af->fp) || errno == EAGAIN || errno == EINTR) {
+	if (_feof(af->fp) || __errno == EAGAIN || __errno == EINTR) {
 		return JIM_OK;
 	}
 #ifdef ECONNRESET
-	if (errno == ECONNRESET) {
+	if (__errno == ECONNRESET) {
 		return JIM_OK;
 	}
 #endif
 #ifdef ECONNABORTED
-	if (errno != ECONNABORTED) {
+	if (__errno != ECONNABORTED) {
 		return JIM_OK;
 	}
 #endif
@@ -354,7 +355,7 @@ static int JimCheckStreamError(Jim_Interp *interp, AioFile *af)
 	return JIM_ERR;
 }
 
-static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 	char buf[AIO_BUF_LEN];
@@ -389,7 +390,7 @@ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		else {
 			readlen = (neededLen > AIO_BUF_LEN ? AIO_BUF_LEN : neededLen);
 		}
-		retval = fread(buf, 1, readlen, af->fp);
+		retval = _fread(buf, 1, readlen, af->fp);
 		if (retval > 0) {
 			Jim_AppendString(interp, objPtr, buf, retval);
 			if (neededLen != -1) {
@@ -417,7 +418,7 @@ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 	jim_wide count = 0;
@@ -435,23 +436,23 @@ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	while (count < maxlen) {
-		int ch = fgetc(af->fp);
+		int ch = _fgetc(af->fp);
 
-		if (ch == EOF || fputc(ch, outfh) == EOF) {
+		if (ch == EOF || _fputc(ch, outfh) == EOF) {
 			break;
 		}
 		count++;
 	}
 
-	if (ferror(af->fp)) {
-		Jim_SetResultFormatted(interp, "error while reading: %s", strerror(errno));
-		clearerr(af->fp);
+	if (_ferror(af->fp)) {
+		Jim_SetResultFormatted(interp, "error while reading: %s", __strerror(__errno));
+		_clearerr(af->fp);
 		return JIM_ERR;
 	}
 
-	if (ferror(outfh)) {
-		Jim_SetResultFormatted(interp, "error while writing: %s", strerror(errno));
-		clearerr(outfh);
+	if (_ferror(outfh)) {
+		Jim_SetResultFormatted(interp, "error while writing: %s", __strerror(__errno));
+		_clearerr(outfh);
 		return JIM_ERR;
 	}
 
@@ -460,26 +461,26 @@ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 	char buf[AIO_BUF_LEN];
 	Jim_Obj *objPtr;
 	int len;
 
-	errno = 0;
+	__errno = 0;
 
 	objPtr = Jim_NewStringObj(interp, NULL, 0);
 	while (1) {
 		buf[AIO_BUF_LEN - 1] = '_';
-		if (fgets(buf, AIO_BUF_LEN, af->fp) == NULL)
+		if (_fgets(buf, AIO_BUF_LEN, af->fp) == NULL)
 			break;
 
 		if (buf[AIO_BUF_LEN - 1] == '\0' && buf[AIO_BUF_LEN - 2] != '\n') {
 			Jim_AppendString(interp, objPtr, buf, AIO_BUF_LEN - 1);
 		}
 		else {
-			len = strlen(buf);
+			len = _strlen(buf);
 
 			if (len && (buf[len - 1] == '\n')) {
 				/* strip "\n" */
@@ -504,7 +505,7 @@ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 		len = Jim_Length(objPtr);
 
-		if (len == 0 && feof(af->fp)) {
+		if (len == 0 && _feof(af->fp)) {
 			/* On EOF returns -1 if varName was specified */
 			len = -1;
 		}
@@ -516,7 +517,7 @@ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 	int wlen;
@@ -534,8 +535,8 @@ static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	wdata = Jim_GetString(strObj, &wlen);
-	if (fwrite(wdata, 1, wlen, af->fp) == (unsigned)wlen) {
-		if (argc == 2 || putc('\n', af->fp) != EOF) {
+	if (_fwrite((void *)wdata, 1, wlen, af->fp) == (unsigned)wlen) {
+		if (argc == 2 || _fputc('\n', af->fp) != EOF) {
 			return JIM_OK;
 		}
 	}
@@ -543,7 +544,7 @@ static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_ERR;
 }
 
-static int aio_cmd_isatty(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_isatty(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 #ifdef HAVE_ISATTY
 	AioFile *af = Jim_CmdPrivData(interp);
@@ -556,7 +557,7 @@ static int aio_cmd_isatty(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 }
 
 #if !defined(JIM_ANSIC) && !defined(JIM_BOOTSTRAP)
-static int aio_cmd_recvfrom(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_recvfrom(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 	char *buf;
@@ -587,8 +588,7 @@ static int aio_cmd_recvfrom(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-
-static int aio_cmd_sendto(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_sendto(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 	int wlen;
@@ -618,7 +618,7 @@ static int aio_cmd_sendto(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int aio_cmd_accept(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_accept(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 	int sock;
@@ -642,7 +642,7 @@ static int aio_cmd_accept(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		"aio.sockstream%ld", af->addr_family, "r+");
 }
 
-static int aio_cmd_listen(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_listen(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 	long backlog;
@@ -660,26 +660,26 @@ static int aio_cmd_listen(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 }
 #endif /* JIM_BOOTSTRAP */
 
-static int aio_cmd_flush(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_flush(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
-	if (fflush(af->fp) == EOF) {
+	if (_fflush(af->fp) == EOF) {
 		JimAioSetError(interp, af->filename);
 		return JIM_ERR;
 	}
 	return JIM_OK;
 }
 
-static int aio_cmd_eof(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_eof(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
-	Jim_SetResultInt(interp, feof(af->fp));
+	Jim_SetResultInt(interp, _feof(af->fp));
 	return JIM_OK;
 }
 
-static int aio_cmd_close(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_close(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	if (argc == 3) {
 #if !defined(JIM_ANSIC) && defined(HAVE_SHUTDOWN)
@@ -704,7 +704,7 @@ static int aio_cmd_close(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return Jim_DeleteCommand(interp, Jim_String(argv[0]));
 }
 
-static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 	int orig = SEEK_SET;
@@ -731,7 +731,7 @@ static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int aio_cmd_tell(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_tell(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
@@ -739,7 +739,7 @@ static int aio_cmd_tell(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int aio_cmd_filename(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_filename(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
@@ -748,7 +748,7 @@ static int aio_cmd_filename(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 }
 
 #ifdef O_NDELAY
-static int aio_cmd_ndelay(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_ndelay(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 
@@ -774,7 +774,7 @@ static int aio_cmd_ndelay(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 #endif
 
 #ifdef HAVE_FSYNC
-static int aio_cmd_sync(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_sync(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 
@@ -784,16 +784,17 @@ static int aio_cmd_sync(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 }
 #endif
 
-static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
-{
-	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
-
-	static const char * const options[] = {
+	__constant__ static const char *const _cmd_buffering_options[] = {
 		"none",
 		"line",
 		"full",
 		NULL
 	};
+
+__device__ static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
+
 	enum
 	{
 		OPT_NONE,
@@ -802,25 +803,25 @@ static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	};
 	int option;
 
-	if (Jim_GetEnum(interp, argv[0], options, &option, NULL, JIM_ERRMSG) != JIM_OK) {
+	if (Jim_GetEnum(interp, argv[0], _cmd_buffering_options, &option, NULL, JIM_ERRMSG) != JIM_OK) {
 		return JIM_ERR;
 	}
 	switch (option) {
 	case OPT_NONE:
-		setvbuf(af->fp, NULL, _IONBF, 0);
+		_setvbuf(af->fp, NULL, _IONBF, 0);
 		break;
 	case OPT_LINE:
-		setvbuf(af->fp, NULL, _IOLBF, BUFSIZ);
+		_setvbuf(af->fp, NULL, _IOLBF, BUFSIZ);
 		break;
 	case OPT_FULL:
-		setvbuf(af->fp, NULL, _IOFBF, BUFSIZ);
+		_setvbuf(af->fp, NULL, _IOFBF, BUFSIZ);
 		break;
 	}
 	return JIM_OK;
 }
 
 #ifdef jim_ext_eventloop
-static void JimAioFileEventFinalizer(Jim_Interp *interp, void *clientData)
+__device__ static void JimAioFileEventFinalizer(Jim_Interp *interp, void *clientData)
 {
 	Jim_Obj **objPtrPtr = clientData;
 
@@ -828,15 +829,14 @@ static void JimAioFileEventFinalizer(Jim_Interp *interp, void *clientData)
 	*objPtrPtr = NULL;
 }
 
-static int JimAioFileEventHandler(Jim_Interp *interp, void *clientData, int mask)
+__device__ static int JimAioFileEventHandler(Jim_Interp *interp, void *clientData, int mask)
 {
 	Jim_Obj **objPtrPtr = clientData;
 
 	return Jim_EvalObjBackground(interp, *objPtrPtr);
 }
 
-static int aio_eventinfo(Jim_Interp *interp, AioFile * af, unsigned mask, Jim_Obj **scriptHandlerObj,
-						 int argc, Jim_Obj * const *argv)
+__device__ static int aio_eventinfo(Jim_Interp *interp, AioFile * af, unsigned mask, Jim_Obj **scriptHandlerObj, int argc, Jim_Obj * const *argv)
 {
 	if (argc == 0) {
 		/* Return current script */
@@ -867,21 +867,21 @@ static int aio_eventinfo(Jim_Interp *interp, AioFile * af, unsigned mask, Jim_Ob
 	return JIM_OK;
 }
 
-static int aio_cmd_readable(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_readable(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 
 	return aio_eventinfo(interp, af, JIM_EVENT_READABLE, &af->rEvent, argc, argv);
 }
 
-static int aio_cmd_writable(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_writable(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 
 	return aio_eventinfo(interp, af, JIM_EVENT_WRITABLE, &af->wEvent, argc, argv);
 }
 
-static int aio_cmd_onexception(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int aio_cmd_onexception(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	AioFile *af = Jim_CmdPrivData(interp);
 
@@ -889,7 +889,7 @@ static int aio_cmd_onexception(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 }
 #endif
 
-static const jim_subcmd_type aio_command_table[] = {
+__constant__ static const jim_subcmd_type aio_command_table[] = {
 	{   "read",
 	"?-nonewline? ?len?",
 	aio_cmd_read,
@@ -1049,13 +1049,12 @@ static const jim_subcmd_type aio_command_table[] = {
 	{ NULL }
 };
 
-static int JimAioSubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimAioSubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	return Jim_CallSubCmd(interp, Jim_ParseSubCmd(interp, aio_command_table, argc, argv), argc, argv);
 }
 
-static int JimAioOpenCommand(Jim_Interp *interp, int argc,
-							 Jim_Obj *const *argv)
+__device__ static int JimAioOpenCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	const char *mode;
 
@@ -1103,7 +1102,7 @@ __device__ static int JimMakeChannel(Jim_Interp *interp, FILE *fh, int fd, Jim_O
 	char buf[AIO_CMD_LEN];
 	int openFlags = 0;
 
-	snprintf(buf, sizeof(buf), hdlfmt, Jim_GetId(interp));
+	__snprintf(buf, sizeof(buf), hdlfmt, Jim_GetId(interp));
 
 	if (fh) {
 		filename = Jim_NewStringObj(interp, hdlfmt, -1);
@@ -1119,7 +1118,7 @@ __device__ static int JimMakeChannel(Jim_Interp *interp, FILE *fh, int fd, Jim_O
 		}
 		else
 #endif
-			fh = fopen(Jim_String(filename), mode);
+			fh = _fopen(Jim_String(filename), mode);
 
 		if (fh == NULL) {
 			JimAioSetError(interp, filename);
@@ -1137,7 +1136,7 @@ __device__ static int JimMakeChannel(Jim_Interp *interp, FILE *fh, int fd, Jim_O
 	af = (AioFile *)Jim_Alloc(sizeof(*af));
 	memset(af, 0, sizeof(*af));
 	af->fp = fh;
-	af->fd = fileno(fh);
+	af->fd = __fileno(fh);
 	af->filename = filename;
 #ifdef FD_CLOEXEC
 	if ((openFlags & AIO_KEEPOPEN) == 0) {
@@ -1160,7 +1159,7 @@ __device__ static int JimMakeChannel(Jim_Interp *interp, FILE *fh, int fd, Jim_O
 /**
 * Create a pair of channels. e.g. from pipe() or socketpair()
 */
-static int JimMakeChannelPair(Jim_Interp *interp, int p[2], Jim_Obj *filename, const char *hdlfmt, int family, const char *mode[2])
+__device__ static int JimMakeChannelPair(Jim_Interp *interp, int p[2], Jim_Obj *filename, const char *hdlfmt, int family, const char *mode[2])
 {
 	if (JimMakeChannel(interp, NULL, p[0], filename, hdlfmt, family, mode[0]) == JIM_OK) {
 		Jim_Obj *objPtr = Jim_NewListObj(interp, NULL, 0);
@@ -1182,7 +1181,7 @@ static int JimMakeChannelPair(Jim_Interp *interp, int p[2], Jim_Obj *filename, c
 
 #if !defined(JIM_ANSIC) && !defined(JIM_BOOTSTRAP)
 
-static int JimAioSockCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimAioSockCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	const char *hdlfmt = "aio.unknown%ld";
 	const char *socktypes[] = {
@@ -1497,9 +1496,9 @@ __device__ int Jim_aioInit(Jim_Interp *interp)
 	Jim_CreateCommand(interp, "socket", JimAioSockCommand, NULL, NULL);
 #endif
 	// Create filehandles for stdin, stdout and stderr
-	JimMakeChannel(interp, stdin, -1, NULL, "stdin", 0, "r");
-	JimMakeChannel(interp, stdout, -1, NULL, "stdout", 0, "w");
-	JimMakeChannel(interp, stderr, -1, NULL, "stderr", 0, "w");
+	JimMakeChannel(interp, _stdin, -1, NULL, "stdin", 0, "r");
+	JimMakeChannel(interp, _stdout, -1, NULL, "stdout", 0, "w");
+	JimMakeChannel(interp, _stderr, -1, NULL, "stderr", 0, "w");
 	return JIM_OK;
 }
 

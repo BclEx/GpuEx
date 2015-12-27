@@ -45,6 +45,7 @@
 #include <ctype.h>
 #include <string.h>
 
+#include <RuntimeEx.h>
 #include "Jim.h"
 #include "Utf8.h"
 
@@ -122,8 +123,8 @@ __device__ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int
 		*/
 
 		newXpg = 0;
-		if (isdigit(ch)) {
-			int position = strtoul(format, &end, 10);
+		if (_isdigit(ch)) {
+			int position = _strtoul(format, &end, 10);
 			if (*end == '$') {
 				newXpg = 1;
 				objIndex = position - 1;
@@ -183,8 +184,8 @@ __device__ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int
 		*/
 
 		width = 0;
-		if (isdigit(ch)) {
-			width = strtoul(format, &end, 10);
+		if (_isdigit(ch)) {
+			width = _strtoul(format, &end, 10);
 			format = end;
 			step = utf8_tounicode(format, &ch);
 		} else if (ch == '*') {
@@ -217,8 +218,8 @@ __device__ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int
 			format += step;
 			step = utf8_tounicode(format, &ch);
 		}
-		if (isdigit(ch)) {
-			precision = strtoul(format, &end, 10);
+		if (_isdigit(ch)) {
+			precision = _strtoul(format, &end, 10);
 			format = end;
 			step = utf8_tounicode(format, &ch);
 		} else if (ch == '*') {
@@ -360,10 +361,10 @@ __device__ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int
 
 			/* Fill in the width and precision */
 			if (width) {
-				p += sprintf(p, "%ld", width);
+				p += _sprintf(p, "%ld", width);
 			}
 			if (gotPrecision) {
-				p += sprintf(p, ".%ld", precision);
+				p += _sprintf(p, ".%ld", precision);
 			}
 
 			/* Now the modifier, and get the actual value here */
@@ -412,12 +413,12 @@ __device__ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int
 			}
 
 			if (doubleType) {
-				snprintf(num_buffer, length + 1, spec, d);
+				__snprintf(num_buffer, length + 1, spec, d);
 			}
 			else {
-				formatted_bytes = snprintf(num_buffer, length + 1, spec, w);
+				formatted_bytes = __snprintf(num_buffer, length + 1, spec, w);
 			}
-			formatted_chars = formatted_bytes = strlen(num_buffer);
+			formatted_chars = formatted_bytes = _strlen(num_buffer);
 			formatted_buf = num_buffer;
 			break;
 				  }

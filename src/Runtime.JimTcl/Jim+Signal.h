@@ -5,19 +5,19 @@
 extern "C" {
 #endif
 
-/**
- * Returns the canonical name for the given signal,
- * e.g. "SIGTERM", "SIGINT"
- */
-const char *Jim_SignalId(int sig);
+	/**
+	* Returns the canonical name for the given signal,
+	* e.g. "SIGTERM", "SIGINT"
+	*/
+	__device__ const char *Jim_SignalId(int sig);
 
-/**
- * If available, returns a short description of the given signal.
- * e.g. "Terminated", "Interrupted"
- * 
- * Otherwise returns the same as Jim_SignalId()
- */
-const char *Jim_SignalName(int sig);
+	/**
+	* If available, returns a short description of the given signal.
+	* e.g. "Terminated", "Interrupted"
+	* 
+	* Otherwise returns the same as Jim_SignalId()
+	*/
+	__device__ const char *Jim_SignalName(int sig);
 
 #ifdef __cplusplus
 }

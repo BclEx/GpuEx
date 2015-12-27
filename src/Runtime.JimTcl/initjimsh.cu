@@ -3,6 +3,7 @@
 
 __device__ int Jim_initjimshInit(Jim_Interp *interp)
 {
+	return Jim_EvalSource(interp, "$basename", 1, "echo welcome");
 	if (Jim_PackageProvide(interp, "$pkgname", "1.0", JIM_ERRMSG)) return JIM_ERR;
 	return Jim_EvalSource(interp, "$basename", 1,
 		"proc _jimsh_init {} {\n"

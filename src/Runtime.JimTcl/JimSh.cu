@@ -44,7 +44,7 @@
 // From initjimsh.tcl
 extern int Jim_initjimshInit(Jim_Interp *interp);
 
-static void JimSetArgv(Jim_Interp *interp, int argc, char *const argv[])
+__device__ static void JimSetArgv(Jim_Interp *interp, int argc, char *const argv[])
 {
 	Jim_Obj *listObj = Jim_NewListObj(interp, NULL, 0);
 	// Populate argv global var
@@ -64,7 +64,7 @@ static void JimPrintErrorMessage(Jim_Interp *interp)
 
 int main(int argc, char *const argv[])
 {
-	if (argc > 1 && strcmp(argv[1], "--version") == 0) {
+	if (argc > 1 && !strcmp(argv[1], "--version")) {
 		printf("%d.%d\n", JIM_VERSION / 100, JIM_VERSION % 100);
 		return 0;
 	}
@@ -90,7 +90,7 @@ int main(int argc, char *const argv[])
 		}
 	}
 	else {
-		if (argc > 2 && strcmp(argv[1], "-e") == 0) {
+		if (argc > 2 && !strcmp(argv[1], "-e")) {
 			JimSetArgv(interp, argc - 3, argv + 3);
 			retcode = Jim_Eval(interp, argv[2]);
 			if (retcode != JIM_ERR)

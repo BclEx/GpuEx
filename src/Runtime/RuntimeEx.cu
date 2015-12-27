@@ -9,6 +9,68 @@
 // FUNC
 #pragma region FUNC
 
+// setjmp/longjmp
+#if __CUDACC__
+// TODO: BUILD
+__device__ int _setjmp(jmp_buf xxenv)
+{
+	return 0;
+}
+
+// TODO: BUILD
+__device__ void _longjmp(jmp_buf yyenv, int zzval)
+{
+}
+#endif
+
+// rand
+#if __CUDACC__
+// TODO: BUILD
+__device__ int _rand()
+{
+	return 0;
+}
+#endif
+
+// time
+#if __CUDACC__
+// TODO: BUILD
+__device__ time_t _time(time_t *timer)
+{
+	//clock_t start = clock();
+	time_t epoch = 0;
+	return epoch;
+}
+#endif
+
+// gettimeofday
+#if __CUDACC__
+// TODO: BUILD
+__device__ int _gettimeofday(struct timeval *tp, void *tz)
+{
+	time_t seconds = _time(nullptr);
+	tp->tv_usec = 0;
+	tp->tv_sec = seconds;
+	return 0;
+	//if (tz)
+	//	_abort();
+	//tp->tv_usec = 0;
+	//return (_time(&tp->tv_sec) == (time_t)-1 ? -1 : 0);
+}
+#else
+#ifdef _MSC_VER
+#include <sys/timeb.h>
+__device__ int _gettimeofday(struct timeval *tp, void *unused)
+{
+	struct _timeb tb;
+	_ftime(&tb);
+	tp->tv_sec = tb.time;
+	tp->tv_usec = tb.millitm * 1000;
+	return 0;
+}
+#endif
+#endif
+
 // sleep
 #if __CUDACC__
 __device__ void __sleep(unsigned long milliseconds)
@@ -27,10 +89,16 @@ __device__ void __sleep(unsigned long milliseconds)
 // errno
 #if __CUDACC__
 __device__ int __errno;
+// TODO: BUILD
+__device__ char *__strerror(int errno_)
+{
+	return "ERROR";
+}
 #endif
 
-// strtol_, strtoq_
+// strtol_, strtoll_, strtoq_
 #if __CUDACC__
+#pragma warning(disable : 4146)
 // Convert a string to a long integer.
 //
 // Ignores 'locale' stuff.  Assumes that the upper and lower case alphabets and digits are each contiguous.
@@ -113,6 +181,103 @@ __device__ unsigned long _strtol_(const char *str, char **endptr, register int b
 	return acc;
 }
 
+// Convert a string to a long long integer.
+//
+// Ignores `locale' stuff.  Assumes that the upper and lower case alphabets and digits are each contiguous.
+__device__ unsigned long long _strtoll_(const char *str, char **endptr, register int base, bool signed_)
+{
+	register const char *s = str;
+	// Skip white space and pick up leading +/- sign if any. If base is 0, allow 0x for hex and 0 for octal, else assume decimal; if base is already 16, allow 0x.
+	register int neg = 0;
+	register int c;
+	do {
+		c = *s++;
+	} while (_isspace(c));
+	if (c == '-') {
+		neg = 1;
+		c = *s++;
+	} else if (c == '+')
+		c = *s++;
+	if ((base == 0 || base == 16) && c == '0' && (*s == 'x' || *s == 'X')) {
+		c = s[1];
+		s += 2;
+		base = 16;
+	} else if ((base == 0 || base == 2) && c == '0' && (*s == 'b' || *s == 'B')) {
+		c = s[1];
+		s += 2;
+		base = 2;
+	}
+	if (base == 0)
+		base = (c == '0' ? 8 : 10);
+
+	// Compute the cutoff value between legal numbers and illegal numbers.  That is the largest legal value, divided by the
+	// base.  An input number that is greater than this value, if followed by a legal input character, is too big.  One that
+	// is equal to this value may be valid or not; the limit between valid and invalid numbers is then based on the last
+	// digit.  For instance, if the range for long longs is [-9223372036854775808..9223372036854775807] and the input base
+	// is 10, cutoff will be set to 922337203685477580 and cutlim to either 7 (neg==0) or 8 (neg==1), meaning that if we have
+	// accumulated a value > 922337203685477580, or equal but the next digit is > 7 (or 8), the number is too big, and we will return a range error.
+	//
+	// Set any if any `digits' consumed; make it negative to indicate overflow.
+	register unsigned long long cutoff;
+	register int cutlim;
+	if (signed_)
+	{
+		cutoff = (neg ? -(unsigned long long)LLONG_MIN : LLONG_MAX);
+		cutlim = cutoff % (unsigned long long)base;
+		cutoff /= (unsigned long long)base;
+	} else {
+		cutoff = (unsigned long long)ULLONG_MAX / (unsigned long long)base;
+		cutlim = (unsigned long long)ULLONG_MAX % (unsigned long long)base;
+	}
+
+	if (neg) {
+		if (cutlim > 0) {
+			cutlim -= base;
+			cutoff += 1;
+		}
+		cutlim = -cutlim;
+	}
+
+	register unsigned long long acc;
+	register int any;
+	for (acc = 0, any = 0;; c = *s++) {
+		if (_isdigit(c))
+			c -= '0';
+		else if (_isalpha(c))
+			c -= (_isupper(c) ? 'A' - 10 : 'a' - 10);
+		else
+			break;
+		if (c >= base)
+			break;
+		if (any < 0)
+			continue;
+		if (neg) {
+			if (acc < cutoff || (acc == cutoff && c > cutlim)) {
+				any = -1;
+				acc = LLONG_MIN;
+				__errno = ERANGE;
+			} else {
+				any = 1;
+				acc *= base;
+				acc -= c;
+			}
+		} else {
+			if (acc > cutoff || (acc == cutoff && c > cutlim)) {
+				any = -1;
+				acc = LLONG_MAX;
+				__errno = ERANGE;
+			} else {
+				any = 1;
+				acc *= base;
+				acc += c;
+			}
+		}
+	}
+	if (endptr != 0)
+		*endptr = (char *)(any ? s - 1 : str);
+	return acc;
+}
+
 // Convert a string to an unsigned quad integer.
 //
 // Ignores 'locale' stuff.  Assumes that the upper and lower case alphabets and digits are each contiguous.
@@ -156,7 +321,7 @@ __device__ u_quad_t _strtoq_(const char *str, char **endptr, register int base, 
 	if (signed_)
 	{
 		cutoff = (neg ? -(u_quad_t)QUAD_MIN : QUAD_MAX);
-		cutlim = cutoff % qbase;
+		cutlim = (int)(cutoff % qbase);
 		cutoff /= qbase;
 	} else {
 		cutoff = (u_quad_t)UQUAD_MAX / qbase;
@@ -310,6 +475,22 @@ __device__ char *_strrchr(char *str, int ch)
 }
 #endif
 
+// strpbrk
+#if __CUDACC__
+// Find the first occurrence in s1 of a character in s2 (excluding NUL).
+__device__ char *_strpbrk(register const char *s1, register const char *s2)
+{
+	register const char *scanp;
+	register int c, sc;
+	while ((c = *s1++) != 0) {
+		for (scanp = s2; (sc = *scanp++) != 0;)
+			if (sc == c)
+				return ((char *)(s1 - 1));
+	}
+	return nullptr;
+}
+#endif
+
 // sscanf
 #if __CUDACC__
 #define	BUF		32 	// Maximum length of numeric string.
@@ -343,7 +524,7 @@ __device__ char *_strrchr(char *str, int ch)
 __device__ static const char *__sccl(char *, const char *);
 
 __constant__ static short _basefix[17] = { 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }; // 'basefix' is used to avoid 'if' tests in the integer scanner
-__device__ int __sscanf(const char *str, const char *fmt, _va_list &args)
+__device__ int _sscanf_(const char *str, const char *fmt, _va_list &args)
 {
 	int c; // character from format, or conversion
 	size_t width; // field width, or 0
@@ -878,6 +1059,22 @@ loop:
 
 #endif
 
+// div
+#if __CUDACC__
+__device__ div_t _div(int num, int denom)
+{
+	div_t r;
+	r.quot = num / denom;
+	r.rem = num % denom;
+	if (num >= 0 && r.rem < 0)
+	{
+		r.quot++;
+		r.rem -= denom;
+	}
+	return r;
+}
+#endif
+
 #pragma endregion
 
 //////////////////////
@@ -893,6 +1090,10 @@ __device__ char *_getenv(const char *name)
 
 #if __CUDACC__
 __device__ int __chmod(const char *a, mode_t m)
+{
+	return 0;
+}
+__device__ int __rmdir(const char *a)
 {
 	return 0;
 }

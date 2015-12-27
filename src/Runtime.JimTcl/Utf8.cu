@@ -14,7 +14,7 @@
 #include "utf8.h"
 
 /* This one is always implemented */
-int utf8_fromunicode(char *p, unsigned uc)
+__device__ int utf8_fromunicode(char *p, unsigned uc)
 {
     if (uc <= 0x7f) {
         *p = uc;

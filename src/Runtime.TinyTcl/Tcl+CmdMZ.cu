@@ -573,7 +573,7 @@ __device__ int Tcl_ScanCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 	}
 
 	// Step 3:
-	int numScanned = __sscanf(args[1], args[2], // sscanf's result.
+	int numScanned = _sscanf(args[1], args[2], // sscanf's result.
 		fields[0].location, fields[1].location, fields[2].location,
 		fields[3].location, fields[4].location, fields[5].location,
 		fields[6].location, fields[7].location, fields[8].location,

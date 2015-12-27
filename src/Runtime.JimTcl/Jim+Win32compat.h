@@ -38,17 +38,16 @@ extern "C" {
 #define JIM_WIDE_MAX LLONG_MAX
 #define JIM_WIDE_MODIFIER "I64d"
 #define strcasecmp _stricmp
-#define strtoull _strtoui64
-#define snprintf _snprintf
+//#define strtoull _strtoull
+//#define snprintf __snprintf
 
 #include <io.h>
 
-	struct timeval {
-		long tv_sec;
-		long tv_usec;
-	};
-
-	int gettimeofday(struct timeval *tv, void *unused);
+	//struct timeval {
+	//	long tv_sec;
+	//	long tv_usec;
+	//};
+	//__device__ int gettimeofday(struct timeval *tv, void *unused);
 
 #define HAVE_OPENDIR
 	struct dirent {
