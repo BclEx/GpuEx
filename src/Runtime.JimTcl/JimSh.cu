@@ -38,11 +38,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <RuntimeHost.h>
 #include "Jim.h"
 //#include "jimautoconf.h"
 
-// From initjimsh.tcl
-extern int Jim_initjimshInit(Jim_Interp *interp);
+#pragma region Name
 
 __device__ static void JimSetArgv(Jim_Interp *interp, int argc, char *const argv[])
 {
@@ -56,31 +56,162 @@ __device__ static void JimSetArgv(Jim_Interp *interp, int argc, char *const argv
 	Jim_SetVariableStr(interp, "argc", Jim_NewIntObj(interp, argc));
 }
 
-static void JimPrintErrorMessage(Jim_Interp *interp)
+__device__ static void JimPrintErrorMessage(Jim_Interp *interp)
 {
 	Jim_MakeErrorMessage(interp);
-	fprintf(stderr, "%s\n", Jim_String(Jim_GetResult(interp)));
+	printf("%s\n", Jim_String(Jim_GetResult(interp)));
 }
 
-int main(int argc, char *const argv[])
+struct CallbackData
 {
-	if (argc > 1 && !strcmp(argv[1], "--version")) {
-		printf("%d.%d\n", JIM_VERSION / 100, JIM_VERSION % 100);
-		return 0;
-	}
+	int H_size;
+	struct CallbackData *H_;
+	struct CallbackData *D_;
+	Jim_Interp *Interp;
+};
 
+#pragma endregion
+
+#pragma region CUDA
+#if __CUDACC__
+cudaDeviceHeap _deviceHeap;
+
+void H_DIRTY(struct CallbackData *p)
+{
+	p->H_size = 0;
+}
+
+void D_FREE(struct CallbackData *p)
+{
+	if (p->D_)
+	{
+		free(p->H_);
+		cudaFree(p->D_);
+		p->H_ = p->D_ = nullptr;
+	}
+}
+
+void D_DATA(struct CallbackData *p)
+{
+	CallbackData *h = p->H_;
+	if (!p->H_size)
+	{
+		D_FREE(p);
+		// Allocate memory for the CallbackData structure
+		int size = _ROUND8(sizeof(CallbackData));
+		uint8 *ptr = (uint8 *)malloc(size);
+		if (!ptr)
+		{
+			printf("D_DATA: RC_NOMEM");
+			return;
+		}
+		memset(ptr, 0, size);
+		// create clone to send to device
+		h = p->H_ = (CallbackData *)(ptr);
+		p->H_size = size;
+		//
+		cudaErrorCheck(cudaMalloc((void**)&ptr, p->H_size));
+		p->D_ = (CallbackData *)(ptr);
+	}
+	//
+	memcpy(h, p, sizeof(CallbackData));
+	cudaErrorCheck(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice));
+}
+
+void H_DATA(struct CallbackData *p)
+{
+	CallbackData *h = p->H_;
+	cudaErrorCheck(cudaMemcpy(h, p->D_, p->H_size, cudaMemcpyDeviceToHost));
+	memcpy(p, h, sizeof(CallbackData));
+}
+
+__device__ long d_return;
+long h_return;
+void H_RETURN()
+{
+	cudaErrorCheck(cudaMemcpyFromSymbol(&h_return, d_return, sizeof(h_return), 0, cudaMemcpyDeviceToHost));
+}
+
+#else
+#define H_DIRTY(p) 0
+#endif
+#pragma endregion
+
+#pragma region Startup/Shutdown
+
+// From initjimsh.tcl
+extern __device__ int Jim_initjimshInit(Jim_Interp *interp);
+
+// Initialize the state information in data
+struct CallbackData _data;
+#if __CUDACC__
+__global__ void d_MainInit_0(struct CallbackData *data, int argc, char *const argv[])
+{
 	// Create and initialize the interpreter
-	Jim_Interp *interp = Jim_CreateInterp();
+	Jim_Interp *interp = data->Interp = Jim_CreateInterp();
 	Jim_RegisterCoreCommands(interp);
 
 	// Register static extensions
 	if (Jim_InitStaticExtensions(interp) != JIM_OK)
 		JimPrintErrorMessage(interp);
-
+	//
 	Jim_SetVariableStrWithStr(interp, "jim::argv0", argv[0]);
 	Jim_SetVariableStrWithStr(interp, JIM_INTERACTIVE, argc == 1 ? "1" : "0");
 	int retcode = Jim_initjimshInit(interp);
+	if (argc == 1) {
+		if (retcode == JIM_ERR)
+			JimPrintErrorMessage(interp);
+		if (retcode != JIM_EXIT) {
+			JimSetArgv(interp, 0, NULL);
+			//retcode = Jim_InteractivePrompt(interp);
+		}
+	}
+	else {
+		if (argc > 2 && !_strcmp(argv[1], "-e")) {
+			JimSetArgv(interp, argc - 3, argv + 3);
+			retcode = Jim_Eval(interp, argv[2]);
+			if (retcode != JIM_ERR)
+				printf("%s\n", Jim_String(Jim_GetResult(interp)));
+		}
+		else {
+			Jim_SetVariableStr(interp, "argv0", Jim_NewStringObj(interp, argv[1], -1));
+			JimSetArgv(interp, argc - 2, argv + 2);
+			retcode = Jim_EvalFile(interp, argv[1]);
+		}
+		if (retcode == JIM_ERR)
+			JimPrintErrorMessage(interp);
+	}
+}
+#endif
+static int MainInit(int argc, char *const argv[])
+{
+	memset(&_data, 0, sizeof(_data));
+#if __CUDACC__
+	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
+	int deviceId = gpuGetMaxGflopsDeviceId();
+	cudaErrorCheck(cudaSetDevice(deviceId));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*1));
+	_deviceHeap = cudaDeviceHeapCreate(256, 100);
+	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
+	//
+	char **d_argv = cudaDeviceTransferStringArray(argc, argv);
+	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_, argc, d_argv); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
+	cudaDeviceTransferFree(d_argv);
+	H_RETURN();
+	cudaDeviceHeapSynchronize(_deviceHeap);
+	return h_return;
+#else
+	// Create and initialize the interpreter
+	Jim_Interp *interp = _data.Interp = Jim_CreateInterp();
+	Jim_RegisterCoreCommands(interp);
 
+	// Register static extensions
+	if (Jim_InitStaticExtensions(interp) != JIM_OK)
+		JimPrintErrorMessage(interp);
+	//
+	Jim_SetVariableStrWithStr(interp, "jim::argv0", argv[0]);
+	Jim_SetVariableStrWithStr(interp, JIM_INTERACTIVE, argc == 1 ? "1" : "0");
+	int retcode = Jim_initjimshInit(interp);
 	if (argc == 1) {
 		if (retcode == JIM_ERR)
 			JimPrintErrorMessage(interp);
@@ -104,12 +235,53 @@ int main(int argc, char *const argv[])
 		if (retcode == JIM_ERR)
 			JimPrintErrorMessage(interp);
 	}
+	return retcode;
+#endif
+}
+
+#if __CUDACC__
+__global__ void d_MainShutdown_0(struct CallbackData *data, int retcode)
+{
+	Jim_Interp *interp = data->Interp;
 	if (retcode == JIM_EXIT)
 		retcode = Jim_GetExitCode(interp);
-	else if (retcode == JIM_ERR)
+	Jim_FreeInterp(interp);
+	d_return = retcode;
+}
+#endif
+static int MainShutdown(int retcode)
+{
+#if __CUDACC__
+	D_DATA(&_data); d_MainShutdown_0<<<1,1>>>(_data.D_, retcode); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
+	H_RETURN();
+	D_FREE(&_data);
+	//
+	cudaDeviceHeapDestroy(_deviceHeap);
+	cudaDeviceReset();
+	return h_return;
+#else
+	Jim_Interp *interp = _data.Interp;
+	if (retcode == JIM_EXIT)
+		retcode = Jim_GetExitCode(interp);
+	Jim_FreeInterp(interp);
+	return retcode;
+#endif
+}
+
+#pragma endregion
+
+int main(int argc, char *const argv[])
+{
+	if (argc > 1 && !strcmp(argv[1], "--version")) {
+		printf("%d.%d\n", JIM_VERSION / 100, JIM_VERSION % 100);
+		return 0;
+	}
+	int retcode = MainInit(argc, argv);
+	//
+	retcode = MainShutdown(retcode);
+	if (retcode == JIM_ERR)
 		retcode = 1;
 	else
 		retcode = 0;
-	Jim_FreeInterp(interp);
 	return retcode;
 }

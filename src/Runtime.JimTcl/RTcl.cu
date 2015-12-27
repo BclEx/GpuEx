@@ -1,3 +1,5 @@
+#include "JimSh.cu"
+#include "initjimsh.cu"
 #include "Jim.cu"
 #include "Jim+Aio.cu"
 #include "Jim+Array.cu"
@@ -26,5 +28,4 @@
 //#include "Jim+Win32.cu"
 //#include "Jim+Win32compat.cu"
 #include "Utf8.cu"
-#include "JimSh.cu"
 

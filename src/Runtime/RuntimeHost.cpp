@@ -102,7 +102,7 @@ extern "C" void cudaDeviceHeapDestroy(cudaDeviceHeap &host)
 {
 	if (!host.heap)
 		return;
-	#ifndef _LCcpu
+#ifndef _LCcpu
 	cudaFree(host.heap); host.heap = nullptr;
 #endif
 }
@@ -221,6 +221,47 @@ extern "C" cudaError_t cudaDeviceHeapSynchronize(cudaDeviceHeap &host, void *str
 #endif
 	return cudaSuccess;
 }
+
+//////////////////////
+// TRANSFER
+#pragma region TRANSFER
+
+extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value[], cudaError_t *error)
+{
+	int i;
+	int size = 0;
+	for (i = 0; i < length; i++)
+		size += (value[i] ? (int)strlen(value[i]) + 1 : 0);
+	char **ptr = (char **)malloc(size);
+	if (!ptr)
+	{
+		printf("cudaDeviceTransferStringArray: RC_NOMEM");
+		if (error)
+			*error = cudaErrorMemoryAllocation;
+		return nullptr;
+	}
+	memset(ptr, 0, size);
+	char **h = ptr;
+	for (i = 0; i < length; i++) {
+		if (value[i]) {
+			int length = (int)strlen(value[i]) + 1;
+			memcpy((void *)ptr, value[i], length);
+			ptr += length;
+		}
+	}
+	cudaErrorCheck(cudaMalloc((void **)&ptr, size));
+	char **d = ptr;
+	cudaErrorCheck(cudaMemcpy(d, h, size, cudaMemcpyHostToDevice));
+	free(h);
+	return d;
+}
+
+extern "C" void cudaDeviceTransferFree(void *devicePtr)
+{
+	cudaFree(devicePtr);
+}
+
+#pragma endregion
 
 //////////////////////
 // PRINTF

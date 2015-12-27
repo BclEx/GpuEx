@@ -415,7 +415,7 @@ void D_DATA(struct CallbackData *p)
 		memcpy((void *)dbFilename, p->DbFilename, dbFilenameLength);
 		p->H_size = size;
 		//
-		cudaErrorCheck(cudaMalloc((void**)&ptr, p->H_size));
+		cudaErrorCheck(cudaMalloc((void **)&ptr, p->H_size));
 		p->D_ = (CallbackData *)(ptr);
 		destTable = (char *)(ptr += _ROUND8(sizeof(CallbackData)));
 		dbFilename = (char *)(ptr += destTableLength);
