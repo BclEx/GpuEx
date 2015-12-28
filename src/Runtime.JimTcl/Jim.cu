@@ -106,7 +106,7 @@
 // Maximum size of an integer
 #define JIM_INTEGER_SPACE 24
 
-const char *jim_tt_name(int type);
+__device__ const char *jim_tt_name(int type);
 
 #ifdef JIM_DEBUG_PANIC
 __device__ static void JimPanicDump_(int condition, const char *fmt, _va_list &args);
@@ -12409,12 +12409,12 @@ __device__ int Jim_InitStaticExtensions(Jim_Interp *interp)
 	extern __device__ int Jim_namespaceInit(Jim_Interp *interp);
 	extern __device__ int Jim_packInit(Jim_Interp *interp);
 	extern __device__ int Jim_packageInit(Jim_Interp *interp);
-
 	//extern __device__ int Jim_tclprefixInit(Jim_Interp *interp);
+
 	Jim_bootstrapInit(interp);
 	Jim_globInit(interp);
 	Jim_stdlibInit(interp);
-	Jim_tclcompatInit(interp);
+	//Jim_tclcompatInit(interp);
 	//
 	Jim_aioInit(interp);
 	Jim_arrayInit(interp);
@@ -12428,13 +12428,15 @@ __device__ int Jim_InitStaticExtensions(Jim_Interp *interp)
 #if __CUDACC__
 	Jim_gpuInit(interp);
 #else
-	Jim_win32Init(interp);
+	//Jim_win32Init(interp);
 #endif
+#ifndef __CUDACC__
 	Jim_historyInit(interp);
 	Jim_loadInit(interp);
 	Jim_namespaceInit(interp);
 	Jim_packInit(interp);
 	Jim_packageInit(interp);
 	//Jim_tclprefixInit(interp);
+#endif
 	return JIM_OK;
 }

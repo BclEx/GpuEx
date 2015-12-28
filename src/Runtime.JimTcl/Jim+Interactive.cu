@@ -23,7 +23,7 @@ char *Jim_HistoryGetline(const char *prompt)
 		free(line);
 		return NULL;
 	}
-	int len = strlen(line);
+	int len = (int)strlen(line);
 	if (len && line[len - 1] == '\n')
 		line[len - 1] = '\0';
 	return line;
@@ -157,7 +157,7 @@ __global__ void g_InteractivePromptBodyMiddle(char *line)
 int Jim_InteractivePromptBodyMiddle(char *line)
 {
 	char *d_line;
-	int lineLength = strlen(line) + 1;
+	int lineLength = (int)strlen(line) + 1;
 	cudaMalloc((void**)&d_line, lineLength);
 	cudaMemcpy(d_line, line, lineLength, cudaMemcpyHostToDevice);
 	D_DATAI(); g_InteractivePromptBodyMiddle<<<1,1>>>(d_line); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAI();

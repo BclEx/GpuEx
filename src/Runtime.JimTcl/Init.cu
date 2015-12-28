@@ -57,8 +57,7 @@ __device__ int Jim_initjimshInit(Jim_Interp *interp)
 		"}\n"
 		"\n"
 		"_jimsh_init\n"
-		"\n"
-		"cd tests; source array.test;\n"
+		//"cd tests; source array.test;\n"
 		);
 }
 
