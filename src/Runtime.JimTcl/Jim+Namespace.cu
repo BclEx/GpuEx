@@ -54,7 +54,7 @@
 #include <assert.h>
 #include <RuntimeEx.h>
 #include "Jim.h"
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim+Subcmd.h"
 
 // -----------------------------------------------------------------------------

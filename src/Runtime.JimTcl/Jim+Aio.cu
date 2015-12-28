@@ -41,7 +41,7 @@
 
 #ifdef jim_ext_aio
 
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -1478,11 +1478,9 @@ __device__ int Jim_MakeTempFile(Jim_Interp *interp, const char *template_)
 __device__ FILE *Jim_AioFilehandle(Jim_Interp *interp, Jim_Obj *command)
 {
 	Jim_Cmd *cmdPtr = Jim_GetCommand(interp, command, JIM_ERRMSG);
-
-	/* XXX: There ought to be a supported API for this */
-	if (cmdPtr && !cmdPtr->isproc && cmdPtr->u.native.cmdProc == JimAioSubCmdProc) {
+	// XXX: There ought to be a supported API for this
+	if (cmdPtr && !cmdPtr->isproc && cmdPtr->u.native.cmdProc == JimAioSubCmdProc)
 		return ((AioFile *) cmdPtr->u.native.privData)->fp;
-	}
 	Jim_SetResultFormatted(interp, "Not a filehandle: \"%#s\"", command);
 	return NULL;
 }
@@ -1502,4 +1500,4 @@ __device__ int Jim_aioInit(Jim_Interp *interp)
 	return JIM_OK;
 }
 
-#endif /* jim_ext_aio */
+#endif

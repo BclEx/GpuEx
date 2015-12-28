@@ -1084,6 +1084,8 @@ __device__ div_t _div(int num, int denom)
 #if __CUDACC__
 __device__ char *_getenv(const char *name)
 {
+	//if (!_strcmp(name, "HOME")) return "gpu:\\";
+	//if (!_strcmp(name, "PATH")) return "gpu:\\";
 	return nullptr;
 }
 #endif
@@ -1111,7 +1113,7 @@ __device__ int __stat(const char *a, struct stat *b)
 }
 __device__ char *__getcwd(char *b, int l)
 {
-	return nullptr;
+	return "GPU";
 }
 __device__ int __chdir(const char *p)
 {

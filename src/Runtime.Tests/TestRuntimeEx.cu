@@ -9,7 +9,6 @@ __global__ static void runtime0(void *r)
 	printf("Example: 0\n");
 }
 
-
 #if __CUDACC__
 void __testRuntimeEx(cudaDeviceHeap &r)
 {

@@ -42,7 +42,7 @@
 #include <signal.h>
 #include <errno.h>
 
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim.h"
 
 #ifdef HAVE_SYS_SYSINFO_H

@@ -37,7 +37,7 @@
   <PropertyGroup Label="UserMacros">
     <LD>
     </LD>
-    <LC>30</LC>
+    <LC>35</LC>
     <!--<LC>cpu</LC>-->
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
     <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>
@@ -141,6 +141,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Jim.h" />
+    <ClInclude Include="Jim+Autoconf.h" />
     <ClInclude Include="Jim+Config.h" />
     <ClInclude Include="Jim+EventLoop.h" />
     <ClInclude Include="Jim+Signal.h" />
@@ -190,8 +191,7 @@
     <ClCompile Include="Jim+Win32.cu" />
     <ClCompile Include="Jim+Win32compat.cu" />
     <ClCompile Include="JimSh.cu" />
-    <None Include="initjimsh.tcl" />
-    <ClCompile Include="initjimsh.cu" />
+    <ClCompile Include="Init.cu" />
     <ClCompile Include="Utf8.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
@@ -224,8 +224,7 @@
     <None Include="Jim+Win32.cu" />
     <None Include="Jim+Win32Compat.cu" />
     <None Include="JimSh.cu" />
-    <None Include="initjimsh.tcl" />
-    <None Include="initjimsh.cu" />
+    <None Include="Init.cu" />
     <None Include="Utf8.cu" />
   </ItemGroup>
   <ItemGroup>

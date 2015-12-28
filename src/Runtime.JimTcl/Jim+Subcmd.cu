@@ -22,7 +22,6 @@ __device__ static int subcmd_null(Jim_Interp *interp, int argc, Jim_Obj *const *
 __constant__ static const jim_subcmd_type _dummy_subcmd = {
 	"dummy", NULL, subcmd_null, 0, 0, JIM_MODFLAG_HIDDEN
 };
-
 __device__ static void add_commands(Jim_Interp *interp, const jim_subcmd_type *ct, const char *sep)
 {
 	const char *s = "";
@@ -74,24 +73,22 @@ __device__ const jim_subcmd_type *Jim_ParseSubCmd(Jim_Interp *interp, const jim_
 	}
 
 	Jim_Obj *cmd = argv[1];
-
-	/* Check for the help command */
+	// Check for the help command
 	int help = 0;
 	if (Jim_CompareStringImmediate(interp, cmd, "-help")) {
 		if (argc == 2) {
-			/* Usage for the command, not the subcommand */
+			// Usage for the command, not the subcommand
 			show_cmd_usage(interp, command_table, argc, argv);
 			return &_dummy_subcmd;
 		}
 		help = 1;
-
-		/* Skip the 'help' command */
+		// Skip the 'help' command
 		cmd = argv[2];
 	}
 
-	/* Check for special builtin '-commands' command first */
+	// Check for special builtin '-commands' command first
 	if (Jim_CompareStringImmediate(interp, cmd, "-commands")) {
-		/* Build the result here */
+		// Build the result here
 		Jim_SetResult(interp, Jim_NewEmptyStringObj(interp));
 		add_commands(interp, command_table, " ");
 		return &_dummy_subcmd;

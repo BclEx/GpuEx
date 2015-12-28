@@ -229,10 +229,11 @@ extern "C" cudaError_t cudaDeviceHeapSynchronize(cudaDeviceHeap &host, void *str
 extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value[], cudaError_t *error)
 {
 	int i;
-	int size = 0;
+	int vectorSize;
+	int size = vectorSize = (sizeof(char *) * length);
 	for (i = 0; i < length; i++)
 		size += (value[i] ? (int)strlen(value[i]) + 1 : 0);
-	char **ptr = (char **)malloc(size);
+	char *ptr = (char *)malloc(size);
 	if (!ptr)
 	{
 		printf("cudaDeviceTransferStringArray: RC_NOMEM");
@@ -241,24 +242,27 @@ extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value
 		return nullptr;
 	}
 	memset(ptr, 0, size);
-	char **h = ptr;
+	char *h = ptr;
+	char **vector = (char **)ptr;
+	ptr += vectorSize;
 	for (i = 0; i < length; i++) {
 		if (value[i]) {
-			int length = (int)strlen(value[i]) + 1;
-			memcpy((void *)ptr, value[i], length);
-			ptr += length;
+			int valueLength = (int)strlen(value[i]) + 1;
+			memcpy((void *)ptr, value[i], valueLength);
+			ptr += valueLength;
 		}
 	}
 	cudaErrorCheck(cudaMalloc((void **)&ptr, size));
-	char **d = ptr;
+	char *d = ptr;
+	ptr += vectorSize;
+	for (i = 0; i < length; i++) {
+		int valueLength = (int)strlen(value[i]) + 1;
+		vector[i] = (value[i] ? ptr : nullptr);
+		ptr += valueLength;
+	}
 	cudaErrorCheck(cudaMemcpy(d, h, size, cudaMemcpyHostToDevice));
 	free(h);
-	return d;
-}
-
-extern "C" void cudaDeviceTransferFree(void *devicePtr)
-{
-	cudaFree(devicePtr);
+	return (char **)d;
 }
 
 #pragma endregion

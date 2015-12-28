@@ -42,6 +42,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "System.Data", "System.Data", "{13E1E01A-69CF-4BD0-ADC3-8F8291399885}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runtime.TinyTcl", "src\Runtime.TinyTcl\Runtime.TinyTcl.vcxproj", "{9E735B14-3DDD-4703-A408-1FD099B4CA92}"
+	ProjectSection(ProjectDependencies) = postProject
+		{821AFA21-3738-4DFC-985B-0F5C080E15E4} = {821AFA21-3738-4DFC-985B-0F5C080E15E4}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dSql", "src\dSql\dSql.vcxproj", "{4CBB97BD-16C4-4698-BC63-16F2499254B3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -55,16 +58,29 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Falloc.Tests", "src\Falloc.Tests\Falloc.Tests.vcxproj", "{2A992207-4EA5-4750-9401-AAD09DFDE7E6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dSql-Test", "src\dSql-Test\dSql-Test.vcxproj", "{6BEBE11A-7B56-4CA0-9E47-5C1638B1D311}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AADAB731-E71B-406B-B023-6A3FD7957591} = {AADAB731-E71B-406B-B023-6A3FD7957591}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runtime.JimTcl", "src\Runtime.JimTcl\Runtime.JimTcl.vcxproj", "{602F49D0-3A63-459E-AD6D-81CF59C44A3A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{821AFA21-3738-4DFC-985B-0F5C080E15E4} = {821AFA21-3738-4DFC-985B-0F5C080E15E4}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "System.Fea", "System.Fea", "{9A19E695-6BB4-44B1-BD74-4555813593F5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "System.Fea", "src\System.Fea\System.Fea.vcxproj", "{E12FCAFC-B881-41D2-BA5B-72A5AF25E655}"
+	ProjectSection(ProjectDependencies) = postProject
+		{821AFA21-3738-4DFC-985B-0F5C080E15E4} = {821AFA21-3738-4DFC-985B-0F5C080E15E4}
+		{ACDAB731-E71B-406B-B023-6A3FD7957591} = {ACDAB731-E71B-406B-B023-6A3FD7957591}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Fea.net", "src\System.Fea.net\System.Fea.net.csproj", "{B04CF5DA-4F66-4FA2-9C9C-8D4DA59814D6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "System.Fea.Tests", "src\System.Fea.Tests\System.Fea.Tests.vcxproj", "{A384B764-632E-4026-9269-BE64BC1D14C3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E12FCAFC-B881-41D2-BA5B-72A5AF25E655} = {E12FCAFC-B881-41D2-BA5B-72A5AF25E655}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

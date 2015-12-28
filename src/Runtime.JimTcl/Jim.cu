@@ -57,7 +57,7 @@
 #include <errno.h>
 #include <time.h>
 #include "Jim.h"
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Utf8.h"
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -89,12 +89,12 @@
 #endif
 
 // GPUEX@begin: turn these back off
-#define DEBUG_SHOW_SCRIPT
-#define DEBUG_SHOW_SCRIPT_TOKENS
-#define DEBUG_SHOW_SUBST
-#define DEBUG_SHOW_EXPR
-#define DEBUG_SHOW_EXPR_TOKENS
-#define JIM_DEBUG_GC
+//#define DEBUG_SHOW_SCRIPT
+//#define DEBUG_SHOW_SCRIPT_TOKENS
+//#define DEBUG_SHOW_SUBST
+//#define DEBUG_SHOW_EXPR
+//#define DEBUG_SHOW_EXPR_TOKENS
+//#define JIM_DEBUG_GC
 // GPUEX@end
 #ifdef JIM_MAINTAINER
 #define JIM_DEBUG_COMMAND
@@ -2700,7 +2700,7 @@ __device__ static void JimSetSourceInfo(Jim_Interp *interp, Jim_Obj *objPtr, Jim
 // This object is used only in the Script internal represenation. For each line of the script, it holds the number of tokens on the line and the source line number.
 #pragma region ScriptLine Object
 
-__constant__ static const Jim_ObjType scriptLineObjType = {
+__constant__ static const Jim_ObjType _scriptLineObjType = {
 	"scriptline",
 	NULL,
 	NULL,
@@ -2718,7 +2718,7 @@ __device__ static Jim_Obj *JimNewScriptLineObj(Jim_Interp *interp, int argc, int
 #else
 	objPtr = Jim_NewEmptyStringObj(interp);
 #endif
-	objPtr->typePtr = &scriptLineObjType;
+	objPtr->typePtr = &_scriptLineObjType;
 	objPtr->internalRep.scriptLineValue.argc = argc;
 	objPtr->internalRep.scriptLineValue.line = line;
 	return objPtr;
@@ -2736,7 +2736,7 @@ __device__ static void DupScriptInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr,
 __device__ static void JimSetScriptFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr);
 __device__ static int JimParseCheckMissing(Jim_Interp *interp, int ch);
 
-__constant__ static const Jim_ObjType scriptObjType = {
+__constant__ static const Jim_ObjType _scriptObjType = {
 	"script",
 	FreeScriptInternalRep,
 	DupScriptInternalRep,
@@ -2935,7 +2935,11 @@ __device__ static void ScriptObjAddTokens(Jim_Interp *interp, struct ScriptObj *
 #ifdef DEBUG_SHOW_SCRIPT_TOKENS
 	printf("==== Tokens ====\n");
 	for (i = 0; i < tokenlist->count; i++)
+#if __CUDACC__
+		printf("[%2d]@%d %s '%s'\n", i, tokenlist->list[i].line, jim_tt_name(tokenlist->list[i].type), tokenlist->list[i].token);
+#else
 		printf("[%2d]@%d %s '%.*s'\n", i, tokenlist->list[i].line, jim_tt_name(tokenlist->list[i].type), tokenlist->list[i].len, tokenlist->list[i].token);
+#endif
 #endif
 
 	// May need up to one extra script token for each EOL in the worst case
@@ -3090,7 +3094,7 @@ __device__ static void JimSetScriptFromAny(Jim_Interp *interp, struct Jim_Obj *o
 	// Free the old internal rep and set the new one.
 	Jim_FreeIntRep(interp, objPtr);
 	Jim_SetIntRepPtr(objPtr, script);
-	objPtr->typePtr = &scriptObjType;
+	objPtr->typePtr = &_scriptObjType;
 }
 
 __device__ static void JimAddErrorToStack(Jim_Interp *interp, ScriptObj *script);
@@ -3100,7 +3104,7 @@ __device__ ScriptObj *JimGetScript(Jim_Interp *interp, Jim_Obj *objPtr)
 {
 	if (objPtr == interp->emptyObj)
 		objPtr = interp->nullScriptObj; // Avoid converting emptyObj to a script. use nullScriptObj instead.
-	if (objPtr->typePtr != &scriptObjType || ((struct ScriptObj *)Jim_GetIntRepPtr(objPtr))->substFlags)
+	if (objPtr->typePtr != &_scriptObjType || ((struct ScriptObj *)Jim_GetIntRepPtr(objPtr))->substFlags)
 		JimSetScriptFromAny(interp, objPtr);
 	return (ScriptObj *)Jim_GetIntRepPtr(objPtr);
 }
@@ -3479,7 +3483,7 @@ __device__ static void DupCommandInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr
 	Jim_IncrRefCount(dupPtr->internalRep.cmdValue.nsObj);
 }
 
-__constant__ static const Jim_ObjType commandObjType = {
+__constant__ static const Jim_ObjType _commandObjType = {
 	"command",
 	FreeCommandInternalRep,
 	DupCommandInternalRep,
@@ -3495,7 +3499,7 @@ __device__ Jim_Cmd *Jim_GetCommand(Jim_Interp *interp, Jim_Obj *objPtr, int flag
 {
 	Jim_Cmd *cmd;
 	// In order to be valid, the proc epoch must match and the lookup must have occurred in the same namespace
-	if (objPtr->typePtr != &commandObjType || objPtr->internalRep.cmdValue.procEpoch != interp->procEpoch
+	if (objPtr->typePtr != &_commandObjType || objPtr->internalRep.cmdValue.procEpoch != interp->procEpoch
 #ifdef jim_ext_namespace
 		|| !Jim_StringEqObj(objPtr->internalRep.cmdValue.nsObj, interp->framePtr->nsObj)
 #endif
@@ -3531,7 +3535,7 @@ found:
 
 			// Free the old internal repr and set the new one.
 			Jim_FreeIntRep(interp, objPtr);
-			objPtr->typePtr = &commandObjType;
+			objPtr->typePtr = &_commandObjType;
 			objPtr->internalRep.cmdValue.procEpoch = interp->procEpoch;
 			objPtr->internalRep.cmdValue.cmdPtr = cmd;
 			objPtr->internalRep.cmdValue.nsObj = interp->framePtr->nsObj;
@@ -3560,7 +3564,7 @@ found:
 
 __device__ static int SetVariableFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr);
 
-__device__ static const Jim_ObjType variableObjType = {
+__device__ static const Jim_ObjType _variableObjType = {
 	"variable",
 	NULL,
 	NULL,
@@ -3572,7 +3576,7 @@ __device__ static const Jim_ObjType variableObjType = {
 __device__ static int JimValidName(Jim_Interp *interp, const char *type, Jim_Obj *nameObjPtr)
 {
 	// Variable names and proc names can't contain embedded nulls 
-	if (nameObjPtr->typePtr != &variableObjType) {
+	if (nameObjPtr->typePtr != &_variableObjType) {
 		int len;
 		const char *str = Jim_GetString(nameObjPtr, &len);
 		if (_memchr(str, '\0', len)) {
@@ -3589,7 +3593,7 @@ __device__ static int SetVariableFromAny(Jim_Interp *interp, struct Jim_Obj *obj
 {
 	// Check if the object is already an uptodate variable
 	Jim_CallFrame *framePtr;
-	if (objPtr->typePtr == &variableObjType) {
+	if (objPtr->typePtr == &_variableObjType) {
 		framePtr = (objPtr->internalRep.varValue.global ? interp->topFramePtr : interp->framePtr);
 		if (objPtr->internalRep.varValue.callFrameId == framePtr->id)
 			return JIM_OK; // nothing to do
@@ -3629,7 +3633,7 @@ __device__ static int SetVariableFromAny(Jim_Interp *interp, struct Jim_Obj *obj
 
 	// Free the old internal repr and set the new one.
 	Jim_FreeIntRep(interp, objPtr);
-	objPtr->typePtr = &variableObjType;
+	objPtr->typePtr = &_variableObjType;
 	objPtr->internalRep.varValue.callFrameId = framePtr->id;
 	objPtr->internalRep.varValue.varPtr = (Jim_Var *)Jim_GetHashEntryVal(he);
 	objPtr->internalRep.varValue.global = global;
@@ -3665,7 +3669,7 @@ __device__ static Jim_Var *JimCreateVariable(Jim_Interp *interp, Jim_Obj *nameOb
 	Jim_AddHashEntry(&framePtr->vars, name, var);
 	// Make the object int rep a variable
 	Jim_FreeIntRep(interp, nameObjPtr);
-	nameObjPtr->typePtr = &variableObjType;
+	nameObjPtr->typePtr = &_variableObjType;
 	nameObjPtr->internalRep.varValue.callFrameId = framePtr->id;
 	nameObjPtr->internalRep.varValue.varPtr = var;
 	nameObjPtr->internalRep.varValue.global = global;
@@ -6098,7 +6102,7 @@ __constant__ static const char * const jimReturnCodes[] = {
 };
 #define jimReturnCodesSize (sizeof(jimReturnCodes)/sizeof(*jimReturnCodes))
 
-__constant__ static const Jim_ObjType returnCodeObjType = {
+__constant__ static const Jim_ObjType _returnCodeObjType = {
 	"return-code",
 	NULL,
 	NULL,
@@ -6125,14 +6129,14 @@ __device__ static int SetReturnCodeFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 	}
 	// Free the old internal repr and set the new one
 	Jim_FreeIntRep(interp, objPtr);
-	objPtr->typePtr = &returnCodeObjType;
+	objPtr->typePtr = &_returnCodeObjType;
 	objPtr->internalRep.intValue = returnCode;
 	return JIM_OK;
 }
 
 __device__ int Jim_GetReturnCode(Jim_Interp *interp, Jim_Obj *objPtr, int *intPtr)
 {
-	if (objPtr->typePtr != &returnCodeObjType && SetReturnCodeFromAny(interp, objPtr) == JIM_ERR)
+	if (objPtr->typePtr != &_returnCodeObjType && SetReturnCodeFromAny(interp, objPtr) == JIM_ERR)
 		return JIM_ERR;
 	*intPtr = objPtr->internalRep.intValue;
 	return JIM_OK;
@@ -8126,7 +8130,7 @@ __device__ static int Jim_IncrCoreCommand(Jim_Interp *interp, int argc, Jim_Obj 
 		Jim_InvalidateStringRep(intObjPtr);
 		JimWideValue(intObjPtr) = wideValue + increment;
 		// The following step is required in order to invalidate the string repr of "FOO" if the var name is on the form of "FOO(IDX)"
-		if (argv[1]->typePtr != &variableObjType)
+		if (argv[1]->typePtr != &_variableObjType)
 			Jim_SetVariable(interp, argv[1], intObjPtr); // Note that this can't fail since GetVariable already succeeded
 	}
 	Jim_SetResult(interp, intObjPtr);
@@ -8407,10 +8411,10 @@ __device__ int Jim_EvalObj(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
 		return JIM_OK;
 	}
 	if (script->len == 3
-		&& token[1].objPtr->typePtr == &commandObjType
+		&& token[1].objPtr->typePtr == &_commandObjType
 		&& token[1].objPtr->internalRep.cmdValue.cmdPtr->isproc == 0
 		&& token[1].objPtr->internalRep.cmdValue.cmdPtr->u.native.cmdProc == Jim_IncrCoreCommand
-		&& token[2].objPtr->typePtr == &variableObjType) {
+		&& token[2].objPtr->typePtr == &_variableObjType) {
 			Jim_Obj *objPtr = Jim_GetVariable(interp, token[2].objPtr, JIM_NONE);
 			if (objPtr && !Jim_IsShared(objPtr) && objPtr->typePtr == &_intObjType) {
 				JimWideValue(objPtr)++;
@@ -8538,7 +8542,7 @@ __device__ int Jim_EvalObj(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
 	interp->currentScriptObj = prevScriptObj;
 	// Note that we don't have to decrement inUse, because the following code transfers our use of the reference again to the script object.
 	Jim_FreeIntRep(interp, scriptObjPtr);
-	scriptObjPtr->typePtr = &scriptObjType;
+	scriptObjPtr->typePtr = &_scriptObjType;
 	Jim_SetIntRepPtr(scriptObjPtr, script);
 	Jim_DecrRefCount(interp, scriptObjPtr);
 	return retcode;
@@ -8932,13 +8936,13 @@ __device__ static int SetSubstFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr
 	// Free the old internal rep and set the new one
 	Jim_FreeIntRep(interp, objPtr);
 	Jim_SetIntRepPtr(objPtr, script);
-	objPtr->typePtr = &scriptObjType;
+	objPtr->typePtr = &_scriptObjType;
 	return JIM_OK;
 }
 
 __device__ static ScriptObj *Jim_GetSubst(Jim_Interp *interp, Jim_Obj *objPtr, int flags)
 {
-	if (objPtr->typePtr != &scriptObjType || ((ScriptObj *)Jim_GetIntRepPtr(objPtr))->substFlags != flags)
+	if (objPtr->typePtr != &_scriptObjType || ((ScriptObj *)Jim_GetIntRepPtr(objPtr))->substFlags != flags)
 		SetSubstFromAny(interp, objPtr, flags);
 	return (ScriptObj *) Jim_GetIntRepPtr(objPtr);
 }
@@ -9101,7 +9105,7 @@ __device__ static int Jim_PutsCoreCommand(Jim_Interp *interp, int argc, Jim_Obj 
 			_fputs(Jim_String(argv[2]), stdout);
 	}
 	else
-		_fputs(Jim_String(argv[1]), stdout);
+		_puts(Jim_String(argv[1]));
 	return JIM_OK;
 }
 
@@ -9458,14 +9462,14 @@ __device__ static int Jim_LoopCoreCommand(Jim_Interp *interp, int argc, Jim_Obj 
 			// Increment
 			i += incr;
 			if (objPtr && !Jim_IsShared(objPtr) && objPtr->typePtr == &_intObjType) {
-				if (argv[1]->typePtr != &variableObjType)
+				if (argv[1]->typePtr != &_variableObjType)
 					if (Jim_SetVariable(interp, argv[1], objPtr) != JIM_OK)
 						return JIM_ERR;
 				JimWideValue(objPtr) = i;
 				Jim_InvalidateStringRep(objPtr);
 
 				// The following step is required in order to invalidate the string repr of "FOO" if the var name is of the form of "FOO(IDX)"
-				if (argv[1]->typePtr != &variableObjType)
+				if (argv[1]->typePtr != &_variableObjType)
 					if (Jim_SetVariable(interp, argv[1], objPtr) != JIM_OK) {
 						retval = JIM_ERR;
 						break;
@@ -11566,7 +11570,7 @@ __device__ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj 
 				fileNameObj = argv[2]->internalRep.sourceValue.fileNameObj;
 				line = argv[2]->internalRep.sourceValue.lineNumber;
 			}
-			else if (argv[2]->typePtr == &scriptObjType) {
+			else if (argv[2]->typePtr == &_scriptObjType) {
 				ScriptObj *script = JimGetScript(interp, argv[2]);
 				fileNameObj = script->fileNameObj;
 				line = script->firstline;
@@ -12379,7 +12383,58 @@ __device__ int Jim_MakeTempFile(Jim_Interp *interp, const char *template_)
 }
 #endif
 
+#include "Jim+EventLoop.h"
 __device__ int Jim_InitStaticExtensions(Jim_Interp *interp)
 {
+	extern __device__ int Jim_bootstrapInit(Jim_Interp *interp);
+	extern __device__ int Jim_globInit(Jim_Interp *interp);
+	extern __device__ int Jim_stdlibInit(Jim_Interp *interp);
+	extern __device__ int Jim_tclcompatInit(Jim_Interp *interp);
+	//
+	extern __device__ int Jim_aioInit(Jim_Interp *interp);
+	extern __device__ int Jim_arrayInit(Jim_Interp *interp);
+	extern __device__ int Jim_clockInit(Jim_Interp *interp);
+	extern __device__ int Jim_execInit(Jim_Interp *interp);
+	extern __device__ int Jim_fileInit(Jim_Interp *interp);
+	extern __device__ int Jim_readdirInit(Jim_Interp *interp);
+	extern __device__ int Jim_regexpInit(Jim_Interp *interp);
+	//
+#if __CUDACC__
+	extern __device__ int Jim_gpuInit(Jim_Interp *interp);
+#else
+	extern __device__ int Jim_win32Init(Jim_Interp *interp);
+#endif
+	extern __device__ int Jim_historyInit(Jim_Interp *interp);
+	extern __device__ int Jim_loadInit(Jim_Interp *interp);
+	extern __device__ int Jim_namespaceInit(Jim_Interp *interp);
+	extern __device__ int Jim_packInit(Jim_Interp *interp);
+	extern __device__ int Jim_packageInit(Jim_Interp *interp);
+
+	//extern __device__ int Jim_tclprefixInit(Jim_Interp *interp);
+	Jim_bootstrapInit(interp);
+	Jim_globInit(interp);
+	Jim_stdlibInit(interp);
+	Jim_tclcompatInit(interp);
+	//
+	Jim_aioInit(interp);
+	Jim_arrayInit(interp);
+	Jim_clockInit(interp);
+	Jim_eventloopInit(interp);
+	Jim_execInit(interp);
+	Jim_fileInit(interp);
+	Jim_readdirInit(interp);
+	Jim_regexpInit(interp);
+	//
+#if __CUDACC__
+	Jim_gpuInit(interp);
+#else
+	Jim_win32Init(interp);
+#endif
+	Jim_historyInit(interp);
+	Jim_loadInit(interp);
+	Jim_namespaceInit(interp);
+	Jim_packInit(interp);
+	Jim_packageInit(interp);
+	//Jim_tclprefixInit(interp);
 	return JIM_OK;
 }

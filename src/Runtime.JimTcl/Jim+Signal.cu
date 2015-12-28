@@ -8,7 +8,7 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include <jim-subcmd.h>
 #include <jim-signal.h>
 

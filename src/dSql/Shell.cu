@@ -3610,7 +3610,7 @@ int main(int argc, char **argv)
 				char *d_sql;
 				cudaMalloc((void**)&d_sql, sqlLength);
 				cudaMemcpy(d_sql, z, sqlLength, cudaMemcpyHostToDevice);
-				D_DATA(&_data);  d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
+				D_DATA(&_data); d_main_ShellExec<<<1,1>>>(_data.D_, d_sql); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 				cudaFree(d_sql);
 				H_RETURN(); if (_bailOnError && h_return) return h_return;
 #else

@@ -2,7 +2,7 @@
 
 #include <string.h>
 #include <RuntimeEx.h>
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim+Subcmd.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

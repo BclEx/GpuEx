@@ -39,13 +39,10 @@
 **/
 #pragma endregion
 
-/* ------ USAGE -------
-* See jim-aio.c as an example of an event provider.
-*/
-
+// ------ USAGE -------
+// See jim-aio.c as an example of an event provider.
 #ifndef __JIM_EVENTLOOP_H__
 #define __JIM_EVENTLOOP_H__
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,7 +54,7 @@ extern "C" {
 	typedef void Jim_TimeProc(Jim_Interp *interp, void *clientData);
 	typedef void Jim_EventFinalizerProc(Jim_Interp *interp, void *clientData);
 
-	/* File event structure */
+	// File event structure
 #define JIM_EVENT_READABLE 1
 #define JIM_EVENT_WRITABLE 2
 #define JIM_EVENT_EXCEPTION 4
@@ -80,5 +77,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __JIM_EVENTLOOP_H__ */
+#endif

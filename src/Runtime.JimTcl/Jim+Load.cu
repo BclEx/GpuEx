@@ -1,6 +1,6 @@
 #include <string.h>
 
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim.h"
 
 // -----------------------------------------------------------------------------

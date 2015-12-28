@@ -51,7 +51,7 @@
 #include <string.h>
 #include <RuntimeEx.h>
 #include "Jim.h"
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif

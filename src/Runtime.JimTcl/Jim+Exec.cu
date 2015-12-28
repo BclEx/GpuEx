@@ -25,7 +25,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <RuntimeEx.h>
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim.h"
 
 #if (!defined(HAVE_VFORK) || !defined(HAVE_WAITPID)) && !defined(__MINGW32__)

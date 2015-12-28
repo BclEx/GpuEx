@@ -94,13 +94,6 @@ extern "C" cudaError_t cudaDeviceHeapSynchronize(cudaDeviceHeap &host, void *str
 //
 extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value[], cudaError_t *error = nullptr);
 
-//
-//	cudaDeviceTransferFree
-//
-//	Re-encodes and transfers string array
-//
-extern "C" void cudaDeviceTransferFree(void *devicePtr);
-
 #pragma endregion
 
 

@@ -693,6 +693,8 @@ template <typename T> __device__ __forceinline const T *_memchr(const T *src, ch
 // memcmp
 template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__restrict__ left, Y *__restrict__ right, size_t length)
 {
+	if (!length)
+		return 0;
 	register unsigned char *a = (unsigned char *)left;
 	register unsigned char *b = (unsigned char *)right;
 	while (--length > 0 && *a == *b) { a++; b++; }
@@ -702,6 +704,8 @@ template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__rest
 // memmove
 template <typename T, typename Y> __device__ __forceinline void _memmove(T *__restrict__ left, Y *__restrict__ right, size_t length)
 {
+	if (!length)
+		return;
 	register unsigned char *a = (unsigned char *)left;
 	register unsigned char *b = (unsigned char *)right;
 	if (a == b) return; // No need to do that thing.
@@ -1340,6 +1344,7 @@ extern "C" __device__ inline int _rename(const char *a, const char *b) { }
 extern "C" __device__ inline int _unlink(const char *a) { }
 extern "C" __device__ inline int __close(int a) { }
 extern "C" __device__ inline int _system(const char *c) { }
+extern "C" __device__ inline void _puts(const char *s) { printf("%s\n", s); }
 #else
 #define _fprintfR _fprintf
 #define _fflushR _fflush
@@ -1357,7 +1362,7 @@ extern "C" __device__ inline int _system(const char *c) { }
 #define _fgetc(f) (int)0
 #define _fgets(s, n, f) (int)0
 #define _fputc(c, f) printf("%c", c)
-#define _fputs(s, f) printf("%s\n", s)
+#define _fputs(s, f) printf(s)
 #define _fread(p, s, n, f) (size_t)0
 #define _fwrite(p, s, n, f) (size_t)0
 #define _fseek(f, o, s) (int)0
@@ -1369,6 +1374,7 @@ extern "C" __device__ inline int _system(const char *c) { }
 #define _unlink(a) (int)0
 #define __close(a) (int)0
 #define _system(c) (int)0
+#define _puts(s) printf("%s\n", s)
 #else
 #define __fileno(f) fileno(f)
 #define _fprintf(f, ...) fprintf(f, __VA_ARGS__)
@@ -1391,6 +1397,7 @@ extern "C" __device__ inline int _system(const char *c) { }
 #define _unlink(a) remove(a)
 #define __close(a) close(a)
 #define _system(c) system(c)
+#define _puts(s) puts(s)
 #endif
 #endif
 

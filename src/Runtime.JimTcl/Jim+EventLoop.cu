@@ -40,7 +40,7 @@
 #pragma endregion
 
 #include <RuntimeEx.h>
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim.h"
 #include "Jim+EventLoop.h"
 // POSIX includes

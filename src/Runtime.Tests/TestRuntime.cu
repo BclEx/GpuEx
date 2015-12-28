@@ -180,7 +180,7 @@ __global__ static void runtime12(void *r)
 	int a0 = __snprintf(buf, sizeof(buf), "t0\n"); _assert(a0 == 3);
 	int a1 = __snprintf(buf, sizeof(buf), "t1 %s\n", "1"); _assert(a1 == 5);
 	int a2 = __snprintf(buf, sizeof(buf), "t2 %s %d\n", "1", 2); _assert(a2 == 7);
-	int a3 = __snprintf(buf, sizeof(buf), "t3 %s %d %d\n", "1", 2, 3); _assert(a3 = 8);
+	int a3 = __snprintf(buf, sizeof(buf), "t3 %s %d %d\n", "1", 2, 3); _assert(a3 == 9);
 	int a4 = __snprintf(buf, sizeof(buf), "t4 %s %d %d %d\n", "1", 2, 3, 4); _assert(a4 == 11);
 	int a5 = __snprintf(buf, sizeof(buf), "t5 %s %d %d %d %d\n", "1", 2, 3, 4, 5); _assert(a5 == 13);
 	int a6 = __snprintf(buf, sizeof(buf), "t6 %s %d %d %d %d %d\n", "1", 2, 3, 4, 5, 6); _assert(a6 == 15);

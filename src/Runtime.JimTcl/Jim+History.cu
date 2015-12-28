@@ -1,14 +1,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
 #include "Jim.h"
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim+Subcmd.h"
 
 __device__ static int history_cmd_getline(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
+#if __CUDACC__
+	char *line = nullptr; //Jim_HistoryGetline(Jim_String(argv[0]));
+#else
 	char *line = Jim_HistoryGetline(Jim_String(argv[0]));
+#endif
 	// On EOF returns -1 if varName was specified; otherwise the empty string.
 	if (line == NULL) {
 		if (argc == 2)
@@ -31,25 +34,41 @@ __device__ static int history_cmd_getline(Jim_Interp *interp, int argc, Jim_Obj 
 
 __device__ static int history_cmd_load(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
+#if __CUDACC__
+	//Jim_HistoryLoad(Jim_String(argv[0]));
+#else
 	Jim_HistoryLoad(Jim_String(argv[0]));
+#endif
 	return JIM_OK;
 }
 
 __device__ static int history_cmd_save(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
+#if __CUDACC__
+	//Jim_HistorySave(Jim_String(argv[0]));
+#else
 	Jim_HistorySave(Jim_String(argv[0]));
+#endif
 	return JIM_OK;
 }
 
 __device__ static int history_cmd_add(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
+#if __CUDACC__
+	//Jim_HistoryAdd(Jim_String(argv[0]));
+#else
 	Jim_HistoryAdd(Jim_String(argv[0]));
+#endif
 	return JIM_OK;
 }
 
 __device__ static int history_cmd_show(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
+#if __CUDACC__
+	//Jim_HistoryShow();
+#else
 	Jim_HistoryShow();
+#endif
 	return JIM_OK;
 }
 

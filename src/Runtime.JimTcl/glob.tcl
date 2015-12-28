@@ -148,7 +148,7 @@ proc glob {args} {
 			-* {
 				return -code error "bad option \"$arg\": must be -directory, -nocomplain, -tails, or --"
 			}
-			*  {
+			* {
 				break
 			}
 		}

@@ -52,7 +52,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <RuntimeEx.h>
-//#include "jimautoconf.h"
+#include "Jim+Autoconf.h"
 #include "Jim+Subcmd.h"
 #ifdef HAVE_UTIMES
 #include <sys/time.h>

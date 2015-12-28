@@ -10,6 +10,8 @@
     <ClInclude Include="Jim+Signal.h" />
     <ClInclude Include="Jim+Subcmd.h" />
     <ClInclude Include="Jim+Win32compat.h" />
+    <ClInclude Include="Jim+Autoconf.h" />
+    <ClInclude Include="Utf8.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Jim.cu" />
@@ -39,14 +41,14 @@
     <None Include="Jim+Win32.cu" />
     <None Include="Jim+Win32Compat.cu" />
     <None Include="JimSh.cu" />
-    <None Include="initjimsh.tcl" />
-    <None Include="initjimsh.cu" />
     <None Include="Utf8.cu" />
     <None Include="GpuEx-Runtime.JimTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.JimTcl.Native.targets" />
     <None Include="_content\runtime.jimtcl.cu.sample">
       <Filter>_content</Filter>
     </None>
+    <None Include="Jim+Gpu.cu" />
+    <None Include="Init.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="_content">
