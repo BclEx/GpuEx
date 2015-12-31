@@ -26,44 +26,44 @@ task Init -depends Clean {
 task Compile -depends Init {
 	if ($full_compile) {
 		# cpu
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cpu;Platform=Win32;LC=cpu;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cpuD;Platform=Win32;LC=cpu;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cpu;Platform=x64;LC=cpu;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cpu;Platform=Win32;LC=cpu;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cpuD;Platform=Win32;LC=cpu;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cpu;Platform=x64;LC=cpu;LD=" /m
 		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cpu;Platform=x64;LC=cpu;LD=V" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cpu;Platform=x64;LC=cpu;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD=V" /m
 		# 11
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuDPlatform=Win32;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuDPlatform=x64;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuDPlatform=Win32;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuDPlatform=x64;LC=11;LD=" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=11;LD=V" /t:"Runtime\Runtime:Rebuild;Runtime\Runtime_cu_Tests:Rebuild" /m
 		# 20
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=20;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=20;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=20;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=20;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=20;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=20;LD=" /m
 		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=20;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=20;LD=V" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=20;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=20;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=20;LD=V" /m
 		# 30
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=30;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=30;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=30;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=30;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=30;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=30;LD=" /m
 		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=30;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=30;LD=V" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=30;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=30;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=30;LD=V" /m
 		# 35
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=35;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=35;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=35;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;LC=35;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=35;LD=" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=35;LD=" /m
 		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=35;LD=" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=35;LD=V" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=35;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=35;LD=V" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=35;LD=V" /m
 	} else {
 		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD="
 		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=30;LD="
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=30;LD="
+		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=20;LD="
 	}
 }
 
@@ -89,8 +89,8 @@ task Dependency -precondition { return $false } {
 	}
 }
 
-#task Package -depends Dependency, Compile, Test {
-task Package {
+task Package -depends Dependency, Compile, Test {
+#task Package {
 	$spec_files = @(Get-ChildItem $base_dir\src -include *.nuspec -recurse)
 	foreach ($spec in $spec_files)
 	{

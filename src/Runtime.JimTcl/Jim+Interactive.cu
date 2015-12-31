@@ -215,7 +215,7 @@ int Jim_InteractivePrompt(Jim_Interp *interp)
 		while (1) {
 			char *line = Jim_HistoryGetline(h_dataI.prompt);
 			if (line == NULL)
-				if (__errno == EINTR)
+				if (errno == EINTR)
 					continue;
 			op = Jim_InteractivePromptBodyMiddle(line);
 			if (op == -1) goto out;
