@@ -50,7 +50,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -107,7 +107,7 @@
       <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)'=='Debug.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RTinyTcl.cu.obj" -o "$(OutDir)Runtime.TinyTcl.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)'=='Debug.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RTcl.cu.obj" -o "$(OutDir)Runtime.TinyTcl.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
@@ -136,7 +136,7 @@
       <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)'=='Release.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RTinyTcl.obj" -o "$(OutDir)Runtime.TinyTcl.$(LC)$(LD).lib"</Command>
+      <Command Condition="'$(Configuration)'=='Release.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)RTcl.obj" -o "$(OutDir)Runtime.TinyTcl.$(LC)$(LD).lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -200,6 +200,7 @@
     <ClCompile Include="TclEx+Main.cu" />
     <ClCompile Include="TclEx+UnixReaddir.cu" />
     <ClCompile Include="TclMod.cu" />
+    <ClCompile Include="TinySh.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="RTcl.cu" />
@@ -245,6 +246,7 @@
     <None Include="TclEx+Main.cu" />
     <None Include="TclEx+UnixReaddir.cu" />
     <None Include="TclMod.cu" />
+    <None Include="TinySh.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="library\init.tcl" />

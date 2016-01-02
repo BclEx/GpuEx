@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>GpuEx-JimTcl.Native</id>
+    <version>1.0.0</version>
+    <title>GpuEx JimTcl</title>
+    <authors>Contoso</authors>
+    <owners>Contoso</owners>
+    <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>This package contains an embeded JimTcl engine.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2010</copyright>
+    <tags>native cuda gpu tcl jimtcl</tags>
+    <language>en-US</language>
+    <dependencies>
+      <dependency id="GpuEx-Runtime.JimTcl.Native" version="1.0.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="src\JimTcl\**\*.cu" target="content" />
+  </files>
+</package>

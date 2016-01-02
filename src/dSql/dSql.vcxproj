@@ -47,6 +47,9 @@
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="Shell.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="GpuEx-dSql.Native.nuspec" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4CBB97BD-16C4-4698-BC63-16F2499254B3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

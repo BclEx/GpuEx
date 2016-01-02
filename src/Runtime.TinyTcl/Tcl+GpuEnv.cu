@@ -1,5 +1,5 @@
 #include "Tcl+Int.h"
-#if 0 && OS_GPU
+#if OS_GPU
 #include "Tcl+Gpu.h"
 
 // The structure below is used to keep track of all of the interpereters for which we're managing the "env" array.  It's needed so that they
@@ -9,7 +9,7 @@ typedef struct EnvInterp {
 	struct EnvInterp *nextPtr;	// Next in list of all such interpreters, or zero.
 } EnvInterp;
 
-static EnvInterp *_firstInterpPtr;
+__device__ static EnvInterp *_firstInterpPtr;
 // First in list of all managed interpreters, or NULL if none.
 
 // Declarations for local procedures defined in this file:
@@ -31,19 +31,8 @@ static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1
 *
 *----------------------------------------------------------------------
 */
-void TclSetupEnv(Tcl_Interp *interp)
+__device__ void TclSetupEnv(Tcl_Interp *interp)
 {
-	// Next, verify that file descriptors 0, 1 and 2 are connected to something. If not, we open them connected to /dev/null since Tcl assumes that a normal open() will never return 0, 1 or 2
-	if (fcntl(0, F_GETFL, 0) < 0 && errno == EBADF) {
-		open("/dev/null", O_RDONLY);
-	}
-	if (fcntl(1, F_GETFL, 0) < 0 && errno == EBADF) {
-		open("/dev/null", O_WRONLY);
-	}
-	if (fcntl(2, F_GETFL, 0) < 0 && errno == EBADF) {
-		open("/dev/null", O_WRONLY);
-	}
-
 	// Next, add the interpreter to the list of those that we manage.
 	EnvInterp *eiPtr = (EnvInterp *)_allocFast(sizeof(EnvInterp));
 	eiPtr->interp = interp;
@@ -53,7 +42,7 @@ void TclSetupEnv(Tcl_Interp *interp)
 	// Store the environment variable values into the interpreter's "env" array, and arrange for us to be notified on future writes and unsets to that array.
 	Tcl_UnsetVar2(interp, "env", (char *)NULL, TCL_GLOBAL_ONLY);
 	for (int i = 0; ; i++) {
-		char *p = environ[i];
+		char *p = __environ[i];
 		if (!p || !*p ) {
 			break;
 		}
@@ -82,7 +71,7 @@ void TclSetupEnv(Tcl_Interp *interp)
 *
 *----------------------------------------------------------------------
 */
-static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags)
+__device__ static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags)
 {
 	// First see if the whole "env" variable is being deleted.  If so, just forget about this interpreter.
 	if (name2 == NULL) {
@@ -109,10 +98,10 @@ static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1
 	}
 	// If a value is being set, call setenv to do all of the work.
 	if (flags & TCL_TRACE_WRITES) {
-		setenv(name2, Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY), 1);
+		_setenv(name2, Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY));
 	}
 	if (flags & TCL_TRACE_UNSETS) {
-		unsetenv(name2);
+		_unsetenv(name2);
 	}
 	return NULL;
 }

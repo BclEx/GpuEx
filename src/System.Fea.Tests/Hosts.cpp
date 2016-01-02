@@ -1,6 +1,6 @@
+#include <RuntimeHost.h>
 #include <stdio.h>
 #include <string.h>
-#include <Runtime.h>
 using namespace System;
 using namespace Xunit;
 
@@ -11,9 +11,9 @@ using namespace Xunit;
 public: \
 	name##Tests() \
 { \
-	cudaErrorCheck2(cudaSetDevice(0), throw gcnew Exception("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?")); \
+	cudaErrorCheckF(cudaSetDevice(0), throw gcnew Exception("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?")); \
 	_deviceHeap = cudaDeviceHeapCreate(256, 4096); \
-	cudaErrorCheck2(cudaDeviceHeapSelect(_deviceHeap), throw gcnew Exception("cudaDeviceHeapSelect failed!")); \
+	cudaErrorCheckF(cudaDeviceHeapSelect(_deviceHeap), throw gcnew Exception("cudaDeviceHeapSelect failed!")); \
 } \
 	~name##Tests() \
 { \
@@ -21,7 +21,7 @@ public: \
 	/*FILE *f = fopen(path, "w");*/ \
 	cudaDeviceHeapSynchronize(_deviceHeap); \
 	/*fclose(f);*/ \
-	cudaErrorCheck2(cudaDeviceReset(), throw gcnew Exception("cudaDeviceReset failed!")); \
+	cudaErrorCheckF(cudaDeviceReset(), throw gcnew Exception("cudaDeviceReset failed!")); \
 } \
 	body \
 };
@@ -35,7 +35,7 @@ namespace Tests
 {
 	static cudaDeviceHeap _deviceHeap;
 
-	TESTCLASS(select2,
-		FACT(select2)
-	)
+	//TESTCLASS(select2,
+	//	FACT(select2)
+	//)
 }

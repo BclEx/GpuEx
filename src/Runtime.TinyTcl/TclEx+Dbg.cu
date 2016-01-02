@@ -195,7 +195,7 @@ __device__ static int Tcl_CmdtraceCmd(ClientData clientData, Tcl_Interp *interp,
 	infoPtr->noTruncate = FALSE;
 	infoPtr->procCalls  = FALSE;
 	infoPtr->flush      = FALSE;
-	infoPtr->filePtr    = stdout;
+	infoPtr->filePtr    = _stdout;
 	fileHandle          = NULL;
 
 	for (idx = 2; idx < argc; idx++) {

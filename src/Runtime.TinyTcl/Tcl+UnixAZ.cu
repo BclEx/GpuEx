@@ -1325,7 +1325,7 @@ int Tcl_TimeCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args
 *
 *----------------------------------------------------------------------
 */
-static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidPtr, int errorId)
+static int CleanupChildren(Tcl_Interp *interp, int numPids, HANDLE *pidPtr, HANDLE errorId)
 {
 	int result = TCL_OK;
 	int i, pid;

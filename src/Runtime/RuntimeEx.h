@@ -186,9 +186,20 @@ __device__ int __access(const char *p, int flags);
 #endif
 
 #if OS_GPU
+extern __device__ char **__environ;
 __device__ char *_getenv(const char *name);
-#else
+__device__ void _setenv(const char *name, const char *value);
+#define _unsetenv(name) _setenv(name, "")
+#elif OS_WIN
+#define __environ environ
 #define _getenv(name) getenv(name)
+#define _setenv(name, value, overwrite) _putenv_s(name, value)
+#define _unsetenv(name) _putenv_s(name, "")
+#else OS_UNIX
+#define __environ environ
+#define _getenv(name) getenv(name)
+#define _setenv(name, value, overwrite) setenv(name, value, overwrite)
+#define _unsetenv(name) unsetenv(name)
 #endif
 
 #if OS_UNIX

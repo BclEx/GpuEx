@@ -47,8 +47,6 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
     <ClCompile Include="Program.cu" />
-    <ClCompile Include="..\System.Data.Tests.net\_Tester.cu" />
-    <ClCompile Include="..\System.Data.Tests.net\Core+Vdbe\Command\select2.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="Program.cu" />

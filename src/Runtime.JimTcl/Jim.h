@@ -664,7 +664,7 @@ extern "C" {
 	JIM_EXPORT __device__ void Jim_MakeErrorMessage(Jim_Interp *interp);
 
 	// interactive mode
-	JIM_EXPORT int Jim_InteractivePrompt(Jim_Interp *interp);
+	JIM_EXPORT int Jim_InteractivePrompt(cudaDeviceHeap *heap, Jim_Interp *interp);
 	JIM_EXPORT void Jim_HistoryLoad(const char *filename);
 	JIM_EXPORT void Jim_HistorySave(const char *filename);
 	JIM_EXPORT char *Jim_HistoryGetline(const char *prompt);

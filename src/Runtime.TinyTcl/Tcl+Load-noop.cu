@@ -25,7 +25,7 @@
 *
 *---------------------------------------------------------------------------
 */
-int TclpDlopen(Tcl_Interp *interp, char *pathPtr, Tcl_LoadHandle *loadHandle, Tcl_FSUnloadFileProc **unloadProcPtr)
+__device__ int TclpDlopen(Tcl_Interp *interp, char *pathPtr, Tcl_LoadHandle *loadHandle, Tcl_FSUnloadFileProc **unloadProcPtr)
 {
 	*unloadProcPtr = NULL;
 	*loadHandle = NULL;
@@ -43,7 +43,7 @@ int TclpDlopen(Tcl_Interp *interp, char *pathPtr, Tcl_LoadHandle *loadHandle, Tc
 *
 *----------------------------------------------------------------------
 */
-Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp, Tcl_LoadHandle loadHandle, const char *symbol)
+__device__ Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp, Tcl_LoadHandle loadHandle, const char *symbol)
 {
 	return NULL;
 }
@@ -62,7 +62,7 @@ Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp, Tcl_LoadHandle loadHandl
 *
 *----------------------------------------------------------------------
 */
-void TclpUnloadFile(Tcl_LoadHandle loadHandle)
+__device__ void TclpUnloadFile(Tcl_LoadHandle loadHandle)
 {
 }
 

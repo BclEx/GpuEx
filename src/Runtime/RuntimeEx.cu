@@ -1082,11 +1082,16 @@ __device__ div_t _div(int num, int denom)
 #pragma region OS
 
 #if __CUDACC__
+__device__ char **__environ = nullptr; // pointer to environment table
 __device__ char *_getenv(const char *name)
 {
 	//if (!_strcmp(name, "HOME")) return "gpu:\\";
 	//if (!_strcmp(name, "PATH")) return "gpu:\\";
 	return nullptr;
+}
+
+__device__ void _setenv(const char *name, const char *value)
+{
 }
 #endif
 

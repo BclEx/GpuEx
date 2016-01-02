@@ -1,4 +1,4 @@
-#include "JimSh.cu"
+#include "Jim+Interactive.cu"
 #include "Init.cu"
 #include "Jim.cu"
 #include "Jim+Aio.cu"
@@ -10,7 +10,6 @@
 #include "Jim+Format.cu"
 #include "Jim+Gpu.cu"
 #include "Jim+History.cu"
-#include "Jim+Interactive.cu"
 #include "Jim+Load.cu"
 #include "Jim+Namespace.cu"
 #include "Jim+Pack.cu"

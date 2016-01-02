@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <string.h>
+#include <RuntimeHost.h>
 #include <RuntimeEx.h>
 #include "Jim+Autoconf.h"
 #include "Jim.h"
@@ -85,7 +86,7 @@ __global__ void g_InteractivePromptBegin()
 	printf("Welcome to Jim version %d.%d\n", JIM_VERSION / 100, JIM_VERSION % 100);
 	Jim_SetVariableStrWithStr(d_dataI.interp, JIM_INTERACTIVE, "1");
 }
-void Jim_InteractivePromptBegin(Jim_Interp *interp)
+void Jim_InteractivePromptBegin(cudaDeviceHeap &heap, Jim_Interp *interp)
 { 
 	memset(&h_dataI, 0, sizeof(h_dataI));
 	h_dataI.interp = interp;
@@ -100,7 +101,7 @@ void Jim_InteractivePromptBegin(Jim_Interp *interp)
 		Jim_HistoryLoad(history_file);
 	}
 #endif
-	D_DATAI(); g_InteractivePromptBegin<<<1,1>>>(); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAI();
+	D_DATAI(); g_InteractivePromptBegin<<<1,1>>>(); cudaErrorCheck(cudaDeviceHeapSynchronize(heap)); H_DATAI();
 }
 
 __global__ void g_InteractivePromptBodyBegin()
@@ -121,9 +122,9 @@ __global__ void g_InteractivePromptBodyBegin()
 	Jim_Obj *scriptObjPtr = d_dataI.scriptObjPtr = Jim_NewStringObj(interp, "", 0);
 	Jim_IncrRefCount(scriptObjPtr);
 }
-void Jim_InteractivePromptBodyBegin()
+void Jim_InteractivePromptBodyBegin(cudaDeviceHeap &heap)
 {
-	D_DATAI(); g_InteractivePromptBodyBegin<<<1,1>>>(); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAI();
+	D_DATAI(); g_InteractivePromptBodyBegin<<<1,1>>>(); cudaErrorCheck(cudaDeviceHeapSynchronize(heap)); H_DATAI();
 }
 
 __global__ void g_InteractivePromptBodyMiddle(char *line)
@@ -154,13 +155,13 @@ __global__ void g_InteractivePromptBodyMiddle(char *line)
 	__snprintf(prompt, sizeof(d_dataI.prompt), "%c> ", state);
 	d_dataI.OP = 0; //: continue;
 }
-int Jim_InteractivePromptBodyMiddle(char *line)
+int Jim_InteractivePromptBodyMiddle(cudaDeviceHeap &heap, char *line)
 {
 	char *d_line;
 	int lineLength = (int)strlen(line) + 1;
 	cudaMalloc((void**)&d_line, lineLength);
 	cudaMemcpy(d_line, line, lineLength, cudaMemcpyHostToDevice);
-	D_DATAI(); g_InteractivePromptBodyMiddle<<<1,1>>>(d_line); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAI();
+	D_DATAI(); g_InteractivePromptBodyMiddle<<<1,1>>>(d_line); cudaErrorCheck(cudaDeviceHeapSynchronize(heap)); H_DATAI();
 	cudaFree(d_line);
 	return h_dataI.OP;
 }
@@ -183,7 +184,7 @@ __global__ void g_InteractivePromptBodyEnd()
 		printf("%s\n", result);
 	d_dataI.OP = 0; //: continue;
 }
-int Jim_InteractivePromptBodyEnd()
+int Jim_InteractivePromptBodyEnd(cudaDeviceHeap &heap)
 {
 #ifdef USE_LINENOISE
 	if (!strcmp(str, "h")) {
@@ -196,45 +197,45 @@ int Jim_InteractivePromptBodyEnd()
 	if (history_file)
 		Jim_HistorySave(history_file);	
 #endif
-	D_DATAI(); g_InteractivePromptBodyEnd<<<1,1>>>(); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAI();
+	D_DATAI(); g_InteractivePromptBodyEnd<<<1,1>>>(); cudaErrorCheck(cudaDeviceHeapSynchronize(heap)); H_DATAI();
 	return h_dataI.OP;
 }
 
-int Jim_InteractivePromptEnd()
+int Jim_InteractivePromptEnd(cudaDeviceHeap &heap)
 {
 	free(h_dataI.history_file);
 	return h_dataI.retcode;
 }
 
-int Jim_InteractivePrompt(Jim_Interp *interp)
+int Jim_InteractivePrompt(cudaDeviceHeap *heap, Jim_Interp *interp)
 {
-	Jim_InteractivePromptBegin(interp);
+	Jim_InteractivePromptBegin(*heap, interp);
 	while (1) {
-		Jim_InteractivePromptBodyBegin();
+		Jim_InteractivePromptBodyBegin(*heap);
 		int op;
 		while (1) {
 			char *line = Jim_HistoryGetline(h_dataI.prompt);
 			if (line == NULL)
 				if (errno == EINTR)
 					continue;
-			op = Jim_InteractivePromptBodyMiddle(line);
+			op = Jim_InteractivePromptBodyMiddle(*heap, line);
 			if (op == -1) goto out;
 			free(line);
 			if (op == 0) continue;
 			else if (op == 1) break;
 		}
-		op = Jim_InteractivePromptBodyEnd();
+		op = Jim_InteractivePromptBodyEnd(*heap);
 		if (op == -1) goto out;
 		else if (op == 0) continue;
 		else if (op == 1) break;
 	}
 out:
-	return Jim_InteractivePromptEnd();
+	return Jim_InteractivePromptEnd(*heap);
 }
 
 #else
 
-int Jim_InteractivePrompt(Jim_Interp *interp)
+int Jim_InteractivePrompt(cudaDeviceHeap *heap, Jim_Interp *interp)
 {
 	int retcode = JIM_OK;
 	char *history_file = NULL;

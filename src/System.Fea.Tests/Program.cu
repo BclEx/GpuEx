@@ -2,14 +2,15 @@
 
 //#define VISUAL
 #include <RuntimeHost.h>
+#include <string.h>
 
 #if __CUDACC__
 void GMain(cudaDeviceHeap &r) {
 #else
 void main(int argc, char **argv) { cudaDeviceHeap r; memset(&r, 0, sizeof(r));
 #endif
-extern void select2_host(cudaDeviceHeap &r);
-select2_host(r);
+//extern void select2_host(cudaDeviceHeap &r);
+//select2_host(r);
 }
 
 #if __CUDACC__

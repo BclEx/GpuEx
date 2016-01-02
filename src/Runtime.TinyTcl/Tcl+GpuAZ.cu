@@ -7,7 +7,7 @@
 __device__ static char *currentDir = NULL;
 
 // Prototypes for local procedures defined in this file:
-__device__ static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidPtr, FILE *errorId);
+__device__ static int CleanupChildren(Tcl_Interp *interp, int numPids, HANDLE *pidPtr, HANDLE errorId);
 __device__ static char *GetFileType(int mode);
 __device__ static int StoreStatData(Tcl_Interp *interp, char *varName, struct stat *statPtr);
 
@@ -33,7 +33,7 @@ __device__ int Tcl_CdCmd(ClientData dummy, Tcl_Interp *interp, int argc, const c
 	}
 	char *dirName;
 	if (argc == 2) {
-		dirName = args[1];
+		dirName = (char *)args[1];
 	} else {
 		dirName = "~";
 	}
@@ -73,7 +73,7 @@ __device__ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, cons
 		return TCL_ERROR;
 	}
 	OpenFile_ *filePtr;
-	if (TclGetOpenFile(interp, args[1], &filePtr) != TCL_OK) {
+	if (TclGetOpenFile(interp, (char *)args[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	((Interp *)interp)->filePtrArray[__fileno(filePtr->f)] = NULL;
@@ -120,7 +120,7 @@ __device__ int Tcl_EofCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cons
 		return TCL_ERROR;
 	}
 	OpenFile_ *filePtr;
-	if (TclGetOpenFile(interp, args[1], &filePtr) != TCL_OK) {
+	if (TclGetOpenFile(interp, (char *)args[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	if (_feof(filePtr->f)) {
@@ -147,6 +147,9 @@ __device__ int Tcl_EofCmd(ClientData notUsed, Tcl_Interp *interp, int argc, cons
 */
 __device__ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, const char *args[])
 {
+#if 1
+	return 0;
+#else
 	int *pidPtr;
 	int numPids;
 	// See if the command is to be run in background;  if so, create the command, detach it, and return.
@@ -196,6 +199,7 @@ __device__ int Tcl_ExecCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 		result = TCL_ERROR;
 	}
 	return result;
+#endif
 }
 
 /*
@@ -254,7 +258,7 @@ __device__ int Tcl_FileCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 	int length = _strlen(args[1]);
 
 	// First handle operations on the file name.
-	char *fileName = Tcl_TildeSubst(interp, args[2]);
+	char *fileName = Tcl_TildeSubst(interp, (char *)args[2]);
 	if (fileName == NULL) {
 		return TCL_ERROR;
 	}
@@ -415,7 +419,7 @@ checkAccess:
 			Tcl_AppendResult(interp, "couldn't lstat \"", args[2], "\": ", Tcl_OSError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
-		return StoreStatData(interp, args[3], &statBuf);
+		return StoreStatData(interp, (char *)args[3], &statBuf);
 	} else if (c == 'm' && !_strncmp(args[1], "mtime", length)) {
 		if (argc != 3) {
 			args[1] = "mtime";
@@ -469,7 +473,7 @@ badStat:
 			Tcl_AppendResult(interp, "couldn't stat \"", args[2], "\": ", Tcl_OSError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
-		return StoreStatData(interp, args[3], &statBuf);
+		return StoreStatData(interp, (char *)args[3], &statBuf);
 	} else if (c == 't' && !_strncmp(args[1], "type", length) && length >= 2) {
 		if (argc != 3) {
 			args[1] = "type";
@@ -621,7 +625,7 @@ __device__ int Tcl_FlushCmd(ClientData notUsed, Tcl_Interp *interp, int argc, co
 		return TCL_ERROR;
 	}
 	OpenFile_ *filePtr;
-	if (TclGetOpenFile(interp, args[1], &filePtr) != TCL_OK) {
+	if (TclGetOpenFile(interp, (char *)args[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	if (!filePtr->writable) {
@@ -662,7 +666,7 @@ __device__ int Tcl_GetsCmd(ClientData notUsed, Tcl_Interp *interp, int argc, con
 		return TCL_ERROR;
 	}
 	OpenFile_ *filePtr;
-	if (TclGetOpenFile(interp, args[1], &filePtr) != TCL_OK) {
+	if (TclGetOpenFile(interp, (char *)args[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	if (!filePtr->readable) {
@@ -705,7 +709,7 @@ __device__ int Tcl_GetsCmd(ClientData notUsed, Tcl_Interp *interp, int argc, con
 		if (argc == 2) {
 			Tcl_AppendResult(interp, buffer, (char *)NULL);
 		} else {
-			if (Tcl_SetVar(interp, args[2], buffer, flags|TCL_LEAVE_ERR_MSG) == NULL) {
+			if (Tcl_SetVar(interp, (char *)args[2], buffer, flags|TCL_LEAVE_ERR_MSG) == NULL) {
 				return TCL_ERROR;
 			}
 			flags = TCL_APPEND_VALUE;
@@ -739,7 +743,7 @@ __device__ int Tcl_OpenCmd(ClientData notUsed, Tcl_Interp *interp, int argc, con
 	if (argc == 2) {
 		access = "rb";
 	} else if (argc == 3) {
-		access = args[2];
+		access = (char *)args[2];
 	} else {
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " filename ?access?\"", (char *)NULL);
 		return TCL_ERROR;
@@ -793,7 +797,7 @@ badAccess:
 
 	// Open the file or create a process pipeline.
 	if (!pipeline) {
-		char *fileName = args[1];
+		char *fileName = (char *)args[1];
 		if (fileName[0] == '~') {
 			fileName = Tcl_TildeSubst(interp, fileName);
 			if (fileName == NULL) {
@@ -812,12 +816,12 @@ badAccess:
 	else {
 		int cmdArgc;
 		char **cmdArgs;
-		if (Tcl_SplitList(interp, args[1]+1, &cmdArgc, &cmdArgs) != TCL_OK) {
+		if (Tcl_SplitList(interp, (char *)args[1]+1, &cmdArgc, &cmdArgs) != TCL_OK) {
 			goto error;
 		}
-		FILE *inPipe = NULL, *outPipe = NULL;
-		FILE **inPipePtr = (filePtr->writable ? &inPipe : NULL);
-		FILE **outPipePtr = (filePtr->readable ? &outPipe : NULL);
+		HANDLE inPipe = NULL, outPipe = NULL;
+		HANDLE *inPipePtr = (filePtr->writable ? &inPipe : NULL);
+		HANDLE *outPipePtr = (filePtr->readable ? &outPipe : NULL);
 		filePtr->numPids = Tcl_CreatePipeline(interp, cmdArgc, cmdArgs, &filePtr->pidPtr, inPipePtr, outPipePtr, &filePtr->errorId);
 		_freeFast((char *)cmdArgs);
 		if (filePtr->numPids < 0) {
@@ -949,7 +953,7 @@ __device__ int Tcl_PutsCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 	if (i == (argc-1)) {
 		fileId = "stdout";
 	} else {
-		fileId = args[i];
+		fileId = (char *)args[i];
 		i++;
 	}
 
@@ -1007,7 +1011,7 @@ __device__ int Tcl_ReadCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 	}
 
 	OpenFile_ *filePtr;
-	if (TclGetOpenFile(interp, args[i], &filePtr) != TCL_OK) {
+	if (TclGetOpenFile(interp, (char *)args[i], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	if (!filePtr->readable) {
@@ -1085,7 +1089,7 @@ __device__ int Tcl_SeekCmd(ClientData notUsed, Tcl_Interp *interp, int argc, con
 		return TCL_ERROR;
 	}
 	OpenFile_ *filePtr;
-	if (TclGetOpenFile(interp, args[1], &filePtr) != TCL_OK) {
+	if (TclGetOpenFile(interp, (char *)args[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	int offset;
@@ -1135,7 +1139,7 @@ __device__ int Tcl_SourceCmd(ClientData dummy, Tcl_Interp *interp, int argc, con
 		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " fileName\"", (char *)NULL);
 		return TCL_ERROR;
 	}
-	return Tcl_EvalFile(interp, args[1]);
+	return Tcl_EvalFile(interp, (char *)args[1]);
 }
 
 /*
@@ -1159,7 +1163,7 @@ __device__ int Tcl_TellCmd(ClientData notUsed, Tcl_Interp *interp, int argc, con
 		return TCL_ERROR;
 	}
 	OpenFile_ *filePtr;
-	if (TclGetOpenFile(interp, args[1], &filePtr) != TCL_OK) {
+	if (TclGetOpenFile(interp, (char *)args[1], &filePtr) != TCL_OK) {
 		return TCL_ERROR;
 	}
 	_sprintf(interp->result, "%ld", _ftell(filePtr->f));
@@ -1196,7 +1200,7 @@ __device__ int Tcl_TimeCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 	double timePer;
 	clock_t start = clock();
 	for (int i = count; i > 0; i--) {
-		int result = Tcl_Eval(interp, args[1], 0, (char **)NULL);
+		int result = Tcl_Eval(interp, (char *)args[1], 0, (char **)NULL);
 		if (result != TCL_OK) {
 			if (result == TCL_ERROR) {
 				char msg[60];
@@ -1230,7 +1234,7 @@ __device__ int Tcl_TimeCmd(ClientData dummy, Tcl_Interp *interp, int argc, const
 *
 *----------------------------------------------------------------------
 */
-__device__ static int CleanupChildren(Tcl_Interp *interp, int numPids, int *pidPtr, FILE *errorId)
+__device__ static int CleanupChildren(Tcl_Interp *interp, int numPids, HANDLE *pidPtr, HANDLE errorId)
 {
 	//	int result = TCL_OK;
 	//	int i, pid;

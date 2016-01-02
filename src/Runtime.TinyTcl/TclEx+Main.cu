@@ -16,7 +16,7 @@
 #include "TclEx+Dbg.h"
 #endif
 
-#if 1
+#if 0
 
 // From generated load_extensions.c
 __device__ void TclEx_InitExtensions(Tcl_Interp *interp);

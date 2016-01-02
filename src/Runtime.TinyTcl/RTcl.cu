@@ -1,6 +1,7 @@
 //#include "dos.cu"
 //#include "regex_compat.cu"
 
+//#include "TinySh.cu"
 #include "Tcl+Alloc.cu"
 #include "Tcl+Assem.cu"
 #include "Tcl+Basic.cu"
@@ -18,7 +19,7 @@
 #include "Tcl+GpuUtil.cu"
 #include "Tcl+Hash.cu"
 #include "Tcl+History.cu"
-#include "Tcl+Load-unix.cu"
+#include "Tcl+Load-noop.cu"
 #include "Tcl+Load.cu"
 #include "Tcl+Obj.cu"
 #include "Tcl+Parse.cu"
@@ -35,7 +36,7 @@
 #include "TclEx+UnixReaddir.cu"
 #include "TclMod.cu"
 
-//#include "Tcl+Main-embed.cu" -- Test Driver
-//#include "Tcl+Main.cu" -- Test Driver
-//#include "TclEx+Main.cu" -- Test Driver
+#include "Tcl+Main-embed.cu" -- Test Driver
+#include "Tcl+Main.cu" -- Test Driver
+#include "TclEx+Main.cu" -- Test Driver
 
