@@ -4828,7 +4828,7 @@ __device__ static int JimIsWide(Jim_Obj *objPtr)
 }
 #endif
 
-__device__ int Jim_GetWide(Jim_Interp *interp, Jim_Obj *objPtr, jim_wide * widePtr)
+__device__ int Jim_GetWide(Jim_Interp *interp, Jim_Obj *objPtr, jim_wide *widePtr)
 {
 	if (objPtr->typePtr != &_intObjType && SetIntFromAny(interp, objPtr, JIM_ERRMSG) == JIM_ERROR)
 		return JIM_ERROR;

@@ -1,6 +1,6 @@
 // Code for testing the client/server version of the SQLite library.
 // Derived from test4.c.
-#include "TclContext.cu.h"
+#include "Test.cu.h"
 
 // This test only works on UNIX with a SQLITE_THREADSAFE build that includes the SQLITE_SERVER option.
 #if defined(CORE_SERVER) && !defined(OMIT_SHARED_CACHE) && OS_UNIX && THREADSAFE

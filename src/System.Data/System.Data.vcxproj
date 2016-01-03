@@ -173,7 +173,9 @@
   <ItemGroup>
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Parser.ycu" />
     <None Include="GpuEx-System.Data.Native.nuspec" />
-    <None Include="GpuEx-System.Data.Native.targets" />
+    <None Include="GpuEx-System.Data.Native.targets">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="_content\system.data.sample.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

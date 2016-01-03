@@ -1,17 +1,6 @@
-// A JIM Interface to SQLite.  Append this file to sqlite3.c and compile the whole thing to build a JIM-enabled version of SQLite.
-//
-// Compile-time options:
-//
-//  -DJIMSH=1             Add a "main()" routine that works as a tclsh.
-//
-//  -D_JIMMD5       When used in conjuction with -DJIMSH=1, add four new commands to the JIM interpreter for
-//                        generating MD5 checksums:  md5, md5file, md5-10x8, and md5file-10x8.
-//
-//  -D_TEST         When used in conjuction with -DJIMSH=1, add hundreds of new commands used for testing
-//                        SQLite.  This option implies -DSQLITE_JIMMD5.
-//#include <errno.h>
+// A TCL Interface to SQLite
+#if HASJIMTCL
 
-// Some additional include files are needed if this file is not appended to the amalgamation.
 #include "TclContext.cu.h"
 #include <string.h>
 #include <stdlib.h>
@@ -2561,3 +2550,4 @@ __device__ int Main_Shutdown(Jim_Interp *interp, int flags) { return JIM_OK; }
 //int Jimsqlite_Unload(Jim_Interp *interp, int flags){ return JIM_OK; }
 //#endif
 
+#endif

@@ -348,7 +348,7 @@ extern "C" {
 	} Jim_Var;
 
 	// The cmd structure
-	typedef int Jim_CmdProc(struct Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+	typedef int Jim_CmdProc(ClientData clientData, struct Jim_Interp *interp, int argc, Jim_Obj *const argv[]);
 	typedef void Jim_DelCmdProc(struct Jim_Interp *interp, void *privData);
 
 	// A command is implemented in C if isproc is 0, otherwise it's a Tcl procedure with the arglist and body represented by the
@@ -441,10 +441,11 @@ extern "C" {
 	} Jim_Interp;
 
 	// Currently provided as macro that performs the increment. At some point may be a real function doing more work.
-	//The proc epoch is used in order to know when a command lookup cached can no longer considered valid.
+	// The proc epoch is used in order to know when a command lookup cached can no longer considered valid.
 #define Jim_InterpIncrProcEpoch(i) (i)->procEpoch++
 #define Jim_SetResultString(i,s,l) Jim_SetResult(i, Jim_NewStringObj(i,s,l))
 #define Jim_SetResultInt(i,intval) Jim_SetResult(i, Jim_NewIntObj(i,intval))
+#define Jim_SetResultWide(i,intval) Jim_SetResultInt(i,intval)
 	// Note: Using trueObj and falseObj here makes some things slower...
 #define Jim_SetResultBool(i,b) Jim_SetResultInt(i, b)
 #define Jim_ResetResult(i) Jim_SetResult(i, (i)->emptyObj)
@@ -484,7 +485,7 @@ extern "C" {
 	JIM_EXPORT __device__ void *Jim_Alloc(int size);
 	JIM_EXPORT __device__ void *Jim_Realloc(void *ptr, int size);
 	JIM_EXPORT __device__ void Jim_Free(void *ptr);
-	JIM_EXPORT __device__ char * Jim_StrDup(const char *s);
+	JIM_EXPORT __device__ char *Jim_StrDup(const char *s);
 	JIM_EXPORT __device__ char *Jim_StrDupLen(const char *s, int l);
 
 	// environment
@@ -516,8 +517,8 @@ extern "C" {
 	JIM_EXPORT __device__ void Jim_FreeStack(Jim_Stack *stack);
 	JIM_EXPORT __device__ int Jim_StackLen(Jim_Stack *stack);
 	JIM_EXPORT __device__ void Jim_StackPush(Jim_Stack *stack, void *element);
-	JIM_EXPORT __device__ void * Jim_StackPop(Jim_Stack *stack);
-	JIM_EXPORT __device__ void * Jim_StackPeek(Jim_Stack *stack);
+	JIM_EXPORT __device__ void *Jim_StackPop(Jim_Stack *stack);
+	JIM_EXPORT __device__ void *Jim_StackPeek(Jim_Stack *stack);
 	JIM_EXPORT __device__ void Jim_FreeStackElements(Jim_Stack *stack, void (*freeFunc)(void *ptr));
 
 	// hash table
@@ -536,7 +537,7 @@ extern "C" {
 	JIM_EXPORT __device__ Jim_Obj *Jim_NewObj(Jim_Interp *interp);
 	JIM_EXPORT __device__ void Jim_FreeObj(Jim_Interp *interp, Jim_Obj *objPtr);
 	JIM_EXPORT __device__ void Jim_InvalidateStringRep(Jim_Obj *objPtr);
-	JIM_EXPORT __device__ Jim_Obj * Jim_DuplicateObj(Jim_Interp *interp, Jim_Obj *objPtr);
+	JIM_EXPORT __device__ Jim_Obj *Jim_DuplicateObj(Jim_Interp *interp, Jim_Obj *objPtr);
 	JIM_EXPORT __device__ const char *Jim_GetString(Jim_Obj *objPtr, int *lenPtr);
 	JIM_EXPORT __device__ const char *Jim_String(Jim_Obj *objPtr);
 	JIM_EXPORT __device__ int Jim_Length(Jim_Obj *objPtr);
@@ -565,7 +566,7 @@ extern "C" {
 	JIM_EXPORT __device__ int Jim_GetFinalizer(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj **cmdNamePtrPtr);
 
 	// interpreter
-	JIM_EXPORT __device__ Jim_Interp * Jim_CreateInterp();
+	JIM_EXPORT __device__ Jim_Interp *Jim_CreateInterp();
 	JIM_EXPORT __device__ void Jim_FreeInterp(Jim_Interp *i);
 	JIM_EXPORT __device__ int Jim_GetExitCode(Jim_Interp *interp);
 	JIM_EXPORT __device__ const char *Jim_ReturnCode(int code);
@@ -600,7 +601,7 @@ extern "C" {
 	JIM_EXPORT __device__ int Jim_GetIndex(Jim_Interp *interp, Jim_Obj *objPtr, int *indexPtr);
 
 	// list object
-	JIM_EXPORT __device__ Jim_Obj * Jim_NewListObj (Jim_Interp *interp, Jim_Obj *const *elements, int len);
+	JIM_EXPORT __device__ Jim_Obj *Jim_NewListObj (Jim_Interp *interp, Jim_Obj *const *elements, int len);
 	JIM_EXPORT __device__ void Jim_ListInsertElements (Jim_Interp *interp, Jim_Obj *listPtr, int listindex, int objc, Jim_Obj *const *objVec);
 	JIM_EXPORT __device__ void Jim_ListAppendElement (Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *objPtr);
 	JIM_EXPORT __device__ void Jim_ListAppendList (Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *appendListPtr);
@@ -608,11 +609,11 @@ extern "C" {
 	JIM_EXPORT __device__ int Jim_ListIndex(Jim_Interp *interp, Jim_Obj *listPrt, int listindex, Jim_Obj **objPtrPtr, int seterr);
 	JIM_EXPORT __device__ Jim_Obj *Jim_ListGetIndex(Jim_Interp *interp, Jim_Obj *listPtr, int idx);
 	JIM_EXPORT __device__ int Jim_SetListIndex(Jim_Interp *interp, Jim_Obj *varNamePtr, Jim_Obj *const *indexv, int indexc, Jim_Obj *newObjPtr);
-	JIM_EXPORT __device__ Jim_Obj * Jim_ConcatObj(Jim_Interp *interp, int objc, Jim_Obj *const *objv);
+	JIM_EXPORT __device__ Jim_Obj *Jim_ConcatObj(Jim_Interp *interp, int objc, Jim_Obj *const *objv);
 	JIM_EXPORT __device__ Jim_Obj *Jim_ListJoin(Jim_Interp *interp, Jim_Obj *listObjPtr, const char *joinStr, int joinStrLen);
 
 	// dict object
-	JIM_EXPORT __device__ Jim_Obj * Jim_NewDictObj (Jim_Interp *interp, Jim_Obj *const *elements, int len);
+	JIM_EXPORT __device__ Jim_Obj *Jim_NewDictObj (Jim_Interp *interp, Jim_Obj *const *elements, int len);
 	JIM_EXPORT __device__ int Jim_DictKey (Jim_Interp *interp, Jim_Obj *dictPtr, Jim_Obj *keyPtr, Jim_Obj **objPtrPtr, int flags);
 	JIM_EXPORT __device__ int Jim_DictKeysVector (Jim_Interp *interp, Jim_Obj *dictPtr, Jim_Obj *const *keyv, int keyc, Jim_Obj **objPtrPtr, int flags);
 	JIM_EXPORT __device__ int Jim_SetDictKeysVector (Jim_Interp *interp, Jim_Obj *varNamePtr, Jim_Obj *const *keyv, int keyc, Jim_Obj *newObjPtr, int flags);
@@ -635,6 +636,20 @@ extern "C" {
 	JIM_EXPORT __device__ int Jim_GetLong(Jim_Interp *interp, Jim_Obj *objPtr, long *longPtr);
 #define Jim_NewWideObj Jim_NewIntObj
 	JIM_EXPORT __device__ Jim_Obj *Jim_NewIntObj(Jim_Interp *interp, jim_wide wideValue);
+	__inline __device__ int Jim_GetInt(Jim_Interp *interp, Jim_Obj *objPtr, int *intPtr)
+	{
+		jim_wide wideValue;
+		int retval;
+		if (retval = Jim_GetWide(interp, objPtr, &wideValue) == JIM_OK) *intPtr = (int)wideValue;
+		return retval;
+	}
+	__inline __device__ int Jim_GetBoolean(Jim_Interp *interp, Jim_Obj *objPtr, bool *boolPtr)
+	{
+		jim_wide wideValue;
+		int retval;
+		if (retval = Jim_GetWide(interp, objPtr, &wideValue) == JIM_OK) *boolPtr = (bool)wideValue;
+		return retval;
+	}
 
 	// double object
 	JIM_EXPORT __device__ int Jim_GetDouble(Jim_Interp *interp, Jim_Obj *objPtr, double *doublePtr);

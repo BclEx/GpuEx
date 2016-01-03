@@ -1,6 +1,6 @@
 // This file contains obscure tests of the C-interface required for completeness. Test code is written in C for these cases
 // as there is not much point in binding to Tcl.
-#include "TclContext.cu.h"
+#include "Test.cu.h"
 #include <stdlib.h>
 #include <string.h>
 

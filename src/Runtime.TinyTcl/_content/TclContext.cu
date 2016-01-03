@@ -1,17 +1,6 @@
-// A TCL Interface to SQLite.  Append this file to sqlite3.c and compile the whole thing to build a TCL-enabled version of SQLite.
-//
-// Compile-time options:
-//
-//  -DTCLSH=1             Add a "main()" routine that works as a tclsh.
-//
-//  -D_TCLMD5       When used in conjuction with -DTCLSH=1, add four new commands to the TCL interpreter for
-//                        generating MD5 checksums:  md5, md5file, md5-10x8, and md5file-10x8.
-//
-//  -D_TEST         When used in conjuction with -DTCLSH=1, add hundreds of new commands used for testing
-//                        SQLite.  This option implies -DSQLITE_TCLMD5.
-//#include <errno.h>
+// A TCL Interface to SQLite
+#if HASTINYTCL
 
-// Some additional include files are needed if this file is not appended to the amalgamation.
 #include "TclContext.cu.h"
 #include <string.h>
 #include <stdlib.h>
@@ -2489,3 +2478,5 @@ __device__ int Main_Shutdown(Tcl_Interp *interp, int flags) { return TCL_OK; }
 //int Sqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 //int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 //#endif
+
+#endif

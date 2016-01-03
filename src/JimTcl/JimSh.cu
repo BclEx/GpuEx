@@ -116,7 +116,7 @@ static int MainInit(int argc, char *const argv[]) {
 	Jim_SetVariableStrWithStr(interp, JIM_INTERACTIVE, argc == 1 ? "1" : "0");
 	int retcode = Jim_initjimshInit(interp);
 	if (argc == 1) {
-		if (retcode == JIM_ERR)
+		if (retcode == JIM_ERROR)
 			JimPrintErrorMessage(interp);
 		if (retcode != JIM_EXIT)
 			JimSetArgv(interp, 0, NULL);
@@ -125,7 +125,7 @@ static int MainInit(int argc, char *const argv[]) {
 		if (argc > 2 && !_strcmp(argv[1], "-e")) {
 			JimSetArgv(interp, argc - 3, argv + 3);
 			retcode = Jim_Eval(interp, argv[2]);
-			if (retcode != JIM_ERR)
+			if (retcode != JIM_ERROR)
 				printf("%s\n", Jim_String(Jim_GetResult(interp)));
 		}
 		else {
@@ -133,7 +133,7 @@ static int MainInit(int argc, char *const argv[]) {
 			JimSetArgv(interp, argc - 2, argv + 2);
 			retcode = Jim_EvalFile(interp, argv[1]);
 		}
-		if (retcode == JIM_ERR)
+		if (retcode == JIM_ERROR)
 			JimPrintErrorMessage(interp);
 	}
 #if __CUDACC__
@@ -184,7 +184,7 @@ int main(int argc, char *const argv[])
 		retcode = Jim_InteractivePrompt(nullptr, h_dataP.interp);
 #endif
 	retcode = MainShutdown(retcode);
-	if (retcode == JIM_ERR)
+	if (retcode == JIM_ERROR)
 		retcode = 1;
 	else
 		retcode = 0;

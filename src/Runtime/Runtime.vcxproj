@@ -116,8 +116,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="GpuEx-Runtime.Native.nuspec" />
-    <None Include="GpuEx-Runtime.Native.targets" />
-    <Xml Include="GpuEx-Runtime.Native.xml" />
+    <None Include="GpuEx-Runtime.Native.targets">
+      <SubType>Designer</SubType>
+    </None>
+    <Xml Include="GpuEx-Runtime.Native.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <None Include="_content\runtime.sample.cu" />
     <None Include="_content\runtime.ganging.sample.cu" />
   </ItemGroup>

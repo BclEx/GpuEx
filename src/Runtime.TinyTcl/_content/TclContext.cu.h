@@ -1,3 +1,5 @@
+// A TCL Interface to SQLite
+#if HASTINYTCL
 #ifndef __TCLCONTEXT_CU_H__
 #define __TCLCONTEXT_CU_H__
 
@@ -93,3 +95,4 @@ struct IncrblobChannel
 };
 
 #endif // __TCLCONTEXT_CU_H__
+#endif

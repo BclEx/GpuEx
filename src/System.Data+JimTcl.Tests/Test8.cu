@@ -1,5 +1,5 @@
 // Code for testing the virtual table interfaces.  This code is not included in the SQLite library.  It is used for automated testing of the SQLite library.
-#include "TclContext.cu.h"
+#include "Test.cu.h"
 #include <stdlib.h>
 #include <string.h>
 

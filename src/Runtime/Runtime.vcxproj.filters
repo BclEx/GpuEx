@@ -4,6 +4,30 @@
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="RuntimeHost.cpp" />
     <ClCompile Include="VisualHost.cpp" />
+    <ClCompile Include="CompileTime.cu" />
+    <ClCompile Include="Regex.cu" />
+    <ClCompile Include="Runtime.cu" />
+    <ClCompile Include="Runtime+Alloc.cu" />
+    <ClCompile Include="Runtime+BenignAlloc.cu" />
+    <ClCompile Include="Runtime+Bitvec.cu" />
+    <ClCompile Include="Runtime+Convert.cu" />
+    <ClCompile Include="Runtime+Hash.cu" />
+    <ClCompile Include="Runtime+Math.cu" />
+    <ClCompile Include="Runtime+Mem0.cu" />
+    <ClCompile Include="Runtime+Mem1.cu" />
+    <ClCompile Include="Runtime+Mutex-gpu.cu" />
+    <ClCompile Include="Runtime+Mutex-noop.cu" />
+    <ClCompile Include="Runtime+Mutex-unix.cu" />
+    <ClCompile Include="Runtime+Mutex-win.cu" />
+    <ClCompile Include="Runtime+Printf.cu" />
+    <ClCompile Include="Runtime+Utf.cu" />
+    <ClCompile Include="Runtime+Sentinel-win.cu" />
+    <ClCompile Include="Runtime+Sentinel-gpu.cu" />
+    <ClCompile Include="Runtime+Status.cu" />
+    <ClCompile Include="Runtime+TagBase.cu" />
+    <ClCompile Include="Runtime+Sentinel.cu" />
+    <ClCompile Include="RuntimeEx.cu" />
+    <ClCompile Include="RuntimeOS.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RuntimeGL.h" />
@@ -20,29 +44,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="GpuEx-Runtime.Native.nuspec" />
-    <None Include="CompileTime.cu" />
-    <None Include="Regex.cu" />
-    <None Include="Runtime.cu" />
-    <None Include="Runtime+Alloc.cu" />
-    <None Include="Runtime+BenignAlloc.cu" />
-    <None Include="Runtime+Bitvec.cu" />
-    <None Include="Runtime+Convert.cu" />
-    <None Include="Runtime+Hash.cu" />
-    <None Include="Runtime+Math.cu" />
-    <None Include="Runtime+Mem0.cu" />
-    <None Include="Runtime+Mem1.cu" />
-    <None Include="Runtime+Mutex-gpu.cu" />
-    <None Include="Runtime+Mutex-noop.cu" />
-    <None Include="Runtime+Mutex-unix.cu" />
-    <None Include="Runtime+Mutex-win.cu" />
-    <None Include="Runtime+Printf.cu" />
-    <None Include="Runtime+Utf.cu" />
-    <None Include="Runtime+Sentinel-win.cu" />
-    <None Include="Runtime+Sentinel-gpu.cu" />
-    <None Include="Runtime+Status.cu" />
-    <None Include="Runtime+TagBase.cu" />
-    <None Include="RuntimeEx.cu" />
-    <None Include="RuntimeOS.cu" />
     <None Include="GpuEx-Runtime.Native.targets" />
     <None Include="_content\runtime.sample.cu">
       <Filter>_content</Filter>
@@ -50,15 +51,12 @@
     <None Include="_content\runtime.ganging.sample.cu">
       <Filter>_content</Filter>
     </None>
+    <None Include="RT.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="_content">
       <UniqueIdentifier>{ef2be218-740b-4db9-879c-c266469963f5}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="RT.cu" />
-    <CudaCompile Include="Runtime+Sentinel.cu" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="GpuEx-Runtime.Native.xml" />
