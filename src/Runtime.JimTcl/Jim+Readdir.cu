@@ -67,7 +67,7 @@ __device__ int Jim_ReaddirCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv
 		nocomplain = 1;
 	if (argc != 2 && !nocomplain) {
 		Jim_WrongNumArgs(interp, 1, argv, "?-nocomplain? dirPath");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	const char *dirPath = Jim_String(argv[1 + nocomplain]);
 	DIR *dirPtr = _opendir(dirPath);
@@ -75,7 +75,7 @@ __device__ int Jim_ReaddirCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv
 		if (nocomplain)
 			return JIM_OK;
 		Jim_SetResultString(interp, __strerror(__errno), -1);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	else {
 		Jim_Obj *listObj = Jim_NewListObj(interp, NULL, 0);
@@ -98,7 +98,7 @@ __device__ int Jim_ReaddirCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv
 __device__ int Jim_readdirInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "readdir", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "readdir", Jim_ReaddirCmd, NULL, NULL);
 	return JIM_OK;
 }

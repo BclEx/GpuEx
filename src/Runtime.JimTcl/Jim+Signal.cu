@@ -212,7 +212,7 @@ static int do_signal_cmd(Jim_Interp *interp, int action, int argc, Jim_Obj *cons
 		int sig = find_signal_by_name(interp, Jim_String(argv[i]));
 
 		if (sig < 0) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		if (action != siginfo[sig].status) {
 			/* Need to change the action for this signal */
@@ -320,7 +320,7 @@ static int signal_cmd_throw(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	if (argc == 1) {
 		if ((sig = find_signal_by_name(interp, Jim_String(argv[0]))) < 0) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 	}
 
@@ -408,7 +408,7 @@ static int Jim_AlarmCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "seconds");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	else {
 #ifdef HAVE_UALARM
@@ -442,7 +442,7 @@ static int Jim_SleepCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "seconds");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	else {
 		double t;
@@ -468,7 +468,7 @@ static int Jim_KillCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	if (argc != 2 && argc != 3) {
 		Jim_WrongNumArgs(interp, 1, argv, "?SIG|-0? pid");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (argc == 2) {
@@ -486,13 +486,13 @@ static int Jim_KillCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		else {
 			sig = find_signal_by_name(interp, signame);
 			if (sig < 0) {
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 		}
 	}
 
 	if (Jim_GetLong(interp, pidObj, &pid) != JIM_OK) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (kill(pid, sig) == 0) {
@@ -500,13 +500,13 @@ static int Jim_KillCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	Jim_SetResultString(interp, "kill: Failed to deliver signal", -1);
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 int Jim_signalInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "signal", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 
 	signal_init_names();
 

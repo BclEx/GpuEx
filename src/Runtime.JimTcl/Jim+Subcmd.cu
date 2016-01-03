@@ -155,12 +155,12 @@ __device__ const jim_subcmd_type *Jim_ParseSubCmd(Jim_Interp *interp, const jim_
 
 __device__ int Jim_CallSubCmd(Jim_Interp *interp, const jim_subcmd_type * ct, int argc, Jim_Obj *const *argv)
 {
-	int ret = JIM_ERR;
+	int ret = JIM_ERROR;
 	if (ct) {
 		ret = (ct->flags & JIM_MODFLAG_FULLARGV ? ct->function(interp, argc, argv) : ct->function(interp, argc - 2, argv + 2));
 		if (ret < 0) {
 			set_wrong_args(interp, ct, argv[0]);
-			ret = JIM_ERR;
+			ret = JIM_ERROR;
 		}
 	}
 	return ret;

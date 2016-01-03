@@ -100,7 +100,7 @@ __device__ static int array_cmd_unset(Jim_Interp *interp, int argc, Jim_Obj *con
 	int len;
 	Jim_Obj **dictValuesObj;
 	if (Jim_DictPairs(interp, objPtr, &dictValuesObj, &len) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	// Create a new object with the values which don't match
 	Jim_Obj *resultObj = Jim_NewDictObj(interp, NULL, 0);
 	for (int i = 0; i < len; i += 2)
@@ -119,7 +119,7 @@ __device__ static int array_cmd_size(Jim_Interp *interp, int argc, Jim_Obj *cons
 	if (objPtr) {
 		len = Jim_DictSize(interp, objPtr);
 		if (len < 0)
-			return JIM_ERR;
+			return JIM_ERROR;
 	}
 	Jim_SetResultInt(interp, len);
 	return JIM_OK;
@@ -131,7 +131,7 @@ __device__ static int array_cmd_stat(Jim_Interp *interp, int argc, Jim_Obj *cons
 	if (objPtr)
 		return Jim_DictInfo(interp, objPtr);
 	Jim_SetResultFormatted(interp, "\"%#s\" isn't an array", argv[0], NULL);
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 __device__ static int array_cmd_set(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
@@ -140,14 +140,14 @@ __device__ static int array_cmd_set(Jim_Interp *interp, int argc, Jim_Obj *const
 	int len = Jim_ListLength(interp, listObj);
 	if (len % 2) {
 		Jim_SetResultString(interp, "list must have an even number of elements", -1);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_Obj *dictObj = Jim_GetVariable(interp, argv[0], JIM_UNSHARED);
 	// Doesn't exist, so just set the list directly
 	if (!dictObj)
 		return Jim_SetVariable(interp, argv[0], listObj);
 	else if (Jim_DictSize(interp, dictObj) < 0)
-		return JIM_ERR;
+		return JIM_ERROR;
 	if (Jim_IsShared(dictObj))
 		dictObj = Jim_DuplicateObj(interp, dictObj);
 	for (int i = 0; i < len; i += 2) {
@@ -174,7 +174,7 @@ __constant__ static const jim_subcmd_type array_command_table[] = {
 __device__ int Jim_arrayInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "array", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "array", Jim_SubCmdProc, (void *)array_command_table, NULL);
 	return JIM_OK;
 }

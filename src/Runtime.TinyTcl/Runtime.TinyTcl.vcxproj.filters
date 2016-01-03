@@ -23,123 +23,6 @@
     <None Include="tcl_sys\system.tcl">
       <Filter>tcl_sys</Filter>
     </None>
-    <None Include="tests\all">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\append.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\case.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\concat.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\defs">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\error.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\eval.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\expr.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\for.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\format.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\history.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\if.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\incr.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\info.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\join.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\lindex.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\linsert.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\list.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\llength.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\lrange.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\lreplace.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\lsearch.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\lsort.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\misc.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\open.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\parse.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\proc.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\regexp.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\rename.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\scan.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\set.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\source.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\split.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\string.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\trace.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\unknown.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\uplevel.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\upvar.test">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\while.test">
-      <Filter>tests</Filter>
-    </None>
     <None Include="library\init.tcl">
       <Filter>library</Filter>
     </None>
@@ -151,21 +34,6 @@
     </None>
     <None Include="library\tclIndex">
       <Filter>library</Filter>
-    </None>
-    <None Include="tests\cd.test_">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\env.test_">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\exec.test_">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\glob.test_">
-      <Filter>tests</Filter>
-    </None>
-    <None Include="tests\file.test.win">
-      <Filter>tests</Filter>
     </None>
     <None Include="GpuEx-Runtime.TinyTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.TinyTcl.Native.targets" />
@@ -190,8 +58,6 @@
     <None Include="Tcl+Load-noop.cu" />
     <None Include="Tcl+Load-unix.cu" />
     <None Include="Tcl+Load-win.cu" />
-    <None Include="Tcl+Main-embed.cu" />
-    <None Include="Tcl+Main.cu" />
     <None Include="Tcl+Obj.cu" />
     <None Include="Tcl+Parse.cu" />
     <None Include="Tcl+Proc.cu" />
@@ -208,16 +74,21 @@
     <None Include="TclEx+Dbg.cu" />
     <None Include="TclEx+Extensions.cu" />
     <None Include="TclEx+Gen.cu" />
-    <None Include="TclEx+Main.cu" />
     <None Include="TclEx+UnixReaddir.cu" />
     <None Include="TclMod.cu" />
+    <None Include="_content\runtime.tinytcl.cu">
+      <Filter>_content</Filter>
+    </None>
+    <None Include="_content\TclContext.cu.h">
+      <Filter>_content</Filter>
+    </None>
+    <None Include="_content\TclContext.cu">
+      <Filter>_content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tcl_sys">
       <UniqueIdentifier>{89c0caf0-84ce-491d-bcf7-30742b81edfc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="tests">
-      <UniqueIdentifier>{28012046-790a-4b04-a842-12a37aa65823}</UniqueIdentifier>
     </Filter>
     <Filter Include="library">
       <UniqueIdentifier>{ade0f6bd-05e7-406f-a51d-438d9be114b3}</UniqueIdentifier>
@@ -228,8 +99,5 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RTcl.cu" />
-    <CudaCompile Include="_content\runtime.tinytcl.cu">
-      <Filter>_content</Filter>
-    </CudaCompile>
   </ItemGroup>
 </Project>

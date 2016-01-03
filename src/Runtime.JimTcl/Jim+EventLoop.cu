@@ -114,7 +114,7 @@ __device__ int Jim_EvalObjBackground(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
 	interp->framePtr = savedFramePtr;
 	// Try to report the error (if any) via the bgerror proc
 	if (retval != JIM_OK && !eventLoop->suppress_bgerror) {
-		int rc = JIM_ERR;
+		int rc = JIM_ERROR;
 		Jim_Obj *objv[2];
 		objv[0] = Jim_NewStringObj(interp, "bgerror", -1);
 		objv[1] = Jim_GetResult(interp);
@@ -422,7 +422,7 @@ __device__ static int JimELVwaitCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 {
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "name");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_EventLoop *eventLoop = (Jim_EventLoop *)Jim_CmdPrivData(interp);
 	Jim_Obj *oldValue = Jim_GetGlobalVariable(interp, argv[1], JIM_NONE);
@@ -430,7 +430,7 @@ __device__ static int JimELVwaitCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 		Jim_IncrRefCount(oldValue);
 	// If a result was left, it is an error
 	else if (Jim_Length(Jim_GetResult(interp)))
-		return JIM_ERR;
+		return JIM_ERROR;
 	eventLoop->suppress_bgerror = 0;
 	int rc;
 	while ((rc = Jim_ProcessEvents(interp, JIM_ALL_EVENTS)) >= 0) {
@@ -443,8 +443,8 @@ __device__ static int JimELVwaitCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	if (oldValue)
 		Jim_DecrRefCount(interp, oldValue);
 	if (rc == -2)
-		return JIM_ERR;
-	Jim_SetEmptyResult(interp);
+		return JIM_ERROR;
+	Jim_ResetResult(interp);
 	return JIM_OK;
 }
 
@@ -461,7 +461,7 @@ __device__ static int JimELUpdateCommand(Jim_Interp *interp, int argc, Jim_Obj *
 		flags = JIM_ALL_EVENTS;
 	else if (argc > 2 || Jim_GetEnum(interp, argv[1], JimELUpdateCommand_options, &option, NULL, JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
 		Jim_WrongNumArgs(interp, 1, argv, "?idletasks?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	eventLoop->suppress_bgerror = 0;
 	while (Jim_ProcessEvents(interp, flags | JIM_DONT_WAIT) > 0) { }
@@ -489,15 +489,15 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	enum { AFTER_CANCEL, AFTER_INFO, AFTER_IDLE, AFTER_RESTART, AFTER_EXPIRE, AFTER_CREATE };
 	if (argc < 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "option ?arg ...?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_EventLoop *eventLoop = (Jim_EventLoop *)Jim_CmdPrivData(interp);
 	jim_wide ms = 0, id;
 	int option = AFTER_CREATE;
 	if (Jim_GetWide(interp, argv[1], &ms) != JIM_OK) {
 		if (Jim_GetEnum(interp, argv[1], JimELAfterCommand_options, &option, "argument", JIM_ERRMSG) != JIM_OK)
-			return JIM_ERR;
-		Jim_SetEmptyResult(interp);
+			return JIM_ERROR;
+		Jim_ResetResult(interp);
 	}
 	else if (argc == 2) {
 		// Simply a sleep
@@ -508,7 +508,7 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	case AFTER_IDLE:
 		if (argc < 3) {
 			Jim_WrongNumArgs(interp, 2, argv, "script ?script ...?");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		// fall through
 	case AFTER_CREATE: {
@@ -526,7 +526,7 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	case AFTER_CANCEL:
 		if (argc < 3) {
 			Jim_WrongNumArgs(interp, 2, argv, "id|command");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		else {
 			id = JimParseAfterId(argv[2]);
@@ -569,11 +569,11 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 				}
 			}
 			Jim_SetResultFormatted(interp, "event \"%#s\" doesn't exist", argv[2]);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		else {
 			Jim_WrongNumArgs(interp, 2, argv, "?id?");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		break;
 	}
@@ -583,7 +583,7 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 __device__ int Jim_eventloopInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "eventloop", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_EventLoop *eventLoop = (Jim_EventLoop *)Jim_Alloc(sizeof(*eventLoop));
 	_memset(eventLoop, 0, sizeof(*eventLoop));
 	Jim_SetAssocData(interp, "eventloop", JimELAssocDataDeleProc, eventLoop);

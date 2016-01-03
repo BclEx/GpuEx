@@ -174,7 +174,7 @@ __device__ static int JimParseIPv6Address(Jim_Interp *interp, const char *hostpo
 
 	if (getaddrinfo(sthost, NULL, &req, &ai)) {
 		Jim_SetResultFormatted(interp, "Not a valid address: %s", hostport);
-		ret = JIM_ERR;
+		ret = JIM_ERROR;
 	}
 	else {
 		memcpy(&sa->sin, ai->ai_addr, ai->ai_addrlen);
@@ -189,7 +189,7 @@ __device__ static int JimParseIPv6Address(Jim_Interp *interp, const char *hostpo
 	return ret;
 #else
 	Jim_SetResultString(interp, "ipv6 not supported", -1);
-	return JIM_ERR;
+	return JIM_ERROR;
 #endif
 }
 
@@ -226,7 +226,7 @@ static int JimParseIpAddress(Jim_Interp *interp, const char *hostport, union soc
 		req.ai_family = PF_INET;
 
 		if (getaddrinfo(sthost, NULL, &req, &ai)) {
-			ret = JIM_ERR;
+			ret = JIM_ERROR;
 		}
 		else {
 			memcpy(&sa->sin, ai->ai_addr, ai->ai_addrlen);
@@ -236,7 +236,7 @@ static int JimParseIpAddress(Jim_Interp *interp, const char *hostport, union soc
 #else
 		struct hostent *he;
 
-		ret = JIM_ERR;
+		ret = JIM_ERROR;
 
 		if ((he = gethostbyname(sthost)) != NULL) {
 			if (he->h_length == sizeof(sa->sin.sin_addr)) {
@@ -352,7 +352,7 @@ __device__ static int JimCheckStreamError(Jim_Interp *interp, AioFile *af)
 	}
 #endif
 	JimAioSetError(interp, af->filename);
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 __device__ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
@@ -370,10 +370,10 @@ __device__ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const 
 	}
 	if (argc == 1) {
 		if (Jim_GetWide(interp, argv[0], &neededLen) != JIM_OK)
-			return JIM_ERR;
+			return JIM_ERROR;
 		if (neededLen < 0) {
 			Jim_SetResultString(interp, "invalid parameter: negative len", -1);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 	}
 	else if (argc) {
@@ -403,7 +403,7 @@ __device__ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const 
 	/* Check for error conditions */
 	if (JimCheckStreamError(interp, af)) {
 		Jim_FreeNewObj(interp, objPtr);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	if (nonewline) {
 		int len;
@@ -426,12 +426,12 @@ __device__ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const 
 	FILE *outfh = Jim_AioFilehandle(interp, argv[0]);
 
 	if (outfh == NULL) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (argc == 2) {
 		if (Jim_GetWide(interp, argv[1], &maxlen) != JIM_OK) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 	}
 
@@ -447,13 +447,13 @@ __device__ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const 
 	if (_ferror(af->fp)) {
 		Jim_SetResultFormatted(interp, "error while reading: %s", __strerror(__errno));
 		_clearerr(af->fp);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (_ferror(outfh)) {
 		Jim_SetResultFormatted(interp, "error while writing: %s", __strerror(__errno));
 		_clearerr(outfh);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	Jim_SetResultInt(interp, count);
@@ -494,13 +494,13 @@ __device__ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const 
 	if (JimCheckStreamError(interp, af)) {
 		/* I/O error */
 		Jim_FreeNewObj(interp, objPtr);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (argc) {
 		if (Jim_SetVariable(interp, argv[0], objPtr) != JIM_OK) {
 			Jim_FreeNewObj(interp, objPtr);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 
 		len = Jim_Length(objPtr);
@@ -541,7 +541,7 @@ __device__ static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const 
 		}
 	}
 	JimAioSetError(interp, af->filename);
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 __device__ static int aio_cmd_isatty(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
@@ -567,7 +567,7 @@ __device__ static int aio_cmd_recvfrom(Jim_Interp *interp, int argc, Jim_Obj *co
 	int rlen;
 
 	if (Jim_GetLong(interp, argv[0], &len) != JIM_OK) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	buf = Jim_Alloc(len + 1);
@@ -576,7 +576,7 @@ __device__ static int aio_cmd_recvfrom(Jim_Interp *interp, int argc, Jim_Obj *co
 	if (rlen < 0) {
 		Jim_Free(buf);
 		JimAioSetError(interp, NULL);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	buf[rlen] = 0;
 	Jim_SetResult(interp, Jim_NewStringObjNoAlloc(interp, buf, rlen));
@@ -600,11 +600,11 @@ __device__ static int aio_cmd_sendto(Jim_Interp *interp, int argc, Jim_Obj *cons
 
 	if (IPV6 && af->addr_family == PF_INET6) {
 		if (JimParseIPv6Address(interp, addr, &sa, &salen) != JIM_OK) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 	}
 	else if (JimParseIpAddress(interp, addr, &sa, &salen) != JIM_OK) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	wdata = Jim_GetString(argv[0], &wlen);
 
@@ -612,7 +612,7 @@ __device__ static int aio_cmd_sendto(Jim_Interp *interp, int argc, Jim_Obj *cons
 	len = sendto(fileno(af->fp), wdata, wlen, 0, &sa.sa, salen);
 	if (len < 0) {
 		JimAioSetError(interp, NULL);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_SetResultInt(interp, len);
 	return JIM_OK;
@@ -628,12 +628,12 @@ __device__ static int aio_cmd_accept(Jim_Interp *interp, int argc, Jim_Obj *cons
 	sock = accept(af->fd, &sa.sa, &addrlen);
 	if (sock < 0) {
 		JimAioSetError(interp, NULL);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (argc > 0) {
 		if (JimFormatIpAddress(interp, argv[0], &sa) != JIM_OK) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 	}
 
@@ -648,12 +648,12 @@ __device__ static int aio_cmd_listen(Jim_Interp *interp, int argc, Jim_Obj *cons
 	long backlog;
 
 	if (Jim_GetLong(interp, argv[0], &backlog) != JIM_OK) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (listen(af->fd, backlog)) {
 		JimAioSetError(interp, NULL);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	return JIM_OK;
@@ -666,7 +666,7 @@ __device__ static int aio_cmd_flush(Jim_Interp *interp, int argc, Jim_Obj *const
 
 	if (_fflush(af->fp) == EOF) {
 		JimAioSetError(interp, af->filename);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -689,7 +689,7 @@ __device__ static int aio_cmd_close(Jim_Interp *interp, int argc, Jim_Obj *const
 		AioFile *af = Jim_CmdPrivData(interp);
 
 		if (Jim_GetEnum(interp, argv[2], options, &option, NULL, JIM_ERRMSG) != JIM_OK) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		if (shutdown(af->fd, option == OPT_R ? SHUT_RD : SHUT_WR) == 0) {
 			return JIM_OK;
@@ -698,7 +698,7 @@ __device__ static int aio_cmd_close(Jim_Interp *interp, int argc, Jim_Obj *const
 #else
 		Jim_SetResultString(interp, "async close not supported", -1);
 #endif
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	return Jim_DeleteCommand(interp, Jim_String(argv[0]));
@@ -722,11 +722,11 @@ __device__ static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const 
 		}
 	}
 	if (Jim_GetWide(interp, argv[0], &offset) != JIM_OK) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	if (fseeko(af->fp, offset, orig) == -1) {
 		JimAioSetError(interp, af->filename);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -758,7 +758,7 @@ __device__ static int aio_cmd_ndelay(Jim_Interp *interp, int argc, Jim_Obj *cons
 		long nb;
 
 		if (Jim_GetLong(interp, argv[0], &nb) != JIM_OK) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		if (nb) {
 			fmode |= O_NDELAY;
@@ -804,7 +804,7 @@ __device__ static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *c
 	int option;
 
 	if (Jim_GetEnum(interp, argv[0], _cmd_buffering_options, &option, NULL, JIM_ERRMSG) != JIM_OK) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	switch (option) {
 	case OPT_NONE:
@@ -1060,7 +1060,7 @@ __device__ static int JimAioOpenCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 
 	if (argc != 2 && argc != 3) {
 		Jim_WrongNumArgs(interp, 1, argv, "filename ?mode?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	mode = (argc == 3) ? Jim_String(argv[2]) : "r";
@@ -1128,7 +1128,7 @@ __device__ static int JimMakeChannel(Jim_Interp *interp, FILE *fh, int fd, Jim_O
 			}
 #endif
 			Jim_DecrRefCount(interp, filename);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 	}
 
@@ -1175,7 +1175,7 @@ __device__ static int JimMakeChannelPair(Jim_Interp *interp, int p[2], Jim_Obj *
 	close(p[0]);
 	close(p[1]);
 	JimAioSetError(interp, NULL);
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 #endif
 
@@ -1219,7 +1219,7 @@ __device__ static int JimAioSockCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	if (argc > 1 && Jim_CompareStringImmediate(interp, argv[1], "-ipv6")) {
 		if (!IPV6) {
 			Jim_SetResultString(interp, "ipv6 not supported", -1);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		ipv6 = 1;
 		family = PF_INET6;
@@ -1230,13 +1230,13 @@ __device__ static int JimAioSockCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	if (argc < 2) {
 wrongargs:
 		Jim_WrongNumArgs(interp, 1, &argv0, "?-ipv6? type ?address?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (Jim_GetEnum(interp, argv[1], socktypes, &socktype, "socket type", JIM_ERRMSG) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 
-	Jim_SetEmptyResult(interp);
+	Jim_ResetResult(interp);
 
 	hdlfmt = "aio.sock%ld";
 
@@ -1251,7 +1251,7 @@ wrongargs:
 			sock = socket(family, SOCK_DGRAM, 0);
 			if (sock < 0) {
 				JimAioSetError(interp, NULL);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			break;
 		}
@@ -1267,22 +1267,22 @@ wrongargs:
 
 			if (ipv6) {
 				if (JimParseIPv6Address(interp, hostportarg, &sa, &salen) != JIM_OK) {
-					return JIM_ERR;
+					return JIM_ERROR;
 				}
 			}
 			else if (JimParseIpAddress(interp, hostportarg, &sa, &salen) != JIM_OK) {
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			sock = socket(family, (socktype == SOCK_DGRAM_CLIENT) ? SOCK_DGRAM : SOCK_STREAM, 0);
 			if (sock < 0) {
 				JimAioSetError(interp, NULL);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			res = connect(sock, &sa.sa, salen);
 			if (res) {
 				JimAioSetError(interp, argv[2]);
 				close(sock);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 		}
 		break;
@@ -1299,16 +1299,16 @@ wrongargs:
 
 			if (ipv6) {
 				if (JimParseIPv6Address(interp, hostportarg, &sa, &salen) != JIM_OK) {
-					return JIM_ERR;
+					return JIM_ERROR;
 				}
 			}
 			else if (JimParseIpAddress(interp, hostportarg, &sa, &salen) != JIM_OK) {
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			sock = socket(family, (socktype == SOCK_DGRAM_SERVER) ? SOCK_DGRAM : SOCK_STREAM, 0);
 			if (sock < 0) {
 				JimAioSetError(interp, NULL);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 
 			/* Enable address reuse */
@@ -1318,14 +1318,14 @@ wrongargs:
 			if (res) {
 				JimAioSetError(interp, argv[2]);
 				close(sock);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			if (socktype == SOCK_STREAM_SERVER) {
 				res = listen(sock, 5);
 				if (res) {
 					JimAioSetError(interp, NULL);
 					close(sock);
-					return JIM_ERR;
+					return JIM_ERROR;
 				}
 			}
 			hdlfmt = "aio.socksrv%ld";
@@ -1344,20 +1344,20 @@ wrongargs:
 
 			if (JimParseDomainAddress(interp, hostportarg, &sa) != JIM_OK) {
 				JimAioSetError(interp, argv[2]);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			family = PF_UNIX;
 			sock = socket(PF_UNIX, SOCK_STREAM, 0);
 			if (sock < 0) {
 				JimAioSetError(interp, NULL);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			len = strlen(sa.sun_path) + 1 + sizeof(sa.sun_family);
 			res = connect(sock, (struct sockaddr *)&sa, len);
 			if (res) {
 				JimAioSetError(interp, argv[2]);
 				close(sock);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			hdlfmt = "aio.sockunix%ld";
 			break;
@@ -1374,26 +1374,26 @@ wrongargs:
 
 			if (JimParseDomainAddress(interp, hostportarg, &sa) != JIM_OK) {
 				JimAioSetError(interp, argv[2]);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			family = PF_UNIX;
 			sock = socket(PF_UNIX, SOCK_STREAM, 0);
 			if (sock < 0) {
 				JimAioSetError(interp, NULL);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			len = strlen(sa.sun_path) + 1 + sizeof(sa.sun_family);
 			res = bind(sock, (struct sockaddr *)&sa, len);
 			if (res) {
 				JimAioSetError(interp, argv[2]);
 				close(sock);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			res = listen(sock, 5);
 			if (res) {
 				JimAioSetError(interp, NULL);
 				close(sock);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			hdlfmt = "aio.sockunixsrv%ld";
 			break;
@@ -1409,7 +1409,7 @@ wrongargs:
 				goto wrongargs;
 			if (socketpair(PF_UNIX, SOCK_STREAM, 0, p) < 0) {
 				JimAioSetError(interp, NULL);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			return JimMakeChannelPair(interp, p, argv[1], "aio.sockpair%ld", PF_UNIX, mode);
 		}
@@ -1425,7 +1425,7 @@ wrongargs:
 				goto wrongargs;
 			if (pipe(p) < 0) {
 				JimAioSetError(interp, NULL);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			return JimMakeChannelPair(interp, p, argv[1], "aio.pipe%ld", 0, mode);
 		}
@@ -1434,7 +1434,7 @@ wrongargs:
 
 	default:
 		Jim_SetResultString(interp, "Unsupported socket type", -1);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	return JimMakeChannel(interp, NULL, sock, argv[1], hdlfmt, family, mode);
@@ -1488,7 +1488,7 @@ __device__ FILE *Jim_AioFilehandle(Jim_Interp *interp, Jim_Obj *command)
 __device__ int Jim_aioInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "aio", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "open", JimAioOpenCommand, NULL, NULL);
 #ifndef JIM_ANSIC
 	Jim_CreateCommand(interp, "socket", JimAioSockCommand, NULL, NULL);

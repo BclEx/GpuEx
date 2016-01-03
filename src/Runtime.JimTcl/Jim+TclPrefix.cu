@@ -35,11 +35,11 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 	enum { OPT_MATCH, OPT_ALL, OPT_LONGEST };
 	if (argc < 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "subcommand ?arg ...?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	int option;
 	if (Jim_GetEnum(interp, argv[1], _prefix_options, &option, NULL, JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_Obj *objPtr;
 	Jim_Obj *stringObj;
 	switch (option) {
@@ -47,7 +47,7 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 		enum { OPT_MATCH_ERROR, OPT_MATCH_EXACT, OPT_MATCH_MESSAGE };
 		if (argc < 4) {
 			Jim_WrongNumArgs(interp, 2, argv, "?options? table string");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		int i;
 		Jim_Obj *errorObj = NULL;
@@ -59,7 +59,7 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 		for (i = 2; i < argc; i++) {
 			int matchoption;
 			if (Jim_GetEnum(interp, argv[i], _prefix_matchoptions, &matchoption, "option", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK)
-				return JIM_ERR;
+				return JIM_ERROR;
 			switch (matchoption) {
 			case OPT_MATCH_EXACT:
 				flags &= ~JIM_ENUM_ABBREV;
@@ -67,18 +67,18 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 			case OPT_MATCH_ERROR:
 				if (++i == argc) {
 					Jim_SetResultString(interp, "missing error options", -1);
-					return JIM_ERR;
+					return JIM_ERROR;
 				}
 				errorObj = argv[i];
 				if (Jim_Length(errorObj) % 2) {
 					Jim_SetResultString(interp, "error options must have an even number of elements", -1);
-					return JIM_ERR;
+					return JIM_ERROR;
 				}
 				break;
 			case OPT_MATCH_MESSAGE:
 				if (++i == argc) {
 					Jim_SetResultString(interp, "missing message", -1);
-					return JIM_ERR;
+					return JIM_ERROR;
 				}
 				messageObj = argv[i];
 				break;
@@ -101,11 +101,11 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 		}
 		if (tablesize == 0) {
 			Jim_SetResultFormatted(interp, "bad option \"%#s\": no valid options", stringObj);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		if (errorObj) {
 			if (Jim_Length(errorObj) == 0) {
-				Jim_SetEmptyResult(interp);
+				Jim_ResetResult(interp);
 				return JIM_OK;
 			}
 			// Do this the easy way. Build a list to evaluate
@@ -114,11 +114,11 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 			Jim_ListAppendElement(interp, objPtr, Jim_GetResult(interp));
 			return Jim_EvalObjList(interp, objPtr);
 		}
-		return JIM_ERR; }
+		return JIM_ERROR; }
 	case OPT_ALL:
 		if (argc != 4) {
 			Jim_WrongNumArgs(interp, 2, argv, "table string");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		else {
 			int listlen = Jim_ListLength(interp, argv[2]);
@@ -134,7 +134,7 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 	case OPT_LONGEST:
 		if (argc != 4) {
 			Jim_WrongNumArgs(interp, 2, argv, "table string");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		else if (Jim_ListLength(interp, argv[2])) {
 			const char *longeststr = NULL;
@@ -157,13 +157,13 @@ __device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim
 			return JIM_OK;
 		}
 	}
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 __device__ int Jim_tclprefixInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "tclprefix", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "tcl::prefix", Jim_TclPrefixCoreCommand, NULL, NULL);
 	return JIM_OK;
 }

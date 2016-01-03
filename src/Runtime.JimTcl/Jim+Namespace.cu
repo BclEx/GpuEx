@@ -96,7 +96,7 @@ __device__ int Jim_CreateNamespaceVariable(Jim_Interp *interp, Jim_Obj *varNameO
 	// push non-namespace vars if in namespace eval?
 	int rc = Jim_SetVariableLink(interp, varNameObj, targetNameObj, interp->topFramePtr);
 	// This is the only reason the link can fail
-	if (rc == JIM_ERR)
+	if (rc == JIM_ERROR)
 		Jim_SetResultFormatted(interp, "can't define \"%#s\": name refers to an element in an array", varNameObj);
 	Jim_DecrRefCount(interp, varNameObj);
 	Jim_DecrRefCount(interp, targetNameObj);
@@ -136,7 +136,7 @@ __device__ static int JimVariableCmd(Jim_Interp *interp, int argc, Jim_Obj *cons
 	int retcode = JIM_OK;
 	if (argc > 3) {
 		Jim_WrongNumArgs(interp, 1, argv, "name ?value?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	if (argc > 1) {
 		Jim_Obj *targetNameObj = JimCanonicalNamespace(interp, interp->framePtr->nsObj, argv[1]);
@@ -177,18 +177,18 @@ __device__ static int JimNamespaceCmd(Jim_Interp *interp, int argc, Jim_Obj *con
 	};
 	if (argc < 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "subcommand ?arg ...?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_Obj *nsObj;
 	Jim_Obj *objPtr;
 	int option;
 	if (Jim_GetEnum(interp, argv[1], _namespace_options, &option, "subcommand", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	switch (option) {
 	case OPT_EVAL:
 		if (argc < 4) {
 			Jim_WrongNumArgs(interp, 2, argv, "name arg ?arg...?");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		objPtr = (argc == 4 ? argv[3] : Jim_ConcatObj(interp, argc - 3, argv + 3));
 		nsObj = JimCanonicalNamespace(interp, interp->framePtr->nsObj, argv[2]);
@@ -196,14 +196,14 @@ __device__ static int JimNamespaceCmd(Jim_Interp *interp, int argc, Jim_Obj *con
 	case OPT_CURRENT:
 		if (argc != 2) {
 			Jim_WrongNumArgs(interp, 2, argv, "");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		Jim_SetResult(interp, JimNamespaceCurrent(interp));
 		return JIM_OK;
 	case OPT_CANONICAL:
 		if (argc > 4) {
 			Jim_WrongNumArgs(interp, 2, argv, "?current? ?name?");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		if (argc == 2)
 			Jim_SetResult(interp, interp->framePtr->nsObj);
@@ -215,7 +215,7 @@ __device__ static int JimNamespaceCmd(Jim_Interp *interp, int argc, Jim_Obj *con
 	case OPT_QUALIFIERS:
 		if (argc != 3) {
 			Jim_WrongNumArgs(interp, 2, argv, "string");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		Jim_SetResult(interp, Jim_NamespaceQualifiers(interp, argv[2]));
 		return JIM_OK;
@@ -224,14 +224,14 @@ __device__ static int JimNamespaceCmd(Jim_Interp *interp, int argc, Jim_Obj *con
 	case OPT_TAIL:
 		if (argc != 3) {
 			Jim_WrongNumArgs(interp, 2, argv, "string");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		Jim_SetResult(interp, Jim_NamespaceTail(interp, argv[2]));
 		return JIM_OK;
 	case OPT_PARENT:
 		if (argc != 2 && argc != 3) {
 			Jim_WrongNumArgs(interp, 2, argv, "?name?");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		else {
 			objPtr = (argc == 3 ? argv[2] : interp->framePtr->nsObj);
@@ -258,7 +258,7 @@ __device__ static int JimNamespaceCmd(Jim_Interp *interp, int argc, Jim_Obj *con
 __device__ int Jim_namespaceInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "namespace", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "namespace", JimNamespaceCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "variable", JimVariableCmd, NULL, NULL);
 	return JIM_OK;

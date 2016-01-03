@@ -40,7 +40,6 @@
     <None Include="Jim+TclPrefix.cu" />
     <None Include="Jim+Win32.cu" />
     <None Include="Jim+Win32Compat.cu" />
-    <None Include="JimSh.cu" />
     <None Include="Utf8.cu" />
     <None Include="GpuEx-Runtime.JimTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.JimTcl.Native.targets" />
@@ -49,6 +48,12 @@
     </None>
     <None Include="Jim+Gpu.cu" />
     <None Include="Init.cu" />
+    <None Include="_content\TclContext.cu.h">
+      <Filter>_content</Filter>
+    </None>
+    <None Include="_content\TclContext.cu">
+      <Filter>_content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="_content">

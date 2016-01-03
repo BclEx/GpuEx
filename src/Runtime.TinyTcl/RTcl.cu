@@ -1,7 +1,7 @@
 //#include "dos.cu"
 //#include "regex_compat.cu"
 
-//#include "TinySh.cu"
+//#include "_/TinySh.cu"
 #include "Tcl+Alloc.cu"
 #include "Tcl+Assem.cu"
 #include "Tcl+Basic.cu"
@@ -35,8 +35,4 @@
 #include "TclEx+Gen.cu"
 #include "TclEx+UnixReaddir.cu"
 #include "TclMod.cu"
-
-#include "Tcl+Main-embed.cu" -- Test Driver
-#include "Tcl+Main.cu" -- Test Driver
-#include "TclEx+Main.cu" -- Test Driver
 

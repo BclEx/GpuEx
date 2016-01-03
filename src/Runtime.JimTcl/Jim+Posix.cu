@@ -63,11 +63,11 @@ static int Jim_PosixForkCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 
 	if (argc != 1) {
 		Jim_WrongNumArgs(interp, 1, argv, "");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	if ((pid = fork()) == -1) {
 		Jim_PosixSetError(interp);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_SetResultInt(interp, (jim_wide) pid);
 	return JIM_OK;
@@ -115,10 +115,10 @@ static int Jim_PosixWaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 	}
 	if (argc != nohang + 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "?-nohang? pid");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	if (Jim_GetLong(interp, argv[nohang + 1], &pid) != JIM_OK) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	pid = waitpid(pid, &status, nohang ? WNOHANG : 0);
@@ -162,7 +162,7 @@ static int Jim_PosixGetidsCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
 
 	if (argc != 1) {
 		Jim_WrongNumArgs(interp, 1, argv, "");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	objv[0] = Jim_NewStringObj(interp, "uid", -1);
 	objv[1] = Jim_NewIntObj(interp, getuid());
@@ -184,13 +184,13 @@ static int Jim_PosixGethostnameCommand(Jim_Interp *interp, int argc, Jim_Obj *co
 
 	if (argc != 1) {
 		Jim_WrongNumArgs(interp, 1, argv, "");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	buf = Jim_Alloc(JIM_HOST_NAME_MAX);
 	if (gethostname(buf, JIM_HOST_NAME_MAX) == -1) {
 		Jim_PosixSetError(interp);
 		Jim_Free(buf);
-		rc = JIM_ERR;
+		rc = JIM_ERROR;
 	}
 	else {
 		Jim_SetResult(interp, Jim_NewStringObjNoAlloc(interp, buf, -1));
@@ -205,12 +205,12 @@ static int Jim_PosixUptimeCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
 
 	if (argc != 1) {
 		Jim_WrongNumArgs(interp, 1, argv, "");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	if (sysinfo(&info) == -1) {
 		Jim_PosixSetError(interp);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	Jim_SetResultInt(interp, info.uptime);
@@ -224,7 +224,7 @@ static int Jim_PosixPidCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 {
 	if (argc != 1) {
 		Jim_WrongNumArgs(interp, 1, argv, "");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	Jim_SetResultInt(interp, getpid());
@@ -234,7 +234,7 @@ static int Jim_PosixPidCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 int Jim_posixInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "posix", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 
 #ifdef HAVE_FORK
 	Jim_CreateCommand(interp, "os.fork", Jim_PosixForkCommand, NULL, NULL);

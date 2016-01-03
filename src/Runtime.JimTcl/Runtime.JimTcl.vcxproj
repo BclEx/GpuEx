@@ -225,7 +225,6 @@
     <None Include="Jim+TclPrefix.cu" />
     <None Include="Jim+Win32.cu" />
     <None Include="Jim+Win32Compat.cu" />
-    <None Include="JimSh.cu" />
     <None Include="Init.cu" />
     <None Include="Utf8.cu" />
   </ItemGroup>
@@ -233,6 +232,8 @@
     <None Include="GpuEx-Runtime.JimTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.JimTcl.Native.targets" />
     <None Include="_content\runtime.jimtcl.cu.sample" />
+    <None Include="_content\TclContext.cu" />
+    <None Include="_content\TclContext.cu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

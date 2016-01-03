@@ -26,7 +26,7 @@ __device__ int Jim_PackageProvide(Jim_Interp *interp, const char *name, const ch
 	if (he && *(const char *)he->u.val) {
 		if (flags & JIM_ERRMSG)
 			Jim_SetResultFormatted(interp, "package \"%s\" was already provided", name);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_ReplaceHashEntry(&interp->packages, name, (char *)ver);
 	return JIM_OK;
@@ -58,10 +58,10 @@ __device__ static char *JimFindPackage(Jim_Interp *interp, Jim_Obj *prefixListOb
 	return NULL;
 }
 
-// Search for a suitable package under every dir specified by JIM_LIBPATH, and load it if possible. If a suitable package was loaded with success JIM_OK is returned, otherwise JIM_ERR is returned.
+// Search for a suitable package under every dir specified by JIM_LIBPATH, and load it if possible. If a suitable package was loaded with success JIM_OK is returned, otherwise JIM_ERROR is returned.
 __device__ static int JimLoadPackage(Jim_Interp *interp, const char *name, int flags)
 {
-	int retCode = JIM_ERR;
+	int retCode = JIM_ERROR;
 	Jim_Obj *libPathObjPtr = Jim_GetGlobalVariableStr(interp, JIM_LIBPATH, JIM_NONE);
 	if (libPathObjPtr) {
 		// Scan every directory for the the first match
@@ -87,13 +87,13 @@ __device__ static int JimLoadPackage(Jim_Interp *interp, const char *name, int f
 		}
 		return retCode;
 	}
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 __device__ int Jim_PackageRequire(Jim_Interp *interp, const char *name, int flags)
 {
 	// Start with an empty error string
-	Jim_SetEmptyResult(interp);
+	Jim_ResetResult(interp);
 	Jim_HashEntry *he = Jim_FindHashEntry(&interp->packages, name);
 	if (he == NULL) {
 		// Try to load the package

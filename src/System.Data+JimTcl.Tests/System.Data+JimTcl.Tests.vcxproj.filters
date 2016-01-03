@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="tclsqlite.c" />
+    <None Include="test\all.test">
+      <Filter>test</Filter>
+    </None>
+    <None Include="test\veryquick.test">
+      <Filter>test</Filter>
+    </None>
+    <None Include="test\full.test">
+      <Filter>test</Filter>
+    </None>
+    <None Include="test\permutations.test">
+      <Filter>test</Filter>
+    </None>
+    <None Include="test\tester.tcl">
+      <Filter>test</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Test.cu.h" />
+    <ClInclude Include="..\Runtime.JimTcl\_content\TclContext.cu.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{459cb18a-44b4-408a-ae20-051c3d31411c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="Test_Autoext.cu" />
+    <CudaCompile Include="Test_Backup.cu" />
+    <CudaCompile Include="Test_Btree.cu" />
+    <CudaCompile Include="Test_Config.cu" />
+    <CudaCompile Include="Test_DemoVfs.cu" />
+    <CudaCompile Include="Test_DevSym.cu" />
+    <CudaCompile Include="Test_FS.cu" />
+    <CudaCompile Include="Test_Func.cu" />
+    <CudaCompile Include="Test_Fuzzer.cu" />
+    <CudaCompile Include="Test_HexIO.cu" />
+    <CudaCompile Include="Test_Init.cu" />
+    <CudaCompile Include="Test_IntArray.cu" />
+    <CudaCompile Include="Test_Journal.cu" />
+    <CudaCompile Include="Test_LoadExt.cu" />
+    <CudaCompile Include="Test_Malloc.cu" />
+    <CudaCompile Include="Test_Multiplex.cu" />
+    <CudaCompile Include="Test_Mutex.cu" />
+    <CudaCompile Include="Test_OneFile.cu" />
+    <CudaCompile Include="Test_OSInst.cu" />
+    <CudaCompile Include="Test_PCache.cu" />
+    <CudaCompile Include="Test_Quota.cu" />
+    <CudaCompile Include="Test_RegExp.cu" />
+    <CudaCompile Include="Test_Schema.cu" />
+    <CudaCompile Include="Test_Server.cu" />
+    <CudaCompile Include="Test_SpellFix.cu" />
+    <CudaCompile Include="Test_SqlLog.cu" />
+    <CudaCompile Include="Test_Stat.cu" />
+    <CudaCompile Include="Test_SuperLock.cu" />
+    <CudaCompile Include="Test_SysCall.cu" />
+    <CudaCompile Include="Test_TclVar.cu" />
+    <CudaCompile Include="Test_Thread.cu" />
+    <CudaCompile Include="Test_Vfs.cu" />
+    <CudaCompile Include="Test_VfsTrace.cu" />
+    <CudaCompile Include="Test_WholeNumber.cu" />
+    <CudaCompile Include="Test_Wsd.cu" />
+    <CudaCompile Include="Test1.cu" />
+    <CudaCompile Include="Test2.cu" />
+    <CudaCompile Include="Test3.cu" />
+    <CudaCompile Include="Test4.cu" />
+    <CudaCompile Include="Test5.cu" />
+    <CudaCompile Include="Test6.cu" />
+    <CudaCompile Include="Test7.cu" />
+    <CudaCompile Include="Test8.cu" />
+    <CudaCompile Include="Test9.cu" />
+    <CudaCompile Include="..\Runtime.JimTcl\_content\TclContext.cu" />
+    <CudaCompile Include="TclContext+Test.cu" />
+  </ItemGroup>
+</Project>

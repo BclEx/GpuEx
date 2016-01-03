@@ -1,0 +1,290 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug.cpu|Win32">
+      <Configuration>Debug.cpu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug.cpu|x64">
+      <Configuration>Debug.cpu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug.cu|Win32">
+      <Configuration>Debug.cu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug.cu|x64">
+      <Configuration>Debug.cu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cpu|Win32">
+      <Configuration>Release.cpu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cpu|x64">
+      <Configuration>Release.cpu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cu|Win32">
+      <Configuration>Release.cu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release.cu|x64">
+      <Configuration>Release.cu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="UserMacros">
+    <LD>
+    </LD>
+    <LC>35</LC>
+    <!--<LC>cpu</LC>-->
+    <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
+    <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Runtime.JimTcl\_content\TclContext.cu.h" />
+    <ClInclude Include="Test.cu.h" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
+    <ClCompile Include="..\Runtime.JimTcl\_content\TclContext.cu" />
+    <ClCompile Include="..\System.net\TclContext+Test.cu" />
+    <ClCompile Include="Test_Autoext.cu" />
+    <ClCompile Include="Test_Backup.cu" />
+    <ClCompile Include="Test_Btree.cu" />
+    <ClCompile Include="Test_Config.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_DemoVfs.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_DevSym.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_FS.cu" />
+    <ClCompile Include="Test_Func.cu" />
+    <ClCompile Include="Test_Fuzzer.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_HexIO.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Init.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_IntArray.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Journal.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_LoadExt.cu" />
+    <ClCompile Include="Test_Malloc.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Multiplex.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Mutex.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_OneFile.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_OSInst.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_PCache.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Quota.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_RegExp.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Schema.cu" />
+    <ClCompile Include="Test_Server.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_SpellFix.cu.inc">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_SqlLog.cu" />
+    <ClCompile Include="Test_Stat.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_SuperLock.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_SysCall.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_TclVar.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Thread.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_Vfs.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_VfsTrace.cu">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Test_WholeNumber.cu" />
+    <ClCompile Include="Test_Wsd.cu" />
+    <ClCompile Include="Test1.cu" />
+    <ClCompile Include="Test2.cu" />
+    <ClCompile Include="Test3.cu" />
+    <ClCompile Include="Test4.cu" />
+    <ClCompile Include="Test5.cu" />
+    <ClCompile Include="Test6.cu" />
+    <ClCompile Include="Test7.cu" />
+    <ClCompile Include="Test8.cu" />
+    <ClCompile Include="Test9.cu" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
+    <CudaCompile Include="..\Runtime.JimTcl\_content\TclContext.cu" />
+    <CudaCompile Include="TclContext+Test.cu" />
+    <CudaCompile Include="Test_Autoext.cu" />
+    <CudaCompile Include="Test_Backup.cu" />
+    <CudaCompile Include="Test_Btree.cu" />
+    <CudaCompile Include="Test_Config.cu" />
+    <CudaCompile Include="Test_DemoVfs.cu" />
+    <CudaCompile Include="Test_DevSym.cu" />
+    <CudaCompile Include="Test_FS.cu" />
+    <CudaCompile Include="Test_Func.cu" />
+    <CudaCompile Include="Test_Fuzzer.cu" />
+    <CudaCompile Include="Test_HexIO.cu" />
+    <CudaCompile Include="Test_Init.cu" />
+    <CudaCompile Include="Test_IntArray.cu" />
+    <CudaCompile Include="Test_Journal.cu" />
+    <CudaCompile Include="Test_LoadExt.cu" />
+    <CudaCompile Include="Test_Malloc.cu" />
+    <CudaCompile Include="Test_Multiplex.cu" />
+    <CudaCompile Include="Test_Mutex.cu" />
+    <CudaCompile Include="Test_OneFile.cu" />
+    <CudaCompile Include="Test_OSInst.cu" />
+    <CudaCompile Include="Test_PCache.cu" />
+    <CudaCompile Include="Test_Quota.cu" />
+    <CudaCompile Include="Test_RegExp.cu" />
+    <CudaCompile Include="Test_Schema.cu" />
+    <CudaCompile Include="Test_Server.cu" />
+    <CudaCompile Include="Test_SpellFix.cu" />
+    <CudaCompile Include="Test_SqlLog.cu" />
+    <CudaCompile Include="Test_Stat.cu" />
+    <CudaCompile Include="Test_SuperLock.cu" />
+    <CudaCompile Include="Test_SysCall.cu" />
+    <CudaCompile Include="Test_TclVar.cu" />
+    <CudaCompile Include="Test_Thread.cu" />
+    <CudaCompile Include="Test_Vfs.cu" />
+    <CudaCompile Include="Test_VfsTrace.cu" />
+    <CudaCompile Include="Test_WholeNumber.cu" />
+    <CudaCompile Include="Test_Wsd.cu" />
+    <CudaCompile Include="Test1.cu" />
+    <CudaCompile Include="Test2.cu" />
+    <CudaCompile Include="Test3.cu" />
+    <CudaCompile Include="Test4.cu" />
+    <CudaCompile Include="Test5.cu" />
+    <CudaCompile Include="Test6.cu" />
+    <CudaCompile Include="Test7.cu" />
+    <CudaCompile Include="Test8.cu" />
+    <CudaCompile Include="Test9.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tclsqlite.c" />
+    <None Include="test\all.test" />
+    <None Include="test\full.test" />
+    <None Include="test\permutations.test" />
+    <None Include="test\tester.tcl" />
+    <None Include="test\veryquick.test" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6BEBE11A-7B56-4CA0-9E47-5C1638B1D311}</ProjectGuid>
+    <RootNamespace>dSql</RootNamespace>
+    <ProjectName>System.Data+JimTcl.Tests</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>WIN32;_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.JimTcl;$(SolutionDir)src\System.net;$(SolutionDir)src\System.Data.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;System.$(LC)$(LD).lib;System.Data.$(LC)$(LD).lib;Runtime.JimTcl.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <Include>$(SolutionDir)lib;%(Include)</Include>
+      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.JimTcl;$(SolutionDir)src\System.net;$(SolutionDir)src\System.Data.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;System.$(LC)$(LD).lib;System.Data.$(LC)$(LD).lib;Runtime.JimTcl.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.targets" />
+  </ImportGroup>
+</Project>

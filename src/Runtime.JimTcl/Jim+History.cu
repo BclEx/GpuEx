@@ -23,7 +23,7 @@ __device__ static int history_cmd_getline(Jim_Interp *interp, int argc, Jim_Obj 
 	if (argc == 2) {
 		if (Jim_SetVariable(interp, argv[1], objPtr) != JIM_OK) {
 			Jim_FreeNewObj(interp, objPtr);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		Jim_SetResultInt(interp, Jim_Length(objPtr));
 	}
@@ -94,7 +94,7 @@ __device__ static void JimHistoryDelProc(Jim_Interp *interp, void *privData)
 __device__ int Jim_historyInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "history", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	void **history = (void **)Jim_Alloc(sizeof(*history));
 	*history = NULL;
 	Jim_CreateCommand(interp, "history", JimHistorySubCmdProc, history, JimHistoryDelProc);

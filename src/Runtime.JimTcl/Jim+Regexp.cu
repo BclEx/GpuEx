@@ -114,14 +114,14 @@ __device__ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (argc < 3) {
 wrongNumArgs:
 		Jim_WrongNumArgs(interp, 1, argv, "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	for (i = 1; i < argc; i++) {
 		const char *opt = Jim_String(argv[i]);
 		if (*opt != '-')
 			break;
 		if (Jim_GetEnum(interp, argv[i], _regexp_options, &option, "switch", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK)
-			return JIM_ERR;
+			return JIM_ERROR;
 		if (option == OPT_END) {
 			i++;
 			break;
@@ -146,7 +146,7 @@ wrongNumArgs:
 			if (++i == argc)
 				goto wrongNumArgs;
 			if (Jim_GetIndex(interp, argv[i], &offset) != JIM_OK)
-				return JIM_ERR;
+				return JIM_ERROR;
 			break;
 		}
 	}
@@ -154,7 +154,7 @@ wrongNumArgs:
 		goto wrongNumArgs;
 	regex_t *regex = SetRegexpFromAny(interp, argv[i], regcomp_flags);
 	if (!regex)
-		return JIM_ERR;
+		return JIM_ERROR;
 	const char *pattern = Jim_String(argv[i]);
 	int source_len;
 	const char *source_str = Jim_GetString(argv[i + 1], &source_len);
@@ -162,7 +162,7 @@ wrongNumArgs:
 	if (opt_inline) {
 		if (num_vars) {
 			Jim_SetResultString(interp, "regexp match variables not allowed when using -inline", -1);
-			result = JIM_ERR;
+			result = JIM_ERROR;
 			goto done;
 		}
 		num_vars = regex->re_nsub + 1;
@@ -187,7 +187,7 @@ next_match:
 		char buf[100];
 		regerror(match, regex, buf, sizeof(buf));
 		Jim_SetResultFormatted(interp, "error while matching pattern: %s", buf);
-		result = JIM_ERR;
+		result = JIM_ERROR;
 		goto done;
 	}
 	if (match == REG_NOMATCH)
@@ -278,7 +278,7 @@ __device__ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (argc < 4) {
 wrongNumArgs:
 		Jim_WrongNumArgs(interp, 1, argv, "?switches? exp string subSpec ?varName?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	for (i = 1; i < argc; i++) {
 		const char *opt = Jim_String(argv[i]);
@@ -286,7 +286,7 @@ wrongNumArgs:
 			break;
 		int option;
 		if (Jim_GetEnum(interp, argv[i], _regsub_options, &option, "switch", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK)
-			return JIM_ERR;
+			return JIM_ERROR;
 		if (option == OPT_END) {
 			i++;
 			break;
@@ -305,7 +305,7 @@ wrongNumArgs:
 			if (++i == argc)
 				goto wrongNumArgs;
 			if (Jim_GetIndex(interp, argv[i], &offset) != JIM_OK)
-				return JIM_ERR;
+				return JIM_ERROR;
 			break;
 		}
 	}
@@ -313,7 +313,7 @@ wrongNumArgs:
 		goto wrongNumArgs;
 	regex_t *regex = SetRegexpFromAny(interp, argv[i], regcomp_flags);
 	if (!regex)
-		return JIM_ERR;
+		return JIM_ERROR;
 	const char *pattern = Jim_String(argv[i]);
 
 	int source_len;
@@ -345,7 +345,7 @@ wrongNumArgs:
 			char buf[100];
 			regerror(match, regex, buf, sizeof(buf));
 			Jim_SetResultFormatted(interp, "error while matching pattern: %s", buf);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		if (match == REG_NOMATCH)
 			break;
@@ -418,7 +418,7 @@ wrongNumArgs:
 __device__ int Jim_regexpInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "regexp", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "regexp", Jim_RegexpCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "regsub", Jim_RegsubCmd, NULL, NULL);
 	return JIM_OK;

@@ -85,7 +85,7 @@ int Jim_SyslogCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 wrongargs:
 		Jim_WrongNumArgs(interp, 1, argv,
 			"?-facility cron|daemon|...? ?-ident string? ?-options int? ?debug|info|...? message");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	while (i < argc - 1) {
 		if (Jim_CompareStringImmediate(interp, argv[i], "-facility")) {
@@ -94,7 +94,7 @@ wrongargs:
 				sizeof(facilities) / sizeof(*facilities));
 			if (entry < 0) {
 				Jim_SetResultString(interp, "Unknown facility", -1);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			if (info->facility != entry) {
 				info->facility = entry;
@@ -107,8 +107,8 @@ wrongargs:
 		else if (Jim_CompareStringImmediate(interp, argv[i], "-options")) {
 			long tmp;
 
-			if (Jim_GetLong(interp, argv[i + 1], &tmp) == JIM_ERR) {
-				return JIM_ERR;
+			if (Jim_GetLong(interp, argv[i + 1], &tmp) == JIM_ERROR) {
+				return JIM_ERROR;
 			}
 			info->options = tmp;
 			if (info->logOpened) {
@@ -142,7 +142,7 @@ wrongargs:
 			sizeof(priorities) / sizeof(*priorities));
 		if (priority < 0) {
 			Jim_SetResultString(interp, "Unknown priority", -1);
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		i++;
 	}
@@ -175,7 +175,7 @@ int Jim_syslogInit(Jim_Interp *interp)
 	SyslogInfo *info;
 
 	if (Jim_PackageProvide(interp, "syslog", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 
 	info = Jim_Alloc(sizeof(*info));
 

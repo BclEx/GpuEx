@@ -147,7 +147,7 @@ __device__ static int StoreStatData(Jim_Interp *interp, Jim_Obj *varName, const 
 				// This message matches the one from Tcl
 				Jim_SetResultFormatted(interp, "can't set \"%#s(dev)\": variable isn't array", varName);
 				Jim_FreeNewObj(interp, listObj);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			if (Jim_IsShared(objPtr))
 				objPtr = Jim_DuplicateObj(interp, objPtr);
@@ -223,11 +223,11 @@ __device__ static int file_cmd_normalize(Jim_Interp *interp, int argc, Jim_Obj *
 	else {
 		Jim_Free(newname);
 		Jim_SetResultFormatted(interp, "can't normalize \"%#s\": %s", argv[0], strerror(errno));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 #else
 	Jim_SetResultString(interp, "Not implemented", -1);
-	return JIM_ERR;
+	return JIM_ERROR;
 #endif
 }
 
@@ -258,7 +258,7 @@ __device__ static int file_cmd_join(Jim_Interp *interp, int argc, Jim_Obj *const
 			if (last + len - newname >= MAXPATHLEN) {
 				Jim_Free(newname);
 				Jim_SetResultString(interp, "Path too long", -1);
-				return JIM_ERR;
+				return JIM_ERROR;
 			}
 			_memcpy(last, part, len);
 			last += len;
@@ -319,7 +319,7 @@ __device__ static int file_cmd_delete(Jim_Interp *interp, int argc, Jim_Obj *con
 			if (__rmdir(path) == -1)
 				if (!force || Jim_EvalPrefix(interp, "file delete force", 1, argv) != JIM_OK) { // Maybe try using the script helper
 					Jim_SetResultFormatted(interp, "couldn't delete file \"%s\": %s", path, __strerror(__errno));
-					return JIM_ERR;
+					return JIM_ERROR;
 				}
 		}
 		argv++;
@@ -383,7 +383,7 @@ __device__ static int file_cmd_mkdir(Jim_Interp *interp, int argc, Jim_Obj *cons
 		Jim_Free(path);
 		if (rc != 0) {
 			Jim_SetResultFormatted(interp, "can't create directory \"%#s\": %s", argv[0], __strerror(__errno));
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		argv++;
 	}
@@ -394,7 +394,7 @@ __device__ static int file_cmd_tempfile(Jim_Interp *interp, int argc, Jim_Obj *c
 {
 	int fd = Jim_MakeTempFile(interp, (argc >= 1) ? Jim_String(argv[0]) : NULL);
 	if (fd < 0)
-		return JIM_ERR;
+		return JIM_ERROR;
 	__close(fd);
 	return JIM_OK;
 }
@@ -413,11 +413,11 @@ __device__ static int file_cmd_rename(Jim_Interp *interp, int argc, Jim_Obj *con
 	const char *dest = Jim_String(argv[1]);
 	if (!force && __access(dest, F_OK) == 0) {
 		Jim_SetResultFormatted(interp, "error renaming \"%#s\" to \"%#s\": target exists", argv[0], argv[1]);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	if (_rename(source, dest) != 0) {
 		Jim_SetResultFormatted(interp, "error renaming \"%#s\" to \"%#s\": %s", argv[0], argv[1], __strerror(__errno));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -430,7 +430,7 @@ __device__ static int file_cmd_link(Jim_Interp *interp, int argc, Jim_Obj *const
 	int option = OPT_HARD;
 	if (argc == 3) {
 		if (Jim_GetEnum(interp, argv[0], _link_options, &option, NULL, JIM_ENUM_ABBREV | JIM_ERRMSG) != JIM_OK)
-			return JIM_ERR;
+			return JIM_ERROR;
 		argv++;
 		argc--;
 	}
@@ -439,7 +439,7 @@ __device__ static int file_cmd_link(Jim_Interp *interp, int argc, Jim_Obj *const
 	int ret = (option == OPT_HARD ? link(source, dest) : symlink(source, dest));
 	if (ret != 0) {
 		Jim_SetResultFormatted(interp, "error linking \"%#s\" to \"%#s\": %s", argv[0], argv[1], __strerror(__errno));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -450,7 +450,7 @@ __device__ static int file_stat(Jim_Interp *interp, Jim_Obj *filename, struct st
 	const char *path = Jim_String(filename);
 	if (__stat(path, sb) == -1) {
 		Jim_SetResultFormatted(interp, "could not read \"%#s\": %s", filename, __strerror(__errno));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -461,7 +461,7 @@ __device__ static int file_lstat(Jim_Interp *interp, Jim_Obj *filename, struct _
 	const char *path = Jim_String(filename);
 	if (_lstat(path, sb) == -1) {
 		Jim_SetResultFormatted(interp, "could not read \"%#s\": %s", filename, __strerror(__errno));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -473,7 +473,7 @@ __device__ static int file_cmd_atime(Jim_Interp *interp, int argc, Jim_Obj *cons
 {
 	struct stat sb;
 	if (file_stat(interp, argv[0], &sb) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_SetResultInt(interp, sb.st_atime);
 	return JIM_OK;
 }
@@ -485,21 +485,21 @@ __device__ static int file_cmd_mtime(Jim_Interp *interp, int argc, Jim_Obj *cons
 		jim_wide newtime;
 		struct timeval times[2];
 		if (Jim_GetWide(interp, argv[1], &newtime) != JIM_OK)
-			return JIM_ERR;
+			return JIM_ERROR;
 		times[1].tv_sec = times[0].tv_sec = newtime;
 		times[1].tv_usec = times[0].tv_usec = 0;
 		if (utimes(Jim_String(argv[0]), times) != 0) {
 			Jim_SetResultFormatted(interp, "can't set time on \"%#s\": %s", argv[0], strerror(errno));
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 #else
 		Jim_SetResultString(interp, "Not implemented", -1);
-		return JIM_ERR;
+		return JIM_ERROR;
 #endif
 	}
 	struct stat sb;
 	if (file_stat(interp, argv[0], &sb) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_SetResultInt(interp, sb.st_mtime);
 	return JIM_OK;
 }
@@ -513,7 +513,7 @@ __device__ static int file_cmd_size(Jim_Interp *interp, int argc, Jim_Obj *const
 {
 	struct stat sb;
 	if (file_stat(interp, argv[0], &sb) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_SetResultInt(interp, sb.st_size);
 	return JIM_OK;
 }
@@ -559,7 +559,7 @@ __device__ static int file_cmd_readlink(Jim_Interp *interp, int argc, Jim_Obj *c
 	if (linkLength == -1) {
 		Jim_Free(linkValue);
 		Jim_SetResultFormatted(interp, "couldn't readlink \"%#s\": %s", argv[0], __strerror(__errno));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	linkValue[linkLength] = 0;
 	Jim_SetResult(interp, Jim_NewStringObjNoAlloc(interp, linkValue, linkLength));
@@ -571,7 +571,7 @@ __device__ static int file_cmd_type(Jim_Interp *interp, int argc, Jim_Obj *const
 {
 	struct stat sb;
 	if (file_lstat(interp, argv[0], &sb) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_SetResultString(interp, JimGetFileType((int)sb.st_mode), -1);
 	return JIM_OK;
 }
@@ -581,7 +581,7 @@ __device__ static int file_cmd_lstat(Jim_Interp *interp, int argc, Jim_Obj *cons
 {
 	struct _stat sb;
 	if (file_lstat(interp, argv[0], &sb) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	return StoreStatData(interp, argc == 2 ? argv[1] : NULL, &sb);
 }
 #else
@@ -592,7 +592,7 @@ __device__ static int file_cmd_stat(Jim_Interp *interp, int argc, Jim_Obj *const
 {
 	struct stat sb;
 	if (file_stat(interp, argv[0], &sb) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	return StoreStatData(interp, argc == 2 ? argv[1] : NULL, &sb);
 }
 
@@ -636,12 +636,12 @@ __device__ static int Jim_CdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 {
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "dirname");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	const char *path = Jim_String(argv[1]);
 	if (__chdir(path) != 0) {
 		Jim_SetResultFormatted(interp, "couldn't change working directory to \"%s\": %s", path, __strerror(__errno));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -652,7 +652,7 @@ __device__ static int Jim_PwdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *a
 	if (__getcwd(cwd, MAXPATHLEN) == NULL) {
 		Jim_SetResultString(interp, "Failed to get pwd", -1);
 		Jim_Free(cwd);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	else if (ISWINDOWS) {
 		// Try to keep backslashes out of paths
@@ -668,7 +668,7 @@ __device__ static int Jim_PwdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *a
 __device__ int Jim_fileInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "file", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "file", Jim_SubCmdProc, (void *)_file_command_table, NULL);
 	Jim_CreateCommand(interp, "pwd", Jim_PwdCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "cd", Jim_CdCmd, NULL, NULL);

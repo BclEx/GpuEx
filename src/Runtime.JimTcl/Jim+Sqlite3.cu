@@ -145,15 +145,15 @@ static int JimSqliteHandlerCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
 
 	if (argc < 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "method ?args ...?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	if (Jim_GetEnum(interp, argv[1], options, &option, "Sqlite method", JIM_ERRMSG) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	/* CLOSE */
 	if (option == OPT_CLOSE) {
 		if (argc != 2) {
 			Jim_WrongNumArgs(interp, 2, argv, "");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		Jim_DeleteCommand(interp, Jim_String(argv[0]));
 		return JIM_OK;
@@ -164,7 +164,7 @@ static int JimSqliteHandlerCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
 		sqlite3_stmt *stmt;
 		const char *query, *tail;
 		int columns, rows, len;
-		int retcode = JIM_ERR;
+		int retcode = JIM_ERROR;
 		Jim_Obj *nullStrObj;
 
 		if (argc >= 4 && Jim_CompareStringImmediate(interp, argv[2], "-null")) {
@@ -182,7 +182,7 @@ static int JimSqliteHandlerCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
 		}
 		objPtr = JimSqliteFormatQuery(interp, argv[2], argc - 3, argv + 3);
 		if (objPtr == NULL) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		query = Jim_GetString(objPtr, &len);
 		Jim_IncrRefCount(objPtr);
@@ -245,7 +245,7 @@ err:
 	else if (option == OPT_LASTID) {
 		if (argc != 2) {
 			Jim_WrongNumArgs(interp, 2, argv, "");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		Jim_SetResult(interp, Jim_NewIntObj(interp, sqlite3_last_insert_rowid(db)));
 		return JIM_OK;
@@ -253,7 +253,7 @@ err:
 	else if (option == OPT_CHANGES) {
 		if (argc != 2) {
 			Jim_WrongNumArgs(interp, 2, argv, "");
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		Jim_SetResult(interp, Jim_NewIntObj(interp, sqlite3_changes(db)));
 		return JIM_OK;
@@ -269,13 +269,13 @@ static int JimSqliteOpenCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "dbname");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	r = sqlite3_open(Jim_String(argv[1]), &db);
 	if (r != SQLITE_OK) {
 		Jim_SetResultString(interp, sqlite3_errmsg(db), -1);
 		sqlite3_close(db);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	/* Create the file command */
 	snprintf(buf, sizeof(buf), "sqlite.handle%ld", Jim_GetId(interp));
@@ -289,7 +289,7 @@ static int JimSqliteOpenCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 int Jim_sqlite3Init(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "sqlite3", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 
 	Jim_CreateCommand(interp, "sqlite3.open", JimSqliteOpenCommand, NULL, NULL);
 	return JIM_OK;

@@ -4,7 +4,7 @@
 __device__ int Jim_bootstrapInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "bootstrap", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	return Jim_EvalSource(interp, "bootstrap.tcl", 1,
 		"proc package {args} {}\n"
 		);
@@ -12,7 +12,7 @@ __device__ int Jim_bootstrapInit(Jim_Interp *interp)
 
 __device__ int Jim_initjimshInit(Jim_Interp *interp)
 {
-	if (Jim_PackageProvide(interp, "initjimsh", "1.0", JIM_ERRMSG)) return JIM_ERR;
+	if (Jim_PackageProvide(interp, "initjimsh", "1.0", JIM_ERRMSG)) return JIM_ERROR;
 	return Jim_EvalSource(interp, "initjimsh.tcl", 1,
 		"proc _jimsh_init {} {\n"
 		"	rename _jimsh_init {}\n"
@@ -64,7 +64,7 @@ __device__ int Jim_initjimshInit(Jim_Interp *interp)
 __device__ int Jim_globInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "glob", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	return Jim_EvalSource(interp, "glob.tcl", 1,
 		"package require readdir\n"
 		"\n"
@@ -239,7 +239,7 @@ __device__ int Jim_globInit(Jim_Interp *interp)
 __device__ int Jim_stdlibInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "stdlib", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	return Jim_EvalSource(interp, "stdlib.tcl", 1,
 		"\n"
 		"proc lambda {arglist args} {\n"
@@ -355,7 +355,7 @@ __device__ int Jim_stdlibInit(Jim_Interp *interp)
 __device__ int Jim_tclcompatInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "tclcompat", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	return Jim_EvalSource(interp, "tclcompat.tcl", 1,
 		"set env [env]\n"
 		"\n"

@@ -75,7 +75,7 @@ __device__ static int Win32_ShellExecute(Jim_Interp *interp, int objc, Jim_Obj *
 {
 	if (objc < 3 || objc > 4) {
 		Jim_WrongNumArgs(interp, 1, objv, "verb path ?parameters?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	const char *verb = Jim_String(objv[1]);
 	const char *file = Jim_String(objv[2]);
@@ -85,7 +85,7 @@ __device__ static int Win32_ShellExecute(Jim_Interp *interp, int objc, Jim_Obj *
 	int r = (int)ShellExecuteA(NULL, verb, file, parm, cwd, SW_SHOWNORMAL);
 	if (r < 33)
 		Jim_SetResult(interp, Win32ErrorObj(interp, "ShellExecute", GetLastError()));
-	return (r < 33 ? JIM_ERR : JIM_OK);
+	return (r < 33 ? JIM_ERROR : JIM_OK);
 }
 
 // win32.FindWindow title ?class?
@@ -93,7 +93,7 @@ __device__ static int Win32_FindWindow(Jim_Interp *interp, int objc, Jim_Obj *co
 {
 	if (objc < 2 || objc > 3) {
 		Jim_WrongNumArgs(interp, 1, objv, "title ?class?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	int r = JIM_OK;
 	const char *title = Jim_String(objv[1]);
@@ -101,7 +101,7 @@ __device__ static int Win32_FindWindow(Jim_Interp *interp, int objc, Jim_Obj *co
 	HWND hwnd = hwnd = FindWindowA(class_, title);
 	if (hwnd == NULL) {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "FindWindow", GetLastError()));
-		r = JIM_ERR;
+		r = JIM_ERROR;
 	} else
 		Jim_SetResult(interp, Jim_NewIntObj(interp, (long)hwnd));
 	return r;
@@ -112,14 +112,14 @@ __device__ static int Win32_CloseWindow(Jim_Interp *interp, int objc, Jim_Obj *c
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "?windowHandle?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	long hwnd;
 	if (Jim_GetLong(interp, objv[1], &hwnd) != JIM_OK)
-		return JIM_ERR;
+		return JIM_ERROR;
 	if (!CloseWindow((HWND)hwnd)) {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "CloseWindow", GetLastError()));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -134,7 +134,7 @@ __device__ static int Win32_SetActiveWindow(Jim_Interp *interp, int objc, Jim_Ob
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "windowHandle");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	HWND hwnd;
 	int r = r = Jim_GetLong(interp, objv[1], (long *)&hwnd);
@@ -142,7 +142,7 @@ __device__ static int Win32_SetActiveWindow(Jim_Interp *interp, int objc, Jim_Ob
 		HWND old = SetActiveWindow(hwnd);
 		if (old == NULL) {
 			Jim_SetResult(interp, Win32ErrorObj(interp, "SetActiveWindow", GetLastError()));
-			r = JIM_ERR;
+			r = JIM_ERROR;
 		} else 
 			Jim_SetResult(interp, Jim_NewIntObj(interp, (long)old));
 	}
@@ -153,14 +153,14 @@ __device__ static int Win32_SetForegroundWindow(Jim_Interp *interp, int objc, Ji
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "windowHandle");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	HWND hwnd;
 	int r = Jim_GetLong(interp, objv[1], (long *)&hwnd);
 	if (r == JIM_OK) {
 		if (!SetForegroundWindow(hwnd)) {
 			Jim_SetResult(interp, Win32ErrorObj(interp, "SetForegroundWindow", GetLastError()));
-			r = JIM_ERR;
+			r = JIM_ERROR;
 		}
 	}
 	return r;
@@ -170,7 +170,7 @@ static int Win32_Beep(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 {
 	if (objc != 3) {
 		Jim_WrongNumArgs(interp, 1, objv, "freq duration");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	long freq, duration;
 	int r = Jim_GetLong(interp, objv[1], &freq);
@@ -181,7 +181,7 @@ static int Win32_Beep(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 	if (r == JIM_OK) {
 		if (!Beep(freq, duration)) {
 			Jim_SetResult(interp, Win32ErrorObj(interp, "Beep", GetLastError()));
-			r = JIM_ERR;
+			r = JIM_ERROR;
 		}
 	}
 	return r;
@@ -191,7 +191,7 @@ __device__ static int Win32_GetComputerName(Jim_Interp *interp, int objc, Jim_Ob
 {
 	if (objc != 1) {
 		Jim_WrongNumArgs(interp, 1, objv, "");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	int r = JIM_OK;
 	char name[MAX_COMPUTERNAME_LENGTH + 1];
@@ -201,7 +201,7 @@ __device__ static int Win32_GetComputerName(Jim_Interp *interp, int objc, Jim_Ob
 		Jim_SetResult(interp, nameObj);
 	} else {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "GetComputerName", GetLastError()));
-		r = JIM_ERR;
+		r = JIM_ERROR;
 	}
 	return r;
 }
@@ -210,7 +210,7 @@ __device__ static int Win32_GetUserName(Jim_Interp *interp, int objc, Jim_Obj *c
 {
 	if (objc != 1) {
 		Jim_WrongNumArgs(interp, 1, objv, "");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	int r = JIM_OK;
 	char name[UNLEN + 1];
@@ -220,7 +220,7 @@ __device__ static int Win32_GetUserName(Jim_Interp *interp, int objc, Jim_Obj *c
 		Jim_SetResult(interp, nameObj);
 	} else {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "GetUserName", GetLastError()));
-		r = JIM_ERR;
+		r = JIM_ERROR;
 	}
 	return r;
 }
@@ -229,12 +229,12 @@ __device__ static int Win32_GetModuleFileName(Jim_Interp *interp, int objc, Jim_
 {
 	if (objc > 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "?moduleid?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	HMODULE hModule = NULL;
 	if (objc == 2)
 		if (Jim_GetLong(interp, objv[1], (long *)&hModule) != JIM_OK)
-			return JIM_ERR;
+			return JIM_ERROR;
 	char path[MAX_PATH];
 	DWORD len = GetModuleFileNameA(hModule, path, MAX_PATH);
 	if (len != 0) {
@@ -242,7 +242,7 @@ __device__ static int Win32_GetModuleFileName(Jim_Interp *interp, int objc, Jim_
 		Jim_SetResult(interp, pathObj);
 	} else {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "GetModuleFileName", GetLastError()));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -289,7 +289,7 @@ __device__ static int Win32_GetPerformanceInfo(Jim_Interp *interp, int objc, Jim
 	PERFORMANCE_INFORMATION pi;
 	if (!GetPerformanceInfo(&pi, sizeof(pi))) {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "GetPerformanceInfo", GetLastError()));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 #define JIMADD(name) a[n++] = Jim_NewStringObj(interp, #name, -1); a[n++] = Jim_NewIntObj(interp, pi. name)
 	JIMADD(CommitTotal);
@@ -315,13 +315,13 @@ __device__ static int Win32_SetComputerName(Jim_Interp *interp, int objc, Jim_Ob
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "computername");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	int r = JIM_OK;
 	const char *name = Jim_String(objv[1]);
 	if (!SetComputerNameA(name)) {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "SetComputerName", GetLastError()));
-		r = JIM_ERR;
+		r = JIM_ERROR;
 	}
 	return r;
 }
@@ -330,13 +330,13 @@ __device__ static int Win32_GetModuleHandle(Jim_Interp *interp, int objc, Jim_Ob
 {
 	if (objc < 1 || objc >  2) {
 		Jim_WrongNumArgs(interp, 1, objv, "?name?");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	const char *name = (objc == 2 ? Jim_String(objv[1]) : NULL);
 	HMODULE hModule = GetModuleHandleA(name);
 	if (hModule == NULL) {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "GetModuleHandle", GetLastError()));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_SetResult(interp, Jim_NewIntObj(interp, (unsigned long)hModule));
 	return JIM_OK;
@@ -346,12 +346,12 @@ __device__ static int Win32_LoadLibrary(Jim_Interp *interp, int objc, Jim_Obj *c
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "path");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	HMODULE hLib = LoadLibraryA(Jim_String(objv[1]));
 	if (hLib == NULL) {
 		Jim_SetResult(interp, Win32ErrorObj(interp, "LoadLibrary", GetLastError()));
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	Jim_SetResult(interp, Jim_NewIntObj(interp, (unsigned long)hLib));
 	return JIM_OK;
@@ -361,14 +361,14 @@ __device__ static int Win32_FreeLibrary(Jim_Interp *interp, int objc, Jim_Obj *c
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "hmodule");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	HMODULE hModule = NULL;
 	int r = Jim_GetLong(interp, objv[1], (long *)&hModule);
 	if (r == JIM_OK) {
 		if (!FreeLibrary(hModule)) {
 			Jim_SetResult(interp, Win32ErrorObj(interp, "FreeLibrary", GetLastError()));
-			r = JIM_ERR;
+			r = JIM_ERROR;
 		}
 	}
 	return r;
@@ -377,7 +377,7 @@ __device__ static int Win32_FreeLibrary(Jim_Interp *interp, int objc, Jim_Obj *c
 __device__ int Jim_win32Init(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "win32", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 #define CMD(name) Jim_CreateCommand(interp, "win32." #name, Win32_ ## name, NULL, NULL)
 	CMD(ShellExecute);
 	CMD(FindWindow);

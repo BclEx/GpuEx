@@ -66,7 +66,6 @@
 
 #ifndef __JIM__H
 #define __JIM__H
-
 #include <Runtime.h>
 #ifdef __cplusplus
 extern "C" {
@@ -82,7 +81,6 @@ extern "C" {
 	// System configuration autoconf (configure) will set these
 	// -----------------------------------------------------------------------------
 #include "Jim+Win32compat.h"
-
 #ifndef HAVE_NO_AUTOCONF
 #include "Jim+Config.h"
 #endif
@@ -121,13 +119,11 @@ extern "C" {
 #  endif
 #endif
 
-#define UCHAR(c) ((unsigned char)(c))
-
 	// -----------------------------------------------------------------------------
 	// Exported defines
 	// -----------------------------------------------------------------------------
 #define JIM_OK 0
-#define JIM_ERR 1
+#define JIM_ERROR 1
 #define JIM_RETURN 2
 #define JIM_BREAK 3
 #define JIM_CONTINUE 4
@@ -167,6 +163,11 @@ extern "C" {
 
 #define JIM_LIBPATH "auto_path"
 #define JIM_INTERACTIVE "tcl_interactive"
+
+#ifndef _CLIENTDATA
+#define _CLIENTDATA
+	typedef void *ClientData;
+#endif
 
 	// -----------------------------------------------------------------------------
 	// Stack
@@ -446,7 +447,7 @@ extern "C" {
 #define Jim_SetResultInt(i,intval) Jim_SetResult(i, Jim_NewIntObj(i,intval))
 	// Note: Using trueObj and falseObj here makes some things slower...
 #define Jim_SetResultBool(i,b) Jim_SetResultInt(i, b)
-#define Jim_SetEmptyResult(i) Jim_SetResult(i, (i)->emptyObj)
+#define Jim_ResetResult(i) Jim_SetResult(i, (i)->emptyObj)
 #define Jim_GetResult(i) ((i)->result)
 #define Jim_CmdPrivData(i) ((i)->cmdPrivData)
 

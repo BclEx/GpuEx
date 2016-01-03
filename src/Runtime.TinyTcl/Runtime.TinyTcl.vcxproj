@@ -179,8 +179,6 @@
     <ClCompile Include="Tcl+Load-noop.cu" />
     <ClCompile Include="Tcl+Load-unix.cu" />
     <ClCompile Include="Tcl+Load-win.cu" />
-    <ClCompile Include="Tcl+Main-embed.cu" />
-    <ClCompile Include="Tcl+Main.cu" />
     <ClCompile Include="Tcl+Obj.cu" />
     <ClCompile Include="Tcl+Parse.cu" />
     <ClCompile Include="Tcl+Proc.cu" />
@@ -197,10 +195,8 @@
     <ClCompile Include="TclEx+Dbg.cu" />
     <ClCompile Include="TclEx+Extensions.cu" />
     <ClCompile Include="TclEx+Gen.cu" />
-    <ClCompile Include="TclEx+Main.cu" />
     <ClCompile Include="TclEx+UnixReaddir.cu" />
     <ClCompile Include="TclMod.cu" />
-    <ClCompile Include="TinySh.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="RTcl.cu" />
@@ -225,8 +221,6 @@
     <None Include="Tcl+Load-noop.cu" />
     <None Include="Tcl+Load-unix.cu" />
     <None Include="Tcl+Load-win.cu" />
-    <None Include="Tcl+Main-embed.cu" />
-    <None Include="Tcl+Main.cu" />
     <None Include="Tcl+Obj.cu" />
     <None Include="Tcl+Parse.cu" />
     <None Include="Tcl+Proc.cu" />
@@ -243,10 +237,8 @@
     <None Include="TclEx+Dbg.cu" />
     <None Include="TclEx+Extensions.cu" />
     <None Include="TclEx+Gen.cu" />
-    <None Include="TclEx+Main.cu" />
     <None Include="TclEx+UnixReaddir.cu" />
     <None Include="TclMod.cu" />
-    <None Include="TinySh.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="library\init.tcl" />
@@ -256,55 +248,13 @@
     <None Include="tcl_sys\autoinit.tcl" />
     <None Include="tcl_sys\devel.tcl" />
     <None Include="tcl_sys\system.tcl" />
-    <None Include="tests\all" />
-    <None Include="tests\append.test" />
-    <None Include="tests\case.test" />
-    <None Include="tests\cd.test_" />
-    <None Include="tests\concat.test" />
-    <None Include="tests\defs" />
-    <None Include="tests\env.test_" />
-    <None Include="tests\error.test" />
-    <None Include="tests\eval.test" />
-    <None Include="tests\exec.test_" />
-    <None Include="tests\expr.test" />
-    <None Include="tests\file.test.win" />
-    <None Include="tests\for.test" />
-    <None Include="tests\format.test" />
-    <None Include="tests\glob.test_" />
-    <None Include="tests\history.test" />
-    <None Include="tests\if.test" />
-    <None Include="tests\incr.test" />
-    <None Include="tests\info.test" />
-    <None Include="tests\join.test" />
-    <None Include="tests\lindex.test" />
-    <None Include="tests\linsert.test" />
-    <None Include="tests\list.test" />
-    <None Include="tests\llength.test" />
-    <None Include="tests\lrange.test" />
-    <None Include="tests\lreplace.test" />
-    <None Include="tests\lsearch.test" />
-    <None Include="tests\lsort.test" />
-    <None Include="tests\misc.test" />
-    <None Include="tests\open.test" />
-    <None Include="tests\parse.test" />
-    <None Include="tests\proc.test" />
-    <None Include="tests\regexp.test" />
-    <None Include="tests\rename.test" />
-    <None Include="tests\scan.test" />
-    <None Include="tests\set.test" />
-    <None Include="tests\source.test" />
-    <None Include="tests\split.test" />
-    <None Include="tests\string.test" />
-    <None Include="tests\trace.test" />
-    <None Include="tests\unknown.test" />
-    <None Include="tests\uplevel.test" />
-    <None Include="tests\upvar.test" />
-    <None Include="tests\while.test" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GpuEx-Runtime.TinyTcl.Native.nuspec" />
     <None Include="GpuEx-Runtime.TinyTcl.Native.targets" />
     <None Include="_content\runtime.tinytcl.cu" />
+    <None Include="_content\TclContext.cu" />
+    <None Include="_content\TclContext.cu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

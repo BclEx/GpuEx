@@ -62,7 +62,7 @@ __device__ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *
 		Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, 0));
 		Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, rc));
 		Jim_SetGlobalVariableStr(interp, "errorCode", errorCode);
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return JIM_OK;
 }
@@ -70,7 +70,7 @@ __device__ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *
 __device__ int Jim_execInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "exec", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 	Jim_CreateCommand(interp, "exec", Jim_ExecCmd, NULL, NULL);
 	return JIM_OK;
 }
@@ -296,7 +296,7 @@ const char *Jim_SignalName(int sig)
 * Create and store an appropriate value for the global variable $::errorCode
 * Based on pid and waitStatus.
 *
-* Returns JIM_OK for a normal exit with code 0, otherwise returns JIM_ERR.
+* Returns JIM_OK for a normal exit with code 0, otherwise returns JIM_ERROR.
 *
 * Note that $::errorCode is left unchanged for a normal exit.
 */
@@ -341,7 +341,7 @@ static int JimCheckWaitStatus(Jim_Interp *interp, pidtype pid, int waitStatus, i
 	}
 	Jim_SetGlobalVariableStr(interp, "errorCode", errorCode);
 
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 /*
@@ -413,7 +413,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		argc--;
 		numPids = JimCreatePipeline(interp, argc - 1, argv + 1, &pidPtr, NULL, NULL, NULL);
 		if (numPids < 0) {
-			return JIM_ERR;
+			return JIM_ERROR;
 		}
 		/* The return value is a list of the pids */
 		listObj = Jim_NewListObj(interp, NULL, 0);
@@ -433,7 +433,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		JimCreatePipeline(interp, argc - 1, argv + 1, &pidPtr, NULL, &outputId, &errorId);
 
 	if (numPids < 0) {
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 
 	/*
@@ -444,7 +444,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	result = JIM_OK;
 	if (outputId != JIM_BAD_FD) {
 		if (JimAppendStreamToString(interp, outputId, Jim_GetResult(interp)) < 0) {
-			result = JIM_ERR;
+			result = JIM_ERROR;
 			Jim_SetResultErrno(interp, "error reading from output pipe");
 		}
 	}
@@ -461,7 +461,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		ret = JimAppendStreamToString(interp, errorId, Jim_GetResult(interp));
 		if (ret < 0) {
 			Jim_SetResultErrno(interp, "error reading from error pipe");
-			result = JIM_ERR;
+			result = JIM_ERROR;
 		}
 		else if (ret > 0) {
 			child_siginfo = 0;
@@ -469,7 +469,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	if (JimCleanupChildren(interp, numPids, pidPtr, child_siginfo) != JIM_OK) {
-		result = JIM_ERR;
+		result = JIM_ERROR;
 	}
 
 	/* Finally remove any trailing newline from the result */
@@ -1096,7 +1096,7 @@ error:
 *
 * Results:
 *  The return value is a standard Tcl result.  If anything at
-*  weird happened with the child processes, JIM_ERR is returned
+*  weird happened with the child processes, JIM_ERROR is returned
 *  and a message is left in interp->result.
 *
 * Side effects:
@@ -1116,7 +1116,7 @@ static int JimCleanupChildren(Jim_Interp *interp, int numPids, pidtype *pidPtr, 
 		int waitStatus = 0;
 		if (JimWaitForProcess(table, pidPtr[i], &waitStatus) != JIM_BAD_PID) {
 			if (JimCheckWaitStatus(interp, pidPtr[i], waitStatus, child_siginfo) != JIM_OK) {
-				result = JIM_ERR;
+				result = JIM_ERROR;
 			}
 		}
 	}
@@ -1128,7 +1128,7 @@ static int JimCleanupChildren(Jim_Interp *interp, int numPids, pidtype *pidPtr, 
 int Jim_execInit(Jim_Interp *interp)
 {
 	if (Jim_PackageProvide(interp, "exec", "1.0", JIM_ERRMSG))
-		return JIM_ERR;
+		return JIM_ERROR;
 
 #ifdef SIGPIPE
 	/*

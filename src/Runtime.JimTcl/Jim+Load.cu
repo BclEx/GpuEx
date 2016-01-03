@@ -43,7 +43,7 @@ int Jim_LoadLibrary(Jim_Interp *interp, const char *pathName)
 		jim_module_init_func_type *onload;
 		if ((onload = (jim_module_init_func_type *)dlsym(handle, initsym)) == NULL)
 			Jim_SetResultFormatted(interp, "No %s symbol found in extension %s", initsym, pathName);
-		else if (onload(interp) != JIM_ERR) {
+		else if (onload(interp) != JIM_ERROR) {
 			// Add this handle to the stack of handles to be freed
 			Jim_Stack *loadHandles = (Jim_Stack *)Jim_GetAssocData(interp, "load::handles");
 			if (loadHandles == NULL) {
@@ -52,13 +52,13 @@ int Jim_LoadLibrary(Jim_Interp *interp, const char *pathName)
 				Jim_SetAssocData(interp, "load::handles", JimFreeLoadHandles, loadHandles);
 			}
 			Jim_StackPush(loadHandles, handle);
-			Jim_SetEmptyResult(interp);
+			Jim_ResetResult(interp);
 			return JIM_OK;
 		}
 	}
 	if (handle)
 		dlclose(handle);
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 static void JimFreeOneLoadHandle(void *handle)
@@ -83,7 +83,7 @@ __device__ int Jim_LoadLibrary(Jim_Interp *interp, const char *pathName)
 	JIM_NOTUSED(pathName);
 
 	Jim_SetResultString(interp, "the Jim binary has no support for [load]", -1);
-	return JIM_ERR;
+	return JIM_ERROR;
 }
 
 __device__ void Jim_FreeLoadHandles(Jim_Interp *interp)
@@ -96,7 +96,7 @@ __device__ static int Jim_LoadCoreCommand(Jim_Interp *interp, int argc, Jim_Obj 
 {
 	if (argc < 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "libraryFile");
-		return JIM_ERR;
+		return JIM_ERROR;
 	}
 	return Jim_LoadLibrary(interp, Jim_String(argv[1]));
 }

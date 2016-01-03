@@ -176,7 +176,7 @@ __global__ void g_InteractivePromptBodyEnd()
 		d_dataI.OP = 1; //: break;
 		return;
 	}
-	if (retcode == JIM_ERR)
+	if (retcode == JIM_ERROR)
 		Jim_MakeErrorMessage(interp);
 	int reslen;
 	const char *result = Jim_GetString(Jim_GetResult(interp), &reslen);
@@ -302,7 +302,7 @@ int Jim_InteractivePrompt(cudaDeviceHeap *heap, Jim_Interp *interp)
 		Jim_DecrRefCount(interp, scriptObjPtr);
 		if (retcode == JIM_EXIT)
 			break;
-		if (retcode == JIM_ERR)
+		if (retcode == JIM_ERROR)
 			Jim_MakeErrorMessage(interp);
 		int reslen;
 		const char *result = Jim_GetString(Jim_GetResult(interp), &reslen);
