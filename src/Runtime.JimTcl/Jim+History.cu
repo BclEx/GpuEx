@@ -81,7 +81,7 @@ __constant__ static const jim_subcmd_type _history_command_table[] = {
 	{ NULL }
 };
 
-__device__ static int JimHistorySubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimHistorySubCmdProc(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	return Jim_CallSubCmd(interp, Jim_ParseSubCmd(interp, _history_command_table, argc, argv), argc, argv);
 }

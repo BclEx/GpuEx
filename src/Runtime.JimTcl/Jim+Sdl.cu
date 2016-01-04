@@ -67,7 +67,7 @@ static void JimSdlDelProc(Jim_Interp *interp, void *privData)
 
 /* Calls to commands created via [sdl.surface] are implemented by this
 * C command. */
-static int JimSdlHandlerCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int JimSdlHandlerCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	JimSdlSurface *jss = Jim_CmdPrivData(interp);
 	int option;
@@ -194,7 +194,7 @@ static int JimSdlHandlerCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 	return JIM_OK;
 }
 
-static int JimSdlSurfaceCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int JimSdlSurfaceCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	JimSdlSurface *jss;
 	char buf[AIO_CMD_LEN];

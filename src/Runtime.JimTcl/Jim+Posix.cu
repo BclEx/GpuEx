@@ -55,7 +55,7 @@ static void Jim_PosixSetError(Jim_Interp *interp)
 }
 
 #if defined(HAVE_FORK)
-static int Jim_PosixForkCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_PosixForkCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	pid_t pid;
 
@@ -101,7 +101,7 @@ static int Jim_PosixForkCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 *
 *   {<pid> other 0}
 */
-static int Jim_PosixWaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_PosixWaitCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int nohang = 0;
 	long pid;
@@ -156,7 +156,7 @@ static int Jim_PosixWaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 	return JIM_OK;
 }
 
-static int Jim_PosixGetidsCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_PosixGetidsCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *objv[8];
 
@@ -177,7 +177,7 @@ static int Jim_PosixGetidsCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
 }
 
 #define JIM_HOST_NAME_MAX 1024
-static int Jim_PosixGethostnameCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_PosixGethostnameCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	char *buf;
 	int rc = JIM_OK;
@@ -198,7 +198,7 @@ static int Jim_PosixGethostnameCommand(Jim_Interp *interp, int argc, Jim_Obj *co
 	return rc;
 }
 
-static int Jim_PosixUptimeCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_PosixUptimeCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 #ifdef HAVE_STRUCT_SYSINFO_UPTIME
 	struct sysinfo info;
@@ -220,7 +220,7 @@ static int Jim_PosixUptimeCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
 	return JIM_OK;
 }
 
-static int Jim_PosixPidCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_PosixPidCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	if (argc != 1) {
 		Jim_WrongNumArgs(interp, 1, argv, "");

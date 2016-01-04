@@ -133,7 +133,7 @@ static Jim_Obj *JimSqliteFormatQuery(Jim_Interp *interp, Jim_Obj *fmtObjPtr,
 
 /* Calls to [sqlite.open] create commands that are implemented by this
 * C command. */
-static int JimSqliteHandlerCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int JimSqliteHandlerCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	sqlite3 *db = Jim_CmdPrivData(interp);
 	int option;
@@ -261,7 +261,7 @@ err:
 	return JIM_OK;
 }
 
-static int JimSqliteOpenCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int JimSqliteOpenCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	sqlite3 *db;
 	char buf[60];

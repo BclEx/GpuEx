@@ -4,7 +4,8 @@
 #define __TCLCONTEXT_CU_H__
 
 #include <Core+Vdbe\Core+Vdbe.cu.h>
-#include <Jim.h>
+#include <JimEx.h>
+#include <Jim+EventLoop.h>
 
 typedef struct TclContext TclContext;
 
@@ -72,16 +73,6 @@ struct TclContext
 #ifdef _TEST
 	bool LegacyPrepare;			// True to use sqlite3_prepare()
 #endif
-
-	//__device__ ::RC AUTHORIZER(array_t<Tcl_Obj *> objv);
-	//__device__ ::RC BACKUP(array_t<Tcl_Obj *> objv);
-	//__device__ ::RC BUSY(array_t<Tcl_Obj *> objv);
-	//__device__ ::RC CACHE(array_t<Tcl_Obj *> objv);
-	//__device__ ::RC CHANGES(array_t<Tcl_Obj *> objv);
-	//__device__ ::RC CLOSE(array_t<Tcl_Obj *> objv);
-
-	//__device__ ::RC EVAL(array_t<Tcl_Obj *> objv);
-
 };
 
 struct IncrblobChannel

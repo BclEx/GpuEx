@@ -75,7 +75,7 @@ static void Jim_SyslogCmdDelete(Jim_Interp *interp, void *privData)
 *
 * syslog ?-facility cron|daemon|...? ?-ident string? ?-options int? ?debug|info|...? text
 */
-int Jim_SyslogCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+int Jim_SyslogCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int priority = LOG_INFO;
 	int i = 1;

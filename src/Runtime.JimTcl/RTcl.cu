@@ -18,6 +18,7 @@
 #include "Jim+Regexp.cu"
 #include "Jim+Subcmd.cu"
 //#include "Jim+TclPrefix.cu"
+#include "JimEx.cu"
 #include "Utf8.cu"
 
 // NO IMPLEMENTATION

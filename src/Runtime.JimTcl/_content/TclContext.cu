@@ -1,23 +1,20 @@
 // A TCL Interface to SQLite
 #if HASJIMTCL
-
 #include "TclContext.cu.h"
-#include <string.h>
-#include <stdlib.h>
-#include <Jim+EventLoop.h>
+//#include <string.h>
+//#include <stdlib.h>
 
 #define NUM_PREPARED_STMTS 10
 #define MAX_PREPARED_STMTS 100
 
 #pragma region BLOB
-#ifdef OMIT_INCRBLOB
+#ifndef OMIT_INCRBLOB
 
-// Close all incrblob channels opened using database connection pDb.
-// This is called when shutting down the database connection.
+// Close all incrblob channels opened using database connection pDb. This is called when shutting down the database connection.
 __device__ static void CloseIncrblobChannels(TclContext *tctx)
 {
 	IncrblobChannel *next;
-	for (IncrblobChannel *p = tctx->Incrblob; p; p = next)
+	for (IncrblobChannel *p = tctx->Incrblobs; p; p = next)
 	{
 		next = p->Next;
 		// Note: Calling unregister here call Jim_Close on the incrblob channel, which deletes the IncrblobChannel structure at *p. So do not call Jim_Free() here.
@@ -245,7 +242,7 @@ __device__ static void FlushStmtCache(TclContext *tctx)
 }
 
 // JIM calls this procedure when an sqlite3 database command is deleted.
-__device__ static void DbDeleteCmd(ClientData db)
+__device__ static void DbDeleteCmd(Jim_Interp *interp, ClientData db)
 {
 	TclContext *tctx = (TclContext *)db;
 	FlushStmtCache(tctx);
@@ -297,9 +294,6 @@ __device__ static int DbBusyHandler(void *cd, int tries)
 	Jim_Interp *interp = tctx->Interp;
 	char b[30];
 	__snprintf(b, sizeof(b), "%d", tries);
-	//BCL: OPTIMIZE
-	//int rc = Jim_VarEval(tctx->Interp, tctx->Busy, " ", b, (char *)0);
-	//if (rc != JIM_OK || _atoi(tctx->Interp->result))
 	Jim_Obj *objPtr = Jim_NewStringObj(interp, tctx->Busy, -1);
 	Jim_AppendStrings(interp, objPtr, " ", b, NULL);
 	int rc = Jim_EvalObj(interp, objPtr);
@@ -310,14 +304,11 @@ __device__ static int DbBusyHandler(void *cd, int tries)
 
 #ifndef OMIT_PROGRESS_CALLBACK
 // This routine is invoked as the 'progress callback' for the database.
-__device__ static ::RC DbProgressHandler(void *cd)
+__device__ static int DbProgressHandler(void *cd)
 {
 	TclContext *tctx = (TclContext *)cd;
 	Jim_Interp *interp = tctx->Interp;
 	_assert(tctx->Progress);
-	//BCL: OPTIMIZE
-	//int rc = Jim_Eval(interp, tctx->Progress, 0, nullptr);
-	//if (rc != JIM_OK || _atoi(interp->result))
 	int rc = Jim_Eval(interp, tctx->Progress);
 	if (rc != JIM_OK || _atoi(Jim_String(Jim_GetResult(interp))))
 		return RC_ERROR;
@@ -331,13 +322,9 @@ __device__ static void DbTraceHandler(void *cd, const char *sql)
 {
 	TclContext *tctx = (TclContext *)cd;
 	Jim_Interp *interp = tctx->Interp;
-	char *cmd = _mprintf("%s%s", tctx->Trace, sql);
-	Jim_Eval(interp, cmd);
-	_free(cmd);
-	//JIM: Looks broken
-	//Jim_Obj *str = Jim_NewStringObj(interp, tctx->Trace, -1);
-	//Jim_ListAppendElement(interp, str, Jim_NewStringObj(interp, sql, -1));
-	//Jim_Eval(interp, sql);
+	Jim_Obj *str = Jim_NewStringObj(interp, tctx->Trace, -1);
+	Jim_ListAppendElement(interp, str, Jim_NewStringObj(interp, sql, -1));
+	Jim_Eval(interp, sql);
 	Jim_ResetResult(interp);
 }
 
@@ -348,10 +335,6 @@ __device__ static void DbProfileHandler(void *cd, const char *sql, uint64 tm)
 	Jim_Interp *interp = tctx->Interp;
 	char tmAsString[100];
 	__snprintf(tmAsString, sizeof(tmAsString)-1, "%lld", tm);
-	//BCL: OPTIMIZE
-	//char *cmd = _mprintf("%s,%s,%s", tctx->Profile, sql, tmAsString);
-	//Jim_Eval(tctx->Interp, cmd, 0, nullptr);
-	//_free(cmd);
 	Jim_Obj *str = Jim_NewStringObj(interp, tctx->Profile, -1);
 	Jim_ListAppendElement(interp, str, Jim_NewStringObj(interp, sql, -1));
 	Jim_ListAppendElement(interp, str, Jim_NewStringObj(interp, tmAsString, -1));
@@ -366,8 +349,6 @@ __device__ static ::RC DbCommitHandler(void *cd)
 {
 	TclContext *tctx = (TclContext *)cd;
 	int rc = Jim_Eval(tctx->Interp, tctx->Commit);
-	//BCL: OPTIMIZE
-	//if (rc != JIM_OK || _atoi(tctx->Interp->result))
 	if (rc != JIM_OK || _atoi(Jim_String(Jim_GetResult(tctx->Interp))))
 		return RC_ERROR;
 	return RC_OK;
@@ -377,9 +358,6 @@ __device__ static void DbRollbackHandler(void *clientData)
 {
 	TclContext *tctx = (TclContext *)clientData;
 	_assert(tctx->RollbackHook);
-	//if (Jim_Eval(tctx->Interp, tctx->RollbackHook) != JIM_OK)
-	//	Jim_BackgroundError(tctx->Interp);
-	//JIM: BETTER
 	Jim_EvalObjBackground(tctx->Interp, tctx->RollbackHook);
 }
 
@@ -389,20 +367,12 @@ __device__ static int DbWalHandler(void *clientData, Context *ctx, const char *d
 	TclContext *tctx = (TclContext *)clientData;
 	Jim_Interp *interp = tctx->Interp;
 	_assert(tctx->WalHook);
-	//BCL: Optimize
-	//char b[50];
-	//Jim_SetResult(interp, tctx->WalHook, nullptr);
-	//Jim_AppendElement(interp, dbName, false);
-	//Jim_AppendElement(interp, _itoa(entrys, b), false);
-	//char *cmd = interp->result;
 	int rc = RC_OK;
-	//if (Jim_Eval(interp, cmd, 0, nullptr) != JIM_OK || Jim_GetInt(interp, interp->result, &rc) != JIM_OK)
-	//	Jim_BackgroundError(tctx->Interp);
 	Jim_Obj *p = Jim_DuplicateObj(interp, tctx->WalHook);
 	Jim_IncrRefCount(p);
 	Jim_ListAppendElement(interp, p, Jim_NewStringObj(interp, dbName, -1));
 	Jim_ListAppendElement(interp, p, Jim_NewIntObj(interp, entrys));
-	if (Jim_EvalObjEx(interp, p, 0) != JIM_OK || Jim_GetIntFromObj(interp, Jim_GetObjResult(interp), &ret) != JIM_OK)
+	if (Jim_EvalObj(interp, p) != JIM_OK || Jim_GetInt(interp, Jim_GetResult(interp), &rc) != JIM_OK)
 		Jim_BackgroundError(interp);
 	Jim_DecrRefCount(interp, p);
 	return rc;
@@ -444,16 +414,7 @@ __device__ static void DbUpdateHandler(void *p, TK op, const char *dbName, const
 	Jim_Interp *interp = tctx->Interp;
 	_assert(tctx->UpdateHook);
 	_assert(op == TK_INSERT || op == TK_UPDATE || op == TK_DELETE);
-	//BCL: OPTIMIZE
-	//char b[50];
-	//Jim_SetResult(interp, tctx->UpdateHook, nullptr);
-	//Jim_AppendElement(interp, (op == TK_INSERT?"INSERT":(op == TK_UPDATE?"UPDATE":"DELETE")), false);
-	//Jim_AppendElement(interp, dbName, false);
-	//Jim_AppendElement(interp, tableName, false);
-	//Jim_AppendElement(interp, _itoa(rowid, b), false);
-	//char *cmd = interp->result;
-	//Jim_Eval(interp, cmd);
-	Jim_Obj *cmd = Jim_DuplicateObj(tctx->interp, tctx->pUpdateHook);
+	Jim_Obj *cmd = Jim_DuplicateObj(interp, tctx->UpdateHook);
 	Jim_IncrRefCount(cmd);
 	Jim_ListAppendElement(0, cmd, Jim_NewStringObj(interp, (op == TK_INSERT?"INSERT":(op == TK_UPDATE?"UPDATE":"DELETE")), -1));
 	Jim_ListAppendElement(interp, cmd, Jim_NewStringObj(interp, dbName, -1));
@@ -462,15 +423,10 @@ __device__ static void DbUpdateHandler(void *p, TK op, const char *dbName, const
 	Jim_EvalObj(interp, cmd);
 }
 
-__device__ static void JimCollateNeeded(void *p, Context *ctx, TEXTENCODE encode, const char *name)
+__device__ static void TclCollateNeeded(void *p, Context *ctx, TEXTENCODE encode, const char *name)
 {
 	TclContext *tctx = (TclContext *)p;
 	Jim_Interp *interp = tctx->Interp;
-	//BCL: OPTIMIZE
-	//Jim_SetResult(interp, tctx->CollateNeeded, nullptr);
-	//Jim_AppendElement(interp, name, false);
-	//char *cmd = interp->result;
-	//Jim_Eval(interp, cmd, 0, nullptr);
 	Jim_Obj *script = Jim_DuplicateObj(interp, tctx->CollateNeeded);
 	//Jim_IncrRefCount(script);
 	Jim_ListAppendElement(interp, script, Jim_NewStringObj(interp, name, -1));
@@ -479,28 +435,21 @@ __device__ static void JimCollateNeeded(void *p, Context *ctx, TEXTENCODE encode
 }
 
 // This routine is called to evaluate an SQL collation function implemented using JIM script.
-__device__ static int JimSqlCollate(void *p1, int aLength, const void *a, int bLength, const void *b)
+__device__ static int TclSqlCollate(void *p1, int aLength, const void *a, int bLength, const void *b)
 {
 	SqlCollate *p = (SqlCollate *)p1;
 	Jim_Interp *interp = p->Interp;
-	//BCL: OPTIMIZE
-	//Jim_SetResult(interp, p->Script, nullptr);
-	//Jim_AppendElement(interp, (const char *)a, false); //Jim_AppendElement(interp, Jim_Obj::NewStringObj((const char *)a, aLength), false);
-	//Jim_AppendElement(interp, (const char *)b, false); //Jim_AppendElement(interp, Jim_Obj::NewStringObj((const char *)b, bLength), false);
-	//char *cmd = interp->result;
-	//Jim_Eval(interp, cmd);
-	//return _atoi(interp->result);
 	Jim_Obj *cmd = Jim_NewStringObj(interp, p->Script, -1);
 	//Jim_IncrRefCount(cmd);
-	Jim_ListAppendElement(interp, cmd, Jim_NewStringObj(interp, a, aLength));
-	Jim_ListAppendElement(interp, cmd, Jim_NewStringObj(interp, b, bLength));
+	Jim_ListAppendElement(interp, cmd, Jim_NewStringObj(interp, (const char *)a, aLength));
+	Jim_ListAppendElement(interp, cmd, Jim_NewStringObj(interp, (const char *)b, bLength));
 	Jim_EvalObj(interp, cmd);
 	//Jim_DecrRefCount(interp, cmd);
 	return _atoi(Jim_String(Jim_GetResult(interp)));
 }
 
 // This routine is called to evaluate an SQL function implemented using JIM script.
-__device__ static void JimSqlFunc(FuncContext *fctx, int argc, Mem **argv)
+__device__ static void TclSqlFunc(FuncContext *fctx, int argc, Mem **argv)
 {
 	SqlFunc *p = (SqlFunc *)Vdbe::User_Data(fctx);
 	Jim_Interp *interp = p->Interp;
@@ -524,12 +473,11 @@ __device__ static void JimSqlFunc(FuncContext *fctx, int argc, Mem **argv)
 		// be preserved and reused on the next invocation.
 		cmd = Jim_DuplicateObj(interp, p->Script);
 		Jim_IncrRefCount(cmd);
-		for (i = 0; i < argc; i++)
+		for (int i = 0; i < argc; i++)
 		{
 			Mem *in = argv[i];
 			Jim_Obj *val;
 			// Set pVal to contain the i'th column of this row.
-			char b[50];
 			switch (Vdbe::Value_Type(in))
 			{
 			case TYPE_BLOB: {
@@ -538,12 +486,12 @@ __device__ static void JimSqlFunc(FuncContext *fctx, int argc, Mem **argv)
 				break; }
 			case TYPE_INTEGER: {
 				int64 v = Vdbe::Value_Int64(in);
-				val = Jim_NewIntObj(interp, v);
 				//val = (v >= -2147483647 && v <= 2147483647 ? Jim_NewIntObj(interp, v) : Jim_NewIntObj(interp, v));
+				val = Jim_NewIntObj(interp, v);
 				break; }
 			case TYPE_FLOAT: {
 				double r = Vdbe::Value_Double(in);
-				val = Jim_NewDoubleObj(interp, b);
+				val = Jim_NewDoubleObj(interp, r);
 				break; }
 			case TYPE_NULL: {
 				val = Jim_NewStringObj(interp, "", 0);
@@ -576,7 +524,7 @@ __device__ static void JimSqlFunc(FuncContext *fctx, int argc, Mem **argv)
 		if (c == 'b' && !_strcmp(typeName, "bytearray") && var->Bytes == 0)
 		{
 			// Only return a BLOB type if the Tcl variable is a bytearray and has no string representation.
-			data = Jim_GetByteArrayFromObj(var, &n);
+			data = Jim_GetByteArray(var, &n);
 			Vdbe::Result_Blob(fctx, data, n, DESTRUCTOR_TRANSIENT);
 		}
 		else if (c == 'b' && !_strcmp(typeName, "boolean"))
@@ -600,7 +548,7 @@ __device__ static void JimSqlFunc(FuncContext *fctx, int argc, Mem **argv)
 			}
 			else
 			{
-				data = Jim_GetString(var, &n);
+				data = (char *)Jim_GetString(var, &n);
 				Vdbe::Result_Text(fctx, data, n, DESTRUCTOR_TRANSIENT);
 			}
 	}
@@ -653,10 +601,6 @@ __device__ static ARC AuthCallback(void *arg, int code, const char *arg1, const 
 	case AUTH_SAVEPOINT         : codeName="AUTH_SAVEPOINT"; break;
 	default                     : codeName="????"; break;
 	}
-	//BCL: Optimize
-	//char *str = _mprintf("%s%s%s%s%s", tctx->Auth, codeName, (arg1?arg1:""), (arg2?arg2:""), (arg3?arg3:""), (arg4?arg4:""));
-	//int rc2 = Jim_GlobalEval(interp, str);
-	//_free(str);
 	Jim_Obj *str = Jim_NewStringObj(interp, tctx->Auth, -1);
 	// XXX: list or string here?
 	Jim_ListAppendElement(interp, str, Jim_NewStringObj(interp, codeName, -1));
@@ -665,22 +609,22 @@ __device__ static ARC AuthCallback(void *arg, int code, const char *arg1, const 
 	if (arg3) Jim_ListAppendElement(interp, str, Jim_NewStringObj(interp, arg3, -1));
 	if (arg4) Jim_ListAppendElement(interp, str, Jim_NewStringObj(interp, arg4, -1));
 	Jim_IncrRefCount(str);
-	rc = Jim_EvalGlobal(interp, Jim_String(str));
+	int rc = Jim_EvalGlobal(interp, Jim_String(str));
 	Jim_DecrRefCount(interp, str);
-	ARC rc = ARC_OK;
+	rc = ARC_OK;
 	const char *reply = (rc == RC_OK ? Jim_String(Jim_GetResult(interp)) : "ARC_DENY");
 	if (!_strcmp(reply, "ARC_OK")) rc = ARC_OK;
 	else if (!_strcmp(reply, "ARC_DENY")) rc = ARC_DENY;
 	else if (!_strcmp(reply, "ARC_IGNORE")) rc = ARC_IGNORE;
-	else rc = (ARC)999;
-	return rc;
+	else rc = 999;
+	return (ARC)rc;
 }
 #endif
 
 #pragma endregion
 
 // JIM: Note that Jim Tcl can't do encoding conversion, so this simply returns the string as an object.
-__device__ static Jim_Obj *dbTextToObj(Jim_Interp *interp, char const *text) { return Jim_NewStringObj(interp, text ? text : "", -1); }
+__device__ static Jim_Obj *dbTextToObj(Jim_Interp *interp, char const *text) { return Jim_NewStringObj(interp, (text ? text : ""), -1); }
 
 #pragma region GetLine
 
@@ -738,7 +682,7 @@ __device__ static int DbTransPostCmd(ClientData data[], Jim_Interp *interp, int 
 	int rc = result;
 
 	tctx->Transactions--;
-	const char *end = _trans_ends[(rc == JIM_ERR) * 2 + (tctx->Transactions == 0)];
+	const char *end = _trans_ends[(rc == JIM_ERROR) * 2 + (tctx->Transactions == 0)];
 
 	tctx->DisableAuth++;
 	if (Main::Exec(ctx, end, nullptr, nullptr, nullptr))
@@ -749,10 +693,10 @@ __device__ static int DbTransPostCmd(ClientData data[], Jim_Interp *interp, int 
 		//
 		// But it could also be that the user executed one or more BEGIN, COMMIT, SAVEPOINT, RELEASE or ROLLBACK commands that are confusing
 		// this method's logic. Not clear how this would be best handled.
-		if (rc != JIM_ERR)
+		if (rc != JIM_ERROR)
 		{
 			Jim_AppendString(interp, Jim_GetResult(interp), Main::ErrMsg(ctx), -1);
-			rc = JIM_ERR;
+			rc = JIM_ERROR;
 		}
 		Main::Exec(ctx, "ROLLBACK", nullptr, nullptr, nullptr);
 	}
@@ -811,7 +755,7 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 	{
 		if (DbPrepare(tctx, sql, &stmt, out) != RC_OK)
 		{
-			Jim_SetResult(interp,dbTextToObj(interp, (char *)Main::ErrMsg(ctx)));
+			Jim_SetResult(interp, dbTextToObj(interp, Main::ErrMsg(ctx)));
 			return RC_ERROR;
 		}
 		if (!stmt)
@@ -819,7 +763,7 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 			if (Main::ErrCode(ctx) != RC_OK)
 			{
 				// A compile-time error in the statement.
-				Jim_SetResult(interp, (char *)Main::ErrMsg(ctx), nullptr);
+				Jim_SetResult(interp, dbTextToObj(interp, Main::ErrMsg(ctx)));
 				return RC_ERROR;
 			}
 			// The statement was a no-op.  Continue to the next statement in the SQL string.
@@ -866,16 +810,10 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 				const char *typeName = (var->typePtr ? var->typePtr->name : "");
 				char c = typeName[0];
 				// XXX: Jim Tcl doesn't have bytearray or boolean
-				if (varName[0] == '@')
+				if (varName[0] == '@') //|| (c == 'b' && !_strcmp(typeName, "bytearray") && var->Bytes == 0))
 				{
-#if 0
-					|| (c == 'b' && !_strcmp(typeName, "bytearray") && var->Bytes == 0))
-					{
-						// Load a BLOB type if the Tcl variable is a bytearray and it has no string representation or the host parameter name begins with "@".
-						data = Jim_GetByteArrayFromObj(var, &n);
-#else
-					data = (char *)Jim_GetString(var, &n);
-#endif
+					// Load a BLOB type if the Tcl variable is a bytearray and it has no string representation or the host parameter name begins with "@".
+					data = (char *)Jim_GetByteArray(var, &n);
 					Vdbe::Bind_Blob(stmt, i, data, n, DESTRUCTOR_STATIC);
 					Jim_IncrRefCount(var);
 					p->Parms[parmsLength++] = var;
@@ -890,7 +828,7 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 				else if (c == 'd' && !_strcmp(typeName, "double"))
 				{
 					double r;
-					Jim_GetDouble(interp, *var, &r);
+					Jim_GetDouble(interp, var, &r);
 					Vdbe::Bind_Double(stmt, i, r);
 				}
 				else if ((c == 'c' && !_strcmp(typeName, "coerced-double")) || (c == 'i' && !_strcmp(typeName, "int")))
@@ -901,7 +839,7 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 				}
 				else
 				{
-					data = Jim_GetString(var, &n);
+					data = (char *)Jim_GetString(var, &n);
 					Vdbe::Bind_Text(stmt, i, data, n, DESTRUCTOR_STATIC);
 					Jim_IncrRefCount(var);
 					p->Parms[parmsLength++] = var;
@@ -920,8 +858,9 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 __device__ static void DbReleaseStmt(TclContext *tctx, SqlPreparedStmt *preStmt, bool discard)
 {
 	// Free the bound string and blob parameters
+	Jim_Interp *interp = tctx->Interp;
 	for (int i = 0; i < preStmt->Parms.length; i++)
-		Jim_DecrRefCount(preStmt->Parms[i]);
+		Jim_DecrRefCount(interp, preStmt->Parms[i]);
 	preStmt->Parms.length = 0;
 
 	// If the cache is turned off, deallocated the statement
@@ -981,10 +920,11 @@ struct DbEvalContext
 // Release any cache of column names currently held as part of the DbEvalContext structure passed as the first argument.
 __device__ static void DbReleaseColumnNames(DbEvalContext *p)
 {
+	Jim_Interp *interp = p->Ctx->Interp;
 	if (p->ColNames)
 	{
 		for (int i = 0; i < p->Cols; i++)
-			Jim_DecrRefCount(p->ColNames[i]);
+			Jim_DecrRefCount(interp, p->ColNames[i]);
 		_free(p->ColNames);
 		p->ColNames = nullptr;
 	}
@@ -1002,7 +942,7 @@ __device__ static void DbEvalInit(DbEvalContext *p, TclContext *tctx, Jim_Obj *s
 {
 	_memset(p, 0, sizeof(DbEvalContext));
 	p->Ctx = tctx;
-	p->SqlAsString = *sql;
+	p->SqlAsString = Jim_String(sql);
 	p->Sql = sql;
 	Jim_IncrRefCount(sql);
 	if (array_)
@@ -1015,6 +955,7 @@ __device__ static void DbEvalInit(DbEvalContext *p, TclContext *tctx, Jim_Obj *s
 // Obtain information about the row that the DbEvalContext passed as the first argument currently points to.
 __device__ static void DbEvalRowInfo(DbEvalContext *p, int *colsOut, Jim_Obj ***colNamesOut)
 {
+	Jim_Interp *interp = p->Ctx->Interp;
 	// Compute column names
 	if (!p->ColNames)
 	{
@@ -1027,7 +968,7 @@ __device__ static void DbEvalRowInfo(DbEvalContext *p, int *colsOut, Jim_Obj ***
 			colNames = (Jim_Obj **)_alloc(sizeof(Jim_Obj *) * cols);
 			for (i = 0; i < cols; i++)
 			{
-				colNames[i] = Jim_NewObj(Vdbe::Column_Name(stmt, i), -1);
+				colNames[i] = dbTextToObj(interp, Vdbe::Column_Name(stmt, i));
 				Jim_IncrRefCount(colNames[i]);
 			}
 			p->ColNames = colNames;
@@ -1036,12 +977,11 @@ __device__ static void DbEvalRowInfo(DbEvalContext *p, int *colsOut, Jim_Obj ***
 		// If results are being stored in an array variable, then create the array(*) entry for that array
 		if (p->Array)
 		{
-			Jim_Interp *interp = p->Ctx->Interp;
-			Jim_SetResult(interp, "", nullptr);
-			for (i = 0; i < cols; i++)
-				Jim_AppendElement(interp, *colNames[i], false);
-			char *colList = interp->result;
-			Jim_SetVar2(interp, *p->Array, "*", colList, 0);
+			Jim_Obj *colList = Jim_NewListObj(interp, colNames, cols);
+			Jim_Obj *star = Jim_NewStringObj(interp, "*", -1);
+			Jim_IncrRefCount(star);
+			Jim_ObjSetVar2(interp, p->Array, star, colList); //: Jim_SetDictKeysVector(interp, p->Array, &star, 1, colList, 0);
+			Jim_DecrRefCount(interp, star);
 		}
 	}
 
@@ -1059,6 +999,7 @@ __device__ static void DbEvalRowInfo(DbEvalContext *p, int *colsOut, Jim_Obj ***
 // no further rows available. This is similar to SQLITE_DONE.
 __device__ static RC DbEvalStep(DbEvalContext *p)
 {
+	Jim_Interp *interp = p->Ctx->Interp;
 	const char *prevSql = nullptr; // Previous value of p->zSql
 	while (p->SqlAsString[0] || p->PreStmt)
 	{
@@ -1102,7 +1043,7 @@ __device__ static RC DbEvalStep(DbEvalContext *p)
 					continue;
 				}
 #endif
-				Jim_SetResult(tctx->Interp, (char *)Main::ErrMsg(tctx->Ctx), JIM_VOLATILE);
+				Jim_SetResult(interp, dbTextToObj(interp, (char *)Main::ErrMsg(tctx->Ctx)));
 				return RC_ERROR;
 			}
 			else
@@ -1118,6 +1059,7 @@ __device__ static RC DbEvalStep(DbEvalContext *p)
 // for each call to dbEvalInit().
 __device__ static void DbEvalFinalize(DbEvalContext *p)
 {
+	Jim_Interp *interp = p->Ctx->Interp;
 	if (p->PreStmt)
 	{
 		Vdbe::Reset(p->PreStmt->Stmt);
@@ -1126,10 +1068,10 @@ __device__ static void DbEvalFinalize(DbEvalContext *p)
 	}
 	if (p->Array)
 	{
-		Jim_DecrRefCount(p->Array);
+		Jim_DecrRefCount(interp, p->Array);
 		p->Array = nullptr;
 	}
-	Jim_DecrRefCount(p->Sql);
+	Jim_DecrRefCount(interp, p->Sql);
 	DbReleaseColumnNames(p);
 }
 
@@ -1137,26 +1079,28 @@ __device__ static void DbEvalFinalize(DbEvalContext *p)
 // the DbEvalContext structure passed as the first argument.
 __device__ static Jim_Obj *DbEvalColumnValue(DbEvalContext *p, int colId)
 {
+	Jim_Interp *interp = p->Ctx->Interp;
 	Vdbe *stmt = p->PreStmt->Stmt;
-	char b[50];
 	switch (Vdbe::Column_Type(stmt, colId))
 	{
 	case TYPE_BLOB: {
 		int bytes = Vdbe::Column_Bytes(stmt, colId);
 		const void *blob = Vdbe::Column_Blob(stmt, colId);
 		if (!blob) bytes = 0;
-		return Jim_NewObj((char *)blob, bytes, "bytearray"); }
+		return Jim_NewByteArrayObj(interp, (char *)blob, bytes); }
 	case TYPE_INTEGER: {
 		int64 v = Vdbe::Column_Int64(stmt, colId);
-		return (v >= -2147483647 && v <= 2147483647 ? Jim_NewObj(_itoa((int)v, b), -1, "int") : Jim_NewObj(_itoa64(v, b), -1, "wideInt")); }
+		//return (v >= -2147483647 && v <= 2147483647 ? Jim_NewIntObj(interp, v) : Jim_NewIntObj(interp, v)); }
+		return Jim_NewIntObj(interp, v); }
 	case TYPE_FLOAT: {
-		__snprintf(b, sizeof(b), "%f", Vdbe::Column_Double(stmt, colId));
-		return Jim_NewObj(b, -1, "double"); }
+		return Jim_NewDoubleObj(interp, Vdbe::Column_Double(stmt, colId)); }
 	case TYPE_NULL: {
-		return Jim_NewObj(p->Ctx->NullText, -1, "text"); }
+		return dbTextToObj(interp, p->Ctx->NullText); }
 	}
-	return Jim_NewObj((char *)Vdbe::Column_Text(stmt, colId), -1, "text");
+	return dbTextToObj(interp, (char *)Vdbe::Column_Text(stmt, colId));
 }
+
+//__inline __device__ static int Jim_ObjSetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, Jim_Obj *valObjPtr) { return Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0); }
 
 // This function is part of the implementation of the command:
 //
@@ -1180,15 +1124,17 @@ __device__ static int DbEvalNextCmd(ClientData data[], Jim_Interp *interp, int r
 		{
 			Jim_Obj *val = DbEvalColumnValue(p, i);
 			if (!array)
-				Jim_SetVar2(interp, *colNames[i], nullptr, *val, false);
+				Jim_SetVariable(interp, colNames[i], val);
 			else
-				Jim_SetVar2(interp, *array, *colNames[i], *val, false);
+				Jim_ObjSetVar2(interp, array, colNames[i], val);
 		}
 
-		rc = Jim_Eval(interp, *script, 0, nullptr);
+		// The required interpreter variables are now populated with the data  from the current row.
+		// No NRE in Jim Tcl, so evaluate pScript directly and continue with the next iteration of this while(...) loop.
+		rc = Jim_EvalObj(interp, script);
 	}
 
-	Jim_DecrRefCount(script);
+	Jim_DecrRefCount(interp, script);
 	DbEvalFinalize(p);
 	Jim_Free(p);
 
@@ -1245,7 +1191,7 @@ enum TTYPE_enum { TTYPE_DEFERRED, TTYPE_EXCLUSIVE, TTYPE_IMMEDIATE };
 //       db1 close
 //
 // The first command opens a connection to the "my_database" database and calls that connection "db1".  The second command causes this subroutine to be invoked.
-__device__ static int DbObjCmd(void *cd, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc < 2)
 	{
@@ -1253,14 +1199,12 @@ __device__ static int DbObjCmd(void *cd, Jim_Interp *interp, int argc, const cha
 		return JIM_ERROR;
 	}
 	int choice;
-	if (Jim_GetIndex(interp, args[1], DB_strs, "option", 0, &choice))
+	if (Jim_GetEnum(interp, args[1], DB_strs, &choice, "option", JIM_ERRMSG | JIM_ENUM_ABBREV))
 		return JIM_ERROR;
 
-	char b[50];
-	TclContext *p = (TclContext *)cd;
-	::RC rc2;
+	TclContext *p = (TclContext *)clientData;
 	int rc = JIM_OK;
-	switch ((DB_enum)choice)
+	switch ((enum DB_enum)choice)
 	{
 	case DB_AUTHORIZER: {
 		//    $db authorizer ?CALLBACK?
@@ -1288,14 +1232,14 @@ __device__ static int DbObjCmd(void *cd, Jim_Interp *interp, int argc, const cha
 		else if (argc == 2)
 		{
 			if (p->Auth)
-				Jim_AppendResult(interp, p->Auth, nullptr);
+				Jim_SetResultString(interp, p->Auth, -1);
 		}
 		else
 		{
 			if (p->Auth)
 				Jim_Free(p->Auth);
 			int len;
-			char *auth = Jim_GetString(interp, args[2], &len);
+			const char *auth = Jim_GetString(args[2], &len);
 			if (auth && len > 0)
 			{
 				p->Auth = (char *)Jim_Alloc(len + 1);
@@ -1314,1047 +1258,1035 @@ __device__ static int DbObjCmd(void *cd, Jim_Interp *interp, int argc, const cha
 #endif
 		return RC_OK; }
 
-						/*
-						case DB_BACKUP: {
-						//    $db backup ?DATABASE? FILENAME
-						//
-						// Open or create a database file named FILENAME.  Transfer the content of local database DATABASE (default: "main") into the FILENAME database.
-						const char *srcDb;
-						const char *destFile;
-						if (argc == 3)
-						{
-						srcDb = "main";
-						destFile = args[2];
-						}
-						else if (argc == 4)
-						{
-						srcDb = args[2];
-						destFile = args[3];
-						}
-						else
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?DATABASE? FILENAME");
-						return JIM_ERROR;
-						}
+	case DB_BACKUP: {
+		//    $db backup ?DATABASE? FILENAME
+		//
+		// Open or create a database file named FILENAME.  Transfer the content of local database DATABASE (default: "main") into the FILENAME database.
+		const char *srcDb;
+		const char *destFile;
+		if (argc == 3)
+		{
+			srcDb = "main";
+			destFile = Jim_String(args[2]);
+		}
+		else if (argc == 4)
+		{
+			srcDb = Jim_String(args[2]);
+			destFile = Jim_String(args[3]);
+		}
+		else
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?DATABASE? FILENAME");
+			return JIM_ERROR;
+		}
 
-						Context *destCtx;
-						rc2 = Main::Open(destFile, &destCtx);
-						if (rc2 != RC_OK)
-						{
-						Jim_AppendResult(interp, "cannot open target database: ", Main::ErrMsg(destCtx), nullptr);
-						Main::Close(destCtx);
-						return JIM_ERROR;
-						}
-						Backup *backup = Backup::Init(destCtx, "main", p->Ctx, srcDb);
-						if (!backup)
-						{
-						Jim_AppendResult(interp, "backup failed: ", Main::ErrMsg(destCtx), nullptr);
-						Main::Close(destCtx);
-						return JIM_ERROR;
-						}
-						while ((rc2 = backup->Step(100)) == RC_OK) { }
-						Backup::Finish(backup);
-						if (rc == RC_DONE)
-						rc = JIM_OK;
-						else
-						{
-						Jim_AppendResult(interp, "backup failed: ", Main::ErrMsg(destCtx), nullptr);
-						rc = JIM_ERROR;
-						}
-						Main::Close(destCtx);
-						return rc; }
+		Context *destCtx;
+		rc = Main::Open(destFile, &destCtx);
+		if (rc != RC_OK)
+		{
+			Jim_SetResultFormatted(interp, "cannot open target database: %s", Main::ErrMsg(destCtx));
+			Main::Close(destCtx);
+			return JIM_ERROR;
+		}
+		Backup *backup = Backup::Init(destCtx, "main", p->Ctx, srcDb);
+		if (!backup)
+		{
+			Jim_SetResultFormatted(interp, "backup failed: %s", Main::ErrMsg(destCtx));
+			Main::Close(destCtx);
+			return JIM_ERROR;
+		}
+		while ((rc = backup->Step(100)) == RC_OK) { }
+		Backup::Finish(backup);
+		if (rc == RC_DONE)
+			rc = JIM_OK;
+		else
+		{
+			Jim_SetResultFormatted(interp, "backup failed: %s", Main::ErrMsg(destCtx));
+			rc = JIM_ERROR;
+		}
+		Main::Close(destCtx);
+		return rc; }
 
-						case DB_BUSY: {
-						//    $db busy ?CALLBACK?
-						//
-						// Invoke the given callback if an SQL statement attempts to open a locked database file.
-						if (argc > 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "CALLBACK");
-						return JIM_ERROR;
-						}
-						else if (argc == 2)
-						{
-						if (p->Busy)
-						Jim_AppendResult(interp, p->Busy, nullptr);
-						}
-						else
-						{
-						if (p->Busy)
-						Jim_Free(p->Busy);
-						int len;
-						char *busy = Jim_GetString(interp, args[2], &len);
-						if (busy && len > 0)
-						{
-						p->Busy = (char *)Jim_Alloc(len + 1);
-						_memcpy(p->Busy, busy, len + 1);
-						}
-						else
-						p->Busy = nullptr;
-						if (p->Busy)
-						{
-						p->Interp = interp;
-						Main::BusyHandler(p->Ctx, DbBusyHandler, p);
-						}
-						else
-						Main::BusyHandler(p->Ctx, nullptr, nullptr);
-						}
-						return rc; }
+	case DB_BUSY: {
+		//    $db busy ?CALLBACK?
+		//
+		// Invoke the given callback if an SQL statement attempts to open a locked database file.
+		if (argc > 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "CALLBACK");
+			return JIM_ERROR;
+		}
+		else if (argc == 2)
+		{
+			if (p->Busy)
+				Jim_SetResultString(interp, p->Busy, -1);
+		}
+		else
+		{
+			if (p->Busy)
+				Jim_Free(p->Busy);
+			int len;
+			const char *busy = Jim_GetString(args[2], &len);
+			if (busy && len > 0)
+			{
+				p->Busy = (char *)Jim_Alloc(len + 1);
+				_memcpy(p->Busy, busy, len + 1);
+			}
+			else
+				p->Busy = nullptr;
+			if (p->Busy)
+			{
+				p->Interp = interp;
+				Main::BusyHandler(p->Ctx, DbBusyHandler, p);
+			}
+			else
+				Main::BusyHandler(p->Ctx, nullptr, nullptr);
+		}
+		return rc; }
 
-						case DB_CACHE: {
-						//     $db cache flush
-						//     $db cache size n
-						//
-						// Flush the prepared statement cache, or set the maximum number of cached statements.
-						if (argc <= 2)
-						{
-						Jim_WrongNumArgs(interp, 1, args, "cache option ?arg?");
-						return JIM_ERROR;
-						}
-						char *subCmd = (char *)args[2];
-						if (subCmd[0] == 'f' && !_strcmp(subCmd,"flush"))
-						{
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "flush");
-						return JIM_ERROR;
-						}
-						else
-						FlushStmtCache(p);
-						}
-						else if (subCmd[0] == 's' && !_strcmp(subCmd, "size"))
-						{
-						if (argc != 4)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "size n");
-						return JIM_ERROR;
-						}
-						else
-						{
-						int n;
-						if (Jim_GetInt(interp, args[3], &n) == JIM_ERROR)
-						{
-						Jim_AppendResult(interp, "cannot convert \"", args[3], "\" to integer", nullptr);
-						return JIM_ERROR;
-						}
-						else
-						{
-						if (n < 0)
-						{
+	case DB_CACHE: {
+		//     $db cache flush
+		//     $db cache size n
+		//
+		// Flush the prepared statement cache, or set the maximum number of cached statements.
+		if (argc <= 2)
+		{
+			Jim_WrongNumArgs(interp, 1, args, "cache option ?arg?");
+			return JIM_ERROR;
+		}
+		const char *subCmd = Jim_String(args[2]);
+		if (subCmd[0] == 'f' && !_strcmp(subCmd, "flush"))
+		{
+			if (argc != 3)
+			{
+				Jim_WrongNumArgs(interp, 2, args, "flush");
+				return JIM_ERROR;
+			}
+			else
+				FlushStmtCache(p);
+		}
+		else if (subCmd[0] == 's' && !_strcmp(subCmd, "size"))
+		{
+			if (argc != 4)
+			{
+				Jim_WrongNumArgs(interp, 2, args, "size n");
+				return JIM_ERROR;
+			}
+			else
+			{
+				int64 n;
+				if (Jim_GetWide(interp, args[3], &n) == JIM_ERROR)
+				{
+					Jim_SetResultFormatted(interp, "cannot convert \"%#s\" to integer", args[3]);
+					return JIM_ERROR;
+				}
+				else
+				{
+					if (n < 0)
+					{
 						FlushStmtCache(p);
 						n = 0;
-						}
-						else if (n > MAX_PREPARED_STMTS)
+					}
+					else if (n > MAX_PREPARED_STMTS)
 						n = MAX_PREPARED_STMTS;
-						p->MaxStmt = n;
-						}
-						}
-						}
-						else
-						{
-						Jim_AppendResult(interp, "bad option \"", args[2], "\": must be flush or size", nullptr);
-						return JIM_ERROR;
-						}
-						return rc; }
+					p->MaxStmt = (int)n;
+				}
+			}
+		}
+		else
+		{
+			Jim_SetResultFormatted(interp, "bad option \"%#s\": must be flush or size", args[2]);
+			return JIM_ERROR;
+		}
+		return rc; }
 
-						case DB_CHANGES: {
-						//     $db changes
-						//
-						// Return the number of rows that were modified, inserted, or deleted by the most recent INSERT, UPDATE or DELETE statement, not including 
-						// any changes made by trigger programs.
-						if (argc != 2)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "");
-						return JIM_ERROR;
-						}
-						char b[100];
-						Jim_SetResult(interp, _itoa(Main::CtxChanges(p->Ctx), b), JIM_VOLATILE);
-						return rc; }
+	case DB_CHANGES: {
+		//     $db changes
+		//
+		// Return the number of rows that were modified, inserted, or deleted by the most recent INSERT, UPDATE or DELETE statement, not including 
+		// any changes made by trigger programs.
+		if (argc != 2)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "");
+			return JIM_ERROR;
+		}
+		Jim_SetResultInt(interp, Main::CtxChanges(p->Ctx));
+		return rc; }
 
-						case DB_CLOSE: {
-						//    $db close
-						//
-						// Shutdown the database
-						Jim_DeleteCommand(interp, (char *)args[0]);
-						return rc; }
+	case DB_CLOSE: {
+		//    $db close
+		//
+		// Shutdown the database
+		Jim_DeleteCommand(interp, Jim_String(args[0]));
+		return rc; }
 
-						case DB_COLLATE: {
-						//     $db collate NAME SCRIPT
-						//
-						// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
-						if (argc != 4)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "NAME SCRIPT");
-						return JIM_ERROR;
-						}
-						char *name = (char *)args[2];
-						int scriptLength;
-						char *script = Jim_GetString(interp, args[3], &scriptLength);
-						SqlCollate *collate = (SqlCollate *)Jim_Alloc(sizeof(*collate) + scriptLength + 1);
-						if (!collate) return JIM_ERROR;
-						collate->Interp = interp;
-						collate->Next = p->Collates;
-						collate->Script = (char *)&collate[1];
-						p->Collates = collate;
-						_memcpy(collate->Script, script, scriptLength+1);
-						if (Main::CreateCollation(p->Ctx, name, TEXTENCODE_UTF8, collate, JimSqlCollate))
-						{
-						Jim_SetResult(interp, (char *)Main::ErrMsg(p->Ctx), JIM_VOLATILE);
-						return JIM_ERROR;
-						}
-						return rc; }
+	case DB_COLLATE: {
+		//     $db collate NAME SCRIPT
+		//
+		// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
+		if (argc != 4)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "NAME SCRIPT");
+			return JIM_ERROR;
+		}
+		const char *name = Jim_String(args[2]);
+		int scriptLength;
+		const char *script = Jim_GetString(args[3], &scriptLength);
+		SqlCollate *collate = (SqlCollate *)Jim_Alloc(sizeof(*collate) + scriptLength + 1);
+		if (!collate) return JIM_ERROR;
+		collate->Interp = interp;
+		collate->Next = p->Collates;
+		collate->Script = (char *)&collate[1];
+		p->Collates = collate;
+		_memcpy(collate->Script, script, scriptLength+1);
+		if (Main::CreateCollation(p->Ctx, name, TEXTENCODE_UTF8, collate, TclSqlCollate))
+		{
+			Jim_SetResultString(interp, (char *)Main::ErrMsg(p->Ctx), -1);
+			return JIM_ERROR;
+		}
+		return rc; }
 
-						case DB_COLLATION_NEEDED: {
-						//     $db collation_needed SCRIPT
-						//
-						// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "SCRIPT");
-						return JIM_ERROR;
-						}
-						if (p->CollateNeeded)
-						Jim_DecrRefCount(p->CollateNeeded);
-						p->CollateNeeded = Jim_DuplicateObj((char *)args[2]);
-						Jim_IncrRefCount(p->CollateNeeded);
-						Main::CollationNeeded(p->Ctx, p, JimCollateNeeded);
-						return rc; }
+	case DB_COLLATION_NEEDED: {
+		//     $db collation_needed SCRIPT
+		//
+		// Create a new SQL collation function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
+		if (argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "SCRIPT");
+			return JIM_ERROR;
+		}
+		if (p->CollateNeeded)
+			Jim_DecrRefCount(interp, p->CollateNeeded);
+		p->CollateNeeded = Jim_DuplicateObj(interp, args[2]);
+		Jim_IncrRefCount(p->CollateNeeded);
+		Main::CollationNeeded(p->Ctx, p, TclCollateNeeded);
+		return rc; }
 
-						case DB_COMMIT_HOOK: {
-						//    $db commit_hook ?CALLBACK?
-						//
-						// Invoke the given callback just before committing every SQL transaction. If the callback throws an exception or returns non-zero, then the
-						// transaction is aborted.  If CALLBACK is an empty string, the callback is disabled.
-						if (argc > 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?CALLBACK?");
-						return JIM_ERROR;
-						} else if (argc == 2)
-						{
-						if (p->Commit)
-						Jim_AppendResult(interp, p->Commit, nullptr);
-						}
-						else
-						{
-						if (p->Commit)
-						Jim_Free(p->Commit);
-						int len;
-						char *commit = Jim_GetString(interp, args[2], &len);
-						if (commit && len > 0)
-						{
-						p->Commit = (char *)Jim_Alloc(len + 1);
-						_memcpy(p->Commit, commit, len+1);
-						}
-						else
-						p->Commit = nullptr;
-						if (p->Commit)
-						{
-						p->Interp = interp;
-						Main::CommitHook(p->Ctx, DbCommitHandler, p);
-						}
-						else
-						Main::CommitHook(p->Ctx, nullptr, nullptr);
-						}
-						return rc; }
+	case DB_COMMIT_HOOK: {
+		//    $db commit_hook ?CALLBACK?
+		//
+		// Invoke the given callback just before committing every SQL transaction. If the callback throws an exception or returns non-zero, then the
+		// transaction is aborted.  If CALLBACK is an empty string, the callback is disabled.
+		if (argc > 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?CALLBACK?");
+			return JIM_ERROR;
+		} else if (argc == 2)
+		{
+			if (p->Commit)
+				Jim_SetResultString(interp, p->Commit, -1);
+		}
+		else
+		{
+			if (p->Commit)
+				Jim_Free(p->Commit);
+			int len;
+			const char *commit = Jim_GetString(args[2], &len);
+			if (commit && len > 0)
+			{
+				p->Commit = (char *)Jim_Alloc(len + 1);
+				_memcpy(p->Commit, commit, len+1);
+			}
+			else
+				p->Commit = nullptr;
+			if (p->Commit)
+			{
+				p->Interp = interp;
+				Main::CommitHook(p->Ctx, DbCommitHandler, p);
+			}
+			else
+				Main::CommitHook(p->Ctx, nullptr, nullptr);
+		}
+		return rc; }
 
-						case DB_COMPLETE: {
-						//    $db complete SQL
-						//
-						// Return TRUE if SQL is a complete SQL statement.  Return FALSE if additional lines of input are needed.  This is similar to the
-						// built-in "info complete" command of Jim.
-						#ifndef OMIT_COMPLETE
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "SQL");
-						return JIM_ERROR;
-						}
-						bool isComplete = Parse::Complete(args[2]);
-						Jim_SetResult(interp, (isComplete?"1":"0"), JIM_VOLATILE);
-						#endif
-						return rc; }
+	case DB_COMPLETE: {
+		//    $db complete SQL
+		//
+		// Return TRUE if SQL is a complete SQL statement.  Return FALSE if additional lines of input are needed.  This is similar to the
+		// built-in "info complete" command of Jim.
+#ifndef OMIT_COMPLETE
+		if (argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "SQL");
+			return JIM_ERROR;
+		}
+		bool isComplete = Parse::Complete(Jim_String(args[2]));
+		Jim_SetResultBool(interp, isComplete);
+#endif
+		return rc; }
 
-						case DB_COPY: {
-						//    $db copy conflict-algorithm table filename ?SEPARATOR? ?NULLINDICATOR?
-						//
-						// Copy data into table from filename, optionally using SEPARATOR as column separators.  If a column contains a null string, or the
-						// value of NULLINDICATOR, a NULL is inserted for the column. conflict-algorithm is one of the sqlite conflict algorithms:
-						//    rollback, abort, fail, ignore, replace
-						// On success, return the number of lines processed, not necessarily same as 'db changes' due to conflict-algorithm selected.
-						//
-						// This code is basically an implementation/enhancement of the sqlite3 shell.c ".import" command.
-						//
-						// This command usage is equivalent to the sqlite2.x COPY statement, which imports file data into a table using the PostgreSQL COPY file format:
-						//   $db copy $conflit_algo $table_name $filename \t \\N
-						if (argc < 5 || argc > 7)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?");
-						return JIM_ERROR;
-						}
-						int i;
-						char *sep = (argc >= 6 ? args[5] : "\t");
-						char *null = (argc >= 7 ? args[6] : "");
-						char *conflict = (char *)args[2]; // The conflict algorithm to use
-						char *table = (char *)args[3]; // Insert data into this table
-						char *file = (char *)args[4]; // The file from which to extract data
-						int sepLength = _strlen(sep); // Number of bytes in zSep[]
-						int nullLength = _strlen(null); // Number of bytes in zNull[]
-						if (sepLength == 0)
-						{
-						Jim_AppendResult(interp, "Error: non-null separator required for copy", 0);
-						return JIM_ERROR;
-						}
-						if (_strcmp(conflict, "rollback") && _strcmp(conflict, "abort") && _strcmp(conflict, "fail") && _strcmp(conflict, "ignore") && _strcmp(conflict, "replace"))
-						{
-						Jim_AppendResult(interp, "Error: \"", conflict, "\", conflict-algorithm must be one of: rollback, abort, fail, ignore, or replace", 0);
-						return JIM_ERROR;
-						}
-						char *sql = _mprintf("SELECT * FROM '%q'", table); // An SQL statement
-						if (!sql)
-						{
-						Jim_AppendResult(interp, "Error: no such table: ", table, nullptr);
-						return JIM_ERROR;
-						}
-						int bytes = _strlen(sql); // Number of bytes in an SQL string
-						Vdbe *stmt; // A statement
-						rc2 = Prepare::Prepare_(p->Ctx, sql, -1, &stmt, 0);
-						_free(sql);
-						int cols;// Number of columns in the table
-						if (rc2)
-						{
-						Jim_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), 0);
-						cols = 0;
-						}
-						else
-						cols = Vdbe::Column_Count(stmt);
-						Vdbe::Finalize(stmt);
-						if (cols == 0)
-						return JIM_ERROR;
-						sql = (char *)_alloc(bytes + 50 + cols*2);
-						if (!sql)
-						{
-						Jim_AppendResult(interp, "Error: can't malloc()", nullptr);
-						return JIM_ERROR;
-						}
-						__snprintf(sql, bytes+50, "INSERT OR %q INTO '%q' VALUES(?", conflict, table);
-						int j = _strlen(sql);
-						for (i = 1; i < cols; i++)
-						{
-						sql[j++] = ',';
-						sql[j++] = '?';
-						}
-						sql[j++] = ')';
-						sql[j] = 0;
-						rc2 = Prepare::Prepare_(p->Ctx, sql, -1, &stmt, 0);
-						_free(sql);
-						if (rc2)
-						{
-						Jim_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), nullptr);
-						Vdbe::Finalize(stmt);
-						return JIM_ERROR;
-						}
-						FILE *in = _fopen(file, "rb"); // The input file
-						if (!in)
-						{
-						Jim_AppendResult(interp, "Error: cannot open file: ", file, nullptr);
-						Vdbe::Finalize(stmt);
-						return JIM_ERROR;
-						}
-						char **colNames = (char **)malloc(sizeof(colNames[0]) * (cols+1)); // zLine[] broken up into columns
-						if (!colNames)
-						{
-						Jim_AppendResult(interp, "Error: can't malloc()", 0);
-						_fclose(in);
-						return JIM_ERROR;
-						}
-						Main::Exec(p->Ctx, "BEGIN", 0, 0, 0);
-						char *commit = "COMMIT"; // How to commit changes
-						char *line; // A single line of input from the file
-						int lineno = 0; // Line number of input file
-						char lineNum[80]; // Line number print buffer
-						//Jim_Obj *result; // interp result
-						while ((line = LocalGetLine(0, in)) != 0)
-						{
-						char *z;
-						lineno++;
-						colNames[0] = line;
-						for (i = 0, z = line; *z; z++)
-						{
-						if (*z == sep[0] && !_strncmp(z, sep, sepLength))
-						{
-						*z = 0;
-						i++;
-						if (i < cols)
-						{
+	case DB_COPY: {
+		//    $db copy conflict-algorithm table filename ?SEPARATOR? ?NULLINDICATOR?
+		//
+		// Copy data into table from filename, optionally using SEPARATOR as column separators.  If a column contains a null string, or the
+		// value of NULLINDICATOR, a NULL is inserted for the column. conflict-algorithm is one of the sqlite conflict algorithms:
+		//    rollback, abort, fail, ignore, replace
+		// On success, return the number of lines processed, not necessarily same as 'db changes' due to conflict-algorithm selected.
+		//
+		// This code is basically an implementation/enhancement of the sqlite3 shell.c ".import" command.
+		//
+		// This command usage is equivalent to the sqlite2.x COPY statement, which imports file data into a table using the PostgreSQL COPY file format:
+		//   $db copy $conflit_algo $table_name $filename \t \\N
+		if (argc < 5 || argc > 7)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?");
+			return JIM_ERROR;
+		}
+		int i;
+		const char *sep = (argc >= 6 ? Jim_String(args[5]) : "\t");
+		const char *null = (argc >= 7 ? Jim_String(args[6]) : "");
+		const char *conflict = Jim_String(args[2]); // The conflict algorithm to use
+		const char *table = Jim_String(args[3]); // Insert data into this table
+		const char *file = Jim_String(args[4]); // The file from which to extract data
+		int sepLength = _strlen(sep); // Number of bytes in zSep[]
+		int nullLength = _strlen(null); // Number of bytes in zNull[]
+		if (sepLength == 0)
+		{
+			Jim_SetResultString(interp, "Error: non-null separator required for copy", -1);
+			return JIM_ERROR;
+		}
+		if (_strcmp(conflict, "rollback") && _strcmp(conflict, "abort") && _strcmp(conflict, "fail") && _strcmp(conflict, "ignore") && _strcmp(conflict, "replace"))
+		{
+			Jim_SetResultFormatted(interp, "Error: \"%s\", conflict-algorithm must be one of: rollback, abort, fail, ignore, or replace", conflict);
+			return JIM_ERROR;
+		}
+		char *sql = _mprintf("SELECT * FROM '%q'", table); // An SQL statement
+		if (!sql)
+		{
+			Jim_SetResultFormatted(interp, "Error: no such table: %s", table);
+			return JIM_ERROR;
+		}
+		int bytes = _strlen(sql); // Number of bytes in an SQL string
+		Vdbe *stmt; // A statement
+		rc = Prepare::Prepare_(p->Ctx, sql, -1, &stmt, 0);
+		_free(sql);
+		int cols;// Number of columns in the table
+		if (rc)
+		{
+			Jim_SetResultFormatted(interp, "Error: %s", Main::ErrMsg(p->Ctx));
+			cols = 0;
+		}
+		else
+			cols = Vdbe::Column_Count(stmt);
+		Vdbe::Finalize(stmt);
+		if (cols == 0)
+			return JIM_ERROR;
+		sql = (char *)_alloc(bytes + 50 + cols*2);
+		if (!sql)
+		{
+			Jim_SetResultString(interp, "Error: can't malloc()", -1);
+			return JIM_ERROR;
+		}
+		__snprintf(sql, bytes+50, "INSERT OR %q INTO '%q' VALUES(?", conflict, table);
+		int j = _strlen(sql);
+		for (i = 1; i < cols; i++)
+		{
+			sql[j++] = ',';
+			sql[j++] = '?';
+		}
+		sql[j++] = ')';
+		sql[j] = 0;
+		rc = Prepare::Prepare_(p->Ctx, sql, -1, &stmt, 0);
+		_free(sql);
+		if (rc)
+		{
+			Jim_SetResultFormatted(interp, "Error: %s", Main::ErrMsg(p->Ctx));
+			Vdbe::Finalize(stmt);
+			return JIM_ERROR;
+		}
+		FILE *in = _fopen(file, "rb"); // The input file
+		if (!in)
+		{
+			Jim_SetResultFormatted(interp, "Error: cannot open file: %s", file);
+			Vdbe::Finalize(stmt);
+			return JIM_ERROR;
+		}
+		char **colNames = (char **)malloc(sizeof(colNames[0]) * (cols+1)); // zLine[] broken up into columns
+		if (!colNames)
+		{
+			Jim_SetResultString(interp, "Error: can't malloc()", -1);
+			_fclose(in);
+			return JIM_ERROR;
+		}
+		Main::Exec(p->Ctx, "BEGIN", 0, 0, 0);
+		char *commit = "COMMIT"; // How to commit changes
+		char *line; // A single line of input from the file
+		int lineno = 0; // Line number of input file
+		char lineNum[80]; // Line number print buffer
+		//Jim_Obj *result; // interp result
+		while ((line = LocalGetLine(0, in)) != 0)
+		{
+			char *z;
+			lineno++;
+			colNames[0] = line;
+			for (i = 0, z = line; *z; z++)
+			{
+				if (*z == sep[0] && !_strncmp(z, sep, sepLength))
+				{
+					*z = 0;
+					i++;
+					if (i < cols)
+					{
 						colNames[i] = &z[sepLength];
 						z += sepLength-1;
-						}
-						}
-						}
-						if (i+1 != cols)
-						{
-						int errLength = _strlen(file) + 200;
-						char *err = (char *)malloc(errLength);
-						if (err)
-						{
-						__snprintf(err, errLength, "Error: %s line %d: expected %d columns of data but found %d", file, lineno, cols, i+1);
-						Jim_AppendResult(interp, err, nullptr);
-						free(err);
-						}
-						commit = "ROLLBACK";
-						break;
-						}
-						for (i = 0; i < cols; i++)
-						{
-						// check for null data, if so, bind as null
-						if ((nullLength > 0 && !_strcmp(colNames[i], null)) || !_strlen(colNames[i]))
-						Vdbe::Bind_Null(stmt, i+1);
-						else
-						Vdbe::Bind_Text(stmt, i+1, colNames[i], -1, DESTRUCTOR_STATIC);
-						}
-						stmt->Step();
-						rc2 = Vdbe::Reset(stmt);
-						free(line);
-						if (rc2 != RC_OK)
-						{
-						Jim_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), 0);
-						commit = "ROLLBACK";
-						break;
-						}
-						}
-						free(colNames);
-						_fclose(in);
-						Vdbe::Finalize(stmt);
-						Main::Exec(p->Ctx, commit, 0, 0, 0);
+					}
+				}
+			}
+			if (i+1 != cols)
+			{
+				int errLength = _strlen(file) + 200;
+				char *err = (char *)malloc(errLength);
+				if (err)
+				{
+					__snprintf(err, errLength, "Error: %s line %d: expected %d columns of data but found %d", file, lineno, cols, i+1);
+					Jim_SetResultString(interp, err, -1);
+					free(err);
+				}
+				commit = "ROLLBACK";
+				break;
+			}
+			for (i = 0; i < cols; i++)
+			{
+				// check for null data, if so, bind as null
+				if ((nullLength > 0 && !_strcmp(colNames[i], null)) || !_strlen(colNames[i]))
+					Vdbe::Bind_Null(stmt, i+1);
+				else
+					Vdbe::Bind_Text(stmt, i+1, colNames[i], -1, DESTRUCTOR_STATIC);
+			}
+			stmt->Step();
+			rc = Vdbe::Reset(stmt);
+			free(line);
+			if (rc != RC_OK)
+			{
+				Jim_SetResultFormatted(interp, "Error: %s", Main::ErrMsg(p->Ctx));
+				commit = "ROLLBACK";
+				break;
+			}
+		}
+		free(colNames);
+		_fclose(in);
+		Vdbe::Finalize(stmt);
+		Main::Exec(p->Ctx, commit, 0, 0, 0);
 
-						if (commit[0] == 'C')
-						{
-						// success, set result as number of lines processed
-						Jim_SetResult(interp, _itoa(lineno, b), JIM_VOLATILE);
-						rc = JIM_OK;
-						}
-						else
-						{
-						// failure, append lineno where failed
-						__snprintf(lineNum, sizeof(lineNum), "%d", lineno);
-						Jim_AppendResult(interp, ", failed while processing line: ", lineNum, nullptr);
-						rc = JIM_ERROR;
-						}
-						return rc; }
+		if (commit[0] == 'C')
+		{
+			// success, set result as number of lines processed
+			Jim_SetResultInt(interp, lineno);
+			rc = JIM_OK;
+		}
+		else
+		{
+			// failure, append lineno where failed
+			__snprintf(lineNum, sizeof(lineNum), "%d", lineno);
+			Jim_AppendStrings(interp, Jim_GetResult(interp), ", failed while processing line: ", lineNum, nullptr);
+			rc = JIM_ERROR;
+		}
+		return rc; }
 
-						case DB_ENABLE_LOAD_EXTENSION: {
-						//    $db enable_load_extension BOOLEAN
-						//
-						// Turn the extension loading feature on or off.  It if off by default.
-						#ifndef OMIT_LOAD_EXTENSION
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "BOOLEAN");
-						return JIM_ERROR;
-						}
-						bool onoff;
-						if (Jim_GetBoolean(interp, args[2], &onoff))
-						return JIM_ERROR;
-						Main::EnableLoadExtension(p->Ctx, onoff);
-						#else
-						Jim_AppendResult(interp, "extension loading is turned off at compile-time", 0);
-						return JIM_ERROR;
-						#endif
-						return rc; }
+	case DB_ENABLE_LOAD_EXTENSION: {
+		//    $db enable_load_extension BOOLEAN
+		//
+		// Turn the extension loading feature on or off.  It if off by default.
+#ifndef OMIT_LOAD_EXTENSION
+		if (argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "BOOLEAN");
+			return JIM_ERROR;
+		}
+		bool onoff;
+		if (Jim_GetBoolean(interp, args[2], &onoff))
+			return JIM_ERROR;
+		Main::EnableLoadExtension(p->Ctx, onoff);
+#else
+		Jim_SetResultString(interp, "extension loading is turned off at compile-time", -1);
+		return JIM_ERROR;
+#endif
+		return rc; }
 
-						case DB_ERRORCODE: {
-						//    $db errorcode
-						//
-						// Return the numeric error code that was returned by the most recent call to sqlite3_exec().
-						char b[100];
-						Jim_SetResult(interp, _itoa(Main::ErrCode(p->Ctx), b), JIM_VOLATILE);
-						return rc; }
+	case DB_ERRORCODE: {
+		//    $db errorcode
+		//
+		// Return the numeric error code that was returned by the most recent call to sqlite3_exec().
+		Jim_SetResultInt(interp, Main::ErrCode(p->Ctx));
+		return rc; }
 
-						case DB_EXISTS: 
-						case DB_ONECOLUMN: {
-						//    $db exists $sql
-						//    $db onecolumn $sql
-						//
-						// The onecolumn method is the equivalent of:
-						//     lindex [$db eval $sql] 0
-						DbEvalContext sEval;
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "SQL");
-						return JIM_ERROR;
-						}
+	case DB_EXISTS: 
+	case DB_ONECOLUMN: {
+		//    $db exists $sql
+		//    $db onecolumn $sql
+		//
+		// The onecolumn method is the equivalent of:
+		//     lindex [$db eval $sql] 0
+		DbEvalContext sEval;
+		if (argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "SQL");
+			return JIM_ERROR;
+		}
 
-						DbEvalInit(&sEval, p, (char *)args[2], nullptr);
-						rc = DbEvalStep(&sEval);
-						if (choice == DB_ONECOLUMN)
-						{
-						if (rc == JIM_OK)
-						Jim_SetResult(interp, DbEvalColumnValue(&sEval, 0));
-						else if (rc == JIM_BREAK)
-						Jim_ResetResult(interp);
-						}
-						else if (rc == JIM_BREAK || rc == JIM_OK)
-						Jim_SetResult(interp, (rc == JIM_OK?"1":"0"), JIM_VOLATILE);
-						DbEvalFinalize(&sEval);
+		DbEvalInit(&sEval, p, args[2], nullptr);
+		rc = DbEvalStep(&sEval);
+		if (choice == DB_ONECOLUMN)
+		{
+			if (rc == JIM_OK)
+				Jim_SetResult(interp, DbEvalColumnValue(&sEval, 0));
+			else if (rc == JIM_BREAK)
+				Jim_ResetResult(interp);
+		}
+		else if (rc == JIM_BREAK || rc == JIM_OK)
+			Jim_SetResultBool(interp, (rc == JIM_OK));
+		DbEvalFinalize(&sEval);
 
-						if (rc == JIM_BREAK)
-						rc = JIM_OK;
-						return rc; }
+		if (rc == JIM_BREAK)
+			rc = JIM_OK;
+		return rc; }
 
-						case DB_EVAL: {
-						//    $db eval $sql ?array? ?{  ...code... }?
-						//
-						// The SQL statement in $sql is evaluated.  For each row, the values are placed in elements of the array named "array" and ...code... is executed.
-						// If "array" and "code" are omitted, then no callback is every invoked. If "array" is an empty string, then the values are placed in variables
-						// that have the same name as the fields extracted by the query.
-						if (argc < 3 || argc > 5)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "SQL ?ARRAY-NAME? ?SCRIPT?");
-						return JIM_ERROR;
-						}
+	case DB_EVAL: {
+		//    $db eval $sql ?array? ?{  ...code... }?
+		//
+		// The SQL statement in $sql is evaluated.  For each row, the values are placed in elements of the array named "array" and ...code... is executed.
+		// If "array" and "code" are omitted, then no callback is every invoked. If "array" is an empty string, then the values are placed in variables
+		// that have the same name as the fields extracted by the query.
+		if (argc < 3 || argc > 5)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "SQL ?ARRAY-NAME? ?SCRIPT?");
+			return JIM_ERROR;
+		}
 
-						if (argc == 3)
-						{
-						DbEvalContext sEval;
-						Jim_Obj *ret = Jim_NewObj();
-						Jim_IncrRefCount(ret);
-						DbEvalInit(&sEval, p, args[2], nullptr);
+		if (argc == 3)
+		{
+			DbEvalContext sEval;
+			Jim_Obj *ret = Jim_NewListObj(interp, nullptr, 0);
+			Jim_IncrRefCount(ret);
+			DbEvalInit(&sEval, p, args[2], nullptr);
 
-						while ((rc2 = DbEvalStep(&sEval)) == RC_OK)
-						{
-						int cols;
-						DbEvalRowInfo(&sEval, &cols, nullptr);
-						for (int i = 0; i < cols; i++)
-						Jim_ListObjAppendElement(interp, ret, DbEvalColumnValue(&sEval, i));
-						}
-						DbEvalFinalize(&sEval);
-						if (rc2 == RC_DONE)
-						{
-						Jim_SetObjResult(interp, ret);
-						rc2 = RC_OK;
-						}
-						Jim_DecrRefCount(ret);
-						}
-						else
-						{
-						ClientData cd[2];
-						Jim_Obj *array = (argc == 5 && *args[3] ? args[3] : nullptr);
-						Jim_Obj *script = args[argc-1];
-						Jim_IncrRefCount(script);
+			while ((rc = DbEvalStep(&sEval)) == RC_OK)
+			{
+				int cols;
+				DbEvalRowInfo(&sEval, &cols, nullptr);
+				for (int i = 0; i < cols; i++)
+					Jim_ListAppendElement(interp, ret, DbEvalColumnValue(&sEval, i));
+			}
+			DbEvalFinalize(&sEval);
+			if (rc == RC_DONE)
+			{
+				Jim_SetResult(interp, ret);
+				rc = RC_OK;
+			}
+			Jim_DecrRefCount(interp, ret);
+		}
+		else
+		{
+			ClientData cd[2];
+			Jim_Obj *array = (argc == 5 && Jim_Length(args[3]) ? args[3] : nullptr);
+			Jim_Obj *script = args[argc-1];
+			Jim_IncrRefCount(script);
 
-						DbEvalContext *p2 = (DbEvalContext *)Jim_Alloc(sizeof(DbEvalContext));
-						DbEvalInit(p2, p, args[2], array);
+			DbEvalContext *p2 = (DbEvalContext *)Jim_Alloc(sizeof(DbEvalContext));
+			DbEvalInit(p2, p, args[2], array);
 
-						cd[0] = (ClientData)p2;
-						cd[1] = (ClientData)script;
-						rc2 = DbEvalNextCmd(cd, interp, RC_OK);
-						}
-						return rc; }
+			cd[0] = (ClientData)p2;
+			cd[1] = (ClientData)script;
+			rc = DbEvalNextCmd(cd, interp, RC_OK);
+		}
+		return rc; }
 
-						case DB_FUNCTION: {
-						//     $db function NAME [-argcount N] SCRIPT
-						//
-						// Create a new SQL function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
-						Jim_Obj *script;
-						int args4 = -1;
-						if (argc == 6)
-						{
-						const char *z = args[3];
-						int n = _strlen(z);
-						if (n > 2 && !_strncmp(z, "-argcount",n))
-						{
-						if (Jim_GetInt(interp, args[4], &args4)) return JIM_ERROR;
-						if (args4 < 0)
-						{
-						Jim_AppendResult(interp, "number of arguments must be non-negative", nullptr);
-						return JIM_ERROR;
-						}
-						}
-						script = args[5];
-						}
-						else if (argc != 4)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "NAME [-argcount N] SCRIPT");
-						return JIM_ERROR;
-						}
-						else
-						script = args[3];
-						char *name = args[2];
-						SqlFunc *func = FindSqlFunc(p, name);
-						if (!func) return JIM_ERROR;
-						if (func->Script)
-						Jim_DecrRefCount(func->Script);
-						func->Script = script;
-						Jim_IncrRefCount(script);
-						func->UseEvalObjv = SafeToUseEvalObjv(interp, script);
-						rc2 = Main::CreateFunction(p->Ctx, name, args4, TEXTENCODE_UTF8, func, JimSqlFunc, 0, 0);
-						if (rc2 != RC_OK)
-						{
-						rc = JIM_ERROR;
-						Jim_SetResult(interp, (char *)Main::ErrMsg(p->Ctx), JIM_VOLATILE);
-						}
-						return rc; }
+	case DB_FUNCTION: {
+		//     $db function NAME [-argcount N] SCRIPT
+		//
+		// Create a new SQL function called NAME.  Whenever that function is called, invoke SCRIPT to evaluate the function.
+		Jim_Obj *script;
+		int args4 = -1;
+		if (argc == 6)
+		{
+			const char *z = Jim_String(args[3]);
+			int n = _strlen(z);
+			if (n > 2 && !_strncmp(z, "-argcount",n))
+			{
+				if (Jim_GetInt(interp, args[4], &args4)) return JIM_ERROR;
+				if (args4 < 0)
+				{
+					Jim_SetResultString(interp, "number of arguments must be non-negative", -1);
+					return JIM_ERROR;
+				}
+			}
+			script = args[5];
+		}
+		else if (argc != 4)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "NAME [-argcount N] SCRIPT");
+			return JIM_ERROR;
+		}
+		else
+			script = args[3];
+		const char *name = Jim_String(args[2]);
+		SqlFunc *func = FindSqlFunc(p, name);
+		if (!func) return JIM_ERROR;
+		if (func->Script)
+			Jim_DecrRefCount(interp, func->Script);
+		func->Script = script;
+		Jim_IncrRefCount(script);
+		func->UseEvalObjv = SafeToUseEvalObjv(interp, script);
+		rc = Main::CreateFunction(p->Ctx, name, args4, TEXTENCODE_UTF8, func, TclSqlFunc, 0, 0);
+		if (rc != RC_OK)
+		{
+			rc = JIM_ERROR;
+			Jim_SetResultString(interp, (char *)Main::ErrMsg(p->Ctx), -1);
+		}
+		return rc; }
 
-						case DB_INCRBLOB: {
-						//     $db incrblob ?-readonly? ?DB? TABLE COLUMN ROWID
-						#ifdef OMIT_INCRBLOB
-						Jim_AppendResult(interp, "incrblob not available in this build", nullptr);
-						return JIM_ERROR;
-						#else
-						// Check for the -readonly option
-						int isReadonly = (argc > 3 && !_strcmp(args[2], "-readonly") ? 1 : 0);
-						if (argc != (5+isReadonly) && argc != (6+isReadonly))
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?-readonly? ?DB? TABLE COLUMN ROWID");
-						return JIM_ERROR;
-						}
+	case DB_INCRBLOB: {
+		//     $db incrblob ?-readonly? ?DB? TABLE COLUMN ROWID
+#ifdef OMIT_INCRBLOB
+		Jim_SetResultString(interp, "incrblob not available in this build", -1);
+		return JIM_ERROR;
+#else
+		// Check for the -readonly option
+		int isReadonly = (argc > 3 && !_strcmp(Jim_String(args[2]), "-readonly") ? 1 : 0);
+		if (argc != (5+isReadonly) && argc != (6+isReadonly))
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?-readonly? ?DB? TABLE COLUMN ROWID");
+			return JIM_ERROR;
+		}
 
-						const char *db = (argc == (6+isReadonly) ? args[2] : "main");
-						const char *table = args[argc-3];
-						const char *column = args[argc-2];
-						int64 rows;
-						rc = Jim_GetWideInt(interp, args[argc-1], &rows);
+		const char *db = (argc == (6+isReadonly) ? Jim_String(args[2]) : "main");
+		const char *table = Jim_String(args[argc-3]);
+		const char *column = Jim_String(args[argc-2]);
+		int64 rows;
+		rc = Jim_GetWide(interp, args[argc-1], &rows);
 
-						if (rc == JIM_OK)
-						rc = CreateIncrblobChannel(interp, p, db, table, column, rows, isReadonly);
-						#endif
-						return rc; }
+		if (rc == JIM_OK)
+			rc = CreateIncrblobChannel(interp, p, db, table, column, rows, isReadonly);
+#endif
+		return rc; }
 
-						case DB_INTERRUPT: {
-						//     $db interrupt
-						//
-						// Interrupt the execution of the inner-most SQL interpreter.  This causes the SQL statement to return an error of SQLITE_INTERRUPT.
-						Main::Interrupt(p->Ctx);
-						return rc; }
+	case DB_INTERRUPT: {
+		//     $db interrupt
+		//
+		// Interrupt the execution of the inner-most SQL interpreter.  This causes the SQL statement to return an error of SQLITE_INTERRUPT.
+		Main::Interrupt(p->Ctx);
+		return rc; }
 
-						case DB_NULLVALUE: {
-						//     $db nullvalue ?STRING?
-						//
-						// Change text used when a NULL comes back from the database. If ?STRING? is not present, then the current string used for NULL is returned.
-						// If STRING is present, then STRING is returned.
-						if (argc != 2 && argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "NULLVALUE");
-						return JIM_ERROR;
-						}
-						if (argc == 3)
-						{
-						int len;
-						char *null = Jim_GetString(interp, args[2], &len);
-						if (p->NullText)
-						Jim_Free(p->NullText);
-						if (null && len > 0)
-						{
-						p->NullText = (char *)Jim_Alloc(len + 1);
-						_memcpy(p->NullText, null, len);
-						p->NullText[len] = '\0';
-						}
-						else
-						p->NullText = nullptr;
-						}
-						Jim_SetResult(interp, p->NullText, JIM_VOLATILE);
-						return rc; }
+	case DB_NULLVALUE: {
+		//     $db nullvalue ?STRING?
+		//
+		// Change text used when a NULL comes back from the database. If ?STRING? is not present, then the current string used for NULL is returned.
+		// If STRING is present, then STRING is returned.
+		if (argc != 2 && argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "NULLVALUE");
+			return JIM_ERROR;
+		}
+		if (argc == 3)
+		{
+			int len;
+			const char *null = Jim_GetString(args[2], &len);
+			if (p->NullText)
+				Jim_Free(p->NullText);
+			if (null && len > 0)
+			{
+				p->NullText = (char *)Jim_Alloc(len + 1);
+				_memcpy(p->NullText, null, len);
+				p->NullText[len] = '\0';
+			}
+			else
+				p->NullText = nullptr;
+		}
+		Jim_SetResult(interp, dbTextToObj(interp, p->NullText));
+		return rc; }
 
-						case DB_LAST_INSERT_ROWID: {
-						//     $db last_insert_rowid 
-						//
-						// Return an integer which is the ROWID for the most recent insert.
-						if (argc != 2)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "");
-						return JIM_ERROR;
-						}
-						int64 rowid = Main::CtxLastInsertRowid(p->Ctx);
-						Jim_SetResult(interpt, _itoa64(rowid, b), JIM_VOLATILE);
-						return rc; }
+	case DB_LAST_INSERT_ROWID: {
+		//     $db last_insert_rowid 
+		//
+		// Return an integer which is the ROWID for the most recent insert.
+		if (argc != 2)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "");
+			return JIM_ERROR;
+		}
+		int64 rowid = Main::CtxLastInsertRowid(p->Ctx);
+		Jim_SetResultInt(interp, rowid);
+		return rc; }
 
-						// The DB_ONECOLUMN method is implemented together with DB_EXISTS.
+							   // The DB_ONECOLUMN method is implemented together with DB_EXISTS.
 
-						case DB_PROGRESS: {
-						//    $db progress ?N CALLBACK?
-						// 
-						// Invoke the given callback every N virtual machine opcodes while executing queries.
-						if (argc == 2)
-						{
-						if (p->Progress)
-						Jim_AppendResult(interp, p->Progress, 0);
-						}
-						else if (argc == 4)
-						{
-						int N;
-						if (Jim_GetInt(interp, args[2], &N) != JIM_OK)
-						return JIM_ERROR;
-						if (p->Progress)
-						Jim_Free(p->Progress);
-						int len;
-						char *progress = Jim_GetString(interp, args[3], &len);
-						if (progress && len > 0)
-						{
-						p->Progress = Jim_Alloc(len + 1);
-						_memcpy(p->Progress, progress, len+1);
-						}
-						else
-						p->Progress = nullptr;
-						#ifndef OMIT_PROGRESS_CALLBACK
-						if (p->Progress)
-						{
-						p->Interp = interp;
-						Main::ProgressHandler(p->Ctx, N, DbProgressHandler, p);
-						}
-						else
-						Main::ProgressHandler(p->Ctx, 0, nullptr, nullptr);
-						#endif
-						}
-						else
-						{
-						Jim_WrongNumArgs(interp, 2, args, "N CALLBACK");
-						return JIM_ERROR;
-						}
-						return rc; }
+	case DB_PROGRESS: {
+		//    $db progress ?N CALLBACK?
+		// 
+		// Invoke the given callback every N virtual machine opcodes while executing queries.
+		if (argc == 2)
+		{
+			if (p->Progress)
+				Jim_AppendString(interp, Jim_GetResult(interp), p->Progress, -1);
+		}
+		else if (argc == 4)
+		{
+			int N;
+			if (Jim_GetInt(interp, args[2], &N) != JIM_OK)
+				return JIM_ERROR;
+			if (p->Progress)
+				Jim_Free(p->Progress);
+			int len;
+			const char *progress = Jim_GetString(args[3], &len);
+			if (progress && len > 0)
+			{
+				p->Progress = (char *)Jim_Alloc(len + 1);
+				_memcpy(p->Progress, progress, len+1);
+			}
+			else
+				p->Progress = nullptr;
+#ifndef OMIT_PROGRESS_CALLBACK
+			if (p->Progress)
+			{
+				p->Interp = interp;
+				Main::ProgressHandler(p->Ctx, N, DbProgressHandler, p);
+			}
+			else
+				Main::ProgressHandler(p->Ctx, 0, nullptr, nullptr);
+#endif
+		}
+		else
+		{
+			Jim_WrongNumArgs(interp, 2, args, "N CALLBACK");
+			return JIM_ERROR;
+		}
+		return rc; }
 
-						case DB_PROFILE: {
-						//    $db profile ?CALLBACK?
-						//
-						// Make arrangements to invoke the CALLBACK routine after each SQL statement that has run.  The text of the SQL and the amount of elapse time are
-						// appended to CALLBACK before the script is run.
-						if (argc > 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?CALLBACK?");
-						return JIM_ERROR;
-						}
-						else if (argc == 2)
-						{
-						if (p->Profile)
-						Jim_AppendResult(interp, p->Profile, nullptr);
-						}
-						else
-						{
-						if (p->Profile)
-						Jim_Free(p->Profile);
-						int len;
-						char *profile = Jim_GetString(interp, args[2], &len);
-						if (profile && len > 0)
-						{
-						p->Profile = (char *)Jim_Alloc(len + 1);
-						_memcpy(p->Profile, profile, len+1);
-						}
-						else
-						p->Profile = nullptr;
-						#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
-						if (p->Profile)
-						{
-						p->Interp = interp;
-						Main::Profile(p->Ctx, DbProfileHandler, p);
-						}
-						else
-						Main::Profile(p->Ctx, nullptr, nullptr);
-						#endif
-						}
-						return rc; }
+	case DB_PROFILE: {
+		//    $db profile ?CALLBACK?
+		//
+		// Make arrangements to invoke the CALLBACK routine after each SQL statement that has run.  The text of the SQL and the amount of elapse time are
+		// appended to CALLBACK before the script is run.
+		if (argc > 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?CALLBACK?");
+			return JIM_ERROR;
+		}
+		else if (argc == 2)
+		{
+			if (p->Profile)
+				Jim_SetResultString(interp, p->Profile, -1);
+		}
+		else
+		{
+			if (p->Profile)
+				Jim_Free(p->Profile);
+			int len;
+			const char *profile = Jim_GetString(args[2], &len);
+			if (profile && len > 0)
+			{
+				p->Profile = (char *)Jim_Alloc(len + 1);
+				_memcpy(p->Profile, profile, len+1);
+			}
+			else
+				p->Profile = nullptr;
+#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
+			if (p->Profile)
+			{
+				p->Interp = interp;
+				Main::Profile(p->Ctx, DbProfileHandler, p);
+			}
+			else
+				Main::Profile(p->Ctx, nullptr, nullptr);
+#endif
+		}
+		return rc; }
 
-						case DB_REKEY: {
-						//     $db rekey KEY
-						//
-						// Change the encryption key on the currently open database.
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "KEY");
-						return JIM_ERROR;
-						}
-						#ifdef HAS_CODEC
-						int nKey;
-						void *pKey = Jim_GetByteArray(interp, args[2], &nKey);
-						rc2 = sqlite3_rekey(p->Ctx, pKey, nKey);
-						if (rc2)
-						{
-						Jim_AppendResult(interp, Main::ErrStr(rc2), 0);
-						rc = JIM_ERROR;
-						}
-						#endif
-						return rc; }
-						case DB_RESTORE: {
-						//    $db restore ?DATABASE? FILENAME
-						//
-						// Open a database file named FILENAME.  Transfer the content  of FILENAME into the local database DATABASE (default: "main").
-						const char *srcFile;
-						const char *destDb;
-						if (argc == 3)
-						{
-						destDb = "main";
-						srcFile = args[2];
-						}
-						else if (argc == 4)
-						{
-						destDb = args[2];
-						srcFile = args[3];
-						}
-						else
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?DATABASE? FILENAME");
-						return JIM_ERROR;
-						}
-						Context *src;
-						rc2 = Main::Open_v2(srcFile, &src, VSystem::OPEN::OPEN_READONLY, 0);
-						if (rc2 != RC_OK)
-						{
-						Jim_AppendResult(interp, "cannot open source database: ", Main::ErrMsg(src), nullptr);
-						Main::Close(src);
-						return JIM_ERROR;
-						}
-						Backup *backup = Backup::Init(p->Ctx, destDb, src, "main");
-						if (!backup)
-						{
-						Jim_AppendResult(interp, "restore failed: ", Main::ErrMsg(p->Ctx), nullptr);
-						Main::Close(src);
-						return JIM_ERROR;
-						}
-						int timeout = 0;
-						while ((rc2 = backup->Step(100)) == RC_OK || rc2 == RC_BUSY)
-						{
-						if (rc2 == RC_BUSY)
-						{
-						if (timeout++ >= 3) break;
-						Main::Sleep(100);
-						}
-						}
-						Backup::Finish(backup);
-						if (rc2 == RC_DONE)
-						rc = JIM_OK;
-						else if (rc2 == RC_BUSY || rc2 == RC_LOCKED)
-						{
-						Jim_AppendResult(interp, "restore failed: source database busy", nullptr);
-						rc = JIM_ERROR;
-						}
-						else
-						{
-						Jim_AppendResult(interp, "restore failed: ", Main::ErrMsg(p->Ctx), nullptr);
-						rc = JIM_ERROR;
-						}
-						Main::Close(src);
-						return rc; }
+	case DB_REKEY: {
+		//     $db rekey KEY
+		//
+		// Change the encryption key on the currently open database.
+		if (argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "KEY");
+			return JIM_ERROR;
+		}
+#ifdef HAS_CODEC
+		int nKey;
+		void *pKey = Jim_GetByteArray(args[2], &nKey);
+		rc2 = sqlite3_rekey(p->Ctx, pKey, nKey);
+		if (rc2)
+		{
+			Jim_SetResultString(interp, Main::ErrStr(rc2), -1);
+			rc = JIM_ERROR;
+		}
+#endif
+		return rc; }
+	case DB_RESTORE: {
+		//    $db restore ?DATABASE? FILENAME
+		//
+		// Open a database file named FILENAME.  Transfer the content  of FILENAME into the local database DATABASE (default: "main").
+		const char *srcFile;
+		const char *destDb;
+		if (argc == 3)
+		{
+			destDb = "main";
+			srcFile = Jim_String(args[2]);
+		}
+		else if (argc == 4)
+		{
+			destDb = Jim_String(args[2]);
+			srcFile = Jim_String(args[3]);
+		}
+		else
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?DATABASE? FILENAME");
+			return JIM_ERROR;
+		}
+		Context *src;
+		rc = Main::Open_v2(srcFile, &src, VSystem::OPEN::OPEN_READONLY, 0);
+		if (rc != RC_OK)
+		{
+			Jim_SetResultFormatted(interp, "cannot open source database: %s", Main::ErrMsg(src));
+			Main::Close(src);
+			return JIM_ERROR;
+		}
+		Backup *backup = Backup::Init(p->Ctx, destDb, src, "main");
+		if (!backup)
+		{
+			Jim_SetResultFormatted(interp, "restore failed: %s", Main::ErrMsg(p->Ctx));
+			Main::Close(src);
+			return JIM_ERROR;
+		}
+		int timeout = 0;
+		while ((rc = backup->Step(100)) == RC_OK || rc == RC_BUSY)
+		{
+			if (rc == RC_BUSY)
+			{
+				if (timeout++ >= 3) break;
+				Main::Sleep(100);
+			}
+		}
+		Backup::Finish(backup);
+		if (rc == RC_DONE)
+			rc = JIM_OK;
+		else if (rc == RC_BUSY || rc == RC_LOCKED)
+		{
+			Jim_SetResultString(interp, "restore failed: source database busy", -1);
+			rc = JIM_ERROR;
+		}
+		else
+		{
+			Jim_SetResultFormatted(interp, "restore failed: %s", Main::ErrMsg(p->Ctx));
+			rc = JIM_ERROR;
+		}
+		Main::Close(src);
+		return rc; }
 
-						case DB_STATUS: {
-						//     $db status (step|sort|autoindex)
-						//
-						// Display SQLITE_STMTSTATUS_FULLSCAN_STEP or SQLITE_STMTSTATUS_SORT for the most recent eval.
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "(step|sort|autoindex)");
-						return JIM_ERROR;
-						}
-						const char *op = args[2];
-						int v;
-						if (!_strcmp(op, "step")) v = p->Steps;
-						else if (!_strcmp(op, "sort")) v = p->Sorts;
-						else if (!_strcmp(op, "autoindex")) v = p->Indexs;
-						else
-						{
-						Jim_AppendResult(interp, "bad argument: should be autoindex, step, or sort", nullptr);
-						return JIM_ERROR;
-						}
-						Jim_SetResult(interp, _itoa(v, b), JIM_VOLATILE);
-						return rc; }
+	case DB_STATUS: {
+		//     $db status (step|sort|autoindex)
+		//
+		// Display SQLITE_STMTSTATUS_FULLSCAN_STEP or SQLITE_STMTSTATUS_SORT for the most recent eval.
+		if (argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "(step|sort|autoindex)");
+			return JIM_ERROR;
+		}
+		const char *op = Jim_String(args[2]);
+		int v;
+		if (!_strcmp(op, "step")) v = p->Steps;
+		else if (!_strcmp(op, "sort")) v = p->Sorts;
+		else if (!_strcmp(op, "autoindex")) v = p->Indexs;
+		else
+		{
+			Jim_SetResultString(interp, "bad argument: should be autoindex, step, or sort", -1);
+			return JIM_ERROR;
+		}
+		Jim_SetResultInt(interp, v);
+		return rc; }
 
-						case DB_TIMEOUT: {
-						//     $db timeout MILLESECONDS
-						//
-						// Delay for the number of milliseconds specified when a file is locked.
-						if (argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "MILLISECONDS");
-						return JIM_ERROR;
-						}
-						int ms;
-						if (Jim_GetInt(interp, args[2], &ms)) return JIM_ERROR;
-						Main::BusyTimeout(p->Ctx, ms);
-						return rc; }
+	case DB_TIMEOUT: {
+		//     $db timeout MILLESECONDS
+		//
+		// Delay for the number of milliseconds specified when a file is locked.
+		if (argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "MILLISECONDS");
+			return JIM_ERROR;
+		}
+		int ms;
+		if (Jim_GetInt(interp, args[2], &ms)) return JIM_ERROR;
+		Main::BusyTimeout(p->Ctx, ms);
+		return rc; }
 
-						case DB_TOTAL_CHANGES: {
-						//     $db total_changes
-						//
-						// Return the number of rows that were modified, inserted, or deleted since the database handle was created.
-						if (argc != 2)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "");
-						return JIM_ERROR;
-						}
-						Jim_SetResult(interp, _itoa(Main::CtxTotalChanges(p->Ctx), b), JIM_VOLATILE);
-						return rc; }
+	case DB_TOTAL_CHANGES: {
+		//     $db total_changes
+		//
+		// Return the number of rows that were modified, inserted, or deleted since the database handle was created.
+		if (argc != 2)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "");
+			return JIM_ERROR;
+		}
+		Jim_SetResultInt(interp, Main::CtxTotalChanges(p->Ctx));
+		return rc; }
 
-						case DB_TRACE: {
-						//    $db trace ?CALLBACK?
-						//
-						// Make arrangements to invoke the CALLBACK routine for each SQL statement that is executed.  The text of the SQL is appended to CALLBACK before
-						// it is executed.
-						if (argc > 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?CALLBACK?");
-						return JIM_ERROR;
-						}
-						else if (argc == 2)
-						{
-						if (p->Trace)
-						Jim_AppendResult(interp, p->Trace, nullptr);
-						}
-						else
-						{
-						if (p->Trace)
-						Jim_Free(p->Trace);
-						int len;
-						char *trace = Jim_GetString(interp, args[2], &len);
-						if (trace && len > 0)
-						{
-						p->Trace = (char *)Jim_Alloc(len + 1);
-						_memcpy(p->Trace, trace, len+1);
-						}
-						else
-						p->Trace = nullptr;
-						#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
-						if (p->Trace)
-						{
-						p->Interp = interp;
-						Main::Trace(p->Ctx, DbTraceHandler, p);
-						}
-						else
-						Main::Trace(p->Ctx, nullptr, nullptr);
-						#endif
-						}
-						return rc; }
+	case DB_TRACE: {
+		//    $db trace ?CALLBACK?
+		//
+		// Make arrangements to invoke the CALLBACK routine for each SQL statement that is executed.  The text of the SQL is appended to CALLBACK before
+		// it is executed.
+		if (argc > 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?CALLBACK?");
+			return JIM_ERROR;
+		}
+		else if (argc == 2)
+		{
+			if (p->Trace)
+				Jim_AppendString(interp, Jim_GetResult(interp), p->Trace, 1);
+		}
+		else
+		{
+			if (p->Trace)
+				Jim_Free(p->Trace);
+			int len;
+			const char *trace = Jim_GetString(args[2], &len);
+			if (trace && len > 0)
+			{
+				p->Trace = (char *)Jim_Alloc(len + 1);
+				_memcpy(p->Trace, trace, len+1);
+			}
+			else
+				p->Trace = nullptr;
+#if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
+			if (p->Trace)
+			{
+				p->Interp = interp;
+				Main::Trace(p->Ctx, DbTraceHandler, p);
+			}
+			else
+				Main::Trace(p->Ctx, nullptr, nullptr);
+#endif
+		}
+		return rc; }
 
-						case DB_TRANSACTION: {
-						//    $db transaction [-deferred|-immediate|-exclusive] SCRIPT
-						//
-						// Start a new transaction (if we are not already in the midst of a transaction) and execute the JIM script SCRIPT.  After SCRIPT
-						// completes, either commit the transaction or roll it back if SCRIPT throws an exception.  Or if no new transation was started, do nothing.
-						// pass the exception on up the stack.
-						//
-						// This command was inspired by Dave Thomas's talk on Ruby at the 2005 O'Reilly Open Source Convention (OSCON).
-						if (argc != 3 && argc != 4)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "[TYPE] SCRIPT");
-						return JIM_ERROR;
-						}
+	case DB_TRANSACTION: {
+		//    $db transaction [-deferred|-immediate|-exclusive] SCRIPT
+		//
+		// Start a new transaction (if we are not already in the midst of a transaction) and execute the JIM script SCRIPT.  After SCRIPT
+		// completes, either commit the transaction or roll it back if SCRIPT throws an exception.  Or if no new transation was started, do nothing.
+		// pass the exception on up the stack.
+		//
+		// This command was inspired by Dave Thomas's talk on Ruby at the 2005 O'Reilly Open Source Convention (OSCON).
+		if (argc != 3 && argc != 4)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "[TYPE] SCRIPT");
+			return JIM_ERROR;
+		}
 
-						const char *begin = "SAVEPOINT _tcl_transaction";
-						if (p->Transactions == 0 && argc == 4)
-						{
-						int ttype;
-						if (Jim_GetIndex(interp, args[2], TTYPE_strs, "transaction type", 0, &ttype))
-						return JIM_ERROR;
-						switch ((TTYPE_enum)ttype)
-						{
-						case TTYPE_DEFERRED: break; // no-op
-						case TTYPE_EXCLUSIVE: begin = "BEGIN EXCLUSIVE"; break;
-						case TTYPE_IMMEDIATE: begin = "BEGIN IMMEDIATE"; break;
-						}
-						}
-						char *script = args[argc-1];
+		const char *begin = "SAVEPOINT _tcl_transaction";
+		if (p->Transactions == 0 && argc == 4)
+		{
+			int ttype;
+			if (Jim_GetEnum(interp, args[2], TTYPE_strs, &ttype, "transaction type", JIM_ERRMSG | JIM_ENUM_ABBREV))
+				return JIM_ERROR;
+			switch ((TTYPE_enum)ttype)
+			{
+			case TTYPE_DEFERRED: break; // no-op
+			case TTYPE_EXCLUSIVE: begin = "BEGIN EXCLUSIVE"; break;
+			case TTYPE_IMMEDIATE: begin = "BEGIN IMMEDIATE"; break;
+			}
+		}
+		Jim_Obj *script = args[argc-1];
 
-						// Run the SQLite BEGIN command to open a transaction or savepoint.
-						p->DisableAuth++;
-						rc2 = Main::Exec(p->Ctx, begin, 0, 0, 0);
-						p->DisableAuth--;
-						if (rc2 != RC_OK)
-						{
-						Jim_AppendResult(interp, Main::ErrMsg(p->Ctx), nullptr);
-						return JIM_ERROR;
-						}
-						p->Transactions++;
+		// Run the SQLite BEGIN command to open a transaction or savepoint.
+		p->DisableAuth++;
+		rc = Main::Exec(p->Ctx, begin, 0, 0, 0);
+		p->DisableAuth--;
+		if (rc != RC_OK)
+		{
+			Jim_SetResultString(interp, Main::ErrMsg(p->Ctx), -1);
+			return JIM_ERROR;
+		}
+		p->Transactions++;
 
-						// If using NRE, schedule a callback to invoke the script pScript, then a second callback to commit (or rollback) the transaction or savepoint
-						// opened above. If not using NRE, evaluate the script directly, then call function DbTransPostCmd() to commit (or rollback) the transaction 
-						// or savepoint.
-						//if (DbUseNre())
-						//{
-						//	Jim_NRAddCallback(interp, DbTransPostCmd, cd, 0, 0, 0);
-						//	Jim_NREvalObj(interp, pScript, 0);
-						//} else
-						rc2 = DbTransPostCmd(&cd, interp, Jim_EvalObj(interp, script, 0));
-						return rc; }
+		// No NRE in Jim Tcl, so evaluate the script directly, then call function DbTransPostCmd() to commit (or rollback) the transaction or savepoint.
+		rc = DbTransPostCmd(&clientData, interp, Jim_EvalObj(interp, script));
+		return rc; }
 
-						case DB_UNLOCK_NOTIFY: {
-						//    $db unlock_notify ?script?
-						#ifndef ENABLE_UNLOCK_NOTIFY
-						Jim_AppendResult(interp, "unlock_notify not available in this build", nullptr);
-						rc = JIM_ERROR;
-						#else
-						if (argc != 2 && argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?SCRIPT?");
-						rc = JIM_ERROR;
-						}
-						else
-						{
-						if (p->UnlockNotify)
-						{
-						Jim_DecrRefCount(p->UnlockNotify);
-						p->UnlockNotify = nullptr;
-						}
+	case DB_UNLOCK_NOTIFY: {
+		//    $db unlock_notify ?script?
+#ifndef ENABLE_UNLOCK_NOTIFY
+		Jim_SetResultString(interp, "unlock_notify not available in this build", -1);
+		rc = JIM_ERROR;
+#else
+		if (argc != 2 && argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?SCRIPT?");
+			rc = JIM_ERROR;
+		}
+		else
+		{
+			if (p->UnlockNotify)
+			{
+				Jim_DecrRefCount(interp, p->UnlockNotify);
+				p->UnlockNotify = nullptr;
+			}
 
-						void (*notify)(void **, int) = nullptr;
-						void *notifyArg = nullptr;
-						if (argc == 3)
-						{
-						notify = DbUnlockNotify;
-						notifyArg = (void *)p;
-						p->UnlockNotify = args[2];
-						Jim_IncrRefCount(p->UnlockNotify);
-						}
+			void (*notify)(void **, int) = nullptr;
+			void *notifyArg = nullptr;
+			if (argc == 3)
+			{
+				notify = DbUnlockNotify;
+				notifyArg = (void *)p;
+				p->UnlockNotify = args[2];
+				Jim_IncrRefCount(p->UnlockNotify);
+			}
 
-						if (Main::UnlockNotify(p->Ctx, notify, notifyArg))
-						{
-						Jim_AppendResult(interp, Main::ErrMsg(p->Ctx), nullptr);
-						rc = JIM_ERROR;
-						}
-						}
-						#endif
-						return rc; }
+			if (Main::UnlockNotify(p->Ctx, notify, notifyArg))
+			{
+				Jim_SetResultString(interp, Main::ErrMsg(p->Ctx), -1);
+				rc = JIM_ERROR;
+			}
+		}
+#endif
+		return rc; }
 
-						case DB_WAL_HOOK: 
-						case DB_UPDATE_HOOK: 
-						case DB_ROLLBACK_HOOK: {
-						//    $db wal_hook ?script?
-						//    $db update_hook ?script?
-						//    $db rollback_hook ?script?
-						// set ppHook to point at pUpdateHook or pRollbackHook, depending on whether [$db update_hook] or [$db rollback_hook] was invoked.
-						Jim_Obj **hook; 
-						if (choice == DB_UPDATE_HOOK) hook = &p->UpdateHook;
-						else if (choice == DB_WAL_HOOK) hook = &p->WalHook;
-						else hook = &p->RollbackHook;
+	case DB_WAL_HOOK: 
+	case DB_UPDATE_HOOK: 
+	case DB_ROLLBACK_HOOK: {
+		//    $db wal_hook ?script?
+		//    $db update_hook ?script?
+		//    $db rollback_hook ?script?
+		// set ppHook to point at pUpdateHook or pRollbackHook, depending on whether [$db update_hook] or [$db rollback_hook] was invoked.
+		Jim_Obj **hook; 
+		if (choice == DB_UPDATE_HOOK) hook = &p->UpdateHook;
+		else if (choice == DB_WAL_HOOK) hook = &p->WalHook;
+		else hook = &p->RollbackHook;
 
-						if (argc != 2 && argc != 3)
-						{
-						Jim_WrongNumArgs(interp, 2, args, "?SCRIPT?");
-						return JIM_ERROR;
-						}
-						if (*hook)
-						{
-						Jim_SetObjResult(interp, *hook);
-						if (argc == 3)
-						{
-						Jim_DecrRefCount(*hook);
-						*hook = nullptr;
-						}
-						}
-						if (argc == 3)
-						{
-						_assert(!(*hook));
-						if (_strlen(args[2]) > 0)
-						{
-						*hook = (Jim_Obj *)args[2];
-						Jim_IncrRefCount(*hook);
-						}
-						}
-						Main::UpdateHook(p->Ctx, (p->UpdateHook?DbUpdateHandler:0), p);
-						Main::RollbackHook(p->Ctx, (p->RollbackHook?DbRollbackHandler:0), p);
-						Main::WalHook(p->Ctx, (p->WalHook?DbWalHandler:0), p);
-						return rc; }
-						*/
-
+		if (argc != 2 && argc != 3)
+		{
+			Jim_WrongNumArgs(interp, 2, args, "?SCRIPT?");
+			return JIM_ERROR;
+		}
+		if (*hook)
+		{
+			Jim_SetResult(interp, *hook);
+			if (argc == 3)
+			{
+				Jim_DecrRefCount(interp, *hook);
+				*hook = nullptr;
+			}
+		}
+		if (argc == 3)
+		{
+			_assert(!(*hook));
+			if (Jim_Length(args[2]) > 0)
+			{
+				*hook = (Jim_Obj *)args[2];
+				Jim_IncrRefCount(*hook);
+			}
+		}
+		Main::UpdateHook(p->Ctx, (p->UpdateHook?DbUpdateHandler:nullptr), p);
+		Main::RollbackHook(p->Ctx, (p->RollbackHook?DbRollbackHandler:nullptr), p);
+		Main::WalHook(p->Ctx, (p->WalHook?DbWalHandler:nullptr), p);
+		return rc; }
 	case DB_VERSION: {
 		//    $db version
 		//
 		// Return the version string for this database.
-		Jim_SetResult(interp, CORE_VERSION, JIM_STATIC);
+		Jim_SetResultString(interp, CORE_VERSION, -1);
 		return rc; }
 
 	} // End of the SWITCH statement
@@ -2374,12 +2306,12 @@ __device__ static int DbObjCmd(void *cd, Jim_Interp *interp, int argc, const cha
 // DBNAME that is used to control that connection.  The database connection is deleted when the DBNAME command is deleted.
 //
 // The second argument is the name of the database file.
-__device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	// In normal use, each JIM interpreter runs in a single thread.  So by default, we can turn of mutexing on SQLite database connections.
 	// However, for testing purposes it is useful to have mutexes turned on.  So, by default, mutexes default off.  But if compiled with
 	// SQLITE_JIM_DEFAULT_FULLMUTEX then mutexes default on.
-#ifdef JIM_DEFAULT_FULLMUTEX
+#ifdef TCL_DEFAULT_FULLMUTEX
 	VSystem::OPEN flags = (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_FULLMUTEX);
 #else
 	VSystem::OPEN flags = (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_NOMUTEX);
@@ -2388,18 +2320,18 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, const char 
 	const char *arg;
 	if (argc == 2)
 	{
-		arg = args[1];
+		arg = Jim_String(args[1]);
 		if (!_strcmp(arg, "-version"))
 		{
-			Jim_AppendResult(interp, CORE_VERSION, nullptr);
+			Jim_SetResultString(interp, CORE_VERSION, -1);
 			return JIM_OK;
 		}
 		if (!_strcmp(arg, "-has-codec"))
 		{
 #ifdef HAS_CODEC
-			Jim_AppendResult(interp, "1", nullptr);
+			Jim_SetResultInt(interp, 1);
 #else
-			Jim_AppendResult(interp, "0", nullptr);
+			Jim_SetResultInt(interp, 0);
 #endif
 			return JIM_OK;
 		}
@@ -2411,7 +2343,7 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, const char 
 	const char *vfsName = nullptr;
 	for (int i = 3; i + 1 < argc; i += 2)
 	{
-		arg = args[i];
+		arg = Jim_String(args[i]);
 		bool b;
 		if (!_strcmp(arg, "-key"))
 		{
@@ -2420,7 +2352,7 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, const char 
 #endif
 		}
 		else if (!_strcmp(arg, "-vfs"))
-			vfsName = args[i+1];
+			vfsName = Jim_String(args[i+1]);
 		else if (!_strcmp(arg, "-readonly"))
 		{
 			if (Jim_GetBoolean(interp, args[i+1], &b)) return JIM_ERROR;
@@ -2475,14 +2407,13 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, const char 
 		}
 		else
 		{
-			Jim_AppendResult(interp, "unknown option: ", arg, 0);
+			Jim_SetResultFormatted(interp, "unknown option: %s", arg);
 			return JIM_ERROR;
 		}
 	}
 	if (argc < 3 || (argc & 1) != 1)
 	{
-		Jim_WrongNumArgs(interp, 1, args, "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
-			" ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
+		Jim_WrongNumArgs(interp, 1, args, "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN? ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN? ?-uri BOOLEAN?"
 #ifdef HAS_CODEC
 			" ?-key CODECKEY?"
 #endif
@@ -2493,7 +2424,7 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, const char 
 	TclContext *p = (TclContext *)Jim_Alloc(sizeof(*p));
 	if (!p)
 	{
-		Jim_SetResult(interp, "malloc failed", JIM_STATIC);
+		Jim_SetResultString(interp, "malloc failed", -1);
 		return JIM_ERROR;
 	}
 	_memset(p, 0, sizeof(*p));
@@ -2517,37 +2448,34 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, const char 
 #endif
 	if (!p->Ctx)
 	{
-		Jim_SetResult(interp, errMsg, JIM_VOLATILE);
+		Jim_SetResultString(interp, errMsg, -1);
 		Jim_Free(p);
 		_free(errMsg);
 		return JIM_ERROR;
 	}
 	p->MaxStmt = NUM_PREPARED_STMTS;
 	p->Interp = interp;
-	arg = args[1];
+	arg = Jim_String(args[1]);
 	Jim_CreateCommand(interp, (char *)arg, (Jim_CmdProc *)DbObjCmd, (ClientData)p, DbDeleteCmd);
 	return JIM_OK;
 }
 #pragma endregion
+
+// Make sure we have a PACKAGE_VERSION macro defined.  This will be defined automatically by the TEA makefile.  But other makefiles do not define it.
+#ifndef PACKAGE_VERSION
+#define PACKAGE_VERSION CORE_VERSION
+#endif
 
 // Initialize this module.
 //
 // This Jim module contains only a single new Jim command named "sqlite". (Hence there is no namespace.  There is no point in using a namespace
 // if the extension only supplies one new name!)  The "sqlite" command is used to open a new SQLite database.  See the DbMain() routine above
 // for additional information.
-__device__ int Main_Init(Jim_Interp *interp)
+__device__ int Jim_sqlite3Init(Jim_Interp *interp)
 {
-	Jim_CreateCommand(interp, "sqlite3", (Jim_CmdProc *)DbMain, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3", DbMain, nullptr, nullptr);
+	Jim_PackageProvide(interp, "sqlite3", PACKAGE_VERSION, 0);
 	return JIM_OK;
 }
-__device__ int Main_Shutdown(Jim_Interp *interp, int flags) { return JIM_OK; }
-
-//// Because it accesses the file-system and uses persistent state, SQLite is not considered appropriate for safe interpreters.  Hence, we deliberately omit the _SafeInit() interfaces.
-//#ifndef SQLITE_3_SUFFIX_ONLY
-//int Sqlite_Init(Jim_Interp *interp){ return Sqlite3_Init(interp); }
-//int Jimsqlite_Init(Jim_Interp *interp){ return Sqlite3_Init(interp); }
-//int Sqlite_Unload(Jim_Interp *interp, int flags){ return JIM_OK; }
-//int Jimsqlite_Unload(Jim_Interp *interp, int flags){ return JIM_OK; }
-//#endif
 
 #endif

@@ -113,7 +113,16 @@ __device__ int Jim_EvalObjBackground(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
 	int retval = Jim_EvalObj(interp, scriptObjPtr);
 	interp->framePtr = savedFramePtr;
 	// Try to report the error (if any) via the bgerror proc
-	if (retval != JIM_OK && !eventLoop->suppress_bgerror) {
+	if (retval != JIM_OK && !eventLoop->suppress_bgerror)
+		Jim_BackgroundError(interp);
+	return retval;
+}
+
+__device__ void Jim_BackgroundError(Jim_Interp *interp)
+{
+	Jim_EventLoop *eventLoop = (Jim_EventLoop *)Jim_GetAssocData(interp, "eventloop");
+	// Try to report the error (if any) via the bgerror proc
+	if (!eventLoop->suppress_bgerror) {
 		int rc = JIM_ERROR;
 		Jim_Obj *objv[2];
 		objv[0] = Jim_NewStringObj(interp, "bgerror", -1);
@@ -135,7 +144,6 @@ __device__ int Jim_EvalObjBackground(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
 		Jim_DecrRefCount(interp, objv[0]);
 		Jim_DecrRefCount(interp, objv[1]);
 	}
-	return retval;
 }
 
 __device__ void Jim_CreateFileHandler(Jim_Interp *interp, FILE *handle, int mask, Jim_FileProc *proc, void *clientData, Jim_EventFinalizerProc *finalizerProc)
@@ -187,7 +195,7 @@ __device__ jim_wide Jim_CreateTimeHandler(Jim_Interp *interp, jim_wide milliseco
 	jim_wide id = ++eventLoop->timeEventNextId;
 	Jim_TimeEvent *te = (Jim_TimeEvent *)Jim_Alloc(sizeof(*te));
 	te->id = id;
-	te->initialms = milliseconds;
+	te->initialms = (long)milliseconds;
 	te->when = JimGetTime(eventLoop) + milliseconds;
 	te->timeProc = proc;
 	te->finalizerProc = finalizerProc;
@@ -364,7 +372,7 @@ __device__ int Jim_ProcessEvents(Jim_Interp *interp, int flags)
 	}
 #else
 	if (sleep_ms > 0)
-		msleep(sleep_ms);
+		msleep((unsigned long)sleep_ms);
 #endif
 
 	// Check time events
@@ -418,7 +426,7 @@ __device__ static void JimELAssocDataDeleProc(Jim_Interp *interp, void *data)
 	Jim_Free(data);
 }
 
-__device__ static int JimELVwaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimELVwaitCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "name");
@@ -451,7 +459,7 @@ __device__ static int JimELVwaitCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 __constant__ static const char *const JimELUpdateCommand_options[] = {
 	"idletasks", NULL
 };
-__device__ static int JimELUpdateCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimELUpdateCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	enum { UPDATE_IDLE, UPDATE_NONE };
 	Jim_EventLoop *eventLoop = (Jim_EventLoop *)Jim_CmdPrivData(interp);
@@ -484,7 +492,7 @@ __constant__ static const char *const JimELAfterCommand_options[] = {
 	"cancel", "info", "idle", NULL
 };
 
-__device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimELAfterCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	enum { AFTER_CANCEL, AFTER_INFO, AFTER_IDLE, AFTER_RESTART, AFTER_EXPIRE, AFTER_CREATE };
 	if (argc < 2) {
@@ -501,7 +509,7 @@ __device__ static int JimELAfterCommand(Jim_Interp *interp, int argc, Jim_Obj *c
 	}
 	else if (argc == 2) {
 		// Simply a sleep
-		msleep(ms);
+		msleep((unsigned long)ms);
 		return JIM_OK;
 	}
 	switch (option) {

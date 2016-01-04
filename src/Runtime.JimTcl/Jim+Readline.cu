@@ -39,7 +39,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-static int JimRlReadlineCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int JimRlReadlineCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	char *line;
 
@@ -55,7 +55,7 @@ static int JimRlReadlineCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 	return JIM_OK;
 }
 
-static int JimRlAddHistoryCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int JimRlAddHistoryCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "string");

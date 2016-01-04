@@ -30,7 +30,7 @@ __device__ static int JimStringCommonLength(const char *str1, int charlen1, cons
 // [tcl::prefix]
 __constant__ static const char *const _prefix_options[] = { "match", "all", "longest", NULL };
 __constant__ static const char *const _prefix_matchoptions[] = { "-error", "-exact", "-message", NULL };
-__device__ static int Jim_TclPrefixCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int Jim_TclPrefixCoreCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	enum { OPT_MATCH, OPT_ALL, OPT_LONGEST };
 	if (argc < 2) {

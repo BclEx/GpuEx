@@ -166,7 +166,7 @@ __device__ int Jim_CallSubCmd(Jim_Interp *interp, const jim_subcmd_type * ct, in
 	return ret;
 }
 
-__device__ int Jim_SubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ int Jim_SubCmdProc(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	const jim_subcmd_type *ct = Jim_ParseSubCmd(interp, (const jim_subcmd_type *)Jim_CmdPrivData(interp), argc, argv);
 	return Jim_CallSubCmd(interp, ct, argc, argv);

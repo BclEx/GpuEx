@@ -147,6 +147,7 @@
     <ClInclude Include="Jim+Signal.h" />
     <ClInclude Include="Jim+Subcmd.h" />
     <ClInclude Include="Jim+Win32compat.h" />
+    <ClInclude Include="JimEx.h" />
     <ClInclude Include="Utf8.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
@@ -190,9 +191,7 @@
     <ClCompile Include="Jim+TclPrefix.cu" />
     <ClCompile Include="Jim+Win32.cu" />
     <ClCompile Include="Jim+Win32compat.cu" />
-    <ClCompile Include="JimSh.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="JimEx.cu" />
     <ClCompile Include="Init.cu" />
     <ClCompile Include="Utf8.cu" />
   </ItemGroup>
@@ -225,6 +224,7 @@
     <None Include="Jim+TclPrefix.cu" />
     <None Include="Jim+Win32.cu" />
     <None Include="Jim+Win32Compat.cu" />
+    <None Include="JimEx.cu" />
     <None Include="Init.cu" />
     <None Include="Utf8.cu" />
   </ItemGroup>

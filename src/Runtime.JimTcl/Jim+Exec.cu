@@ -30,7 +30,7 @@
 
 #if (!defined(HAVE_VFORK) || !defined(HAVE_WAITPID)) && !defined(__MINGW32__)
 // Poor man's implementation of exec with system() The system() call *may* do command line redirection, etc. The standard output is not available. Can't redirect filehandles.
-__device__ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int Jim_ExecCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	Jim_Obj *cmdlineObj = Jim_NewEmptyStringObj(interp);
 	int i, j;
@@ -394,7 +394,7 @@ static struct WaitInfoTable *JimAllocWaitInfoTable(void)
 /*
 * The main [exec] command
 */
-static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_ExecCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	fdtype outputId;    /* File id for output pipe. -1 means command overrode. */
 	fdtype errorId;     /* File id for temporary file containing error output. */

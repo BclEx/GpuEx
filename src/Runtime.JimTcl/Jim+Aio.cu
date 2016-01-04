@@ -388,9 +388,9 @@ __device__ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const 
 			readlen = AIO_BUF_LEN;
 		}
 		else {
-			readlen = (neededLen > AIO_BUF_LEN ? AIO_BUF_LEN : neededLen);
+			readlen = (int)(neededLen > AIO_BUF_LEN ? AIO_BUF_LEN : neededLen);
 		}
-		retval = _fread(buf, 1, readlen, af->fp);
+		retval = (int)_fread(buf, 1, readlen, af->fp);
 		if (retval > 0) {
 			Jim_AppendString(interp, objPtr, buf, retval);
 			if (neededLen != -1) {
@@ -724,7 +724,7 @@ __device__ static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const 
 	if (Jim_GetWide(interp, argv[0], &offset) != JIM_OK) {
 		return JIM_ERROR;
 	}
-	if (fseeko(af->fp, offset, orig) == -1) {
+	if (fseeko(af->fp, (long)offset, orig) == -1) {
 		JimAioSetError(interp, af->filename);
 		return JIM_ERROR;
 	}
@@ -784,12 +784,12 @@ __device__ static int aio_cmd_sync(Jim_Interp *interp, int argc, Jim_Obj *const 
 }
 #endif
 
-	__constant__ static const char *const _cmd_buffering_options[] = {
-		"none",
-		"line",
-		"full",
-		NULL
-	};
+__constant__ static const char *const _cmd_buffering_options[] = {
+	"none",
+	"line",
+	"full",
+	NULL
+};
 
 __device__ static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
@@ -890,171 +890,44 @@ __device__ static int aio_cmd_onexception(Jim_Interp *interp, int argc, Jim_Obj 
 #endif
 
 __constant__ static const jim_subcmd_type aio_command_table[] = {
-	{   "read",
-	"?-nonewline? ?len?",
-	aio_cmd_read,
-	0,
-	2,
-	/* Description: Read and return bytes from the stream. To eof if no len. */
-	},
-	{   "copyto",
-	"handle ?size?",
-	aio_cmd_copy,
-	1,
-	2,
-	/* Description: Copy up to 'size' bytes to the given filehandle, or to eof if no size. */
-	},
-	{   "gets",
-	"?var?",
-	aio_cmd_gets,
-	0,
-	1,
-	/* Description: Read one line and return it or store it in the var */
-	},
-	{   "puts",
-	"?-nonewline? str",
-	aio_cmd_puts,
-	1,
-	2,
-	/* Description: Write the string, with newline unless -nonewline */
-	},
-	{   "isatty",
-	NULL,
-	aio_cmd_isatty,
-	0,
-	0,
-	/* Description: Is the file descriptor a tty? */
-	},
+	{ "read", "?-nonewline? ?len?", aio_cmd_read, 0, 2 }, // Description: Read and return bytes from the stream. To eof if no len.
+	{ "copyto", "handle ?size?", aio_cmd_copy, 1, 2 }, // Description: Copy up to 'size' bytes to the given filehandle, or to eof if no size.
+	{ "gets", "?var?", aio_cmd_gets, 0, 1 }, // Description: Read one line and return it or store it in the var
+	{ "puts", "?-nonewline? str", aio_cmd_puts, 1, 2 }, // Description: Write the string, with newline unless -nonewline
+	{ "isatty", NULL, aio_cmd_isatty, 0, 0 }, // Description: Is the file descriptor a tty?
 #if !defined(JIM_ANSIC) && !defined(JIM_BOOTSTRAP)
-	{   "recvfrom",
-	"len ?addrvar?",
-	aio_cmd_recvfrom,
-	1,
-	2,
-	/* Description: Receive up to 'len' bytes on the socket. Sets 'addrvar' with receive address, if set */
-	},
-	{   "sendto",
-	"str address",
-	aio_cmd_sendto,
-	2,
-	2,
-	/* Description: Send 'str' to the given address (dgram only) */
-	},
-	{   "accept",
-	"?addrvar?",
-	aio_cmd_accept,
-	0,
-	1,
-	/* Description: Server socket only: Accept a connection and return stream */
-	},
-	{   "listen",
-	"backlog",
-	aio_cmd_listen,
-	1,
-	1,
-	/* Description: Set the listen backlog for server socket */
-	},
-#endif /* JIM_BOOTSTRAP */
-	{   "flush",
-	NULL,
-	aio_cmd_flush,
-	0,
-	0,
-	/* Description: Flush the stream */
-	},
-	{   "eof",
-	NULL,
-	aio_cmd_eof,
-	0,
-	0,
-	/* Description: Returns 1 if stream is at eof */
-	},
-	{   "close",
-	"?r(ead)|w(rite)?",
-	aio_cmd_close,
-	0,
-	1,
-	JIM_MODFLAG_FULLARGV,
-	/* Description: Closes the stream. */
-	},
-	{   "seek",
-	"offset ?start|current|end",
-	aio_cmd_seek,
-	1,
-	2,
-	/* Description: Seeks in the stream (default 'current') */
-	},
-	{   "tell",
-	NULL,
-	aio_cmd_tell,
-	0,
-	0,
-	/* Description: Returns the current seek position */
-	},
-	{   "filename",
-	NULL,
-	aio_cmd_filename,
-	0,
-	0,
-	/* Description: Returns the original filename */
-	},
+	{ "recvfrom", "len ?addrvar?", aio_cmd_recvfrom, 1, 2 }, // Description: Receive up to 'len' bytes on the socket. Sets 'addrvar' with receive address, if set
+	{ "sendto", "str address", aio_cmd_sendto, 2, 2 }, // Description: Send 'str' to the given address (dgram only)
+	{ "accept", "?addrvar?", aio_cmd_accept, 0, 1 }, // Description: Server socket only: Accept a connection and return stream
+	{ "listen", "backlog", aio_cmd_listen, 1, 1 }, // Description: Set the listen backlog for server socket
+#endif // JIM_BOOTSTRAP
+	{ "flush", NULL, aio_cmd_flush, 0, 0 }, // Description: Flush the stream
+	{ "eof", NULL, aio_cmd_eof, 0, 0 }, // Description: Returns 1 if stream is at eof
+	{ "close", "?r(ead)|w(rite)?", aio_cmd_close, 0, 1, JIM_MODFLAG_FULLARGV }, // Description: Closes the stream.
+	{ "seek", "offset ?start|current|end", aio_cmd_seek, 1, 2 }, // Description: Seeks in the stream (default 'current')
+	{ "tell", NULL, aio_cmd_tell, 0, 0 }, // Description: Returns the current seek position
+	{ "filename", NULL, aio_cmd_filename, 0, 0 }, // Description: Returns the original filename
 #ifdef O_NDELAY
-	{   "ndelay",
-	"?0|1?",
-	aio_cmd_ndelay,
-	0,
-	1,
-	/* Description: Set O_NDELAY (if arg). Returns current/new setting. */
-	},
+	{ "ndelay", "?0|1?", aio_cmd_ndelay, 0, 1 }, // Description: Set O_NDELAY (if arg). Returns current/new setting.
 #endif
 #ifdef HAVE_FSYNC
-	{   "sync",
-	NULL,
-	aio_cmd_sync,
-	0,
-	0,
-	/* Description: Flush and fsync() the stream */
-	},
+	{ "sync", NULL, aio_cmd_sync, 0, 0 }, // Description: Flush and fsync() the stream
 #endif
-	{   "buffering",
-	"none|line|full",
-	aio_cmd_buffering,
-	1,
-	1,
-	/* Description: Sets buffering */
-	},
+	{ "buffering", "none|line|full", aio_cmd_buffering, 1, 1 }, // Description: Sets buffering
 #ifdef jim_ext_eventloop
-	{   "readable",
-	"?readable-script?",
-	aio_cmd_readable,
-	0,
-	1,
-	/* Description: Returns script, or invoke readable-script when readable, {} to remove */
-	},
-	{   "writable",
-	"?writable-script?",
-	aio_cmd_writable,
-	0,
-	1,
-	/* Description: Returns script, or invoke writable-script when writable, {} to remove */
-	},
-	{   "onexception",
-	"?exception-script?",
-	aio_cmd_onexception,
-	0,
-	1,
-	/* Description: Returns script, or invoke exception-script when oob data, {} to remove */
-	},
+	{ "readable", "?readable-script?", aio_cmd_readable, 0, 1 }, // Description: Returns script, or invoke readable-script when readable, {} to remove
+	{ "writable", "?writable-script?", aio_cmd_writable, 0, 1 }, // Description: Returns script, or invoke writable-script when writable, {} to remove
+	{ "onexception", "?exception-script?", aio_cmd_onexception, 0, 1 }, // Description: Returns script, or invoke exception-script when oob data, {} to remove
 #endif
 	{ NULL }
 };
 
-__device__ static int JimAioSubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimAioSubCmdProc(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	return Jim_CallSubCmd(interp, Jim_ParseSubCmd(interp, aio_command_table, argc, argv), argc, argv);
 }
 
-__device__ static int JimAioOpenCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimAioOpenCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	const char *mode;
 
@@ -1181,7 +1054,7 @@ __device__ static int JimMakeChannelPair(Jim_Interp *interp, int p[2], Jim_Obj *
 
 #if !defined(JIM_ANSIC) && !defined(JIM_BOOTSTRAP)
 
-__device__ static int JimAioSockCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimAioSockCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	const char *hdlfmt = "aio.unknown%ld";
 	const char *socktypes[] = {

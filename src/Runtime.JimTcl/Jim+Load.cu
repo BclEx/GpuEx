@@ -37,7 +37,7 @@ int Jim_LoadLibrary(Jim_Interp *interp, const char *pathName)
 		const char *pt = strrchr(pathName, '/');
 		const char *pkgname = (pt ? pt + 1 : pathName);
 		pt = strchr(pkgname, '.');
-		int pkgnamelen = (pt ? pt - pkgname : strlen(pkgname));
+		int pkgnamelen = (int)(pt ? pt - pkgname : strlen(pkgname));
 		char initsym[40];
 		__snprintf(initsym, sizeof(initsym), "Jim_%.*sInit", pkgnamelen, pkgname);
 		jim_module_init_func_type *onload;
@@ -92,7 +92,7 @@ __device__ void Jim_FreeLoadHandles(Jim_Interp *interp)
 #endif
 
 // [load]
-__device__ static int Jim_LoadCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int Jim_LoadCoreCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	if (argc < 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "libraryFile");

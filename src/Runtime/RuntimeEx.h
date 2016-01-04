@@ -44,10 +44,12 @@ __device__ time_t _time(time_t *timer);
 #endif
 
 // gettimeofday
+#if !defined(_WINSOCKAPI_)
 struct timeval {
 	long tv_sec;
 	long tv_usec;
 };
+#endif
 __device__ int _gettimeofday(struct timeval *tp, void *tz);
 
 // sleep

@@ -70,7 +70,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 	//#include <time.h>
 	//#include <limits.h>
 	//#include <stdio.h>
@@ -446,8 +445,9 @@ extern "C" {
 #define Jim_SetResultString(i,s,l) Jim_SetResult(i, Jim_NewStringObj(i,s,l))
 #define Jim_SetResultInt(i,intval) Jim_SetResult(i, Jim_NewIntObj(i,intval))
 #define Jim_SetResultWide(i,intval) Jim_SetResultInt(i,intval)
-	// Note: Using trueObj and falseObj here makes some things slower...
+#define Jim_SetResultByteArray(i,s,l) Jim_SetResult(i, Jim_NewStringObj(i,(char *)s,l))
 #define Jim_SetResultBool(i,b) Jim_SetResultInt(i, b)
+	// Note: Using trueObj and falseObj here makes some things slower...
 #define Jim_ResetResult(i) Jim_SetResult(i, (i)->emptyObj)
 #define Jim_GetResult(i) ((i)->result)
 #define Jim_CmdPrivData(i) ((i)->cmdPrivData)
@@ -496,11 +496,8 @@ extern "C" {
 	// evaluation
 	JIM_EXPORT __device__ int Jim_Eval(Jim_Interp *interp, const char *script);
 	// in C code, you can do this and get better error messages
-	// Jim_EvalSource( interp, __FILE__, __LINE__ , "some tcl commands");
+	// Jim_EvalSource(interp, __FILE__, __LINE__ , "some tcl commands");
 	JIM_EXPORT __device__ int Jim_EvalSource(Jim_Interp *interp, const char *filename, int lineno, const char *script);
-	// Backwards compatibility
-#define Jim_Eval_Named(I, S, F, L) Jim_EvalSource((I), (F), (L), (S))
-
 	JIM_EXPORT __device__ int Jim_EvalGlobal(Jim_Interp *interp, const char *script);
 	JIM_EXPORT __device__ int Jim_EvalFile(Jim_Interp *interp, const char *filename);
 	JIM_EXPORT __device__ int Jim_EvalFileGlobal(Jim_Interp *interp, const char *filename);
@@ -559,6 +556,13 @@ extern "C" {
 	JIM_EXPORT __device__ int Jim_StringCompareLenObj(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *secondObjPtr, int nocase);
 	JIM_EXPORT __device__ int Jim_Utf8Length(Jim_Interp *interp, Jim_Obj *objPtr);
 
+	// bytearray object
+	//JIM_EXPORT __device__ const void *Jim_GetByteArray(Jim_Interp *interp, Jim_Obj *objPtr, int *bytes);
+	//JIM_EXPORT __device__ void Jim_SetByteArray(Jim_Interp *interp, Jim_Obj *objPtr, const void *arrayValue, int bytes);
+	//JIM_EXPORT __device__ Jim_Obj *Jim_NewByteArrayObj(Jim_Interp *interp, const void *arrayValue, int bytes);
+#define Jim_GetByteArray(s, l) Jim_GetString(s, l)
+#define Jim_NewByteArrayObj(i, s, l) Jim_NewStringObj(i, (char *)s, l)
+
 	// reference object
 	JIM_EXPORT __device__ Jim_Obj *Jim_NewReference(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *tagPtr, Jim_Obj *cmdNamePtr);
 	JIM_EXPORT __device__ Jim_Reference *Jim_GetReference(Jim_Interp *interp, Jim_Obj *objPtr);
@@ -601,10 +605,10 @@ extern "C" {
 	JIM_EXPORT __device__ int Jim_GetIndex(Jim_Interp *interp, Jim_Obj *objPtr, int *indexPtr);
 
 	// list object
-	JIM_EXPORT __device__ Jim_Obj *Jim_NewListObj (Jim_Interp *interp, Jim_Obj *const *elements, int len);
-	JIM_EXPORT __device__ void Jim_ListInsertElements (Jim_Interp *interp, Jim_Obj *listPtr, int listindex, int objc, Jim_Obj *const *objVec);
-	JIM_EXPORT __device__ void Jim_ListAppendElement (Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *objPtr);
-	JIM_EXPORT __device__ void Jim_ListAppendList (Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *appendListPtr);
+	JIM_EXPORT __device__ Jim_Obj *Jim_NewListObj(Jim_Interp *interp, Jim_Obj *const *elements, int len);
+	JIM_EXPORT __device__ void Jim_ListInsertElements(Jim_Interp *interp, Jim_Obj *listPtr, int listindex, int objc, Jim_Obj *const *objVec);
+	JIM_EXPORT __device__ void Jim_ListAppendElement(Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *objPtr);
+	JIM_EXPORT __device__ void Jim_ListAppendList(Jim_Interp *interp, Jim_Obj *listPtr, Jim_Obj *appendListPtr);
 	JIM_EXPORT __device__ int Jim_ListLength(Jim_Interp *interp, Jim_Obj *objPtr);
 	JIM_EXPORT __device__ int Jim_ListIndex(Jim_Interp *interp, Jim_Obj *listPrt, int listindex, Jim_Obj **objPtrPtr, int seterr);
 	JIM_EXPORT __device__ Jim_Obj *Jim_ListGetIndex(Jim_Interp *interp, Jim_Obj *listPtr, int idx);
@@ -613,10 +617,10 @@ extern "C" {
 	JIM_EXPORT __device__ Jim_Obj *Jim_ListJoin(Jim_Interp *interp, Jim_Obj *listObjPtr, const char *joinStr, int joinStrLen);
 
 	// dict object
-	JIM_EXPORT __device__ Jim_Obj *Jim_NewDictObj (Jim_Interp *interp, Jim_Obj *const *elements, int len);
-	JIM_EXPORT __device__ int Jim_DictKey (Jim_Interp *interp, Jim_Obj *dictPtr, Jim_Obj *keyPtr, Jim_Obj **objPtrPtr, int flags);
-	JIM_EXPORT __device__ int Jim_DictKeysVector (Jim_Interp *interp, Jim_Obj *dictPtr, Jim_Obj *const *keyv, int keyc, Jim_Obj **objPtrPtr, int flags);
-	JIM_EXPORT __device__ int Jim_SetDictKeysVector (Jim_Interp *interp, Jim_Obj *varNamePtr, Jim_Obj *const *keyv, int keyc, Jim_Obj *newObjPtr, int flags);
+	JIM_EXPORT __device__ Jim_Obj *Jim_NewDictObj(Jim_Interp *interp, Jim_Obj *const *elements, int len);
+	JIM_EXPORT __device__ int Jim_DictKey(Jim_Interp *interp, Jim_Obj *dictPtr, Jim_Obj *keyPtr, Jim_Obj **objPtrPtr, int flags);
+	JIM_EXPORT __device__ int Jim_DictKeysVector(Jim_Interp *interp, Jim_Obj *dictPtr, Jim_Obj *const *keyv, int keyc, Jim_Obj **objPtrPtr, int flags);
+	JIM_EXPORT __device__ int Jim_SetDictKeysVector(Jim_Interp *interp, Jim_Obj *varNamePtr, Jim_Obj *const *keyv, int keyc, Jim_Obj *newObjPtr, int flags);
 	JIM_EXPORT __device__ int Jim_DictPairs(Jim_Interp *interp, Jim_Obj *dictPtr, Jim_Obj ***objPtrPtr, int *len);
 	JIM_EXPORT __device__ int Jim_DictAddElement(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *keyObjPtr, Jim_Obj *valueObjPtr);
 	JIM_EXPORT __device__ int Jim_DictKeys(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *patternObj);
@@ -647,7 +651,7 @@ extern "C" {
 	{
 		jim_wide wideValue;
 		int retval;
-		if (retval = Jim_GetWide(interp, objPtr, &wideValue) == JIM_OK) *boolPtr = (bool)wideValue;
+		if (retval = Jim_GetWide(interp, objPtr, &wideValue) == JIM_OK) *boolPtr = (wideValue != 0);
 		return retval;
 	}
 
@@ -658,7 +662,8 @@ extern "C" {
 
 	// commands utilities
 	JIM_EXPORT __device__ void Jim_WrongNumArgs(Jim_Interp *interp, int argc, Jim_Obj *const *argv, const char *msg);
-	JIM_EXPORT __device__ int Jim_GetEnum(Jim_Interp *interp, Jim_Obj *objPtr, const char * const *tablePtr, int *indexPtr, const char *name, int flags);
+	JIM_EXPORT __device__ int Jim_GetEnum(Jim_Interp *interp, Jim_Obj *objPtr, const char *const *tablePtr, int *indexPtr, const char *name, int flags);
+	JIM_EXPORT __device__ int Jim_GetEnumFromObjStruct(Jim_Interp *interp, Jim_Obj *objPtr, const void **tablePtr, int elementSize, int *indexPtr, const char *name, int flags);
 	JIM_EXPORT __device__ int Jim_ScriptIsComplete(const char *s, int len, char *stateCharPtr);
 	// Find a matching name in the array of the given length.
 	// NULL entries are ignored.
@@ -745,4 +750,4 @@ STDARGvoid(Jim_SetResultFormatted, format, interp COMMA format, Jim_Interp *inte
 //	__device__ inline void Jim_SetResultFormatted(Jim_Interp *interp, const char *format, ...) { _va_list args; _va_start(args, format); Jim_SetResultFormatted_(interp, format, args); _va_end(args); }
 //#endif
 
-#endif /* __JIM__H */
+#endif // __JIM__H

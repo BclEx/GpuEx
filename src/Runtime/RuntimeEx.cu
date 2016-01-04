@@ -64,7 +64,7 @@ __device__ int _gettimeofday(struct timeval *tp, void *unused)
 {
 	struct _timeb tb;
 	_ftime(&tb);
-	tp->tv_sec = tb.time;
+	tp->tv_sec = (long)tb.time;
 	tp->tv_usec = tb.millitm * 1000;
 	return 0;
 }

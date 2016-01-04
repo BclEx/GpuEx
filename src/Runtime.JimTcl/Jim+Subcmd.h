@@ -49,7 +49,7 @@ extern "C" {
 	*
 	* e.g. Jim_CreateCommand(interp, "mycmd", Jim_SubCmdProc, command_table, NULL);
 	*/
-	__device__ int Jim_SubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+	__device__ int Jim_SubCmdProc(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 
 	/*
 	* Invokes the given subcmd with the given args as returned

@@ -103,7 +103,7 @@ __device__ static void JimSetBitsIntBigEndian(unsigned char *bitvec, jim_wide va
 	int i;
 	// Common fast option
 	if (pos % 8 == 0 && width == 8) {
-		bitvec[pos / 8] = value;
+		bitvec[pos / 8] = (unsigned char)value;
 		return;
 	}
 	for (i = 0; i < width; i++) {
@@ -118,7 +118,7 @@ __device__ static void JimSetBitsIntLittleEndian(unsigned char *bitvec, jim_wide
 	int i;
 	// Common fast option
 	if (pos % 8 == 0 && width == 8) {
-		bitvec[pos / 8] = value;
+		bitvec[pos / 8] = (unsigned char)value;
 		return;
 	}
 	for (i = 0; i < width; i++) {
@@ -179,7 +179,7 @@ __device__ static jim_wide JimDoubleToInt(double value)
 // Interprets the value according to the type and returns it.
 __constant__ static const char *const _unpack_options[] = { "-intbe", "-intle", "-uintbe", "-uintle",
 	"-floatbe", "-floatle", "-str", NULL };
-__device__ static int Jim_UnpackCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int Jim_UnpackCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	enum { OPT_INTBE, OPT_INTLE, OPT_UINTBE, OPT_UINTLE, OPT_FLOATBE, OPT_FLOATLE, OPT_STR, };
 	if (argc != 5) {
@@ -205,7 +205,7 @@ __device__ static int Jim_UnpackCmd(Jim_Interp *interp, int argc, Jim_Obj *const
 		if (pos >= 0 && width > 0 && pos < len * 8) {
 			if (pos + width > len * 8)
 				width = len * 8 - pos;
-			Jim_SetResultString(interp, str + pos / 8, width / 8);
+			Jim_SetResultString(interp, str + pos / 8, (int)(width / 8));
 		}
 		return JIM_OK;
 	}
@@ -220,9 +220,9 @@ __device__ static int Jim_UnpackCmd(Jim_Interp *interp, int argc, Jim_Obj *const
 		if (pos >= 0 && width > 0 && pos < len * 8) {
 			if (pos + width > len * 8)
 				width = len * 8 - pos;
-			result = (option == OPT_INTBE || option == OPT_UINTBE || option == OPT_FLOATBE ? JimBitIntBigEndian(str, pos, width) : JimBitIntLittleEndian(str, pos, width));
+			result = (option == OPT_INTBE || option == OPT_UINTBE || option == OPT_FLOATBE ? JimBitIntBigEndian(str, (int)pos, (int)width) : JimBitIntLittleEndian(str, (int)pos, (int)width));
 			if (option == OPT_INTBE || option == OPT_INTLE)
-				result = JimSignExtend(result, width);
+				result = JimSignExtend(result, (int)width);
 		}
 		if (option == OPT_FLOATBE || option == OPT_FLOATLE) {
 			double fresult;
@@ -249,7 +249,7 @@ __device__ static int Jim_UnpackCmd(Jim_Interp *interp, int argc, Jim_Obj *const
 // The variable is expanded if necessary
 __constant__ static const char *const _pack_options[] = { "-intle", "-intbe", "-floatle", "-floatbe",
 	"-str", NULL };
-__device__ static int Jim_PackCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int Jim_PackCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	enum { OPT_LE, OPT_BE, OPT_FLOATLE, OPT_FLOATBE, OPT_STR };
 	if (argc != 5 && argc != 6) {
@@ -306,9 +306,9 @@ __device__ static int Jim_PackCmd(Jim_Interp *interp, int argc, Jim_Obj *const *
 	if (option == OPT_FLOATLE || option == OPT_FLOATBE)
 		value = (width == 32 ? JimFloatToInt((float)fvalue) : JimDoubleToInt(fvalue));
 	if (option == OPT_BE || option == OPT_FLOATBE)
-		JimSetBitsIntBigEndian((unsigned char *)stringObjPtr->bytes, value, pos, width);
+		JimSetBitsIntBigEndian((unsigned char *)stringObjPtr->bytes, value, (int)pos, (int)width);
 	else if (option == OPT_LE || option == OPT_FLOATLE)
-		JimSetBitsIntLittleEndian((unsigned char *)stringObjPtr->bytes, value, pos, width);
+		JimSetBitsIntLittleEndian((unsigned char *)stringObjPtr->bytes, value, (int)pos, (int)width);
 	else {
 		pos /= 8;
 		width /= 8;

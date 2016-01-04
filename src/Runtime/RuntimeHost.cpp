@@ -230,7 +230,7 @@ extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value
 {
 	int i;
 	int vectorSize;
-	int size = vectorSize = (sizeof(char *) * length);
+	int size = vectorSize = (int)(sizeof(char *) * length);
 	for (i = 0; i < length; i++)
 		size += (value[i] ? (int)strlen(value[i]) + 1 : 0);
 	char *ptr = (char *)malloc(size);

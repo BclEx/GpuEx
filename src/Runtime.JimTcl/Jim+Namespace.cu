@@ -114,7 +114,7 @@ __device__ Jim_Obj *Jim_NamespaceQualifiers(Jim_Interp *interp, Jim_Obj *ns)
 {
 	const char *name = Jim_String(ns);
 	const char *pt = _strrchr((char *)name, ':');
-	return (pt && pt != name && pt[-1] == ':' ? Jim_NewStringObj(interp, name, pt - name - 1) : interp->emptyObj);
+	return (pt && pt != name && pt[-1] == ':' ? Jim_NewStringObj(interp, name, (int)(pt - name - 1)) : interp->emptyObj);
 }
 
 __device__ Jim_Obj *Jim_NamespaceTail(Jim_Interp *interp, Jim_Obj *ns)
@@ -131,7 +131,7 @@ __device__ static Jim_Obj *JimNamespaceCurrent(Jim_Interp *interp)
 	return objPtr;
 }
 
-__device__ static int JimVariableCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimVariableCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int retcode = JIM_OK;
 	if (argc > 3) {
@@ -167,7 +167,7 @@ __device__ static const char *const _namespace_options[] = {
 	"which", "upvar", NULL
 };
 
-__device__ static int JimNamespaceCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int JimNamespaceCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	enum
 	{

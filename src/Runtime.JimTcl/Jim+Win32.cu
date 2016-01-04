@@ -71,7 +71,7 @@ __device__ static Jim_Obj *Win32ErrorObj(Jim_Interp *interp, const char *szPrefi
 }
 
 // win32.ShellExecute verb file args
-__device__ static int Win32_ShellExecute(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_ShellExecute(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc < 3 || objc > 4) {
 		Jim_WrongNumArgs(interp, 1, objv, "verb path ?parameters?");
@@ -89,7 +89,7 @@ __device__ static int Win32_ShellExecute(Jim_Interp *interp, int objc, Jim_Obj *
 }
 
 // win32.FindWindow title ?class?
-__device__ static int Win32_FindWindow(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_FindWindow(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc < 2 || objc > 3) {
 		Jim_WrongNumArgs(interp, 1, objv, "title ?class?");
@@ -108,7 +108,7 @@ __device__ static int Win32_FindWindow(Jim_Interp *interp, int objc, Jim_Obj *co
 }
 
 // win32.CloseWindow windowHandle
-__device__ static int Win32_CloseWindow(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_CloseWindow(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "?windowHandle?");
@@ -124,13 +124,13 @@ __device__ static int Win32_CloseWindow(Jim_Interp *interp, int objc, Jim_Obj *c
 	return JIM_OK;
 }
 
-__device__ static int Win32_GetActiveWindow(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetActiveWindow(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	Jim_SetResult(interp, Jim_NewIntObj(interp, (DWORD)GetActiveWindow()));
 	return JIM_OK;
 }
 
-__device__ static int Win32_SetActiveWindow(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_SetActiveWindow(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "windowHandle");
@@ -149,7 +149,7 @@ __device__ static int Win32_SetActiveWindow(Jim_Interp *interp, int objc, Jim_Ob
 	return r;
 }
 
-__device__ static int Win32_SetForegroundWindow(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_SetForegroundWindow(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "windowHandle");
@@ -166,7 +166,7 @@ __device__ static int Win32_SetForegroundWindow(Jim_Interp *interp, int objc, Ji
 	return r;
 }
 
-static int Win32_Beep(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
+static int Win32_Beep(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 3) {
 		Jim_WrongNumArgs(interp, 1, objv, "freq duration");
@@ -187,7 +187,7 @@ static int Win32_Beep(Jim_Interp *interp, int objc, Jim_Obj * const *objv)
 	return r;
 }
 
-__device__ static int Win32_GetComputerName(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetComputerName(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 1) {
 		Jim_WrongNumArgs(interp, 1, objv, "");
@@ -206,7 +206,7 @@ __device__ static int Win32_GetComputerName(Jim_Interp *interp, int objc, Jim_Ob
 	return r;
 }
 
-__device__ static int Win32_GetUserName(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetUserName(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 1) {
 		Jim_WrongNumArgs(interp, 1, objv, "");
@@ -225,7 +225,7 @@ __device__ static int Win32_GetUserName(Jim_Interp *interp, int objc, Jim_Obj *c
 	return r;
 }
 
-__device__ static int Win32_GetModuleFileName(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetModuleFileName(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc > 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "?moduleid?");
@@ -247,19 +247,19 @@ __device__ static int Win32_GetModuleFileName(Jim_Interp *interp, int objc, Jim_
 	return JIM_OK;
 }
 
-__device__ static int Win32_GetVersion(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetVersion(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	Jim_SetResult(interp, Jim_NewIntObj(interp, GetVersion()));
 	return JIM_OK;
 }
 
-__device__ static int Win32_GetTickCount(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetTickCount(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	Jim_SetResult(interp, Jim_NewIntObj(interp, GetTickCount()));
 	return JIM_OK;
 }
 
-__device__ static int Win32_GetSystemTime(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetSystemTime(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	Jim_Obj *a[16];
 	size_t n = 0;
@@ -275,14 +275,14 @@ __device__ static int Win32_GetSystemTime(Jim_Interp *interp, int objc, Jim_Obj 
 	JIMADD(Second);
 	JIMADD(Milliseconds);
 #undef JIMADD
-	Jim_SetResult(interp, Jim_NewListObj(interp, a, n));
+	Jim_SetResult(interp, Jim_NewListObj(interp, a, (int)n));
 	return JIM_OK;
 }
 
 // function not available on mingw or cygwin
 #if !defined(__MINGW32__) && !defined(__CYGWIN__)
 // FIX ME: win2k+ so should do version checks really.
-__device__ static int Win32_GetPerformanceInfo(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetPerformanceInfo(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	Jim_Obj *a[26];
 	size_t n = 0;
@@ -306,12 +306,12 @@ __device__ static int Win32_GetPerformanceInfo(Jim_Interp *interp, int objc, Jim
 	JIMADD(ProcessCount);
 	JIMADD(ThreadCount);
 #undef JIMADD
-	Jim_SetResult(interp, Jim_NewListObj(interp, a, n));
+	Jim_SetResult(interp, Jim_NewListObj(interp, a, (int)n));
 	return JIM_OK;
 }
 #endif
 
-__device__ static int Win32_SetComputerName(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_SetComputerName(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "computername");
@@ -326,7 +326,7 @@ __device__ static int Win32_SetComputerName(Jim_Interp *interp, int objc, Jim_Ob
 	return r;
 }
 
-__device__ static int Win32_GetModuleHandle(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_GetModuleHandle(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc < 1 || objc >  2) {
 		Jim_WrongNumArgs(interp, 1, objv, "?name?");
@@ -342,7 +342,7 @@ __device__ static int Win32_GetModuleHandle(Jim_Interp *interp, int objc, Jim_Ob
 	return JIM_OK;
 }
 
-__device__ static int Win32_LoadLibrary(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_LoadLibrary(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "path");
@@ -357,7 +357,7 @@ __device__ static int Win32_LoadLibrary(Jim_Interp *interp, int objc, Jim_Obj *c
 	return JIM_OK;
 }
 
-__device__ static int Win32_FreeLibrary(Jim_Interp *interp, int objc, Jim_Obj *const *objv)
+__device__ static int Win32_FreeLibrary(ClientData dummy, Jim_Interp *interp, int objc, Jim_Obj *const *objv)
 {
 	if (objc != 2) {
 		Jim_WrongNumArgs(interp, 1, objv, "hmodule");

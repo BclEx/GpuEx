@@ -46,8 +46,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdio.h>
+//#include <stdio.h>
 
 	typedef int Jim_FileProc(Jim_Interp *interp, void *clientData, int mask);
 	typedef int Jim_SignalProc(Jim_Interp *interp, void *clientData, void *msg);
@@ -71,6 +70,7 @@ extern "C" {
 
 	JIM_EXPORT __device__ int Jim_ProcessEvents(Jim_Interp *interp, int flags);
 	JIM_EXPORT __device__ int Jim_EvalObjBackground(Jim_Interp *interp, Jim_Obj *scriptObjPtr);
+	JIM_EXPORT __device__ void Jim_BackgroundError(Jim_Interp *interp);
 
 	__device__ int Jim_eventloopInit(Jim_Interp *interp);
 

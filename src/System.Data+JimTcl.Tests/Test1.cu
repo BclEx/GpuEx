@@ -1,8 +1,7 @@
 // Code for testing all sorts of SQLite interfaces.
-#include <RuntimeEx.h>
+//#include <stdlib.h>
+//#include <string.h>
 #include "Test.cu.h"
-#include <stdlib.h>
-#include <string.h>
 
 #pragma region Tests
 
@@ -61,9 +60,9 @@ __device__ static int get_sqlite_pointer(ClientData clientData, Jim_Interp *inte
 		return JIM_ERROR;
 	}
 	Jim_CmdInfo cmdInfo;
-	if (!Jim_GetCommandInfo(interp, Jim_GetString(args[1]), &cmdInfo))
+	if (!Jim_GetCommandInfo(interp, Jim_String(args[1]), &cmdInfo))
 	{
-		Jim_AppendResult(interp, "command not found: ", args[1], nullptr);
+		Jim_AppendResult(interp, "command not found: ", Jim_String(args[1]), nullptr);
 		return JIM_ERROR;
 	}
 	struct TclContext *p = (struct TclContext *)cmdInfo.objClientData;
@@ -71,7 +70,7 @@ __device__ static int get_sqlite_pointer(ClientData clientData, Jim_Interp *inte
 	_sprintf(b, "%p", p->Ctx);
 	if (_strncmp(b, "0x", 2))
 		_sprintf(b, "0x%p", p->Ctx);
-	Jim_AppendResult(interp, b, 0);
+	Jim_AppendResult(interp, b, nullptr);
 	return JIM_OK;
 }
 
@@ -171,7 +170,7 @@ __device__ int sqlite3TestErrCode(Jim_Interp *interp, Context *ctx, int rc)
 		int r2 = Main::ErrCode(ctx);
 		_sprintf(b, "error code %s (%d) does not match sqlite3_errcode %s (%d)", t1ErrorName(rc), rc, t1ErrorName(r2), r2);
 		Jim_ResetResult(interp);
-		Jim_AppendResult(interp, b, 0);
+		Jim_AppendResult(interp, b, nullptr);
 		return 1;
 	}
 	return 0;
@@ -225,12 +224,12 @@ __device__ static void io_trace_callback(const char *fmt, ...)
 // Usage:  io_trace FILENAME
 //
 // Turn I/O tracing on or off.  If FILENAME is not an empty string, I/O tracing begins going into FILENAME. If FILENAME is an empty string, I/O tracing is turned off.
-__device__ static int test_io_trace(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_io_trace(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 #if !defined(OMIT_TRACE) && defined(ENABLE_IOTRACE)
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FILENAME\"", nullptr);
 		return JIM_ERROR;
 	}
 	if (_iotrace_file)
@@ -240,11 +239,12 @@ __device__ static int test_io_trace(ClientData notUsed, Jim_Interp *interp, int 
 		_iotrace_file = nullptr;
 		sqlite3IoTrace = nullptr;
 	}
-	if (args[1][0])
+	char *path = Jim_String(args[1]);
+	if (path[0])
 	{
-		if (!_strcmp(args[1], "stdout")) _iotrace_file = _stdout;
-		else if (_strcmp(args[1], "stderr")) _iotrace_file = _stderr;
-		else _iotrace_file = _fopen(args[1], "w");
+		if (!_strcmp(path, "stdout")) _iotrace_file = _stdout;
+		else if (_strcmp(path, "stderr")) _iotrace_file = _stderr;
+		else _iotrace_file = _fopen(path, "w");
 		sqlite3IoTrace = _io_trace_callback;
 	}
 #endif
@@ -255,16 +255,16 @@ __device__ static int test_io_trace(ClientData notUsed, Jim_Interp *interp, int 
 //
 // Invoke the sqlite3_exec_printf() interface using the open database DB.  The SQL is the string FORMAT.  The format string should contain
 // one %s or %q.  STRING is the value inserted into %s or %q.
-__device__ static int test_exec_printf(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_exec_printf(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 4)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB FORMAT STRING", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB FORMAT STRING", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	char *sql = _mprintf(args[2], args[3]);
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	char *sql = _mprintf(Jim_String(args[2]), Jim_String(args[3]));
 	TextBuilder str;
 	TextBuilder::Init(&str);
 	char *err = nullptr;
@@ -283,16 +283,16 @@ __device__ static int test_exec_printf(ClientData notUsed, Jim_Interp *interp, i
 // Usage:  sqlite3_exec_hex  DB  HEX
 //
 // Invoke the sqlite3_exec() on a string that is obtained by translating HEX into ASCII.  Most characters are translated as is.  %HH becomes a hex character.
-__device__ static int test_exec_hex(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_exec_hex(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB HEX", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB HEX", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	char *hex = (char *)args[2];
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	char *hex = (char *)Jim_String(args[2]);
 	char sql[500];
 	int i, j;
 	for (i = j = 0; i < sizeof(sql) && hex[j]; i++, j++)
@@ -322,27 +322,27 @@ __device__ static int test_exec_hex(ClientData notUsed, Jim_Interp *interp, int 
 //         db_leave DB
 //
 // Enter or leave the mutex on a database connection.
-__device__ static int db_enter(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int db_enter(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	Context *ctx;
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB", nullptr);
 		return JIM_ERROR;
 	}
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	Context *ctx;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	_mutex_enter(ctx->Mutex);
 	return JIM_OK;
 }
-__device__ static int db_leave(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int db_leave(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	Context *ctx;
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB", 0);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB", nullptr);
 		return JIM_ERROR;
 	}
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	Context *ctx;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	_mutex_leave(db->mutex);
 	return JIM_OK;
 }
@@ -350,16 +350,16 @@ __device__ static int db_leave(ClientData notUsed, Jim_Interp *interp, int argc,
 // Usage:  sqlite3_exec  DB  SQL
 //
 // Invoke the sqlite3_exec interface using the open database DB
-__device__ static int test_exec(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_exec(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB SQL", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB SQL", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	char *sql = _mprintf("%s", args[2]);
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	char *sql = _mprintf("%s", Jim_String(args[2]));
 	int i, j;
 	for (i = j = 0; sql[i];)
 		if (sql[i]=='%' )
@@ -388,17 +388,17 @@ __device__ static int test_exec(ClientData notUsed, Jim_Interp *interp, int argc
 // Usage:  sqlite3_exec_nr  DB  SQL
 //
 // Invoke the sqlite3_exec interface using the open database DB.  Discard all results
-__device__ static int test_exec_nr(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_exec_nr(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	char *err = nullptr;
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB SQL", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB SQL", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	RC rc = Main::Exec(ctx, args[2], nullptr, nullptr, &err);
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	RC rc = Main::Exec(ctx, Jim_String(args[2]), nullptr, nullptr, &err);
 	if (sqlite3TestErrCode(interp, ctx, rc)) return JIM_ERROR;
 	return JIM_OK;
 }
@@ -407,11 +407,11 @@ __device__ static int test_exec_nr(ClientData notUsed, Jim_Interp *interp, int a
 //
 // Test the %z format of sqlite_mprintf().  Use multiple mprintf() calls to concatenate arg0 through argn using separator as the separator.
 // Return the result.
-__device__ static int test_mprintf_z(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_mprintf_z(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	char *result = nullptr;
 	for (int i = 2; i < argc && (i == 2 || result); i++)
-		result = _mprintf("%z%s%s", result, args[1], args[i]);
+		result = _mprintf("%z%s%s", result, Jim_String(args[1]), Jim_String(args[i]));
 	Jim_AppendResult(interp, result, nullptr);
 	_free(result);
 	return JIM_OK;
@@ -420,10 +420,10 @@ __device__ static int test_mprintf_z(ClientData notUsed, Jim_Interp *interp, int
 // Usage:  sqlite3_mprintf_n_test  STRING
 //
 // Test the %n format of sqlite_mprintf().  Return the length of the input string.
-__device__ static int test_mprintf_n(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_mprintf_n(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	int n = 0;
-	char *str = _mprintf("%s%n", args[1], &n);
+	char *str = _mprintf("%s%n", Jim_String(args[1]), &n);
 	_free(str);
 	Jim_SetResultInt(interp, n);
 	return JIM_OK;
@@ -434,11 +434,11 @@ __device__ static int test_mprintf_n(ClientData notUsed, Jim_Interp *interp, int
 // Test the of sqlite3_snprintf() routine.  SIZE is the size of the output buffer in bytes.  The maximum size is 100.  FORMAT is the
 // format string.  INT is a single integer argument.  The FORMAT string must require no more than this one integer argument.  If
 // You pass in a format string that requires more than one argument, bad things will happen.
-__device__ static int test_snprintf_int(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_snprintf_int(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	int n = _atoi(args[1]);
-	const char *format = args[2];
-	int a1 = _atoi(args[3]);
+	int n = _atoi(Jim_String(args[1]));
+	const char *format = Jim_String(args[2]);
+	int a1 = _atoi(Jim_String(args[3]));
 	char str[100];
 	if (n > sizeof(str)) n = sizeof(str);
 	__snprintf(str, sizeof(str), "abcdefghijklmnopqrstuvwxyz");
@@ -453,21 +453,21 @@ __device__ static int test_snprintf_int(ClientData notUsed, Jim_Interp *interp, 
 //
 // Invoke the sqlite3_get_table_printf() interface using the open database DB.  The SQL is the string FORMAT.  The format string should contain
 // one %s or %q.  STRING is the value inserted into %s or %q.
-__device__ static int test_get_table_printf(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_get_table_printf(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
+	if (argc != 4 && argc != 5)
+	{
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB FORMAT STRING ?COUNT?", nullptr);
+		return JIM_ERROR;
+	}
 	int resCount = -1;
 	if (argc == 5)
 		if (Jim_GetInt(interp, args[4], &resCount)) return JIM_ERROR;
-	if (argc != 4 && argc != 5)
-	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB FORMAT STRING ?COUNT?", nullptr);
-		return JIM_ERROR;
-	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	TextBuilder str;
 	TextBuilder::Init(&str);
-	char *sql = _mprintf(args[2], args[3]);
+	char *sql = _mprintf(Jim_String(args[2]), Jim_String(args[3]));
 	RC rc;
 	char **results;
 	int rows, cols;
@@ -508,15 +508,15 @@ __device__ static int test_get_table_printf(ClientData notUsed, Jim_Interp *inte
 // Usage:  sqlite3_last_insert_rowid DB
 //
 // Returns the integer ROWID of the most recent insert.
-__device__ static int test_last_rowid(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_last_rowid(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB\"", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	char b[30];
 	_sprintf(b, "%lld", Main::CtxLastInsertRowid(ctx));
 	Jim_AppendResult(interp, b, nullptr);
@@ -526,16 +526,16 @@ __device__ static int test_last_rowid(ClientData notUsed, Jim_Interp *interp, in
 // Usage:  sqlite3_key DB KEY
 //
 // Set the codec key.
-__device__ static int test_key(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_key(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 #ifdef HAS_CODEC
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FILENAME\"", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const char *zKey = argv[2];
 	int nKey = _strlen(zKey);
 	sqlite3_key(ctx, zKey, nKey);
@@ -546,17 +546,17 @@ __device__ static int test_key(ClientData notUsed, Jim_Interp *interp, int argc,
 // Usage:  sqlite3_rekey DB KEY
 //
 // Change the codec key.
-__device__ static int test_rekey(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_rekey(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 #ifdef HAS_CODEC
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FILENAME\"", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	const char *key = args[2];
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	const char *key = Jim_String(args[2]);
 	int keyLength = _strlen(key);
 	sqlite3_rekey(ctx, key, keyLength);
 #endif
@@ -566,17 +566,17 @@ __device__ static int test_rekey(ClientData notUsed, Jim_Interp *interp, int arg
 // Usage:  sqlite3_close DB
 //
 // Closes the database opened by sqlite3_open.
-__device__ static int sqlite_test_close(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite_test_close(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FILENAME\"", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	RC rc = Main::Close(ctx);
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 
@@ -761,15 +761,15 @@ __device__ static void ptrChngFunction(FuncContext *fctx, int argc, Mem **args)
 //
 // The original motivation for this routine was to be able to call the sqlite3_create_function function while a query is in progress in order
 // to test the SQLITE_MISUSE detection logic.
-__device__ static int test_create_function(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_create_function(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB\"", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	RC rc = Main::CreateFunction(ctx, "x_coalesce", -1, TEXTENCODE_ANY, 0, t1_ifnullFunc, 0, 0);
 	if (rc == RC_OK)
 		rc = Main::CreateFunction(ctx, "hex8", 1, TEXTENCODE_ANY, 0, hex8Func, 0, 0);
@@ -869,24 +869,24 @@ __device__ static void t1CountFinalize(FuncContext *fctx)
 //
 // Later: It is now also extended to register the aggregate function "legacy_count()" with the supplied database handle. This is used
 // to test the deprecated sqlite3_aggregate_count() API.
-__device__ static int test_create_aggregate(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_create_aggregate(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FILENAME\"", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	RC rc = Main::CreateFunction(ctx, "x_count", 0, TEXTENCODE_UTF8, nullptr, nullptr, t1CountStep, t1CountFinalize);
 	if (rc == RC_OK)
 		rc = Main::CreateFunction(ctx, "x_count", 1, TEXTENCODE_UTF8, nullptr, nullptr, t1CountStep, t1CountFinalize);
-	//#ifndef OMIT_DEPRECATED
-	//	if (rc == RC_OK)
-	//		rc = Main::CreateFunction(ctx, "legacy_count", 0, TEXTENCODE_ANY, nullptr, nullptr, legacyCountStep, legacyCountFinalize);
-	//#endif
+#ifndef OMIT_DEPRECATED
+	//if (rc == RC_OK)
+	//	rc = Main::CreateFunction(ctx, "legacy_count", 0, TEXTENCODE_ANY, nullptr, nullptr, legacyCountStep, legacyCountFinalize);
+#endif
 	if (sqlite3TestErrCode(interp, ctx, rc)) return JIM_ERROR;
-	Jim_SetResultString(interp, (char *)t1ErrorName(rc), 0);
+	Jim_SetResultString(interp, t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 
@@ -894,31 +894,31 @@ __device__ static int test_create_aggregate(ClientData notUsed, Jim_Interp *inte
 //
 // Send output to printf.  Use this rather than puts to merge the output in the correct sequence with debugging printfs inserted into C code.
 // Puts uses a separate buffer and debugging statements will be out of sequence if it is used.
-__device__ static int test_printf(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_printf(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " TEXT\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " TEXT\"", nullptr);
 		return JIM_ERROR;
 	}
-	_printf("%s\n", args[1]);
+	_printf("%s\n", Jim_String(args[1]));
 	return JIM_OK;
 }
 
 // Usage:  sqlite3_mprintf_int FORMAT INTEGER INTEGER INTEGER
 //
 // Call mprintf with three integer arguments
-__device__ static int sqlite3_mprintf_int(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_int(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 5)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT INT\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT INT INT INT\"", nullptr);
 		return JIM_ERROR;
 	}
 	int a[3];
 	for (int i = 2; i < 5; i++)
 		if (Jim_GetInt(interp, args[i], &a[i-2])) return JIM_ERROR;
-	char *z = _mprintf(args[1], a[0], a[1], a[2]);
+	char *z = _mprintf(Jim_String(args[1]), a[0], a[1], a[2]);
 	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
@@ -927,21 +927,21 @@ __device__ static int sqlite3_mprintf_int(ClientData notUsed, Jim_Interp *interp
 // Usage:  sqlite3_mprintf_int64 FORMAT INTEGER INTEGER INTEGER
 //
 // Call mprintf with three 64-bit integer arguments
-__device__ static int sqlite3_mprintf_int64(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_int64(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 5)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT INT\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT INT INT INT\"", nullptr);
 		return JIM_ERROR;
 	}
 	int64 a[3];
 	for (int i = 2; i < 5; i++)
-		if (__atoi64(args[i], &a[i-2], 1000000, TEXTENCODE_UTF8))
+		if (__atoi64(Jim_String(args[i]), &a[i-2], 1000000, TEXTENCODE_UTF8))
 		{
 			Jim_AppendResult(interp, "argument is not a valid 64-bit integer", nullptr);
 			return JIM_ERROR;
 		}
-		char *z = _mprintf(args[1], a[0], a[1], a[2]);
+		char *z = _mprintf(Jim_String(args[1]), a[0], a[1], a[2]);
 		Jim_AppendResult(interp, z, nullptr);
 		_free(z);
 		return JIM_OK;
@@ -950,11 +950,11 @@ __device__ static int sqlite3_mprintf_int64(ClientData notUsed, Jim_Interp *inte
 // Usage:  sqlite3_mprintf_long FORMAT INTEGER INTEGER INTEGER
 //
 // Call mprintf with three long integer arguments.   This might be the same as sqlite3_mprintf_int or sqlite3_mprintf_int64, depending on platform.
-__device__ static int sqlite3_mprintf_long(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_long(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 5)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT INT\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT INT INT INT\"", nullptr);
 		return JIM_ERROR;
 	}
 	long int a[3];
@@ -965,7 +965,7 @@ __device__ static int sqlite3_mprintf_long(ClientData notUsed, Jim_Interp *inter
 		a[i-2] = (long int)b[i-2];
 		a[i-2] &= (((uint64)1)<<(sizeof(int)*8))-1;
 	}
-	char *z = _mprintf(args[1], a[0], a[1], a[2]);
+	char *z = _mprintf(Jim_String(args[1]), a[0], a[1], a[2]);
 	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
@@ -974,17 +974,17 @@ __device__ static int sqlite3_mprintf_long(ClientData notUsed, Jim_Interp *inter
 // Usage:  sqlite3_mprintf_str FORMAT INTEGER INTEGER STRING
 //
 // Call mprintf with two integer arguments and one string argument
-__device__ static int sqlite3_mprintf_str(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_str(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc < 4 || argc > 5)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT ?STRING?\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT INT INT ?STRING?\"", nullptr);
 		return JIM_ERROR;
 	}
 	int a[3];
 	for (int i = 2; i < 4; i++)
 		if (Jim_GetInt(interp, args[i], &a[i-2])) return JIM_ERROR;
-	char *z = _mprintf(args[1], a[0], a[1], argc > 4 ? args[4] : nullptr);
+	char *z = _mprintf(Jim_String(args[1]), a[0], a[1], argc > 4 ? args[4] : nullptr);
 	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
@@ -993,25 +993,25 @@ __device__ static int sqlite3_mprintf_str(ClientData notUsed, Jim_Interp *interp
 // Usage:  sqlite3_snprintf_str INTEGER FORMAT INTEGER INTEGER STRING
 //
 // Call mprintf with two integer arguments and one string argument
-__device__ static int sqlite3_snprintf_str(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_snprintf_str(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc < 5 || argc > 6)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " INT FORMAT INT INT ?STRING?\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " INT FORMAT INT INT ?STRING?\"", nullptr);
 		return JIM_ERROR;
 	}
 	int n;
 	if (Jim_GetInt(interp, args[1], &n)) return JIM_ERROR;
 	if (n < 0)
 	{
-		Jim_AppendResult(interp, "N must be non-negative", 0);
+		Jim_AppendResult(interp, "N must be non-negative", nullptr);
 		return JIM_ERROR;
 	}
 	int a[3];
 	for (int i = 3; i < 5; i++)
 		if (Jim_GetInt(interp, args[i], &a[i-3])) return JIM_ERROR;
 	char *z = (char *)_alloc(n+1);
-	__snprintf(z, n, args[2], a[0], a[1], argc > 4 ? args[5] : nullptr);
+	__snprintf(z, n, Jim_String(args[2]), a[0], a[1], argc > 4 ? Jim_String(args[5]) : nullptr);
 	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
@@ -1020,11 +1020,11 @@ __device__ static int sqlite3_snprintf_str(ClientData notUsed, Jim_Interp *inter
 // Usage:  sqlite3_mprintf_double FORMAT INTEGER INTEGER DOUBLE
 //
 // Call mprintf with two integer arguments and one double argument
-__device__ static int sqlite3_mprintf_double(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_double(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 5)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT INT INT DOUBLE\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT INT INT DOUBLE\"", nullptr);
 		return JIM_ERROR;
 	}
 	int a[3];
@@ -1032,7 +1032,7 @@ __device__ static int sqlite3_mprintf_double(ClientData notUsed, Jim_Interp *int
 		if (Jim_GetInt(interp, args[i], &a[i-2])) return JIM_ERROR;
 	double r;
 	if (Jim_GetDouble(interp, args[4], &r)) return JIM_ERROR;
-	char *z = _mprintf(args[1], a[0], a[1], r);
+	char *z = _mprintf(Jim_String(args[1]), a[0], a[1], r);
 	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
@@ -1042,17 +1042,17 @@ __device__ static int sqlite3_mprintf_double(ClientData notUsed, Jim_Interp *int
 //
 // Call mprintf with a single double argument which is the product of the two arguments given above.  This is used to generate overflow and underflow
 // doubles to test that they are converted properly.
-__device__ static int sqlite3_mprintf_scaled(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_scaled(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 4)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT DOUBLE DOUBLE\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT DOUBLE DOUBLE\"", nullptr);
 		return JIM_ERROR;
 	}
 	double r[2];
 	for (int i = 2; i < 4; i++)
 		if (Jim_GetDouble(interp, args[i], &r[i-2])) return JIM_ERROR;
-	char *z = _mprintf(args[1], r[0]*r[1]);
+	char *z = _mprintf(Jim_String(args[1]), r[0]*r[1]);
 	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
@@ -1062,15 +1062,15 @@ __device__ static int sqlite3_mprintf_scaled(ClientData notUsed, Jim_Interp *int
 //
 // Call mprintf with a single double argument which is the product of the two arguments given above.  This is used to generate overflow and underflow
 // doubles to test that they are converted properly.
-__device__ static int sqlite3_mprintf_stronly(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_stronly(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT STRING\"", 0);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT STRING\"", 0);
 		return JIM_ERROR;
 	}
-	char *z = _mprintf(args[1], args[2]);
-	Jim_AppendResult(interp, z, 0);
+	char *z = _mprintf(Jim_String(args[1]), Jim_String(args[2]));
+	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
 }
@@ -1078,15 +1078,15 @@ __device__ static int sqlite3_mprintf_stronly(ClientData notUsed, Jim_Interp *in
 // Usage:  sqlite3_mprintf_hexdouble FORMAT HEX
 //
 // Call mprintf with a single double argument which is derived from the hexadecimal encoding of an IEEE double.
-__device__ static int sqlite3_mprintf_hexdouble(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int sqlite3_mprintf_hexdouble(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " FORMAT STRING\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FORMAT STRING\"", nullptr);
 		return JIM_ERROR;
 	}
 	unsigned int x1, x2;
-	if (_sscanf(args[2], "%08x%08x", &x2, &x1) != 2)
+	if (_sscanf(Jim_String(args[2]), "%08x%08x", &x2, &x1) != 2)
 	{
 		Jim_AppendResult(interp, "2nd argument should be 16-characters of hex", nullptr);
 		return JIM_ERROR;
@@ -1095,7 +1095,7 @@ __device__ static int sqlite3_mprintf_hexdouble(ClientData notUsed, Jim_Interp *
 	d = (d<<32) + x1;
 	double r;
 	_memcpy(&r, &d, sizeof(r));
-	char *z = _mprintf(args[1], r);
+	char *z = _mprintf(Jim_String(args[1]), r);
 	Jim_AppendResult(interp, z, nullptr);
 	_free(z);
 	return JIM_OK;
@@ -1114,11 +1114,11 @@ __device__ static int test_enable_shared(ClientData clientData, Jim_Interp *inte
 	if (argc == 2)
 	{
 		bool enable;
-		if (Jim_GetBooleanFromObj(interp, args[1], &enable)) return JIM_ERROR;
+		if (Jim_GetBoolean(interp, args[1], &enable)) return JIM_ERROR;
 		RC rc = Btree::EnableSharedCache(enable);
 		if (rc != RC_OK)
 		{
-			Jim_SetResult(interp, (char *)Main::ErrStr(rc), JIM_STATIC);
+			Jim_SetResultString(interp, (char *)Main::ErrStr(rc), -1);
 			return JIM_ERROR;
 		}
 	}
@@ -1138,7 +1138,7 @@ __device__ static int test_extended_result_codes(ClientData clientData, Jim_Inte
 	Context *ctx;
 	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	bool enable;
-	if (Jim_GetBooleanFromObj(interp, args[2], &enable)) return JIM_ERROR;
+	if (Jim_GetBoolean(interp, args[2], &enable)) return JIM_ERROR;
 	Main::ExtendedResultCodes(ctx, enable);
 	return JIM_OK;
 }
@@ -1179,11 +1179,11 @@ __device__ static int test_table_column_metadata(ClientData clientData, Jim_Inte
 		return JIM_ERROR;
 	}
 	Jim_Obj *r = Jim_NewObj();
-	Jim_ListObjAppendElement(nullptr, r, Jim_NewStringObj(datatype, -1));
-	Jim_ListObjAppendElement(nullptr, r, Jim_NewStringObj(collseq, -1));
-	Jim_ListObjAppendElement(nullptr, r, Jim_NewIntObj(notnull));
-	Jim_ListObjAppendElement(nullptr, r, Jim_NewIntObj(primarykey));
-	Jim_ListObjAppendElement(nullptr, r, Jim_NewIntObj(autoincrement));
+	Jim_ListAppendElement(nullptr, r, Jim_NewStringObj(datatype, -1));
+	Jim_ListAppendElement(nullptr, r, Jim_NewStringObj(collseq, -1));
+	Jim_ListAppendElement(nullptr, r, Jim_NewIntObj(notnull));
+	Jim_ListAppendElement(nullptr, r, Jim_NewIntObj(primarykey));
+	Jim_ListAppendElement(nullptr, r, Jim_NewIntObj(autoincrement));
 	Jim_SetObjResult(interp, r);
 	return JIM_OK;
 }
@@ -1263,7 +1263,7 @@ __device__ static int test_blob_read(ClientData clientData, Jim_Interp *interp, 
 		buf = (unsigned char *)Jim_Alloc(bytes);
 	RC rc = Vdbe::Blob_Read(blob, buf, bytes, offset);
 	if (rc == RC_OK)
-		Jim_SetResult(interp, Jim_NewByteArrayObj(buf, buf));
+		Jim_SetResult(interp, Jim_NewByteArrayObj(interp, buf, buf));
 	else
 		Jim_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
 	Jim_Free((char *)buf);
@@ -1333,8 +1333,8 @@ __device__ static void testCreateCollationDel(void *ctx)
 	int rc = Jim_EvalObj(interp, p->Del);
 	if (rc != JIM_OK)
 		Jim_BackgroundError(p->Interp);
-	Jim_DecrRefCount(p->Cmp);
-	Jim_DecrRefCount(p->Del);
+	Jim_DecrRefCount(interp, p->Cmp);
+	Jim_DecrRefCount(interp, p->Del);
 	_free((void *)p);
 }
 __device__ static int testCreateCollationCmp(void *ctx, int leftLength, const void *left, int rightLength, const void *right)
@@ -1343,8 +1343,8 @@ __device__ static int testCreateCollationCmp(void *ctx, int leftLength, const vo
 	Jim_Interp *interp = p->Interp;
 	Jim_Obj *script = Jim_DuplicateObj(interp, p->Cmp);
 	Jim_IncrRefCount(script);
-	Jim_ListObjAppendElement(nullptr, script, Jim_NewStringObj(interp, (char *)left, leftLength));
-	Jim_ListObjAppendElement(nullptr, script, Jim_NewStringObj(interp, (char *)right, rightLength));
+	Jim_ListAppendElement(nullptr, script, Jim_NewStringObj(interp, (char *)left, leftLength));
+	Jim_ListAppendElement(nullptr, script, Jim_NewStringObj(interp, (char *)right, rightLength));
 	int res = 0;
 	if (Jim_EvalObj(p->Interp, script) != JIM_OK || Jim_GetInt(p->Interp, p->Interp->result, &res) != JIM_OK)
 		Jim_BackgroundError(p->Interp);
@@ -1436,7 +1436,7 @@ __device__ static int test_create_function_v2(ClientData clientData, Jim_Interp 
 	int argc2;
 	int enc;
 	if (Jim_GetInt(interp, args[3], &argc2)) return JIM_ERROR;
-	if (Jim_GetIndexFromObjStruct(interp, args[4], (const void **)_encs, sizeof(_encs[0]), "encoding", 0, &enc)) return JIM_ERROR;
+	if (Jim_GetEnumFromObjStruct(interp, args[4], (const void **)_encs, sizeof(_encs[0]), &enc, "encoding", 0)) return JIM_ERROR;
 	enc = _encs[enc].Enc;
 
 	CreateFunctionV2 *p = (CreateFunctionV2 *)_alloc(sizeof(CreateFunctionV2));
@@ -1447,7 +1447,7 @@ __device__ static int test_create_function_v2(ClientData clientData, Jim_Interp 
 	{
 		int switchId;
 		const char *switchName[] = {"-func", "-step", "-final", "-destroy", 0};
-		if (Jim_GetIndexFromObjStruct(interp, args[i], switchName, "switch", 0, &switchId))
+		if (Jim_GetEnum(interp, args[i], switchName, &switchId, "switch", 0))
 		{
 			_free(p);
 			return JIM_ERROR;
@@ -1514,7 +1514,7 @@ __device__ static int test_load_extension(ClientData clientData, Jim_Interp *int
 #endif
 	if (rc != RC_OK)
 	{
-		Jim_SetResult(interp, (err ? err : ""), JIM_VOLATILE);
+		Jim_SetResultString(interp, (err ? err : ""), -1);
 		rc = JIM_ERROR;
 	}
 	else
@@ -1598,16 +1598,16 @@ error_out:
 // Usage:   sqlite_register_test_function  DB  NAME
 //
 // Register the test SQL function on the database DB under the name NAME.
-__device__ static int test_register_func(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_register_func(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB FUNCTION-NAME", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB FUNCTION-NAME", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateFunction(ctx, args[2], -1, TEXTENCODE_UTF8, nullptr, testFunc, nullptr, nullptr);
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	RC rc = Main::CreateFunction(ctx, Jim_String(args[2]), -1, TEXTENCODE_UTF8, nullptr, testFunc, nullptr, nullptr);
 	if (rc != 0)
 	{
 		Jim_AppendResult(interp, Main::ErrStr(rc), nullptr);
@@ -1631,7 +1631,7 @@ __device__ static int test_finalize(ClientData clientData, Jim_Interp *interp, i
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
 	Context *ctx = (stmt ? StmtToDb(stmt) : nullptr);
 	RC rc = Vdbe::Finalize(stmt);
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	if (ctx && sqlite3TestErrCode(interp, ctx, rc)) return JIM_ERROR;
 	return JIM_OK;
 }
@@ -1656,7 +1656,7 @@ __device__ static int test_stmt_status(void * clientData, Jim_Interp *interp, in
 	}
 	Vdbe *stmt;
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
-	const char *opName = args[2];
+	const char *opName = Jim_String(args[2]);
 	int i, op;
 	for (i = 0; i < _lengthof(_ops); i++)
 	{
@@ -1764,7 +1764,7 @@ __device__ static int test_reset(ClientData clientData, Jim_Interp *interp, int 
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
 	RC rc = Vdbe::Reset(stmt);
 	if (stmt && sqlite3TestErrCode(interp, StmtToDb(stmt), rc)) return JIM_ERROR;
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	//if (rc) return JIM_ERROR;
 	return JIM_OK;
 }
@@ -1832,23 +1832,24 @@ __device__ static int _static_bind_nbyte = 0;
 // ignored and the value is set to NULL.  If FLAGS=="static" then the value is set to the value of a static variable named
 // "sqlite_static_bind_value".  If FLAGS=="normal" then a copy of the VALUE is made.  If FLAGS=="blob10" then a VALUE is ignored
 // an a 10-byte blob "abc\000xyz\000pq" is inserted.
-__device__ static int test_bind(ClientData notUsed, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_bind(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 5)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " VM IDX VALUE (null|static|normal)\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " VM IDX VALUE (null|static|normal)\"", nullptr);
 		return JIM_ERROR;
 	}
 	Vdbe *stmt;
 	int idx;
-	if (getStmtPointer(interp, args[1], &stmt)) return JIM_ERROR;
+	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[2], &idx)) return JIM_ERROR;
 	RC rc;
-	if (!_strcmp(args[4], "null")) rc = Vdbe::Bind_Null(stmt, idx);
-	else if (!_strcmp(args[4], "static")) rc = Vdbe::Bind_Text(stmt, idx, _static_bind_value, -1, 0);
-	else if (!_strcmp(args[4], "static-nbytes")) rc = Vdbe::Bind_Text(stmt, idx, _static_bind_value, _static_bind_nbyte, 0);
-	else if (!_strcmp(args[4], "normal")) rc = Vdbe::Bind_Text(stmt, idx, args[3], -1, DESTRUCTOR_TRANSIENT);
-	else if (!_strcmp(args[4], "blob10")) rc = Vdbe::Bind_Text(stmt, idx, "abc\000xyz\000pq", 10, DESTRUCTOR_STATIC);
+	const char *type = Jim_String(args[4]);
+	if (!_strcmp(type, "null")) rc = Vdbe::Bind_Null(stmt, idx);
+	else if (!_strcmp(type, "static")) rc = Vdbe::Bind_Text(stmt, idx, _static_bind_value, -1, 0);
+	else if (!_strcmp(type, "static-nbytes")) rc = Vdbe::Bind_Text(stmt, idx, _static_bind_value, _static_bind_nbyte, 0);
+	else if (!_strcmp(type, "normal")) rc = Vdbe::Bind_Text(stmt, idx, Jim_String(args[3]), -1, DESTRUCTOR_TRANSIENT);
+	else if (!_strcmp(type, "blob10")) rc = Vdbe::Bind_Text(stmt, idx, "abc\000xyz\000pq", 10, DESTRUCTOR_STATIC);
 	else
 	{
 		Jim_AppendResult(interp, "4th argument should be " "\"null\" or \"static\" or \"normal\"", nullptr);
@@ -1892,9 +1893,9 @@ __device__ static int test_collate_func(void *ctx, int aLength, const void *a, i
 	Jim_IncrRefCount(pX);
 	switch (encin)
 	{
-	case TEXTENCODE_UTF8: Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-8")); break;
-	case TEXTENCODE_UTF16LE: Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16LE")); break;
-	case TEXTENCODE_UTF16BE: Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16BE")); break;
+	case TEXTENCODE_UTF8: Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-8", -1)); break;
+	case TEXTENCODE_UTF16LE: Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16LE", -1)); break;
+	case TEXTENCODE_UTF16BE: Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16BE", -1)); break;
 	default: _assert(false);
 	}
 	//
@@ -1904,10 +1905,10 @@ __device__ static int test_collate_func(void *ctx, int aLength, const void *a, i
 	{
 		Vdbe::ValueSetStr(val, aLength, a, encin, DESTRUCTOR_STATIC);
 		int n = Vdbe::Value_Bytes(val);
-		Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(val), n));
+		Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(val), n));
 		Vdbe::ValueSetStr(val, bLength, b, encin, DESTRUCTOR_STATIC);
 		n = Vdbe::Value_Bytes(val);
-		Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(val), n));
+		Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(val), n));
 		Vdbe::ValueFree(val);
 	}
 	_benignalloc_end();
@@ -2043,8 +2044,8 @@ __device__ static void test_function_utf8(FuncContext *fctx, int argc, Mem **arg
 	Jim_Interp *interp = (Jim_Interp *)Vdbe::User_Data(fctx);
 	Jim_Obj *pX = Jim_NewStringObj(interp, "test_function", -1);
 	Jim_IncrRefCount(pX);
-	Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-8", -1));
-	Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(args[0]), -1));
+	Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-8", -1));
+	Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(args[0]), -1));
 	Jim_EvalObj(interp, pX);
 	Jim_DecrRefCount(interp, pX);
 	Vdbe::Result_Text(fctx, Jim_String(Jim_GetResult(interp)), -1, DESTRUCTOR_TRANSIENT);
@@ -2058,8 +2059,8 @@ __device__ static void test_function_utf16le(FuncContext *fctx, int argc, Mem **
 	Jim_Interp *interp = (Jim_Interp *)Vdbe::User_Data(fctx);
 	Jim_Obj *pX = Jim_NewStringObj(interp, "test_function", -1);
 	Jim_IncrRefCount(pX);
-	Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16LE", -1));
-	Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, (char*)Vdbe::Value_Text(args[0]), -1));
+	Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16LE", -1));
+	Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, (char*)Vdbe::Value_Text(args[0]), -1));
 	Jim_EvalObj(interp, pX);
 	Jim_DecrRefCount(interp, pX);
 	Mem *val = Vdbe::ValueNew(nullptr);
@@ -2072,8 +2073,8 @@ __device__ static void test_function_utf16be(FuncContext *fctx,  int argc, Mem *
 	Jim_Interp *interp = (Jim_Interp *)Vdbe::User_Data(fctx);
 	Jim_Obj *pX = Jim_NewStringObj(interp, "test_function", -1);
 	Jim_IncrRefCount(pX);
-	Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16BE", -1));
-	Jim_ListObjAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(args[0]), -1));
+	Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, "UTF-16BE", -1));
+	Jim_ListAppendElement(interp, pX, Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(args[0]), -1));
 	Jim_EvalObj(interp, pX);
 	Jim_DecrRefCount(interp, pX);
 	Mem *val = Vdbe::ValueNew(nullptr);
@@ -2119,7 +2120,7 @@ __device__ static int test_errstr(ClientData clientData, Jim_Interp *interp, int
 	int i;
 	for (i = 0; i < 200; i++)
 		if (!_strcmp(t1ErrorName(i), code)) break;
-	Jim_SetResult(interp, (char *)Main::ErrStr((RC)i), nullptr);
+	Jim_SetResultString(interp, (char *)Main::ErrStr((RC)i), -1);
 	return JIM_OK;
 }
 
@@ -2305,7 +2306,7 @@ __device__ static int test_bind_text(ClientData clientData, Jim_Interp *interp, 
 	int bytes;
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[2], &idx)) return JIM_ERROR;
-	char *value = (char *)Jim_GetByteArray(interp, args[3], &bytes);
+	char *value = (char *)Jim_GetByteArray(args[3], &bytes);
 	if (Jim_GetInt(interp, args[4], &bytes)) return JIM_ERROR;
 	RC rc = Vdbe::Bind_Text(stmt, idx, value, bytes, DESTRUCTOR_TRANSIENT);
 	if (sqlite3TestErrCode(interp, StmtToDb(stmt), rc)) return JIM_ERROR;
@@ -2339,7 +2340,7 @@ __device__ static int test_bind_text16(ClientData clientData, Jim_Interp *interp
 	int bytes;
 	if (getStmtPointer(interp, Jim_String(oStmt), &stmt)) return JIM_ERROR;
 	if (Jim_GetInt(interp, oN, &idx)) return JIM_ERROR;
-	char *value = Jim_GetByteArray(interp, oString, nullptr);
+	char *value = (char *)Jim_GetByteArray(oString, nullptr);
 	if (Jim_GetInt(interp, oBytes, &bytes)) return JIM_ERROR;
 	RC rc = Vdbe::Bind_Text16(stmt, idx, (void *)value, bytes, xDel);
 	if (sqlite3TestErrCode(interp, StmtToDb(stmt), rc)) return JIM_ERROR;
@@ -2430,7 +2431,7 @@ __device__ static int test_bind_parameter_index(ClientData clientData, Jim_Inter
 	}
 	Vdbe *stmt;
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
-	Jim_SetResultInt(interp, Vdbe::Bind_ParameterIndex(stmt, args[2]));
+	Jim_SetResultInt(interp, Vdbe::Bind_ParameterIndex(stmt, Jim_String(args[2])));
 	return JIM_OK;
 }
 
@@ -2530,7 +2531,7 @@ __device__ static int test_errmsg16(ClientData clientData, Jim_Interp *interp, i
 	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const void *err = Main::ErrMsg16(ctx);
 	int bytes = _strlen16(err);
-	Jim_SetResult(interp, Jim_NewByteArrayObj(interp, err, bytes));
+	Jim_SetResultByteArray(interp, err, bytes);
 #endif
 	return JIM_OK;
 }
@@ -2563,7 +2564,7 @@ __device__ static int test_prepare(ClientData clientData, Jim_Interp *interp, in
 			bytes = bytes - (int)(tail-sql);
 		if ((int)_strlen(tail) < bytes)
 			bytes = (int)_strlen(tail);
-		Jim_SetVar2(interp, args[4], 0, Jim_NewStringObj(interp, tail, bytes), 0);
+		Jim_SetVariable(interp, args[4], Jim_NewStringObj(interp, tail, bytes));
 	}
 	char buf[50];
 	if (rc != RC_OK)
@@ -2609,7 +2610,7 @@ __device__ static int test_prepare_v2(ClientData clientData, Jim_Interp *interp,
 	{
 		if (bytes >= 0)
 			bytes = bytes - (int)(tail-sql);
-		Jim_SetVar2(interp, args[4], nullptr, Jim_NewStringObj(interp, tail, bytes), 0);
+		Jim_SetVariable(interp, args[4], Jim_NewStringObj(interp, tail, bytes));
 	}
 	char buf[50];
 	if (rc != RC_OK)
@@ -2677,7 +2678,7 @@ __device__ static int test_prepare16(ClientData clientData, Jim_Interp *interp, 
 	int bytes; // The integer specified as arg 3
 	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	int sqlLength; // The byte-array length of arg 2
-	const void *sql = Jim_GetByteArray(interp, args[2], &sqlLength);
+	const void *sql = Jim_GetByteArray(args[2], &sqlLength);
 	if (Jim_GetInt(interp, args[3], &bytes)) return JIM_ERROR;
 
 	Vdbe *stmt = nullptr;	
@@ -2689,7 +2690,7 @@ __device__ static int test_prepare16(ClientData clientData, Jim_Interp *interp, 
 	if (argc >= 5)
 	{
 		sqlLength = (tail ? sqlLength - (int)((uint8 *)tail-(uint8 *)sql) : 0);
-		Jim_SetVar2(interp, args[4], nullptr, Jim_NewByteArray(interp, tail, bytes), 0);
+		Jim_SetVariable(interp, args[4], Jim_NewByteArrayObj(interp, tail, bytes));
 	}
 	char buf[50];
 	if (stmt)
@@ -2715,7 +2716,7 @@ __device__ static int test_prepare16_v2(ClientData clientData, Jim_Interp *inter
 	int bytes; // The integer specified as arg 3
 	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	int sqlLength; // The byte-array length of arg 2
-	const void *sql = Jim_GetByteArray(interp, args[2], &sqlLength);
+	const void *sql = Jim_GetByteArray(args[2], &sqlLength);
 	if (Jim_GetInt(interp, args[3], &bytes)) return JIM_ERROR;
 
 	Vdbe *stmt = nullptr;
@@ -2727,7 +2728,7 @@ __device__ static int test_prepare16_v2(ClientData clientData, Jim_Interp *inter
 	if (argc >= 5)
 	{
 		sqlLength = (tail ? sqlLength - (int)((uint8 *)tail-(uint8 *)sql) : 0);
-		Jim_SetVar2(interp, args[4], nullptr, Jim_NewByteArray(interp, tail, bytes), 0);
+		Jim_SetVariable(interp, args[4], Jim_NewByteArrayObj(interp, tail, bytes));
 	}
 	char buf[50];
 	if (stmt)
@@ -2791,14 +2792,14 @@ __device__ static int test_open_v2(ClientData clientData, Jim_Interp *interp, in
 	const char *vfs = Jim_String(args[3]);
 	if (vfs[0] == 0x00) vfs = nullptr;
 	int flagLength;
-	const char **flags;
+	Jim_Obj **flags;
 	int rc = Jim_ListObjGetElements(interp, args[2], &flagLength, &flags);
 	if (rc != JIM_OK) return rc;
 	VSystem::OPEN flags2 = (VSystem::OPEN)0;
 	for (int i = 0; i < flagLength; i++)
 	{
 		int flagId;
-		rc = Jim_GetIndexFromObjStruct(interp, flags[i], (const void **)_flags, sizeof(_flags[0]), "flag", 0, &flagId);
+		rc = Jim_GetEnumFromObjStruct(interp, flags[i], (const void **)_flags, sizeof(_flags[0]), &flagId, "flag", 0);
 		if (rc != JIM_OK) return rc;
 		flags2 |= _flags[flagId].Flag;
 	}
@@ -2820,7 +2821,7 @@ __device__ static int test_open16(ClientData clientData, Jim_Interp *interp, int
 		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " filename options-list", nullptr);
 		return JIM_ERROR;
 	}
-	const void *filename = Jim_GetByteArray(interp, args[1], nullptr);
+	const void *filename = Jim_GetByteArray(args[1], 0);
 	Context *ctx;
 	Main::Open16(filename, &ctx);
 
@@ -2842,7 +2843,7 @@ __device__ static int test_complete16(ClientData clientData, Jim_Interp *interp,
 		Jim_WrongNumArgs(interp, 1, args, "<utf-16 sql>");
 		return JIM_ERROR;
 	}
-	char *buf = (char *)Jim_GetByteArray(interp, args[1], nullptr);
+	char *buf = (char *)Jim_GetByteArray(args[1], 0);
 	Jim_SetResultInt(interp, Parse::Complete16(buf));
 #endif
 	return JIM_OK;
@@ -2861,8 +2862,8 @@ __device__ static int test_step(ClientData clientData, Jim_Interp *interp, int a
 	Vdbe *stmt;
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
 	RC rc = stmt->Step();
-	//if (rc != RC_DONE && rc != RC_ROW ) return JIM_ERROR;
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), nullptr);
+	//if (rc != RC_DONE && rc != RC_ROW) return JIM_ERROR;
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 
@@ -2875,7 +2876,7 @@ __device__ static int test_sql(ClientData clientData, Jim_Interp *interp, int ar
 	}
 	Vdbe *stmt;
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
-	Jim_SetResult(interp, (char *)Vdbe::Sql(stmt), JIM_VOLATILE);
+	Jim_SetResultString(interp, (char *)Vdbe::Sql(stmt), -1);
 	return JIM_OK;
 }
 
@@ -2913,11 +2914,11 @@ __device__ static int test_column_type(ClientData clientData, Jim_Interp *interp
 	TYPE tp = Vdbe::Column_Type(stmt, col);
 	switch (tp)
 	{
-	case TYPE_INTEGER: Jim_SetResult(interp, "INTEGER", JIM_STATIC); break;
-	case TYPE_NULL: Jim_SetResult(interp, "NULL", JIM_STATIC); break;
-	case TYPE_FLOAT: Jim_SetResult(interp, "FLOAT", JIM_STATIC); break;
-	case TYPE_TEXT: Jim_SetResult(interp, "TEXT", JIM_STATIC); break;
-	case TYPE_BLOB: Jim_SetResult(interp, "BLOB", JIM_STATIC); break;
+	case TYPE_INTEGER: Jim_SetResultString(interp, "INTEGER", -1); break;
+	case TYPE_NULL: Jim_SetResultString(interp, "NULL", -1); break;
+	case TYPE_FLOAT: Jim_SetResultString(interp, "FLOAT", -1); break;
+	case TYPE_TEXT: Jim_SetResultString(interp, "TEXT", -1); break;
+	case TYPE_BLOB: Jim_SetResultString(interp, "BLOB", -1); break;
 	default: _assert(false);
 	}
 	return JIM_OK;
@@ -2958,7 +2959,7 @@ __device__ static int test_column_blob(ClientData clientData, Jim_Interp *interp
 
 	int len = Vdbe::Column_Bytes(stmt, col);
 	const void *blob = Vdbe::Column_Blob(stmt, col);
-	Jim_SetResult(interp, Jim_NewByteArrayObj(blob, len));
+	Jim_SetResultByteArray(interp, blob, len);
 	return JIM_OK;
 }
 
@@ -2978,7 +2979,7 @@ __device__ static int test_column_double(ClientData clientData, Jim_Interp *inte
 	if (Jim_GetInt(interp, args[2], &col)) return JIM_ERROR;
 
 	double val = Vdbe::Column_Double(stmt, col);
-	Jim_SetResultDouble(interp, val);
+	Jim_SetResult(interp, Jim_NewDoubleObj(interp, val));
 	return JIM_OK;
 }
 
@@ -3016,7 +3017,7 @@ __device__ static int test_stmt_utf8(ClientData clientData, Jim_Interp *interp, 
 	const char *(*func)(Vdbe*,int) = (const char *(*)(Vdbe*,int))clientData;
 	const char *ret = func(stmt, col);
 	if (ret)
-		Jim_SetResult(interp, (char *)ret, nullptr);
+		Jim_SetResultString(interp, (char *)ret, -1);
 	return JIM_OK;
 }
 
@@ -3029,7 +3030,7 @@ __device__ static int test_global_recover(ClientData clientData, Jim_Interp *int
 	//	return JIM_ERROR;
 	//}
 	//RC rc = sqlite3_global_recover();
-	//Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	//Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 #endif
 	return JIM_OK;
 }
@@ -3055,7 +3056,7 @@ __device__ static int test_stmt_utf16(ClientData clientData, Jim_Interp *interp,
 	if (name16)
 	{
 		int n = _strlen16(name16);
-		Jim_SetResult(interp, Jim_NewByteArrayObj(name16, n+2));
+		Jim_SetResultByteArray(interp, name16, n+2);
 	}
 #endif
 	return JIM_OK;
@@ -3084,19 +3085,20 @@ __device__ static int test_stmt_int(ClientData clientData, Jim_Interp *interp, i
 // Usage:  sqlite_set_magic  DB  MAGIC-NUMBER
 //
 // Set the db->magic value.  This is used to test error recovery logic.
-__device__ static int sqlite_set_magic(ClientData clientData, Jim_Interp *interp, int argc, const char *const args[])
+__device__ static int sqlite_set_magic(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB MAGIC", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB MAGIC", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	if (!_strcmp(args[2], "SQLITE_MAGIC_OPEN")) ctx->Magic = MAGIC_OPEN;
-	else if (!_strcmp(args[2], "SQLITE_MAGIC_CLOSED")) ctx->Magic = MAGIC_CLOSED;
-	else if (!_strcmp(args[2], "SQLITE_MAGIC_BUSY")) ctx->Magic = MAGIC_BUSY;
-	else if (!_strcmp(args[2], "SQLITE_MAGIC_ERROR")) ctx->Magic = MAGIC_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	const char *type = Jim_String(args[2]);
+	if (!_strcmp(type, "SQLITE_MAGIC_OPEN")) ctx->Magic = MAGIC_OPEN;
+	else if (!_strcmp(type, "SQLITE_MAGIC_CLOSED")) ctx->Magic = MAGIC_CLOSED;
+	else if (!_strcmp(type, "SQLITE_MAGIC_BUSY")) ctx->Magic = MAGIC_BUSY;
+	else if (!_strcmp(type, "SQLITE_MAGIC_ERROR")) ctx->Magic = MAGIC_ERROR;
 	else if (Jim_GetInt(interp, args[2], (int *)&ctx->Magic)) return JIM_ERROR;
 	return JIM_OK;
 }
@@ -3104,15 +3106,15 @@ __device__ static int sqlite_set_magic(ClientData clientData, Jim_Interp *interp
 // Usage:  sqlite3_interrupt  DB 
 //
 // Trigger an interrupt on DB
-__device__ static int test_interrupt(ClientData clientData, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_interrupt(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, Jim_args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	Main::Interrupt(ctx);
 	return JIM_OK;
 }
@@ -3138,17 +3140,17 @@ __device__ uint64 sqlite3StackDepth()
 // Usage:  sqlite3_stack_used DB SQL
 //
 // Try to measure the amount of stack space used by a call to sqlite3_exec
-__device__ static int test_stack_used(ClientData clientData, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_stack_used(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB SQL", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB SQL", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	prepStack();
-	Main::Exec(ctx, args[2], 0, 0, 0);
+	Main::Exec(ctx, Jim_String(args[2]), 0, 0, 0);
 	int i;
 	for (i = 65535; i >= 0 && ((uint32 *)_stack_baseline)[-i] == 0xdeadbeef; i--) { }
 	Jim_SetResultInt(interp, i*4);
@@ -3159,17 +3161,17 @@ __device__ static int test_stack_used(ClientData clientData, Jim_Interp *interp,
 //
 // Delete the user function 'function-name' from database handle DB. It is assumed that the user function was created as UTF8, any number of
 // arguments (the way the TCL interface does it).
-__device__ static int delete_function(ClientData clientData, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int delete_function(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB function-name", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB function-name", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateFunction(ctx, args[2], -1, TEXTENCODE_UTF8, 0, 0, 0, 0);
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	RC rc = Main::CreateFunction(ctx, Jim_String(args[2]), -1, TEXTENCODE_UTF8, 0, 0, 0, 0);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 
@@ -3177,35 +3179,35 @@ __device__ static int delete_function(ClientData clientData, Jim_Interp *interp,
 //
 // Delete the collation sequence 'collation-name' from database handle  DB. It is assumed that the collation sequence was created as UTF8 (the 
 // way the TCL interface does it).
-__device__ static int delete_collation(ClientData clientData, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int delete_collation(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB function-name", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB function-name", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateCollation(ctx, args[2], TEXTENCODE_UTF8, nullptr, nullptr);
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	RC rc = Main::CreateCollation(ctx, Jim_String(args[2]), TEXTENCODE_UTF8, nullptr, nullptr);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 
 // Usage: sqlite3_get_autocommit DB
 //
 // Return true if the database DB is currently in auto-commit mode. Return false if not.
-__device__ static int get_autocommit(ClientData clientData, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int get_autocommit(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	char buf[30];
 	_sprintf(buf, "%d", ctx->AutoCommit);
-	Jim_AppendResult(interp, buf, 0);
+	Jim_AppendResult(interp, buf, nullptr);
 	return JIM_OK;
 }
 
@@ -3213,16 +3215,16 @@ __device__ static int get_autocommit(ClientData clientData, Jim_Interp *interp, 
 //
 // Set the busy timeout.  This is more easily done using the timeout method of the TCL interface.  But we need a way to test the case
 // where it returns SQLITE_MISUSE.
-__device__ static int test_busy_timeout(ClientData clientData, Jim_Interp *interp, int argc, const char *args[])
+__device__ static int test_busy_timeout(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Jim_AppendResult(interp, "wrong # args: should be \"", args[0], " DB", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB", nullptr);
 		return JIM_ERROR;
 	}
 	Context *ctx;
 	int ms;
-	if (getDbPointer(interp, args[1], &ctx)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[2], &ms)) return JIM_ERROR;
 	RC rc = Main::BusyTimeout(ctx, ms);
 	Jim_AppendResult(interp, sqlite3TestErrorName(rc), nullptr);
@@ -3239,7 +3241,7 @@ __device__ static int tcl_variable_type(ClientData clientData, Jim_Interp *inter
 		Jim_WrongNumArgs(interp, 1, args, "VARIABLE");
 		return JIM_ERROR;
 	}
-	Jim_Obj *var = Jim_GetVar2(interp, Jim_String(args[1]), nullptr, JIM_LEAVE_ERR_MSG);
+	Jim_Obj *var = Jim_GetVariable(interp, args[1], JIM_ERRMSG);
 	if (!var) return JIM_ERROR;
 	if (var->typePtr)
 		Jim_SetResultString(interp, var->typePtr->name, -1);
@@ -3378,7 +3380,7 @@ __device__ static int test_pager_refcounts(ClientData clientData, Jim_Interp *in
 			v = a[0];
 			_mutex_leave(ctx->Mutex);
 		}
-		Jim_ListObjAppendElement(nullptr, result, Jim_NewIntObj(interp, v));
+		Jim_ListAppendElement(nullptr, result, Jim_NewIntObj(interp, v));
 	}
 	Jim_SetResult(interp, result);
 	return JIM_OK;
@@ -3394,7 +3396,7 @@ __device__ static int test_pager_refcounts(ClientData clientData, Jim_Interp *in
 // a result of their defective TCL rather than problems in SQLite.
 __device__ static int working_64bit_int(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	Jim_Obj *testObj = Jim_NewWide(interp, 1000000*(int64)1234567890);
+	Jim_Obj *testObj = Jim_NewWideObj(interp, 1000000*(int64)1234567890);
 	bool working = !_strcmp(Jim_String(testObj), "1234567890000000");
 	Jim_DecrRefCount(interp, testObj);
 	Jim_SetResultBool(interp, working);
@@ -3533,7 +3535,6 @@ __device__ static int vfs_unregister_all(ClientData clientData, Jim_Interp *inte
 // Restore all VFSes that were removed using vfs_unregister_all
 __device__ static int vfs_reregister_all(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	int i;
 	for (int i = 0; i < _vfsLength; i++)
 		VSystem::RegisterVfs(_vfs[i], i == 0);
 	return JIM_OK;
@@ -3610,7 +3611,7 @@ __device__ static int file_control_chunksize_test(ClientData clientData, Jim_Int
 	RC rc = Main::FileControl(ctx, dbName, VFile::FCNTL_CHUNK_SIZE, (void *)&size);
 	if (rc)
 	{
-		Jim_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
+		Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
 		return JIM_ERROR;
 	}
 	return JIM_OK;
@@ -3634,7 +3635,7 @@ __device__ static int file_control_sizehint_test(ClientData clientData, Jim_Inte
 	RC rc = Main::FileControl(ctx, dbName, VFile::FCNTL_SIZE_HINT, (void *)&size);
 	if (rc)
 	{
-		Jim_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
+		Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
 		return JIM_ERROR;
 	}
 	return JIM_OK;
@@ -3817,7 +3818,7 @@ __device__ static int vfs_list(ClientData clientData, Jim_Interp *interp, int ar
 	}
 	Jim_Obj *ret = Jim_NewObj(interp);
 	for (VSystem *vfs = VSystem::FindVfs(nullptr); vfs; vfs = vfs->Next)
-		Jim_ListObjAppendElement(interp, ret, Jim_NewStringObj(interp, vfs->Name, -1));
+		Jim_ListAppendElement(interp, ret, Jim_NewStringObj(interp, vfs->Name, -1));
 	Jim_SetResult(interp, ret);
 	return JIM_OK;  
 }
@@ -3907,20 +3908,21 @@ __device__ static int reset_prng_state(ClientData clientData, Jim_Interp *interp
 // tclcmd:  pcache_stats
 __device__ static int test_pcache_stats(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
+	extern __device__ void PCache1_testStats(uint *current, uint *max, uint *min, uint *recyclables);
 	uint min;
 	uint max;
 	uint current;
 	uint recyclables;
 	PCache1_testStats(&current, &max, &min, &recyclables);
 	Jim_Obj *ret = Jim_NewObj(interp);
-	Jim_ListObjAppendElement(interp, ret, Tcl_NewStringObj(interp, "current", -1));
-	Jim_ListObjAppendElement(interp, ret, Jim_NewIntObj(interp, current));
-	Jim_ListObjAppendElement(interp, ret, Tcl_NewStringObj(interp, "max", -1));
-	Jim_ListObjAppendElement(interp, ret, Jim_NewIntObj(interp, max));
-	Jim_ListObjAppendElement(interp, ret, Tcl_NewStringObj(interp, "min", -1));
-	Jim_ListObjAppendElement(interp, ret, Jim_NewIntObj(interp, min));
-	Jim_ListObjAppendElement(interp, ret, Tcl_NewStringObj(interp, "recyclable", -1));
-	Jim_ListObjAppendElement(interp, ret, Jim_NewIntObj(interp, recyclables));
+	Jim_ListAppendElement(interp, ret, Jim_NewStringObj(interp, "current", -1));
+	Jim_ListAppendElement(interp, ret, Jim_NewIntObj(interp, current));
+	Jim_ListAppendElement(interp, ret, Jim_NewStringObj(interp, "max", -1));
+	Jim_ListAppendElement(interp, ret, Jim_NewIntObj(interp, max));
+	Jim_ListAppendElement(interp, ret, Jim_NewStringObj(interp, "min", -1));
+	Jim_ListAppendElement(interp, ret, Jim_NewIntObj(interp, min));
+	Jim_ListAppendElement(interp, ret, Jim_NewStringObj(interp, "recyclable", -1));
+	Jim_ListAppendElement(interp, ret, Jim_NewIntObj(interp, recyclables));
 	Jim_SetResult(interp, ret);
 	return JIM_OK;
 }
@@ -3943,7 +3945,7 @@ __device__ static int test_unlock_notify(ClientData clientData, Jim_Interp *inte
 	Context *ctx;
 	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	RC rc = Main::UnlockNotify(ctx, test_unlock_notify_cb, (void *)interp);
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 #endif
@@ -3960,7 +3962,7 @@ __device__ static int test_wal_checkpoint(ClientData clientData, Jim_Interp *int
 	if (getDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const char *dbName = (argc == 3 ? Jim_String(args[2]) : nullptr);
 	RC rc = Main::WalCheckpoint(ctx, dbName);
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), JIM_STATIC);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 
@@ -3990,21 +3992,21 @@ __device__ static int test_wal_checkpoint_v2(ClientData clientData, Jim_Interp *
 	const char *dbName = (argc == 4 ? Jim_String(args[3]) : nullptr);
 	Context *ctx;
 	IPager::CHECKPOINT mode;
-	if (getDbPointer(interp, Jim_String(args[1]), &ctx) || Jim_GetIndexFromObj(interp, args[2], (const char **)_modes, "mode", 0, (int *)&mode)) return JIM_ERROR;
+	if (getDbPointer(interp, Jim_String(args[1]), &ctx) || Jim_GetEnum(interp, args[2], (const char **)_modes, (int *)&mode, "mode", 0)) return JIM_ERROR;
 
 	int logs = -555;
 	int ckpts = -555;
 	RC rc = Main::WalCheckpoint_v2(ctx, dbName, mode, &logs, &ckpts);
 	if (rc != RC_OK && rc != RC_BUSY)
 	{
-		Jim_SetResult(interp, (char *)Main::ErrMsg(ctx), JIM_VOLATILE);
+		Jim_SetResultString(interp, (char *)Main::ErrMsg(ctx), -1);
 		return JIM_ERROR;
 	}
 
 	Jim_Obj *ret = Jim_NewObj(interp);
-	Jim_ListObjAppendElement(interp, ret, Jim_NewIntObj(interp, rc == RC_BUSY ? 1 : 0));
-	Jim_ListObjAppendElement(interp, ret, Jim_NewIntObj(interp, logs));
-	Jim_ListObjAppendElement(interp, ret, Jim_NewIntObj(interp, ckpts));
+	Jim_ListAppendElement(interp, ret, Jim_NewIntObj(interp, rc == RC_BUSY ? 1 : 0));
+	Jim_ListAppendElement(interp, ret, Jim_NewIntObj(interp, logs));
+	Jim_ListAppendElement(interp, ret, Jim_NewIntObj(interp, ckpts));
 	Jim_SetResult(interp, ret);
 	return JIM_OK;
 }
@@ -4021,8 +4023,8 @@ __device__ static void xLogcallback(void *unused, int err, char *msg)
 	Jim_Obj *new_ = Jim_DuplicateObj(interp, _logcallback.Obj);
 
 	Jim_IncrRefCount(new_);
-	Jim_ListObjAppendElement(nullptr, new_, Jim_NewStringObj(interp, sqlite3TestErrorName(err), -1));
-	Jim_ListObjAppendElement(nullptr, new_, Jim_NewStringObj(interp, msg, -1));
+	Jim_ListAppendElement(nullptr, new_, Jim_NewStringObj(interp, sqlite3TestErrorName(err), -1));
+	Jim_ListAppendElement(nullptr, new_, Jim_NewStringObj(interp, msg, -1));
 	Jim_EvalObj(interp, new_);
 	Jim_DecrRefCount(interp, new_);
 }
@@ -4113,8 +4115,8 @@ __device__ static int test_print_eqp(ClientData clientData,Jim_Interp *interp, i
 	if (getStmtPointer(interp, Jim_String(args[1]), &stmt)) return JIM_ERROR;
 	RC rc = printExplainQueryPlan(stmt);
 	// This is needed on Windows so that a test case using this function can open a read pipe and get the output of printExplainQueryPlan() immediately.
-	_fflush(stdout);
-	Jim_SetResult(interp, (char *)t1ErrorName(rc), nullptr);
+	_fflush(_stdout);
+	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
 #endif
@@ -4135,7 +4137,7 @@ __device__ static int test_test_control(ClientData clientData, Jim_Interp *inter
 		return JIM_ERROR;
 	}
 	int verbId;
-	int rc = Jim_GetIndexFromObjStruct(interp, args[1], (const void **)_verbs, sizeof(_verbs[0]), "VERB", 0, &verbId);
+	int rc = Jim_GetEnumFromObjStruct(interp, args[1], (const void **)_verbs, sizeof(_verbs[0]), &verbId, "VERB", 0);
 	if (rc != JIM_OK) return rc;
 	int flagId = _verbs[verbId].Id;
 	switch (flagId)
@@ -4315,6 +4317,17 @@ __device__ static int optimization_control(ClientData clientData, Jim_Interp *in
 
 #pragma region Register
 
+extern __device__ int sqlite3_search_count;
+extern __device__ int sqlite3_found_count;
+extern __device__ int sqlite3_interrupt_count;
+extern __device__ int sqlite3_open_file_count;
+extern __device__ int sqlite3_sort_count;
+extern __device__ int sqlite3_current_time;
+#if OS_UNIX && defined(__APPLE__) && ENABLE_LOCKING_STYLE
+extern __device__ int sqlite3_hostid_num;
+#endif
+extern __device__ int sqlite3_max_blobsize;
+extern __device__ int sqlite3BtreeSharedCacheReport(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[]);
 __constant__ static struct
 {
 	char *Name;
@@ -4515,23 +4528,11 @@ __constant__ static struct
 	{ "sqlite3_wal_checkpoint_v2",		test_wal_checkpoint_v2,	nullptr },
 	{ "test_sqlite3_log",				test_sqlite3_log,		nullptr },
 #ifndef OMIT_EXPLAIN
-	{ "print_explain_query_plan",			test_print_eqp,		nullptr },
+	{ "print_explain_query_plan",		test_print_eqp,			nullptr },
 #endif
-	{ "sqlite3_test_control",				test_test_control,	nullptr },
+	{ "sqlite3_test_control",			test_test_control,		nullptr },
 };
 // Register commands with the TCL interpreter.
-extern __device__ int sqlite3_search_count;
-extern __device__ int sqlite3_found_count;
-extern __device__ int sqlite3_interrupt_count;
-extern __device__ int sqlite3_open_file_count;
-extern __device__ int sqlite3_sort_count;
-extern __device__ int sqlite3_current_time;
-#if OS_UNIX && defined(__APPLE__) && ENABLE_LOCKING_STYLE
-extern __device__ int sqlite3_hostid_num;
-#endif
-extern __device__ int sqlite3_max_blobsize;
-extern __device__ int sqlite3BtreeSharedCacheReport(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[]);
-//
 __constant__ static int bitmask_size = sizeof(Bitmask)*8;
 extern __device__ int sqlite3_sync_count, sqlite3_fullsync_count;
 extern __device__ int sqlite3_opentemp_count;

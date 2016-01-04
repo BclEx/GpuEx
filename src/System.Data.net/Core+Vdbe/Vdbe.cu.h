@@ -473,7 +473,7 @@ namespace CORE_NAME
 		__device__ static RC MemExpandBlob(Mem *mem);
 #define ExpandBlob(P) (((P)->Flags & MEM_Zero)?Vdbe::MemExpandBlob(P):(RC)0)
 #else
-		__device__ inline static RC MemExpandBlob(Mem *mem) { return RC_OK };
+		__device__ inline static RC MemExpandBlob(Mem *mem) { return RC_OK; }
 #define ExpandBlob(P) RC_OK
 #endif
 		__device__ static RC MemNulTerminate(Mem *mem);

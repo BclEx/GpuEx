@@ -95,7 +95,7 @@ __device__ static regex_t *SetRegexpFromAny(Jim_Interp *interp, Jim_Obj *objPtr,
 __constant__ static const char * const _regexp_options[] = {
 	"-indices", "-nocase", "-line", "-all", "-inline", "-start", "--", NULL
 };
-__device__ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ int Jim_RegexpCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int opt_indices = 0;
 	int opt_all = 0;
@@ -258,7 +258,7 @@ done:
 __constant__ static const char *const _regsub_options[] = {
 	"-nocase", "-line", "-all", "-start", "--", NULL
 };
-__device__ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ int Jim_RegsubCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int regcomp_flags = 0;
 	int regexec_flags = 0;

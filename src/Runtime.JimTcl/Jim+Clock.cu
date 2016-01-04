@@ -46,7 +46,7 @@ __device__ static int clock_cmd_format(Jim_Interp *interp, int argc, Jim_Obj *co
 }
 
 #ifdef HAVE_STRPTIME
-__device__ static int clock_cmd_scan(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+__device__ static int clock_cmd_scan(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	if (!Jim_CompareStringImmediate(interp, argv[1], "-format"))
 		return -1;

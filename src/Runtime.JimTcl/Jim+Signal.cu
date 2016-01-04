@@ -244,17 +244,17 @@ static int do_signal_cmd(Jim_Interp *interp, int action, int argc, Jim_Obj *cons
 	return JIM_OK;
 }
 
-static int signal_cmd_handle(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int signal_cmd_handle(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	return do_signal_cmd(interp, SIGNAL_ACTION_HANDLE, argc, argv);
 }
 
-static int signal_cmd_ignore(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int signal_cmd_ignore(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	return do_signal_cmd(interp, SIGNAL_ACTION_IGNORE, argc, argv);
 }
 
-static int signal_cmd_default(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int signal_cmd_default(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	return do_signal_cmd(interp, SIGNAL_ACTION_DEFAULT, argc, argv);
 }
@@ -273,7 +273,7 @@ static int signal_set_sigmask_result(Jim_Interp *interp, jim_wide sigmask)
 	return JIM_OK;
 }
 
-static int signal_cmd_check(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int signal_cmd_check(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int clear = 0;
 	jim_wide mask = 0;
@@ -314,7 +314,7 @@ static int signal_cmd_check(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return JIM_OK;
 }
 
-static int signal_cmd_throw(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int signal_cmd_throw(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int sig = SIGINT;
 
@@ -402,7 +402,7 @@ static const jim_subcmd_type signal_command_table[] = {
 	{ NULL }
 };
 
-static int Jim_AlarmCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_AlarmCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int ret;
 
@@ -436,7 +436,7 @@ static int Jim_AlarmCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return ret;
 }
 
-static int Jim_SleepCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_SleepCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int ret;
 
@@ -459,7 +459,7 @@ static int Jim_SleepCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return ret;
 }
 
-static int Jim_KillCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_KillCmd(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	int sig;
 	long pid;
