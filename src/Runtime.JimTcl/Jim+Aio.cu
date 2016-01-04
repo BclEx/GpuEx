@@ -123,7 +123,7 @@ typedef struct AioFile
 	int addr_family;
 } AioFile;
 
-__device__ static int JimAioSubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+__device__ static int JimAioSubCmdProc(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 __device__ static int JimMakeChannel(Jim_Interp *interp, FILE *fh, int fd, Jim_Obj *filename, const char *hdlfmt, int family, const char *mode);
 
 #if !defined(JIM_ANSIC) && !defined(JIM_BOOTSTRAP)
