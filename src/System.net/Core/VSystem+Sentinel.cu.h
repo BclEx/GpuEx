@@ -47,7 +47,7 @@ namespace CORE_NAME { namespace Messages
 			char *buffer = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += 1024);
 			if (end > dataEnd) return nullptr;
-			_memcpy(buffer, t->Buffer, t->Amount);
+			memcpy(buffer, t->Buffer, t->Amount);
 			t->Buffer = buffer;
 			return end;
 		}
@@ -122,11 +122,11 @@ namespace CORE_NAME { namespace Messages
 	{
 		__device__ inline static char *Prepare(System_Open *t, char *data, char *dataEnd)
 		{
-			int nameLength = (t->Name ? _strlen(t->Name) + 2 : 0);
+			int nameLength = (t->Name ? _strlen(t->Name) + 1 : 0);
 			char *name = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += nameLength);
 			if (end > dataEnd) return nullptr;
-			_memcpy(name, t->Name, nameLength);
+			memcpy(name, t->Name, nameLength);
 			t->Name = name;
 			return end;
 		}
@@ -147,7 +147,7 @@ namespace CORE_NAME { namespace Messages
 			char *filename = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += filenameLength);
 			if (end > dataEnd) return nullptr;
-			_memcpy(filename, t->Filename, filenameLength);
+			memcpy(filename, t->Filename, filenameLength);
 			t->Filename = filename;
 			return end;
 		}
@@ -166,7 +166,7 @@ namespace CORE_NAME { namespace Messages
 			char *filename = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += filenameLength);
 			if (end > dataEnd) return nullptr;
-			_memcpy(filename, t->Filename, filenameLength);
+			memcpy(filename, t->Filename, filenameLength);
 			t->Filename = filename;
 			return end;
 		}
@@ -187,7 +187,7 @@ namespace CORE_NAME { namespace Messages
 			char *full = (char *)(data += relativeLength);
 			char *end = (char *)(data += 1024);
 			if (end > dataEnd) return nullptr;
-			_memcpy(relative, t->Relative, relativeLength);
+			memcpy(relative, t->Relative, relativeLength);
 			t->Relative = relative;
 			t->Full = full;
 			return end;

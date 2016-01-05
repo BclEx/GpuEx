@@ -862,7 +862,7 @@ __device__ __forceinline char *__strdup(const char *z)
 	size_t n = _strlen(z) + 1;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_alloc((int)n);
-	if (newZ) _memcpy(newZ, (char *)z, n);
+	if (newZ) memcpy(newZ, (char *)z, n);
 	return newZ;
 }
 //__device__ char *_strndup(const char *z, int n);
@@ -871,7 +871,7 @@ __device__ __forceinline char *_strndup(const char *z, int n)
 	if (z == nullptr) return nullptr;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_alloc(n + 1);
-	if (newZ) { _memcpy(newZ, (char *)z, n); newZ[n] = 0; }
+	if (newZ) { memcpy(newZ, (char *)z, n); newZ[n] = 0; }
 	return newZ;
 }
 
@@ -882,7 +882,7 @@ __device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
 	size_t n = _strlen(z) + 1;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_tagalloc(tag, (int)n);
-	if (newZ) _memcpy(newZ, (char *)z, n);
+	if (newZ) memcpy(newZ, (char *)z, n);
 	return newZ;
 }
 //__device__ char *_tagstrndup(TagBase *tag, const char *z, int n);
@@ -891,7 +891,7 @@ __device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n)
 	if (z == nullptr) return nullptr;
 	_assert((n & 0x7fffffff) == n);
 	char *newZ = (char *)_tagalloc(tag, n + 1);
-	if (newZ) { _memcpy(newZ, (char *)z, n); newZ[n] = 0; }
+	if (newZ) { memcpy(newZ, (char *)z, n); newZ[n] = 0; }
 	return newZ;
 }
 
@@ -1063,7 +1063,7 @@ namespace Messages
 			char *format = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += formatLength);
 			if (end > dataEnd) return nullptr;
-			_memcpy(format, t->Format, formatLength);
+			memcpy(format, t->Format, formatLength);
 			t->Format = format;
 			return end;
 		}
@@ -1084,8 +1084,8 @@ namespace Messages
 			char *mode = (char *)(data += filenameLength);
 			char *end = (char *)(data += modeLength);
 			if (end > dataEnd) return nullptr;
-			_memcpy(filename, t->Filename, filenameLength);
-			_memcpy(mode, t->Mode, modeLength);
+			memcpy(filename, t->Filename, filenameLength);
+			memcpy(mode, t->Mode, modeLength);
 			t->Filename = filename;
 			t->Mode = mode;
 			return end;
@@ -1158,7 +1158,7 @@ namespace Messages
 			char *str = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += strLength);
 			if (end > dataEnd) return nullptr;
-			_memcpy(str, t->Str, strLength);
+			memcpy(str, t->Str, strLength);
 			t->Str = str;
 			return end;
 		}
@@ -1194,7 +1194,7 @@ namespace Messages
 			char *ptr = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += size);
 			if (end > dataEnd) return nullptr;
-			_memcpy(ptr, t->Ptr, size);
+			memcpy(ptr, t->Ptr, size);
 			t->Ptr = ptr;
 			return end;
 		}

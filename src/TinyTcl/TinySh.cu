@@ -131,16 +131,16 @@ static void InteractiveExecute(char *line);
 void InteractivePrompt() {
 	FILE *in = stdin;
 	FILE *out = stdout;
-	_dataP.gotPartial = false;
+	h_dataP.gotPartial = false;
 	while (true) {
 		clearerr(in);
-		if (!_dataP.gotPartial) {
-			if (!_dataP.noninteractive) fputs("% ", out);
+		if (!h_dataP.gotPartial) {
+			if (!h_dataP.noninteractive) fputs("% ", out);
 			fflush(out);
 		}
 		char line[1000];
 		if (fgets(line, 1000, in) == NULL) {
-			if (!_dataP.gotPartial) exit(0);
+			if (!h_dataP.gotPartial) exit(0);
 			line[0] = 0;
 		}
 		InteractiveExecute(line);
