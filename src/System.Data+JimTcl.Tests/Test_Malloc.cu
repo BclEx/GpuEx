@@ -285,10 +285,10 @@ static int textToPointer(const char *z, void **pp){
   for(i=0; i<sizeof(void*)*2 && z[0]; i++){
     int v;
     v = hexToInt(*z++);
-    if( v<0 ) return TCL_ERROR;
+    if( v<0 ) return JIM_ERROR;
     n = n*16 + v;
   }
-  if( *z!=0 ) return TCL_ERROR;
+  if( *z!=0 ) return JIM_ERROR;
   if( sizeof(n)==sizeof(*pp) ){
     memcpy(pp, &n, sizeof(n));
   }else if( sizeof(u)==sizeof(*pp) ){
@@ -297,7 +297,7 @@ static int textToPointer(const char *z, void **pp){
   }else{
     assert( 0 );
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -316,13 +316,13 @@ static int test_malloc(
   char zOut[100];
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "NBYTES");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &nByte) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &nByte) ) return JIM_ERROR;
   p = sqlite3_malloc((unsigned)nByte);
   pointerToText(p, zOut);
   Tcl_AppendResult(interp, zOut, NULL);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -341,17 +341,17 @@ static int test_realloc(
   char zOut[100];
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "PRIOR NBYTES");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[2], &nByte) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &nByte) ) return JIM_ERROR;
   if( textToPointer(Tcl_GetString(objv[1]), &pPrior) ){
     Tcl_AppendResult(interp, "bad pointer: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3_realloc(pPrior, (unsigned)nByte);
   pointerToText(p, zOut);
   Tcl_AppendResult(interp, zOut, NULL);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -368,14 +368,14 @@ static int test_free(
   void *pPrior;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "PRIOR");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( textToPointer(Tcl_GetString(objv[1]), &pPrior) ){
     Tcl_AppendResult(interp, "bad pointer: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   sqlite3_free(pPrior);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -404,31 +404,31 @@ static int test_memset(
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "ADDRESS SIZE HEX");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( textToPointer(Tcl_GetString(objv[1]), &p) ){
     Tcl_AppendResult(interp, "bad pointer: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[2], &size) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( size<=0 ){
     Tcl_AppendResult(interp, "size must be positive", (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zHex = Tcl_GetStringFromObj(objv[3], &n);
   if( n>sizeof(zBin)*2 ) n = sizeof(zBin)*2;
   n = sqlite3TestHexToBin(zHex, n, zBin);
   if( n==0 ){
     Tcl_AppendResult(interp, "no data", (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zOut = p;
   for(i=0; i<size; i++){
     zOut[i] = zBin[i%n];
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -449,18 +449,18 @@ static int test_memget(
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "ADDRESS SIZE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( textToPointer(Tcl_GetString(objv[1]), &p) ){
     Tcl_AppendResult(interp, "bad pointer: ", Tcl_GetString(objv[1]), (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[2], &size) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( size<=0 ){
     Tcl_AppendResult(interp, "size must be positive", (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zBin = p;
   while( size>0 ){
@@ -475,7 +475,7 @@ static int test_memget(
     sqlite3TestBinToHex(zHex, n);
     Tcl_AppendResult(interp, zHex, (char*)0);
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -490,7 +490,7 @@ static int test_memory_used(
   Tcl_Obj *CONST objv[]
 ){
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sqlite3_memory_used()));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -507,14 +507,14 @@ static int test_memory_highwater(
   int resetFlag = 0;
   if( objc!=1 && objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?RESET?");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( objc==2 ){
-    if( Tcl_GetBooleanFromObj(interp, objv[1], &resetFlag) ) return TCL_ERROR;
+    if( Tcl_GetBooleanFromObj(interp, objv[1], &resetFlag) ) return JIM_ERROR;
   } 
   Tcl_SetObjResult(interp, 
      Tcl_NewWideIntObj(sqlite3_memory_highwater(resetFlag)));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -532,16 +532,16 @@ static int test_memdebug_backtrace(
   int depth;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DEPT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &depth) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &depth) ) return JIM_ERROR;
 #ifdef SQLITE_MEMDEBUG
   {
     extern void sqlite3MemdebugBacktrace(int);
     sqlite3MemdebugBacktrace(depth);
   }
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -557,7 +557,7 @@ static int test_memdebug_dump(
 ){
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 #if defined(SQLITE_MEMDEBUG) || defined(SQLITE_MEMORY_SIZE) \
      || defined(SQLITE_POW2_MEMORY_SIZE)
@@ -566,7 +566,7 @@ static int test_memdebug_dump(
     sqlite3MemdebugDump(Tcl_GetString(objv[1]));
   }
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -583,7 +583,7 @@ static int test_memdebug_malloc_count(
   int nMalloc = -1;
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 #if defined(SQLITE_MEMDEBUG)
   {
@@ -592,7 +592,7 @@ static int test_memdebug_malloc_count(
   }
 #endif
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nMalloc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -629,9 +629,9 @@ static int test_memdebug_fail(
 
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "COUNTER ?OPTIONS?");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &iFail) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &iFail) ) return JIM_ERROR;
 
   for(ii=2; ii<objc; ii+=2){
     int nOption;
@@ -643,7 +643,7 @@ static int test_memdebug_fail(
         zErr = "option requires an argument: ";
       }else{
         if( Tcl_GetIntFromObj(interp, objv[ii+1], &nRepeat) ){
-          return TCL_ERROR;
+          return JIM_ERROR;
         }
       }
     }else if( nOption>1 && strncmp(zOption, "-benigncnt", nOption)==0 ){
@@ -658,7 +658,7 @@ static int test_memdebug_fail(
 
     if( zErr ){
       Tcl_AppendResult(interp, zErr, zOption, 0);
-      return TCL_ERROR;
+      return JIM_ERROR;
     }
   }
   
@@ -670,7 +670,7 @@ static int test_memdebug_fail(
     Tcl_ObjSetVar2(interp, pBenignCnt, 0, Tcl_NewIntObj(nBenign), 0);
   }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nFail));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -689,11 +689,11 @@ static int test_memdebug_pending(
   int nPending;
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   nPending = faultsimPending();
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nPending));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -715,7 +715,7 @@ static int test_memdebug_settitle(
 ){
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "TITLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 #ifdef SQLITE_MEMDEBUG
   {
@@ -725,7 +725,7 @@ static int test_memdebug_settitle(
     sqlite3MemdebugSettitle(zTitle);
   }
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }
 
 #define MALLOC_LOG_FRAMES  10 
@@ -815,7 +815,7 @@ static int test_memdebug_log(
     Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND ...");
   }
   if( Tcl_GetIndexFromObj(interp, objv[1], MB_strs, "sub-command", 0, &iSub) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   switch( (enum MB_enum)iSub ){
@@ -872,7 +872,7 @@ static int test_memdebug_log(
     }
   }
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -896,10 +896,10 @@ static int test_config_scratch(
   static char *buf = 0;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return JIM_ERROR;
   free(buf);
   if( sz<0 ){
     buf = 0;
@@ -912,7 +912,7 @@ static int test_config_scratch(
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(N));
   Tcl_SetObjResult(interp, pResult);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -936,10 +936,10 @@ static int test_config_pagecache(
   static char *buf = 0;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return JIM_ERROR;
   free(buf);
   if( sz<0 ){
     buf = 0;
@@ -952,7 +952,7 @@ static int test_config_pagecache(
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(N));
   Tcl_SetObjResult(interp, pResult);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -979,26 +979,26 @@ static int test_alt_pcache(
   if( objc<2 || objc>5 ){
     Tcl_WrongNumArgs(interp, 1, objv, 
         "INSTALLFLAG DISCARDCHANCE PRNGSEEED HIGHSTRESS");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &installFlag) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &installFlag) ) return JIM_ERROR;
   if( objc>=3 && Tcl_GetIntFromObj(interp, objv[2], &discardChance) ){
-     return TCL_ERROR;
+     return JIM_ERROR;
   }
   if( objc>=4 && Tcl_GetIntFromObj(interp, objv[3], &prngSeed) ){
-     return TCL_ERROR;
+     return JIM_ERROR;
   }
   if( objc>=5 && Tcl_GetIntFromObj(interp, objv[4], &highStress) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( discardChance<0 || discardChance>100 ){
     Tcl_AppendResult(interp, "discard-chance should be between 0 and 100",
                      (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   installTestPCache(installFlag, (unsigned)discardChance, (unsigned)prngSeed,
                     (unsigned)highStress);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1015,12 +1015,12 @@ static int test_config_memstatus(
   int enable, rc;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ) return TCL_ERROR;
+  if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ) return JIM_ERROR;
   rc = sqlite3_config(SQLITE_CONFIG_MEMSTATUS, enable);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1037,10 +1037,10 @@ static int test_config_lookaside(
   Tcl_Obj *pRet;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE COUNT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &cnt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &cnt) ) return JIM_ERROR;
   pRet = Tcl_NewObj();
   Tcl_ListObjAppendElement(
       interp, pRet, Tcl_NewIntObj(sqlite3GlobalConfig.szLookaside)
@@ -1050,7 +1050,7 @@ static int test_config_lookaside(
   );
   sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, cnt);
   Tcl_SetObjResult(interp, pRet);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -1075,22 +1075,22 @@ static int test_db_config_lookaside(
   int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BUFID SIZE COUNT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &bufid) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[4], &cnt) ) return TCL_ERROR;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &bufid) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &sz) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[4], &cnt) ) return JIM_ERROR;
   if( bufid==0 ){
     rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, 0, sz, cnt);
   }else if( bufid>=1 && bufid<=2 && sz*cnt<=sizeof(azBuf[0]) ){
     rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, azBuf[bufid], sz,cnt);
   }else{
     Tcl_AppendResult(interp, "illegal arguments - see documentation", (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1112,10 +1112,10 @@ static int test_config_heap(
 
   if( nArg!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "NBYTE NMINALLOC");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, aArg[0], &nByte) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, aArg[1], &nMinAlloc) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, aArg[0], &nByte) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, aArg[1], &nMinAlloc) ) return JIM_ERROR;
 
   if( nByte==0 ){
     free( zBuf );
@@ -1126,8 +1126,8 @@ static int test_config_heap(
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, zBuf, nByte, nMinAlloc);
   }
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
+  return JIM_OK;
 }
 
 /*
@@ -1147,25 +1147,25 @@ static int test_config_error(
 
   if( objc!=2 && objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "[DB]");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( objc==2 ){
-    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
     if( sqlite3_db_config(db, 99999)!=SQLITE_ERROR ){
       Tcl_AppendResult(interp, 
             "sqlite3_db_config(db, 99999) does not return SQLITE_ERROR",
             (char*)0);
-      return TCL_ERROR;
+      return JIM_ERROR;
     }
   }else{
     if( sqlite3_config(99999)!=SQLITE_ERROR ){
       Tcl_AppendResult(interp, 
           "sqlite3_config(99999) does not return SQLITE_ERROR",
           (char*)0);
-      return TCL_ERROR;
+      return JIM_ERROR;
     }
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1185,16 +1185,16 @@ static int test_config_uri(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOL");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( Tcl_GetBooleanFromObj(interp, objv[1], &bOpenUri) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   rc = sqlite3_config(SQLITE_CONFIG_URI, bOpenUri);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1214,16 +1214,16 @@ static int test_config_cis(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOL");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( Tcl_GetBooleanFromObj(interp, objv[1], &bUseCis) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   rc = sqlite3_config(SQLITE_CONFIG_COVERING_INDEX_SCAN, bUseCis);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1240,7 +1240,7 @@ static int test_dump_memsys3(
 ){
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   switch( SQLITE_PTR_TO_INT(clientData) ){
@@ -1259,7 +1259,7 @@ static int test_dump_memsys3(
 #endif
     }
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1296,7 +1296,7 @@ static int test_status(
   Tcl_Obj *pResult;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "PARAMETER RESETFLAG");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zOpName = Tcl_GetString(objv[1]);
   for(i=0; i<ArraySize(aOp); i++){
@@ -1306,9 +1306,9 @@ static int test_status(
     }
   }
   if( i>=ArraySize(aOp) ){
-    if( Tcl_GetIntFromObj(interp, objv[1], &op) ) return TCL_ERROR;
+    if( Tcl_GetIntFromObj(interp, objv[1], &op) ) return JIM_ERROR;
   }
-  if( Tcl_GetBooleanFromObj(interp, objv[2], &resetFlag) ) return TCL_ERROR;
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &resetFlag) ) return JIM_ERROR;
   iValue = 0;
   mxValue = 0;
   rc = sqlite3_status(op, &iValue, &mxValue, resetFlag);
@@ -1317,7 +1317,7 @@ static int test_status(
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(iValue));
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(mxValue));
   Tcl_SetObjResult(interp, pResult);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1355,9 +1355,9 @@ static int test_db_status(
   Tcl_Obj *pResult;
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB PARAMETER RESETFLAG");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   zOpName = Tcl_GetString(objv[2]);
   if( memcmp(zOpName, "SQLITE_", 7)==0 ) zOpName += 7;
   if( memcmp(zOpName, "DBSTATUS_", 9)==0 ) zOpName += 9;
@@ -1368,9 +1368,9 @@ static int test_db_status(
     }
   }
   if( i>=ArraySize(aOp) ){
-    if( Tcl_GetIntFromObj(interp, objv[2], &op) ) return TCL_ERROR;
+    if( Tcl_GetIntFromObj(interp, objv[2], &op) ) return JIM_ERROR;
   }
-  if( Tcl_GetBooleanFromObj(interp, objv[3], &resetFlag) ) return TCL_ERROR;
+  if( Tcl_GetBooleanFromObj(interp, objv[3], &resetFlag) ) return JIM_ERROR;
   iValue = 0;
   mxValue = 0;
   rc = sqlite3_db_status(db, op, &iValue, &mxValue, resetFlag);
@@ -1379,7 +1379,7 @@ static int test_db_status(
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(iValue));
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(mxValue));
   Tcl_SetObjResult(interp, pResult);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1396,14 +1396,14 @@ static int test_install_malloc_faultsim(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[1], &isInstall) ){
-    return TCL_ERROR;
+  if( JIM_OK!=Tcl_GetBooleanFromObj(interp, objv[1], &isInstall) ){
+    return JIM_ERROR;
   }
   rc = faultsimInstall(isInstall);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
+  return JIM_OK;
 }
 
 /*
@@ -1420,8 +1420,8 @@ static int test_install_memsys3(
   const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
   rc = sqlite3_config(SQLITE_CONFIG_MALLOC, sqlite3MemGetMemsys3());
 #endif
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
+  return JIM_OK;
 }
 
 static int test_vfs_oom_test(
@@ -1433,14 +1433,14 @@ static int test_vfs_oom_test(
   extern int sqlite3_memdebug_vfs_oom_test;
   if( objc>2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?INTEGER?");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }else if( objc==2 ){
     int iNew;
-    if( Tcl_GetIntFromObj(interp, objv[1], &iNew) ) return TCL_ERROR;
+    if( Tcl_GetIntFromObj(interp, objv[1], &iNew) ) return JIM_ERROR;
     sqlite3_memdebug_vfs_oom_test = iNew;
   }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_memdebug_vfs_oom_test));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1489,6 +1489,6 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
     ClientData c = (ClientData)SQLITE_INT_TO_PTR(aObjCmd[i].clientData);
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, c, 0);
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif

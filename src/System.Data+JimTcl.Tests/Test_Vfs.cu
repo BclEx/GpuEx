@@ -285,8 +285,8 @@ static void tvfsExecTcl(
   if( arg3 ) Tcl_ListObjAppendElement(p->interp, pEval, arg3);
   if( arg4 ) Tcl_ListObjAppendElement(p->interp, pEval, arg4);
 
-  rc = Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
-  if( rc!=TCL_OK ){
+  rc = Tcl_EvalObjEx(p->interp, pEval, JIM_EVAL_GLOBAL);
+  if( rc!=JIM_OK ){
     Tcl_BackgroundError(p->interp);
     Tcl_ResetResult(p->interp);
   }
@@ -671,7 +671,7 @@ static int tvfsAccess(
       if( rc!=SQLITE_OK ) return rc;
     }else{
       Tcl_Interp *interp = p->interp;
-      if( TCL_OK==Tcl_GetBooleanFromObj(0, Tcl_GetObjResult(interp), pResOut) ){
+      if( JIM_OK==Tcl_GetBooleanFromObj(0, Tcl_GetObjResult(interp), pResOut) ){
         return SQLITE_OK;
       }
     }
@@ -1019,12 +1019,12 @@ static int testvfs_obj_cmd(
   
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SUBCOMMAND ...");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( Tcl_GetIndexFromObjStruct(
         interp, objv[1], aSubcmd, sizeof(aSubcmd[0]), "subcommand", 0, &i) 
   ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   Tcl_ResetResult(interp);
 
@@ -1036,7 +1036,7 @@ static int testvfs_obj_cmd(
       char *zName;
       if( objc!=3 && objc!=4 ){
         Tcl_WrongNumArgs(interp, 2, objv, "FILE ?VALUE?");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       zName = ckalloc(p->pParent->mxPathname);
       rc = p->pParent->xFullPathname(
@@ -1047,7 +1047,7 @@ static int testvfs_obj_cmd(
         Tcl_AppendResult(interp, "failed to get full path: ",
                          Tcl_GetString(objv[2]), 0);
         ckfree(zName);
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       for(pBuffer=p->pBuffer; pBuffer; pBuffer=pBuffer->pNext){
         if( 0==strcmp(pBuffer->zFile, zName) ) break;
@@ -1055,7 +1055,7 @@ static int testvfs_obj_cmd(
       ckfree(zName);
       if( !pBuffer ){
         Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]), 0);
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       if( objc==4 ){
         int n;
@@ -1108,10 +1108,10 @@ static int testvfs_obj_cmd(
       int mask = 0;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "LIST");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       if( Tcl_ListObjGetElements(interp, objv[2], &nElem, &apElem) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       Tcl_ResetResult(interp);
       for(i=0; i<nElem; i++){
@@ -1125,7 +1125,7 @@ static int testvfs_obj_cmd(
         }
         if( iMethod==ArraySize(vfsmethod) ){
           Tcl_AppendResult(interp, "unknown method: ", zElem, 0);
-          return TCL_ERROR;
+          return JIM_ERROR;
         }
       }
       p->mask = mask;
@@ -1146,7 +1146,7 @@ static int testvfs_obj_cmd(
         }
       }else if( objc!=2 ){
         Tcl_WrongNumArgs(interp, 2, objv, "?SCRIPT?");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
 
       Tcl_ResetResult(interp);
@@ -1179,16 +1179,16 @@ static int testvfs_obj_cmd(
 
       if( objc==4 ){
         int iCnt, iPersist;
-        if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iCnt)
-         || TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &iPersist)
+        if( JIM_OK!=Tcl_GetIntFromObj(interp, objv[2], &iCnt)
+         || JIM_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &iPersist)
         ){
-          return TCL_ERROR;
+          return JIM_ERROR;
         }
         pTest->eFault = iPersist?FAULT_INJECT_PERSISTENT:FAULT_INJECT_TRANSIENT;
         pTest->iCnt = iCnt;
       }else if( objc!=2 ){
         Tcl_WrongNumArgs(interp, 2, objv, "?CNT PERSIST?");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iRet));
       break;
@@ -1225,7 +1225,7 @@ static int testvfs_obj_cmd(
 
       if( objc>3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "?ATTR-LIST?");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       if( objc==3 ){
         int j;
@@ -1234,7 +1234,7 @@ static int testvfs_obj_cmd(
         int nFlags = 0;
 
         if( Tcl_ListObjGetElements(interp, objv[2], &nFlags, &flags) ){
-          return TCL_ERROR;
+          return JIM_ERROR;
         }
 
         for(j=0; j<nFlags; j++){
@@ -1242,11 +1242,11 @@ static int testvfs_obj_cmd(
           if( Tcl_GetIndexFromObjStruct(interp, flags[j], aFlag, 
                 sizeof(aFlag[0]), "flag", 0, &idx) 
           ){
-            return TCL_ERROR;
+            return JIM_ERROR;
           }
           if( aFlag[idx].iValue<0 && nFlags>1 ){
             Tcl_AppendResult(interp, "bad flags: ", Tcl_GetString(objv[2]), 0);
-            return TCL_ERROR;
+            return JIM_ERROR;
           }
           iNew |= aFlag[idx].iValue;
         }
@@ -1270,12 +1270,12 @@ static int testvfs_obj_cmd(
     case CMD_SECTORSIZE: {
       if( objc>3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "?VALUE?");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       if( objc==3 ){
         int iNew = 0;
         if( Tcl_GetIntFromObj(interp, objv[2], &iNew) ){
-          return TCL_ERROR;
+          return JIM_ERROR;
         }
         p->iSectorsize = iNew;
       }
@@ -1284,7 +1284,7 @@ static int testvfs_obj_cmd(
     }
   }
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static void testvfs_obj_del(ClientData cd){
@@ -1386,33 +1386,33 @@ static int testvfs_cmd(
 
     if( nSwitch>2 && 0==strncmp("-noshm", zSwitch, nSwitch) ){
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isNoshm) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       if( isNoshm ) isFullshm = 0;
     }
     else if( nSwitch>2 && 0==strncmp("-default", zSwitch, nSwitch) ){
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isDefault) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
     }
     else if( nSwitch>2 && 0==strncmp("-szosfile", zSwitch, nSwitch) ){
       if( Tcl_GetIntFromObj(interp, objv[i+1], &szOsFile) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
     }
     else if( nSwitch>2 && 0==strncmp("-mxpathname", zSwitch, nSwitch) ){
       if( Tcl_GetIntFromObj(interp, objv[i+1], &mxPathname) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
     }
     else if( nSwitch>2 && 0==strncmp("-iversion", zSwitch, nSwitch) ){
       if( Tcl_GetIntFromObj(interp, objv[i+1], &iVersion) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
     }
     else if( nSwitch>2 && 0==strncmp("-fullshm", zSwitch, nSwitch) ){
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &isFullshm) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       if( isFullshm ) isNoshm = 0;
     }
@@ -1462,16 +1462,16 @@ static int testvfs_cmd(
 
   sqlite3_vfs_register(pVfs, isDefault);
 
-  return TCL_OK;
+  return JIM_OK;
 
  bad_args:
   Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
-  return TCL_ERROR;
+  return JIM_ERROR;
 }
 
 int Sqlitetestvfs_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "testvfs", testvfs_cmd, 0, 0);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 #endif

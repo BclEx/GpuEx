@@ -96,9 +96,9 @@ static void *client_main(void *pArg)
 ** If the argument is not a valid thread ID put an error message in
 ** the interpreter and return -1.
 */
-static int parse_client_id(Tcl_Interp *interp, const char *zArg){
+static int parse_client_id(Jim_Interp *interp, const char *zArg){
 	if( zArg==0 || zArg[0]==0 || zArg[1]!=0 || !isupper((unsigned char)zArg[0]) ){
-		Tcl_AppendResult(interp, "thread ID must be an upper case letter", 0);
+		Jim_AppendResult(interp, "thread ID must be an upper case letter", 0);
 		return -1;
 	}
 	return zArg[0] - 'A';
@@ -112,7 +112,7 @@ static int parse_client_id(Tcl_Interp *interp, const char *zArg){
 */
 static int tcl_client_create(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
@@ -121,15 +121,15 @@ static int tcl_client_create(
 		int rc;
 
 		if( argc!=3 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID FILENAME", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( threadset[i].busy ){
-			Tcl_AppendResult(interp, "thread ", argv[1], " is already running", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "thread ", argv[1], " is already running", 0);
+			return JIM_ERROR;
 		}
 		threadset[i].busy = 1;
 		sqlite3_free(threadset[i].zFilename);
@@ -138,14 +138,14 @@ static int tcl_client_create(
 		threadset[i].completed = 0;
 		rc = pthread_create(&x, 0, client_main, &threadset[i]);
 		if( rc ){
-			Tcl_AppendResult(interp, "failed to create the thread", 0);
+			Jim_AppendResult(interp, "failed to create the thread", 0);
 			sqlite3_free(threadset[i].zFilename);
 			threadset[i].busy = 0;
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		pthread_detach(x);
 		sqlite3_server_start();
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
@@ -162,25 +162,25 @@ static void client_wait(Thread *p){
 */
 static int tcl_client_wait(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i;
 
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
@@ -206,16 +206,16 @@ static void stop_thread(Thread *p){
 */
 static int tcl_client_halt(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i;
 
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		if( argv[1][0]=='*' && argv[1][1]==0 ){
 			for(i=0; i<N_THREAD; i++){
@@ -225,10 +225,10 @@ static int tcl_client_halt(
 			}
 		}else{
 			i = parse_client_id(interp, argv[1]);
-			if( i<0 ) return TCL_ERROR;
+			if( i<0 ) return JIM_ERROR;
 			if( !threadset[i].busy ){
-				Tcl_AppendResult(interp, "no such thread", 0);
-				return TCL_ERROR;
+				Jim_AppendResult(interp, "no such thread", 0);
+				return JIM_ERROR;
 			}
 			stop_thread(&threadset[i]);
 		}
@@ -238,7 +238,7 @@ static int tcl_client_halt(
 		if( i>=N_THREAD ){
 			sqlite3_server_stop();
 		}
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
@@ -249,7 +249,7 @@ static int tcl_client_halt(
 */
 static int tcl_client_argc(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
@@ -257,20 +257,20 @@ static int tcl_client_argc(
 		char zBuf[100];
 
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
 		sprintf(zBuf, "%d", threadset[i].argc);
-		Tcl_AppendResult(interp, zBuf, 0);
-		return TCL_OK;
+		Jim_AppendResult(interp, zBuf, 0);
+		return JIM_OK;
 }
 
 /*
@@ -281,7 +281,7 @@ static int tcl_client_argc(
 */
 static int tcl_client_argv(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
@@ -289,24 +289,24 @@ static int tcl_client_argv(
 		int n;
 
 		if( argc!=3 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID N", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
-		if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
+		if( Jim_GetInt(interp, argv[2], &n) ) return JIM_ERROR;
 		client_wait(&threadset[i]);
 		if( n<0 || n>=threadset[i].argc ){
-			Tcl_AppendResult(interp, "column number out of range", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "column number out of range", 0);
+			return JIM_ERROR;
 		}
-		Tcl_AppendResult(interp, threadset[i].argv[n], 0);
-		return TCL_OK;
+		Jim_AppendResult(interp, threadset[i].argv[n], 0);
+		return JIM_OK;
 }
 
 /*
@@ -317,7 +317,7 @@ static int tcl_client_argv(
 */
 static int tcl_client_colname(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
@@ -325,24 +325,24 @@ static int tcl_client_colname(
 		int n;
 
 		if( argc!=3 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID N", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
-		if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
+		if( Jim_GetInt(interp, argv[2], &n) ) return JIM_ERROR;
 		client_wait(&threadset[i]);
 		if( n<0 || n>=threadset[i].argc ){
-			Tcl_AppendResult(interp, "column number out of range", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "column number out of range", 0);
+			return JIM_ERROR;
 		}
-		Tcl_AppendResult(interp, threadset[i].colv[n], 0);
-		return TCL_OK;
+		Jim_AppendResult(interp, threadset[i].colv[n], 0);
+		return JIM_OK;
 }
 
 /*
@@ -353,7 +353,7 @@ static int tcl_client_colname(
 */
 static int tcl_client_result(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
@@ -361,15 +361,15 @@ static int tcl_client_result(
 		const char *zName;
 
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
 		switch( threadset[i].rc ){
@@ -400,8 +400,8 @@ static int tcl_client_result(
 		case SQLITE_DONE:       zName = "SQLITE_DONE";        break;
 		default:                zName = "SQLITE_Unknown";     break;
 		}
-		Tcl_AppendResult(interp, zName, 0);
-		return TCL_OK;
+		Jim_AppendResult(interp, zName, 0);
+		return JIM_OK;
 }
 
 /*
@@ -412,26 +412,26 @@ static int tcl_client_result(
 */
 static int tcl_client_error(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i;
 
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
-		Tcl_AppendResult(interp, threadset[i].zErr, 0);
-		return TCL_OK;
+		Jim_AppendResult(interp, threadset[i].zErr, 0);
+		return JIM_OK;
 }
 
 /*
@@ -457,28 +457,28 @@ static void do_compile(Thread *p){
 */
 static int tcl_client_compile(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i;
 		if( argc!=3 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID SQL", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
 		threadset[i].xOp = do_compile;
 		sqlite3_free(threadset[i].zArg);
 		threadset[i].zArg = sqlite3_mprintf("%s", argv[2]);
 		threadset[i].opnum++;
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
@@ -510,26 +510,26 @@ static void do_step(Thread *p){
 */
 static int tcl_client_step(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i;
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" IDL", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
 		threadset[i].xOp = do_step;
 		threadset[i].opnum++;
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
@@ -552,28 +552,28 @@ static void do_finalize(Thread *p){
 */
 static int tcl_client_finalize(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i;
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" IDL", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
 		threadset[i].xOp = do_finalize;
 		sqlite3_free(threadset[i].zArg);
 		threadset[i].zArg = 0;
 		threadset[i].opnum++;
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
@@ -596,28 +596,28 @@ static void do_reset(Thread *p){
 */
 static int tcl_client_reset(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i;
 		if( argc!=2 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" IDL", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
 		threadset[i].xOp = do_reset;
 		sqlite3_free(threadset[i].zArg);
 		threadset[i].zArg = 0;
 		threadset[i].opnum++;
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
@@ -627,69 +627,69 @@ static int tcl_client_reset(
 */
 static int tcl_client_swap(
 	void *NotUsed,
-	Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+	Jim_Interp *interp,    /* The TCL interpreter that invoked this command */
 	int argc,              /* Number of arguments */
 	const char **argv      /* Text of each argument */
 	){
 		int i, j;
 		sqlite3 *temp;
 		if( argc!=3 ){
-			Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+			Jim_AppendResult(interp, "wrong # args: should be \"", argv[0],
 				" ID1 ID2", 0);
-			return TCL_ERROR;
+			return JIM_ERROR;
 		}
 		i = parse_client_id(interp, argv[1]);
-		if( i<0 ) return TCL_ERROR;
+		if( i<0 ) return JIM_ERROR;
 		if( !threadset[i].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[i]);
 		j = parse_client_id(interp, argv[2]);
-		if( j<0 ) return TCL_ERROR;
+		if( j<0 ) return JIM_ERROR;
 		if( !threadset[j].busy ){
-			Tcl_AppendResult(interp, "no such thread", 0);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "no such thread", 0);
+			return JIM_ERROR;
 		}
 		client_wait(&threadset[j]);
 		temp = threadset[i].db;
 		threadset[i].db = threadset[j].db;
 		threadset[j].db = temp;
-		return TCL_OK;
+		return JIM_OK;
 }
 
 /*
 ** Register commands with the TCL interpreter.
 */
-int Sqlitetest7_Init(Tcl_Interp *interp){
+int Sqlitetest7_Init(Jim_Interp *interp){
 	static struct {
 		char *zName;
-		Tcl_CmdProc *xProc;
+		Jim_CmdProc *xProc;
 	} aCmd[] = {
-		{ "client_create",     (Tcl_CmdProc *)tcl_client_create     },
-		{ "client_wait",       (Tcl_CmdProc *)tcl_client_wait       },
-		{ "client_halt",       (Tcl_CmdProc *)tcl_client_halt       },
-		{ "client_argc",       (Tcl_CmdProc *)tcl_client_argc       },
-		{ "client_argv",       (Tcl_CmdProc *)tcl_client_argv       },
-		{ "client_colname",    (Tcl_CmdProc *)tcl_client_colname    },
-		{ "client_result",     (Tcl_CmdProc *)tcl_client_result     },
-		{ "client_error",      (Tcl_CmdProc *)tcl_client_error      },
-		{ "client_compile",    (Tcl_CmdProc *)tcl_client_compile    },
-		{ "client_step",       (Tcl_CmdProc *)tcl_client_step       },
-		{ "client_reset",      (Tcl_CmdProc *)tcl_client_reset      },
-		{ "client_finalize",   (Tcl_CmdProc *)tcl_client_finalize   },
-		{ "client_swap",       (Tcl_CmdProc *)tcl_client_swap       },
+		{ "client_create",     (Jim_CmdProc *)tcl_client_create     },
+		{ "client_wait",       (Jim_CmdProc *)tcl_client_wait       },
+		{ "client_halt",       (Jim_CmdProc *)tcl_client_halt       },
+		{ "client_argc",       (Jim_CmdProc *)tcl_client_argc       },
+		{ "client_argv",       (Jim_CmdProc *)tcl_client_argv       },
+		{ "client_colname",    (Jim_CmdProc *)tcl_client_colname    },
+		{ "client_result",     (Jim_CmdProc *)tcl_client_result     },
+		{ "client_error",      (Jim_CmdProc *)tcl_client_error      },
+		{ "client_compile",    (Jim_CmdProc *)tcl_client_compile    },
+		{ "client_step",       (Jim_CmdProc *)tcl_client_step       },
+		{ "client_reset",      (Jim_CmdProc *)tcl_client_reset      },
+		{ "client_finalize",   (Jim_CmdProc *)tcl_client_finalize   },
+		{ "client_swap",       (Jim_CmdProc *)tcl_client_swap       },
 	};
 	int i;
 
 	for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
-		Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
+		Jim_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 #else
-__device__ int Sqlitetest7_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest7_Init(Jim_Interp *interp)
 {
-	return TCL_OK;
+	return JIM_OK;
 }
 #endif

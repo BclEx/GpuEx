@@ -1,6 +1,4 @@
 // Code for testing all sorts of SQLite interfaces.
-//#include <stdlib.h>
-//#include <string.h>
 #include "Test.cu.h"
 
 #pragma region Tests

@@ -201,37 +201,37 @@ __device__ int wholenumber_register(Context *ctx)
 }
 
 #ifdef _TEST
-#include <Tcl.h>
+#include <Jim.h>
 // Decode a pointer to an sqlite3 object.
-__device__ extern int GetDbPointer(Tcl_Interp *interp, char *a, Context **ctx);
+__device__ extern int GetDbPointer(Jim_Interp *interp, char *a, Context **ctx);
 
 // Register the echo virtual table module.
-__device__ static int register_wholenumber_module(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int register_wholenumber_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "DB");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, (char *)args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, (char *)args[1], &ctx)) return JIM_ERROR;
 	wholenumber_register(ctx);
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Register commands with the TCL interpreter.
 __constant__ static struct {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 	ClientData ClientData;
 } _objCmds[] = {
-	{ "register_wholenumber_module",  register_wholenumber_module, nullptr },
+	{ "register_wholenumber_module", register_wholenumber_module, nullptr },
 };
-__device__ int Sqlitetestwholenumber_Init(Tcl_Interp *interp)
+__device__ int Sqlitetestwholenumber_Init(Jim_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
-	return TCL_OK;
+		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+	return JIM_OK;
 }
 
 #endif

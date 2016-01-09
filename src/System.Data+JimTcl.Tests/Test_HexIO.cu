@@ -108,14 +108,14 @@ static int hexio_read(
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME OFFSET AMT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &amt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &amt) ) return JIM_ERROR;
   zFile = Tcl_GetString(objv[1]);
   zBuf = sqlite3_malloc( amt*2+1 );
   if( zBuf==0 ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   in = fopen(zFile, "rb");
   if( in==0 ){
@@ -123,7 +123,7 @@ static int hexio_read(
   }
   if( in==0 ){
     Tcl_AppendResult(interp, "cannot open input file ", zFile, 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   fseek(in, offset, SEEK_SET);
   got = (int)fread(zBuf, 1, amt, in);
@@ -134,7 +134,7 @@ static int hexio_read(
   sqlite3TestBinToHex(zBuf, got);
   Tcl_AppendResult(interp, zBuf, 0);
   sqlite3_free(zBuf);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -159,14 +159,14 @@ static int hexio_write(
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME OFFSET HEXDATA");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return JIM_ERROR;
   zFile = Tcl_GetString(objv[1]);
   zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[3], &nIn);
   aOut = sqlite3_malloc( nIn/2 );
   if( aOut==0 ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   nOut = sqlite3TestHexToBin(zIn, nIn, aOut);
   out = fopen(zFile, "r+b");
@@ -175,14 +175,14 @@ static int hexio_write(
   }
   if( out==0 ){
     Tcl_AppendResult(interp, "cannot open output file ", zFile, 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   fseek(out, offset, SEEK_SET);
   written = (int)fwrite(aOut, 1, nOut, out);
   sqlite3_free(aOut);
   fclose(out);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(written));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -206,12 +206,12 @@ static int hexio_get_int(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HEXDATA");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &nIn);
   aOut = sqlite3_malloc( nIn/2 );
   if( aOut==0 ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   nOut = sqlite3TestHexToBin(zIn, nIn, aOut);
   if( nOut>=4 ){
@@ -223,7 +223,7 @@ static int hexio_get_int(
   sqlite3_free(aOut);
   val = (aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
   Tcl_SetObjResult(interp, Tcl_NewIntObj(val));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -243,14 +243,14 @@ static int hexio_render_int16(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "INTEGER");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &val) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &val) ) return JIM_ERROR;
   aNum[0] = val>>8;
   aNum[1] = val;
   sqlite3TestBinToHex(aNum, 2);
   Tcl_SetObjResult(interp, Tcl_NewStringObj((char*)aNum, 4));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -270,16 +270,16 @@ static int hexio_render_int32(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "INTEGER");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &val) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &val) ) return JIM_ERROR;
   aNum[0] = val>>24;
   aNum[1] = val>>16;
   aNum[2] = val>>8;
   aNum[3] = val;
   sqlite3TestBinToHex(aNum, 4);
   Tcl_SetObjResult(interp, Tcl_NewStringObj((char*)aNum, 8));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -302,7 +302,7 @@ static int utf8_to_utf8(
   unsigned char *z;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HEX");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zOrig = (unsigned char *)Tcl_GetStringFromObj(objv[1], &n);
   z = sqlite3_malloc( n+3 );
@@ -312,12 +312,12 @@ static int utf8_to_utf8(
   sqlite3TestBinToHex(z,nOut);
   Tcl_AppendResult(interp, (char*)z, 0);
   sqlite3_free(z);
-  return TCL_OK;
+  return JIM_OK;
 #else
   Tcl_AppendResult(interp, 
       "[utf8_to_utf8] unavailable - SQLITE_DEBUG not defined", 0
   );
-  return TCL_ERROR;
+  return JIM_ERROR;
 #endif
 }
 
@@ -353,14 +353,14 @@ static int read_fts3varint(
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BLOB VARNAME");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zBlob = Tcl_GetByteArrayFromObj(objv[1], &nBlob);
 
   nVal = getFts3Varint((char*)zBlob, (sqlite3_int64 *)(&iVal));
   Tcl_ObjSetVar2(interp, objv[2], 0, Tcl_NewWideIntObj(iVal), 0);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nVal));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -384,5 +384,5 @@ int Sqlitetest_hexio_Init(Tcl_Interp *interp){
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
   }
-  return TCL_OK;
+  return JIM_OK;
 }

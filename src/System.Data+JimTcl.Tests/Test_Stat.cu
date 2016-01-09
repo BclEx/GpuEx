@@ -612,7 +612,7 @@ static int test_dbstat(
 #ifdef SQLITE_OMIT_VIRTUALTABLE
   Tcl_AppendResult(interp, "dbstat not available because of "
                            "SQLITE_OMIT_VIRTUALTABLE", (void*)0);
-  return TCL_ERROR;
+  return JIM_ERROR;
 #else
   struct SqliteDb { sqlite3 *db; };
   char *zDb;
@@ -620,7 +620,7 @@ static int test_dbstat(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   zDb = Tcl_GetString(objv[1]);
@@ -628,12 +628,12 @@ static int test_dbstat(
     sqlite3* db = ((struct SqliteDb*)cmdInfo.objClientData)->db;
     sqlite3_dbstat_register(db);
   }
-  return TCL_OK;
+  return JIM_OK;
 #endif
 }
 
 int SqlitetestStat_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "register_dbstat_vtab", test_dbstat, 0, 0);
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif /* if defined(SQLITE_TEST) || TCLSH==2 */

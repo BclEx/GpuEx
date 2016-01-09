@@ -390,10 +390,10 @@ static int test_syscall_install(
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 2, objv, "SYSCALL-LIST");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( Tcl_ListObjGetElements(interp, objv[2], &nElem, &apElem) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   pVfs = sqlite3_vfs_find(0);
 
@@ -410,7 +410,7 @@ static int test_syscall_install(
     aSyscall[iCall].custom_errno = aSyscall[iCall].default_errno;
   }
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall_uninstall(
@@ -424,7 +424,7 @@ static int test_syscall_uninstall(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 2, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   pVfs = sqlite3_vfs_find(0);
@@ -434,7 +434,7 @@ static int test_syscall_uninstall(
       aSyscall[i].xOrig = 0;
     }
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall_reset(
@@ -449,7 +449,7 @@ static int test_syscall_reset(
 
   if( objc!=2 && objc!=3 ){
     Tcl_WrongNumArgs(interp, 2, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   pVfs = sqlite3_vfs_find(0);
@@ -468,11 +468,11 @@ static int test_syscall_reset(
   }
   if( rc!=SQLITE_OK ){
     Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   Tcl_ResetResult(interp);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall_exists(
@@ -486,14 +486,14 @@ static int test_syscall_exists(
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 2, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   pVfs = sqlite3_vfs_find(0);
   x = pVfs->xGetSystemCall(pVfs, Tcl_GetString(objv[2]));
 
   Tcl_SetObjResult(interp, Tcl_NewBooleanObj(x!=0));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall_fault(
@@ -507,14 +507,14 @@ static int test_syscall_fault(
 
   if( objc!=2 && objc!=4 ){
     Tcl_WrongNumArgs(interp, 2, objv, "?COUNT PERSIST?");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   if( objc==4 ){
     if( Tcl_GetIntFromObj(interp, objv[2], &nCount)
      || Tcl_GetBooleanFromObj(interp, objv[3], &bPersist)
     ){
-      return TCL_ERROR;
+      return JIM_ERROR;
     }
   }
 
@@ -522,7 +522,7 @@ static int test_syscall_fault(
   gSyscall.nCount = nCount;
   gSyscall.bPersist = bPersist;
   gSyscall.nFail = 0;
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall_errno(
@@ -555,20 +555,20 @@ static int test_syscall_errno(
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 2, objv, "SYSCALL ERRNO");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   rc = Tcl_GetIndexFromObjStruct(interp, 
       objv[2], aSyscall, sizeof(aSyscall[0]), "system-call", 0, &iCall
   );
-  if( rc!=TCL_OK ) return rc;
+  if( rc!=JIM_OK ) return rc;
   rc = Tcl_GetIndexFromObjStruct(interp, 
       objv[3], aErrno, sizeof(aErrno[0]), "errno", 0, &iErrno
   );
-  if( rc!=TCL_OK ) return rc;
+  if( rc!=JIM_OK ) return rc;
 
   aSyscall[iCall].custom_errno = aErrno[iErrno].i;
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall_list(
@@ -583,7 +583,7 @@ static int test_syscall_list(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 2, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   pVfs = sqlite3_vfs_find(0);
@@ -598,7 +598,7 @@ static int test_syscall_list(
 
   Tcl_SetObjResult(interp, pList);
   Tcl_DecrRefCount(pList);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall_defaultvfs(
@@ -611,12 +611,12 @@ static int test_syscall_defaultvfs(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 2, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   pVfs = sqlite3_vfs_find(0);
   Tcl_SetObjResult(interp, Tcl_NewStringObj(pVfs->zName, -1));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_syscall(
@@ -644,12 +644,12 @@ static int test_syscall(
 
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND ...");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   rc = Tcl_GetIndexFromObjStruct(interp, 
       objv[1], aCmd, sizeof(aCmd[0]), "sub-command", 0, &iCmd
   );
-  if( rc!=TCL_OK ) return rc;
+  if( rc!=JIM_OK ) return rc;
   return aCmd[iCmd].xCmd(clientData, interp, objc, objv);
 }
 
@@ -665,10 +665,10 @@ int SqlitetestSyscall_Init(Tcl_Interp *interp){
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xCmd, 0, 0);
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 #else
 int SqlitetestSyscall_Init(Tcl_Interp *interp){
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif

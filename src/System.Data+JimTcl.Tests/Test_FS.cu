@@ -15,7 +15,7 @@
 // Adding the row to the idx table automatically creates a row in the virtual table with rowid=4, path=/etc/passwd and a text field that 
 // contains data read from file /etc/passwd on disk.
 #include <Core+Vdbe\VdbeInt.cu.h>
-#include <Tcl.h>
+#include <Jim.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -81,7 +81,6 @@ __device__ static RC fsConnect(Context *ctx, void *aux, int argc, const char *co
 	_memcpy(vtab->Db, db, _strlen(db));
 	*vtabs = &vtab->base;
 	VTable::DeclareVTable(ctx, "CREATE TABLE xyz(path TEXT, data TEXT)");
-
 	return RC_OK;
 }
 
@@ -243,22 +242,22 @@ __constant__ static ITableModule _fsModule = {
 };
 
 // Decode a pointer to an sqlite3 object.
-__device__ extern int GetDbPointer(Tcl_Interp *interp, char *a, Context **ctx);
+__device__ extern int GetDbPointer(Jim_Interp *interp, char *a, Context **ctx);
 
 // Register the echo virtual table module.
-__device__ static int register_fs_module(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int register_fs_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "DB");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, (char *)args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, (char *)Jim_String(args[1]), &ctx)) return JIM_ERROR;
 #ifndef OMIT_VIRTUALTABLE
 	VTable::CreateModule(ctx, "fs", &_fsModule, (void *)interp, nullptr);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 }
 
 #endif
@@ -267,17 +266,17 @@ __device__ static int register_fs_module(ClientData clientData, Tcl_Interp *inte
 __constant__ static struct
 {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 	ClientData ClientData;
 } _objCmds[] = {
 	{ "register_fs_module", register_fs_module, nullptr },
 };
 
-__device__ int Sqlitetestfs_Init(Tcl_Interp *interp)
+__device__ int Sqlitetestfs_Init(Jim_Interp *interp)
 {
 #ifndef OMIT_VIRTUALTABLE
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 }

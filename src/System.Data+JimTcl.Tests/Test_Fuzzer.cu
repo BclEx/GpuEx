@@ -1185,11 +1185,11 @@ static int register_fuzzer_module(
   sqlite3 *db;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   getDbPointer(interp, Tcl_GetString(objv[1]), &db);
   fuzzer_register(db);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -1209,7 +1209,7 @@ int Sqlitetestfuzzer_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
         aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 #endif /* SQLITE_TEST */

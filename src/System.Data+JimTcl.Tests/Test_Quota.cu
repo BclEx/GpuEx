@@ -1357,9 +1357,9 @@ static void tclQuotaCallback(
   Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zFilename, -1));
   Tcl_ListObjAppendElement(0, pEval, pVarname);
   Tcl_ListObjAppendElement(0, pEval, Tcl_NewWideIntObj(iSize));
-  rc = Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
+  rc = Tcl_EvalObjEx(p->interp, pEval, JIM_EVAL_GLOBAL);
 
-  if( rc==TCL_OK ){
+  if( rc==JIM_OK ){
     Tcl_WideInt x;
     Tcl_Obj *pLimit = Tcl_ObjGetVar2(p->interp, pVarname, 0, 0);
     rc = Tcl_GetWideIntFromObj(p->interp, pLimit, &x);
@@ -1369,7 +1369,7 @@ static void tclQuotaCallback(
 
   Tcl_DecrRefCount(pEval);
   Tcl_DecrRefCount(pVarname);
-  if( rc!=TCL_OK ) Tcl_BackgroundError(p->interp);
+  if( rc!=JIM_OK ) Tcl_BackgroundError(p->interp);
 }
 
 /*
@@ -1399,17 +1399,17 @@ static int test_quota_initialize(
   /* Process arguments */
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "NAME MAKEDEFAULT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zName = Tcl_GetString(objv[1]);
-  if( Tcl_GetBooleanFromObj(interp, objv[2], &makeDefault) ) return TCL_ERROR;
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &makeDefault) ) return JIM_ERROR;
   if( zName[0]=='\0' ) zName = 0;
 
   /* Call sqlite3_quota_initialize() */
   rc = sqlite3_quota_initialize(zName, makeDefault);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1425,14 +1425,14 @@ static int test_quota_shutdown(
 
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   /* Call sqlite3_quota_shutdown() */
   rc = sqlite3_quota_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1456,10 +1456,10 @@ static int test_quota_set(
   /* Process arguments */
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "PATTERN LIMIT SCRIPT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zPattern = Tcl_GetString(objv[1]);
-  if( Tcl_GetWideIntFromObj(interp, objv[2], &iLimit) ) return TCL_ERROR;
+  if( Tcl_GetWideIntFromObj(interp, objv[2], &iLimit) ) return JIM_ERROR;
   pScript = objv[3];
   Tcl_GetStringFromObj(pScript, &nScript);
 
@@ -1467,8 +1467,8 @@ static int test_quota_set(
     /* Allocate a TclQuotaCallback object */
     p = (TclQuotaCallback *)sqlite3_malloc(sizeof(TclQuotaCallback));
     if( !p ){
-      Tcl_SetResult(interp, (char *)"SQLITE_NOMEM", TCL_STATIC);
-      return TCL_OK;
+      Tcl_SetResult(interp, (char *)"SQLITE_NOMEM", JIM_STATIC);
+      return JIM_OK;
     }
     memset(p, 0, sizeof(TclQuotaCallback));
     p->interp = interp;
@@ -1485,8 +1485,8 @@ static int test_quota_set(
   /* Invoke sqlite3_quota_set() */
   rc = sqlite3_quota_set(zPattern, iLimit, xCallback, (void*)p, xDestroy);
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
+  return JIM_OK;
 }
 
 /*
@@ -1504,15 +1504,15 @@ static int test_quota_file(
   /* Process arguments */
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zFilename = Tcl_GetString(objv[1]);
 
   /* Invoke sqlite3_quota_file() */
   rc = sqlite3_quota_file(zFilename);
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
+  return JIM_OK;
 }
 
 /*
@@ -1560,7 +1560,7 @@ static int test_quota_dump(
   }
   quotaLeave();
   Tcl_SetObjResult(interp, pResult);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1580,14 +1580,14 @@ static int test_quota_fopen(
   /* Process arguments */
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME MODE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zFilename = Tcl_GetString(objv[1]);
   zMode = Tcl_GetString(objv[2]);
   p = sqlite3_quota_fopen(zFilename, zMode);
   sqlite3_snprintf(sizeof(zReturn), zReturn, "%p", p);
-  Tcl_SetResult(interp, zReturn, TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, zReturn, JIM_VOLATILE);
+  return JIM_OK;
 }
 
 /* Defined in test1.c */
@@ -1610,21 +1610,21 @@ static int test_quota_fread(
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE SIZE NELEM");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
-  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return JIM_ERROR;
   zBuf = (char*)sqlite3_malloc( sz*nElem + 1 );
   if( zBuf==0 ){
-    Tcl_SetResult(interp, "out of memory", TCL_STATIC);
-    return TCL_ERROR;
+    Tcl_SetResult(interp, "out of memory", JIM_STATIC);
+    return JIM_ERROR;
   }
   got = sqlite3_quota_fread(zBuf, sz, nElem, p);
   zBuf[got*sz] = 0;
-  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+  Tcl_SetResult(interp, zBuf, JIM_VOLATILE);
   sqlite3_free(zBuf);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1644,15 +1644,15 @@ static int test_quota_fwrite(
 
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE SIZE NELEM CONTENT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
-  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return JIM_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &nElem) ) return JIM_ERROR;
   zBuf = Tcl_GetString(objv[4]);
   got = sqlite3_quota_fwrite(zBuf, sz, nElem, p);
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj(got));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1669,12 +1669,12 @@ static int test_quota_fclose(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   rc = sqlite3_quota_fclose(p);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1692,15 +1692,15 @@ static int test_quota_fflush(
 
   if( objc!=2 && objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE ?HARDSYNC?");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   if( objc==3 ){
-    if( Tcl_GetBooleanFromObj(interp, objv[2], &doSync) ) return TCL_ERROR;
+    if( Tcl_GetBooleanFromObj(interp, objv[2], &doSync) ) return JIM_ERROR;
   }
   rc = sqlite3_quota_fflush(p, doSync);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1720,10 +1720,10 @@ static int test_quota_fseek(
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE OFFSET WHENCE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
-  if( Tcl_GetIntFromObj(interp, objv[2], &ofst) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &ofst) ) return JIM_ERROR;
   zWhence = Tcl_GetString(objv[3]);
   if( strcmp(zWhence, "SEEK_SET")==0 ){
     whence = SEEK_SET;
@@ -1734,11 +1734,11 @@ static int test_quota_fseek(
   }else{
     Tcl_AppendResult(interp,
            "WHENCE should be SEEK_SET, SEEK_CUR, or SEEK_END", (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   rc = sqlite3_quota_fseek(p, ofst, whence);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1753,11 +1753,11 @@ static int test_quota_rewind(
   quota_FILE *p;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   sqlite3_quota_rewind(p);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1773,12 +1773,12 @@ static int test_quota_ftell(
   sqlite3_int64 x;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   x = sqlite3_quota_ftell(p);
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj(x));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1796,14 +1796,14 @@ static int test_quota_ftruncate(
   int rc;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE SIZE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
-  if( Tcl_GetWideIntFromObj(interp, objv[2], &w) ) return TCL_ERROR;
+  if( Tcl_GetWideIntFromObj(interp, objv[2], &w) ) return JIM_ERROR;
   x = (sqlite3_int64)w;
   rc = sqlite3_quota_ftruncate(p, x);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1819,12 +1819,12 @@ static int test_quota_file_size(
   sqlite3_int64 x;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   x = sqlite3_quota_file_size(p);
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj(x));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1840,12 +1840,12 @@ static int test_quota_file_truesize(
   sqlite3_int64 x;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   x = sqlite3_quota_file_truesize(p);
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj(x));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1861,13 +1861,13 @@ static int test_quota_file_mtime(
   time_t t;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   t = 0;
   sqlite3_quota_file_mtime(p, &t);
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj(t));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -1884,12 +1884,12 @@ static int test_quota_remove(
   int rc;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zFilename = Tcl_GetString(objv[1]);
   rc = sqlite3_quota_remove(zFilename);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1909,13 +1909,13 @@ static int test_quota_glob(
   int rc;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "PATTERN TEXT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zPattern = Tcl_GetString(objv[1]);
   zText = Tcl_GetString(objv[2]);
   rc = quotaStrglob(zPattern, zText);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1934,12 +1934,12 @@ static int test_quota_file_available(
   sqlite3_int64 x;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   x = sqlite3_quota_file_available(p);
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj(x));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1957,12 +1957,12 @@ static int test_quota_ferror(
   int x;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   p = sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   x = sqlite3_quota_ferror(p);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(x));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -2003,6 +2003,6 @@ int Sqlitequota_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
 
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif

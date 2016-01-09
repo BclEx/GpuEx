@@ -348,7 +348,7 @@ extern "C" {
 
 	// The cmd structure
 	typedef int Jim_CmdProc(ClientData clientData, struct Jim_Interp *interp, int argc, Jim_Obj *const argv[]);
-	typedef void Jim_DelCmdProc(struct Jim_Interp *interp, void *privData);
+	typedef void Jim_DelCmdProc(ClientData clientData, struct Jim_Interp *interp);
 
 	// A command is implemented in C if isproc is 0, otherwise it's a Tcl procedure with the arglist and body represented by the
 	// two objects referenced by arglistObjPtr and bodyoObjPtr.

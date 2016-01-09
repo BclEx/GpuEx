@@ -1,23 +1,8 @@
-/*
-** 2009 November 10
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-**
-** This file implements a read-only VIRTUAL TABLE that contains the
-** content of a C-language array of integer values.  See the corresponding
-** header file for full details.
-*/
+// This file implements a read-only VIRTUAL TABLE that contains the content of a C-language array of integer values.  See the corresponding
+// header file for full details.
 #include "test_intarray.h"
 #include <string.h>
 #include <assert.h>
-
 
 /*
 ** Definition of the sqlite3_intarray object.
@@ -300,9 +285,9 @@ static int test_intarray_create(
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   zName = Tcl_GetString(objv[2]);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_intarray_create(db, zName, &pArray);
@@ -310,11 +295,11 @@ static int test_intarray_create(
   if( rc!=SQLITE_OK ){
     assert( pArray==0 );
     Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   sqlite3TestMakePointerStr(interp, zPtr, pArray);
   Tcl_AppendResult(interp, zPtr, (char*)0);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -335,7 +320,7 @@ static int test_intarray_bind(
 
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "INTARRAY");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   pArray = (sqlite3_intarray*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   n = objc - 2;
@@ -343,7 +328,7 @@ static int test_intarray_bind(
   a = sqlite3_malloc( sizeof(a[0])*n );
   if( a==0 ){
     Tcl_AppendResult(interp, "SQLITE_NOMEM", (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   for(i=0; i<n; i++){
     Tcl_WideInt x = 0;
@@ -353,10 +338,10 @@ static int test_intarray_bind(
   rc = sqlite3_intarray_bind(pArray, n, a, sqlite3_free);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -376,7 +361,7 @@ int Sqlitetestintarray_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
         aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 #endif /* SQLITE_TEST */

@@ -1,7 +1,5 @@
 // Code for testing the virtual table interfaces.  This code is not included in the SQLite library.  It is used for automated testing of the SQLite library.
 #include "Test.cu.h"
-#include <stdlib.h>
-#include <string.h>
 
 #ifndef OMIT_VIRTUALTABLE
 
@@ -40,7 +38,7 @@ typedef struct echo_cursor echo_cursor;
 struct echo_vtab
 {
 	IVTable base;
-	Tcl_Interp *Interp;     // Tcl interpreter containing debug variables
+	Jim_Interp *Interp;     // Tcl interpreter containing debug variables
 	Context *Ctx;           // Database connection
 
 	bool IsPattern;
@@ -65,7 +63,7 @@ __device__ static int SimulateVtabError(echo_vtab *p, const char *methodName)
 	char varname[128];
 	varname[127] = '\0';
 	__snprintf(varname, sizeof(varname), "echo_module_fail(%s,%s)", methodName, p->TableName);
-	const char *err = Tcl_GetVar(p->Interp, varname, TCL_GLOBAL_ONLY);
+	const char *err = Jim_String(Jim_GetGlobalVariableStr(p->Interp, varname, 0));
 	if (err)
 		p->base.ErrMsg = _mprintf("echo-vtab-error: %s", err);
 	return (err != nullptr);
@@ -223,10 +221,10 @@ get_index_array_out:
 }
 
 // Global Tcl variable $echo_module is a list. This routine appends the string element zArg to that list in interpreter interp.
-__device__ static void AppendToEchoModule(Tcl_Interp *interp, const char *arg)
+__device__ static void AppendToEchoModule(Jim_Interp *interp, const char *arg)
 {
-	int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "echo_module", (arg ? arg : ""), flags);
+	Jim_Obj *list = Jim_GetGlobalVariableStr(interp, "echo_module", JIM_ERRMSG);
+	Jim_ListAppendElement(interp, list, Jim_NewStringObj(interp, (arg ? arg : ""), -1));
 }
 
 // This function is called from within the echo-modules xCreate and xConnect methods. The argc and argv arguments are copies of those 
@@ -287,7 +285,7 @@ __device__ static RC EchoDestructor(IVTable *vtab)
 typedef struct EchoModule EchoModule;
 struct EchoModule
 {
-	Tcl_Interp *Interp;
+	Jim_Interp *Interp;
 };
 
 // This function is called to do the work of the xConnect() method - to allocate the required in-memory structures for a newly connected
@@ -588,9 +586,9 @@ __device__ static RC EchoBestIndex(IVTable *tab, IIndexInfo *idxInfo)
 	const char *sep = "WHERE";
 	echo_vtab *vtab = (echo_vtab *)tab;
 	Vdbe *stmt = nullptr;
-	Tcl_Interp *interp = vtab->Interp;
+	Jim_Interp *interp = vtab->Interp;
 
-	bool isIgnoreUsable = (Tcl_GetVar(interp, "echo_module_ignore_usable", TCL_GLOBAL_ONLY) != nullptr);
+	bool isIgnoreUsable = (Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_ignore_usable", 0)) != nullptr);
 	if (SimulateVtabError(vtab, "xBestIndex"))
 		return RC_ERROR;
 
@@ -603,9 +601,10 @@ __device__ static RC EchoBestIndex(IVTable *tab, IIndexInfo *idxInfo)
 	bool useCost = false;
 	double cost;
 	char *query = nullptr;
-	if (Tcl_GetVar(interp, "echo_module_cost", TCL_GLOBAL_ONLY))
+	const char *costAsString = Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_cost", 0));
+	if (costAsString)
 	{
-		cost = _atof(Tcl_GetVar(interp, "echo_module_cost", TCL_GLOBAL_ONLY));
+		cost = _atof(costAsString);
 		useCost = true;
 	}
 	else
@@ -831,7 +830,7 @@ __device__ static RC EchoTransactionCall(IVTable *tab, const char *call)
 __device__ static RC EchoBegin(IVTable *tab)
 {
 	echo_vtab *vtab = (echo_vtab *)tab;
-	Tcl_Interp *interp = vtab->Interp;
+	Jim_Interp *interp = vtab->Interp;
 	// Ticket #3083 - do not start a transaction if we are already in a transaction
 	_assert(!vtab->InTransaction);
 	if (SimulateVtabError(vtab, "xBegin"))
@@ -842,7 +841,7 @@ __device__ static RC EchoBegin(IVTable *tab)
 	{
 		// Check if the $::echo_module_begin_fail variable is defined. If it is, and it is set to the name of the real table underlying this virtual
 		// echo module table, then cause this xSync operation to fail.
-		const char *val = Tcl_GetVar(interp, "echo_module_begin_fail", TCL_GLOBAL_ONLY);
+		const char *val = Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_begin_fail", 0));
 		if (val && !_strcmp(val, vtab->TableName))
 			rc = RC_ERROR;
 	}
@@ -854,7 +853,7 @@ __device__ static RC EchoBegin(IVTable *tab)
 __device__ static RC EchoSync(IVTable *tab)
 {
 	echo_vtab *vtab = (echo_vtab *)tab;
-	Tcl_Interp *interp = vtab->Interp;
+	Jim_Interp *interp = vtab->Interp;
 	// Ticket #3083 - Only call xSync if we have previously started a transaction
 	_assert(vtab->InTransaction );
 	if (SimulateVtabError(vtab, "xSync"))
@@ -865,7 +864,7 @@ __device__ static RC EchoSync(IVTable *tab)
 	{
 		// Check if the $::echo_module_sync_fail variable is defined. If it is, and it is set to the name of the real table underlying this virtual
 		// echo module table, then cause this xSync operation to fail.
-		const char *val = Tcl_GetVar(interp, "echo_module_sync_fail", TCL_GLOBAL_ONLY);
+		const char *val = Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_sync_fail", 0));
 		if (val && !_strcmp(val, vtab->TableName))
 			rc = RC_INVALID;
 	}
@@ -902,19 +901,19 @@ __device__ static RC EchoRollback(IVTable *tab)
 // and return the result of that procedure as a string.
 __device__ static void OverloadedGlobFunction(FuncContext *fctx, int argc, Mem **args)
 {
-	Tcl_Interp *interp = (Tcl_Interp *)Vdbe::User_Data(fctx);
+	Jim_Interp *interp = (Jim_Interp *)Vdbe::User_Data(fctx);
 	TextBuilder str;
 	TextBuilder::Init(&str);
 	str.AppendElement("::echo_glob_overload");
 	for (int i = 0; i < argc; i++)
 		str.AppendElement((char *)Vdbe::Value_Text(args[i]));
-	int rc = Tcl_Eval(interp, str.ToString(), 0, nullptr);
+	int rc = Jim_Eval(interp, str.ToString());
 	str.Reset();
 	if (rc)
-		Vdbe::Result_Error(fctx, interp->result, -1);
+		Vdbe::Result_Error(fctx, Jim_String(Jim_GetResult(interp)), -1);
 	else
-		Vdbe::Result_Text(fctx, interp->result, -1, DESTRUCTOR_TRANSIENT);
-	Tcl_ResetResult(interp);
+		Vdbe::Result_Text(fctx, Jim_String(Jim_GetResult(interp)), -1, DESTRUCTOR_TRANSIENT);
+	Jim_ResetResult(interp);
 }
 
 // This is the xFindFunction implementation for the echo module. SQLite calls this routine when the first argument of a function
@@ -923,11 +922,11 @@ __device__ static void OverloadedGlobFunction(FuncContext *fctx, int argc, Mem *
 __device__ static bool EchoFindFunction(IVTable *tab, int args, const char *funcName, void (**funcOut)(FuncContext*,int,Mem**), void **argOut)
 {
 	echo_vtab *vtab = (echo_vtab *)tab;
-	Tcl_Interp *interp = vtab->Interp;
+	Jim_Interp *interp = vtab->Interp;
 	if (_strcmp(funcName, "glob"))
 		return false;
-	Tcl_CmdInfo info;
-	if (!Tcl_GetCommandInfo(interp, "::echo_glob_overload", &info))
+	Jim_CmdInfo info;
+	if (!Jim_GetCommandInfo(interp, "::echo_glob_overload", &info))
 		return false;
 	*funcOut = OverloadedGlobFunction;
 	*argOut = interp;
@@ -1022,7 +1021,7 @@ __device__ static ITableModule _echoModuleV2 =
 };
 
 // Decode a pointer to an sqlite3 object.
-__device__ extern int GetDbPointer(Tcl_Interp *interp, const char *a, Context **ctxOut);
+__device__ extern int GetDbPointer(Jim_Interp *interp, const char *a, Context **ctxOut);
 __device__ extern const char *sqlite3TestErrorName(int rc);
 
 __device__ static void ModuleDestroy(void *p)
@@ -1031,15 +1030,15 @@ __device__ static void ModuleDestroy(void *p)
 }
 
 // Register the echo virtual table module.
-__device__ static int register_echo_module(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int register_echo_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "DB");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 
 	// Virtual table module "echo"
 	EchoModule *mod = (EchoModule *)_alloc(sizeof(EchoModule));
@@ -1054,44 +1053,44 @@ __device__ static int register_echo_module(ClientData clientData, Tcl_Interp *in
 		rc = VTable::CreateModule(ctx, "echo_v2", &_echoModuleV2, (void *)mod, ModuleDestroy);
 	}
 
-	Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
-	return TCL_OK;
+	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
+	return JIM_OK;
 }
 
 // Tcl interface to sqlite3_declare_vtab, invoked as follows from Tcl:
 //
 // sqlite3_declare_vtab DB SQL
-__device__ static int declare_vtab(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int declare_vtab(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "DB SQL");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "DB SQL");
+		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
-	RC rc = VTable::DeclareVTable(ctx, args[2]);
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	RC rc = VTable::DeclareVTable(ctx, Jim_String(args[2]));
 	if (rc != RC_OK)
 	{
-		Tcl_SetResult(interp, (char *)Main::ErrMsg(ctx), TCL_VOLATILE);
-		return TCL_ERROR;
+		Jim_SetResultString(interp, (char *)Main::ErrMsg(ctx), -1);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Register the spellfix virtual table module.
 //#include "Test_SpellFix.cu.inc"
-__device__ static int register_spellfix_module(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int register_spellfix_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "DB");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	//sqlite3_spellfix1_register(ctx);
-	return TCL_OK;
+	return JIM_OK;
 }
 
 #endif
@@ -1100,7 +1099,7 @@ __device__ static int register_spellfix_module(ClientData clientData, Tcl_Interp
 #ifndef OMIT_VIRTUALTABLE
 __constant__ static struct {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 	ClientData ClientData;
 } _objCmds[] = {
 	{ "register_echo_module",       register_echo_module, nullptr },
@@ -1108,11 +1107,11 @@ __constant__ static struct {
 	{ "sqlite3_declare_vtab",       declare_vtab, nullptr },
 };
 #endif
-__device__ int Sqlitetest8_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest8_Init(Jim_Interp *interp)
 {
 #ifndef OMIT_VIRTUALTABLE
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 }

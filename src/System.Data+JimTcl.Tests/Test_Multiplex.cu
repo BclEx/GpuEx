@@ -1204,17 +1204,17 @@ static int test_multiplex_initialize(
   /* Process arguments */
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "NAME MAKEDEFAULT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   zName = Tcl_GetString(objv[1]);
-  if( Tcl_GetBooleanFromObj(interp, objv[2], &makeDefault) ) return TCL_ERROR;
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &makeDefault) ) return JIM_ERROR;
   if( zName[0]=='\0' ) zName = 0;
 
   /* Call sqlite3_multiplex_initialize() */
   rc = sqlite3_multiplex_initialize(zName, makeDefault);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1232,14 +1232,14 @@ static int test_multiplex_shutdown(
 
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   /* Call sqlite3_multiplex_shutdown() */
   rc = sqlite3_multiplex_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1294,7 +1294,7 @@ static int test_multiplex_dump(
   }
   multiplexLeave();
   Tcl_SetObjResult(interp, pResult);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -1326,13 +1326,13 @@ static int test_multiplex_control(
 
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "HANDLE DBNAME SUB-COMMAND INT-VALUE");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
     Tcl_AppendResult(interp, "expected database handle, got \"", 0);
     Tcl_AppendResult(interp, Tcl_GetString(objv[1]), "\"", 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }else{
     db = *(sqlite3 **)cmdInfo.objClientData;
   }
@@ -1340,23 +1340,23 @@ static int test_multiplex_control(
   rc = Tcl_GetIndexFromObjStruct(
       interp, objv[3], aSub, sizeof(aSub[0]), "sub-command", 0, &idx
   );
-  if( rc!=TCL_OK ) return rc;
+  if( rc!=JIM_OK ) return rc;
 
   switch( aSub[idx].argtype ){
     case 1:
       if( Tcl_GetIntFromObj(interp, objv[4], &iValue) ){
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       pArg = (void *)&iValue;
       break;
     default:
       Tcl_WrongNumArgs(interp, 4, objv, "SUB-COMMAND");
-      return TCL_ERROR;
+      return JIM_ERROR;
   }
 
   rc = sqlite3_file_control(db, Tcl_GetString(objv[2]), aSub[idx].op, pArg);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
-  return (rc==SQLITE_OK) ? TCL_OK : TCL_ERROR;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_STATIC);
+  return (rc==SQLITE_OK) ? JIM_OK : JIM_ERROR;
 }
 
 /*
@@ -1380,6 +1380,6 @@ int Sqlitemultiplex_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
 
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif

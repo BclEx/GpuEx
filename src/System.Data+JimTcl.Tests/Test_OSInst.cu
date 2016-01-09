@@ -1118,10 +1118,10 @@ static int test_vfslog(
 
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND ...");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   if( Tcl_GetIndexFromObj(interp, objv[1], strs, "sub-command", 0, &iSub) ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   switch( (enum VL_enum)iSub ){
@@ -1131,14 +1131,14 @@ static int test_vfslog(
       char *zMsg;
       if( objc!=4 ){
         Tcl_WrongNumArgs(interp, 3, objv, "VFS");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       zVfs = Tcl_GetString(objv[2]);
       zMsg = Tcl_GetString(objv[3]);
       rc = sqlite3_vfslog_annotate(zVfs, zMsg);
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp, "failed", 0);
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       break;
     }
@@ -1147,13 +1147,13 @@ static int test_vfslog(
       char *zVfs;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "VFS");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       zVfs = Tcl_GetString(objv[2]);
       rc = sqlite3_vfslog_finalize(zVfs);
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp, "failed", 0);
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       break;
     };
@@ -1165,7 +1165,7 @@ static int test_vfslog(
       char *zLog;
       if( objc!=5 ){
         Tcl_WrongNumArgs(interp, 2, objv, "VFS PARENT LOGFILE");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       zVfs = Tcl_GetString(objv[2]);
       zParent = Tcl_GetString(objv[3]);
@@ -1174,7 +1174,7 @@ static int test_vfslog(
       rc = sqlite3_vfslog_new(zVfs, zParent, zLog);
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp, "failed", 0);
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       break;
     };
@@ -1183,12 +1183,12 @@ static int test_vfslog(
       char *zDb;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "DB");
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
 #ifdef SQLITE_OMIT_VIRTUALTABLE
       Tcl_AppendResult(interp, "vfslog not available because of "
                                "SQLITE_OMIT_VIRTUALTABLE", (void*)0);
-      return TCL_ERROR;
+      return JIM_ERROR;
 #else
       zDb = Tcl_GetString(objv[2]);
       if( Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
@@ -1197,19 +1197,19 @@ static int test_vfslog(
       }
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp, "bad sqlite3 handle: ", zDb, (void*)0);
-        return TCL_ERROR;
+        return JIM_ERROR;
       }
       break;
 #endif
     }
   }
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 int SqlitetestOsinst_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "vfslog", test_vfslog, 0, 0);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 #endif /* SQLITE_TEST */

@@ -40,7 +40,7 @@ struct SqlThread {
 /*
 ** A custom Tcl_Event type used by this module. When the event is
 ** handled, script zScript is evaluated in interpreter interp. If
-** the evaluation throws an exception (returns TCL_ERROR), then the
+** the evaluation throws an exception (returns JIM_ERROR), then the
 ** error is handled by Tcl_BackgroundError(). If no error occurs,
 ** the result is simply discarded.
 */
@@ -74,7 +74,7 @@ static int tclScriptEvent(Tcl_Event *evPtr, int flags){
   int rc;
   EvalEvent *p = (EvalEvent *)evPtr;
   rc = Tcl_Eval(p->interp, p->zScript);
-  if( rc!=TCL_OK ){
+  if( rc!=JIM_OK ){
     Tcl_BackgroundError(p->interp);
   }
   UNUSED_PARAMETER(flags);
@@ -98,7 +98,7 @@ static void postToParent(SqlThread *p, Tcl_Obj *pScript){
   memcpy(pEvent->zScript, zMsg, nMsg+1);
   pEvent->interp = p->interp;
 
-  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, TCL_QUEUE_TAIL);
+  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, JIM_QUEUE_TAIL);
   Tcl_ThreadAlert(p->parent);
 }
 
@@ -133,7 +133,7 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_IncrRefCount(pList);
   Tcl_IncrRefCount(pRes);
 
-  if( rc!=TCL_OK ){
+  if( rc!=JIM_OK ){
     Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj("error", -1));
     Tcl_ListObjAppendElement(interp, pList, pRes);
     postToParent(p, pList);
@@ -150,9 +150,9 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_DecrRefCount(pList);
   Tcl_DecrRefCount(pRes);
   Tcl_DeleteInterp(interp);
-  while( Tcl_DoOneEvent(TCL_ALL_EVENTS|TCL_DONT_WAIT) );
+  while( Tcl_DoOneEvent(JIM_ALL_EVENTS|JIM_DONT_WAIT) );
   Tcl_ExitThread(0);
-  TCL_THREAD_CREATE_RETURN;
+  JIM_THREAD_CREATE_RETURN;
 }
 
 /*
@@ -179,8 +179,8 @@ static int sqlthread_spawn(
   int nScript; char *zScript;
 
   /* Parameters for thread creation */
-  const int nStack = TCL_THREAD_STACK_DEFAULT;
-  const int flags = TCL_THREAD_NOFLAGS;
+  const int nStack = JIM_THREAD_STACK_DEFAULT;
+  const int flags = JIM_THREAD_NOFLAGS;
 
   assert(objc==4);
   UNUSED_PARAMETER(clientData);
@@ -198,13 +198,13 @@ static int sqlthread_spawn(
   pNew->interp = interp;
 
   rc = Tcl_CreateThread(&x, tclScriptThread, (void *)pNew, nStack, flags);
-  if( rc!=TCL_OK ){
+  if( rc!=JIM_OK ){
     Tcl_AppendResult(interp, "Error in Tcl_CreateThread()", 0);
     ckfree((char *)pNew);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -234,7 +234,7 @@ static int sqlthread_parent(
 
   if( p==0 ){
     Tcl_AppendResult(interp, "no parent thread", 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   zMsg = Tcl_GetStringFromObj(objv[2], &nMsg);
@@ -244,10 +244,10 @@ static int sqlthread_parent(
   pEvent->zScript = (char *)&pEvent[1];
   memcpy(pEvent->zScript, zMsg, nMsg+1);
   pEvent->interp = p->interp;
-  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, TCL_QUEUE_TAIL);
+  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, JIM_QUEUE_TAIL);
   Tcl_ThreadAlert(p->parent);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int xBusy(void *pArg, int nBusy){
@@ -293,17 +293,17 @@ static int sqlthread_open(
       sqlite3_close(db);
       Tcl_AppendResult(interp, zErrMsg, (char*)0);
       sqlite3_free(zErrMsg);
-      return TCL_ERROR;
+      return JIM_ERROR;
     }
   }
 #endif
   Md5_Register(db);
   sqlite3_busy_handler(db, xBusy, 0);
   
-  if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;
+  if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return JIM_ERROR;
   Tcl_AppendResult(interp, zBuf, 0);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -324,7 +324,7 @@ static int sqlthread_id(
   UNUSED_PARAMETER(clientData);
   UNUSED_PARAMETER(objc);
   UNUSED_PARAMETER(objv);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 
@@ -355,18 +355,18 @@ static int sqlthread_proc(
 
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   rc = Tcl_GetIndexFromObjStruct(
       interp, objv[1], aSub, sizeof(aSub[0]), "sub-command", 0, &iIndex
   );
-  if( rc!=TCL_OK ) return rc;
+  if( rc!=JIM_OK ) return rc;
   pSub = &aSub[iIndex];
 
   if( objc<(pSub->nArg+2) ){
     Tcl_WrongNumArgs(interp, 2, objv, pSub->zUsage);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   return pSub->xProc(clientData, interp, objc, objv);
@@ -391,7 +391,7 @@ static int clock_seconds_proc(
   UNUSED_PARAMETER(clientData);
   UNUSED_PARAMETER(objc);
   UNUSED_PARAMETER(objv);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*************************************************************************
@@ -553,14 +553,14 @@ static int blocking_step_proc(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "STMT");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   pStmt = (sqlite3_stmt*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   rc = sqlite3_blocking_step(pStmt);
 
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), 0);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -585,11 +585,11 @@ static int blocking_prepare_v2_proc(
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   zSql = Tcl_GetString(objv[2]);
-  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return JIM_ERROR;
 
   if( isBlocking ){
     rc = sqlite3_blocking_prepare_v2(db, zSql, bytes, &pStmt, &zTail);
@@ -608,14 +608,14 @@ static int blocking_prepare_v2_proc(
     assert( pStmt==0 );
     sprintf(zBuf, "%s ", (char *)sqlite3TestErrorName(rc));
     Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   if( pStmt ){
-    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return JIM_ERROR;
     Tcl_AppendResult(interp, zBuf, 0);
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 #endif /* SQLITE_OS_UNIX && SQLITE_ENABLE_UNLOCK_NOTIFY */
@@ -636,10 +636,10 @@ int SqlitetestThread_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, 
       "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, 0, 0);
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }
 #else
 int SqlitetestThread_Init(Tcl_Interp *interp){
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif

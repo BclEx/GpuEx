@@ -1,6 +1,6 @@
 // Code for testing all sorts of SQLite interfaces.  This code implements new SQL functions used by the test scripts.
 #include <Core+Vdbe\Core+Vdbe.cu.h>
-#include <Tcl.h>
+#include <JimEx.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -380,14 +380,14 @@ __device__ static int registerTestFunctions(Context *ctx)
 //
 // Invoke this TCL command to use sqlite3_auto_extension() to cause the standard set of test functions to be loaded into each new
 // database connection.
-__device__ static int autoinstall_test_funcs(ClientData clientData, Tcl_Interp *interp, int argc, const char *objs[])
+__device__ static int autoinstall_test_funcs(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	extern int Md5_Register(Context *);
 	RC rc = Main::AutoExtension((void(*)())registerTestFunctions);
 	if (rc == RC_OK)
 		rc = Main::AutoExtension((void(*)())Md5_Register);
-	Tcl_SetObjResult(interp, (int)rc);
-	return TCL_OK;
+	Jim_SetResultInt(interp, rc);
+	return JIM_OK;
 }
 
 // A bogus step function and finalizer function.
@@ -397,11 +397,11 @@ __device__ static void tFinal(FuncContext *a) { }
 // tclcmd:  abuse_create_function
 //
 // Make various calls to sqlite3_create_function that do not have valid parameters.  Verify that the error condition is detected and reported.
-__device__ static int abuse_create_function(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int abuse_create_function(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	__device__ extern int GetDbPointer(Tcl_Interp*, char*, Context**);
+	__device__ extern int GetDbPointer(Jim_Interp *, char *, Context **);
 	Context *ctx;
-	if (GetDbPointer(interp, (char *)args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, (char *)Jim_String(args[1]), &ctx)) return JIM_ERROR;
 
 	RC rc = Main::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, tStep, tFinal);
 	if (rc != RC_MISUSE) goto abuse_err;
@@ -445,28 +445,28 @@ __device__ static int abuse_create_function(ClientData clientData, Tcl_Interp *i
 		"_123456789_123456789_123456789_123456789_123456789",
 		maxArg, TEXTENCODE_UTF8, nullptr, tStep, nullptr, nullptr);
 	if (rc != RC_MISUSE) goto abuse_err;
-	return TCL_OK;
+	return JIM_OK;
 
 abuse_err:
-	Tcl_AppendResult(interp, "sqlite3_create_function abused test failed", nullptr);
-	return TCL_ERROR;
+	Jim_AppendResult(interp, "sqlite3_create_function abused test failed", nullptr);
+	return JIM_ERROR;
 }
 
 // Register commands with the TCL interpreter.
 __constant__ static struct {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 } _objCmds[] = {
 	{ "autoinstall_test_functions",    autoinstall_test_funcs },
 	{ "abuse_create_function",         abuse_create_function  },
 };
-__device__ int Sqlitetest_func_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest_func_Init(Jim_Interp *interp)
 {
 	extern int Md5_Register(Context*);
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, nullptr, nullptr);
+		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, nullptr, nullptr);
 	Main::Initialize();
 	Main::AutoExtension((void(*)())registerTestFunctions);
 	Main::AutoExtension((void(*)())Md5_Register);
-	return TCL_OK;
+	return JIM_OK;
 }

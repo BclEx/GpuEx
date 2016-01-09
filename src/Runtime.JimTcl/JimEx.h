@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+	JIM_EXPORT __device__ int Jim_UtfToLower(const char *objPtr);
+
+
 	//JIM_EXPORT __device__ int Jim_GetEnum(Jim_Interp *interp, Jim_Obj *objPtr, const char * const *tablePtr, int *indexPtr, const char *name, int flags);
 
 	//static int Jim_ObjSetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, Jim_Obj *valObjPtr) { return Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0); }
@@ -22,8 +25,10 @@ extern "C" {
 	typedef struct Jim_CmdInfo {
 		Jim_CmdProc *objProc;
 		ClientData objClientData;
+		void *deleteProc;
 	} Jim_CmdInfo;
 	JIM_EXPORT __device__ int Jim_GetCommandInfo(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo);
+	JIM_EXPORT __device__ int Jim_SetCommandInfo(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo);
 
 #ifdef __cplusplus
 }

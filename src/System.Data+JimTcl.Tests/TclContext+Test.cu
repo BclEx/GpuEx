@@ -231,12 +231,12 @@ __device__ static void MD5DigestToBase10x8(unsigned char digest[16], char digest
 }
 
 // A TCL command for md5.  The argument is the text to be hashed.  The Result is the hash in base64.  
-__device__ static int md5_cmd(void *cd, Tcl_Interp *interp, int argc, const char **argv)
+__device__ static int md5_cmd(void *cd, Jim_Interp *interp, int argc, const char **argv)
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " TEXT\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", argv[0], " TEXT\"", nullptr);
+		return JIM_ERROR;
 	}
 	MD5Context ctx;
 	MD5Init(&ctx);
@@ -247,23 +247,23 @@ __device__ static int md5_cmd(void *cd, Tcl_Interp *interp, int argc, const char
 	converter = (void(*)(unsigned char*,char*))cd;
 	char buf[50];
 	converter(digest, buf);
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // A TCL command to take the md5 hash of a file.  The argument is the name of the file.
-__device__ static int md5file_cmd(void *cd, Tcl_Interp *interp, int argc, const char **argv)
+__device__ static int md5file_cmd(void *cd, Jim_Interp *interp, int argc, const char **argv)
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0], " FILENAME\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp,"wrong # args: should be \"", argv[0], " FILENAME\"", nullptr);
+		return JIM_ERROR;
 	}
 	FILE *in = _fopen(argv[1], "rb");
 	if (!in)
 	{
-		Tcl_AppendResult(interp,"unable to open file \"", argv[1], "\" for reading", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp,"unable to open file \"", argv[1], "\" for reading", nullptr);
+		return JIM_ERROR;
 	}
 	MD5Context ctx;
 	MD5Init(&ctx);
@@ -281,18 +281,18 @@ __device__ static int md5file_cmd(void *cd, Tcl_Interp *interp, int argc, const 
 	void (*converter)(unsigned char*,char*);
 	converter = (void(*)(unsigned char*,char*))cd;
 	converter(digest, buf);
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // Register the four new TCL commands for generating MD5 checksums with the TCL interpreter.
-__device__ int Md5_Init(Tcl_Interp *interp)
+__device__ int Md5_Init(Jim_Interp *interp)
 {
-	Tcl_CreateCommand(interp, "md5", (Tcl_CmdProc *)md5_cmd, (ClientData)MD5DigestToBase16, nullptr);
-	Tcl_CreateCommand(interp, "md5-10x8", (Tcl_CmdProc *)md5_cmd, (ClientData)MD5DigestToBase10x8, nullptr);
-	Tcl_CreateCommand(interp, "md5file", (Tcl_CmdProc *)md5file_cmd, (ClientData)MD5DigestToBase16, nullptr);
-	Tcl_CreateCommand(interp, "md5file-10x8", (Tcl_CmdProc *)md5file_cmd, (ClientData)MD5DigestToBase10x8, nullptr);
-	return TCL_OK;
+	Jim_CreateCommand(interp, "md5", (Jim_CmdProc *)md5_cmd, (ClientData)MD5DigestToBase16, nullptr);
+	Jim_CreateCommand(interp, "md5-10x8", (Jim_CmdProc *)md5_cmd, (ClientData)MD5DigestToBase10x8, nullptr);
+	Jim_CreateCommand(interp, "md5file", (Jim_CmdProc *)md5file_cmd, (ClientData)MD5DigestToBase16, nullptr);
+	Jim_CreateCommand(interp, "md5file-10x8", (Jim_CmdProc *)md5file_cmd, (ClientData)MD5DigestToBase10x8, nullptr);
+	return JIM_OK;
 }
 
 #endif
@@ -337,24 +337,24 @@ __device__ int Md5_Register(Context *ctx)
 #pragma region Tests
 
 #ifdef _TEST
-__device__ static void init_all(Tcl_Interp *);
+__device__ static void init_all(Jim_Interp *);
 
-__device__ static int init_all_cmd(ClientData cd, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int init_all_cmd(ClientData cd, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "SLAVE");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "SLAVE");
+		return JIM_ERROR;
 	}
-	Tcl_Interp *slave = interp; //Tcl_GetSlave(interp, args[1]);
+	Jim_Interp *slave = interp; //Jim_GetSlave(interp, args[1]);
 	if (!slave)
-		return TCL_ERROR;
+		return JIM_ERROR;
 	init_all(slave);
-	return TCL_OK;
+	return JIM_OK;
 }
 
-__device__ extern int Main_Init(Tcl_Interp *interp);
-__device__ static void init_all(Tcl_Interp *interp)
+__device__ extern int Main_Init(Jim_Interp *interp);
+__device__ static void init_all(Jim_Interp *interp)
 {
 	Main_Init(interp);
 #if defined(_TEST) || defined(_TCLMD5)
@@ -364,49 +364,49 @@ __device__ static void init_all(Tcl_Interp *interp)
 	//	// Install the [register_dbstat_vtab] command to access the implementation of virtual table dbstat (source file test_stat.c). This command is
 	//	// required for testfixture and sqlite3_analyzer, but not by the production Tcl extension.
 	//#if defined(_TEST)
-	//	extern int SqlitetestStat_Init(Tcl_Interp *);
+	//	extern int SqlitetestStat_Init(Jim_Interp *);
 	//	SqlitetestStat_Init(interp);
-	//	extern int Sqliteconfig_Init(Tcl_Interp*);
-	//	extern int Sqlitetest1_Init(Tcl_Interp*);
-	//	extern int Sqlitetest2_Init(Tcl_Interp*);
-	//	extern int Sqlitetest3_Init(Tcl_Interp*);
-	//	extern int Sqlitetest4_Init(Tcl_Interp*);
-	//	extern int Sqlitetest5_Init(Tcl_Interp*);
-	//	extern int Sqlitetest6_Init(Tcl_Interp*);
-	//	extern int Sqlitetest7_Init(Tcl_Interp*);
-	//	extern int Sqlitetest8_Init(Tcl_Interp*);
-	//	extern int Sqlitetest9_Init(Tcl_Interp*);
-	//	extern int Sqlitetestasync_Init(Tcl_Interp*);
-	//	extern int Sqlitetest_autoext_Init(Tcl_Interp*);
-	//	extern int Sqlitetest_demovfs_Init(Tcl_Interp *);
-	//	extern int Sqlitetest_func_Init(Tcl_Interp*);
-	//	extern int Sqlitetest_hexio_Init(Tcl_Interp*);
-	//	extern int Sqlitetest_init_Init(Tcl_Interp*);
-	//	extern int Sqlitetest_malloc_Init(Tcl_Interp*);
-	//	extern int Sqlitetest_mutex_Init(Tcl_Interp*);
-	//	extern int Sqlitetestschema_Init(Tcl_Interp*);
-	//	extern int Sqlitetestsse_Init(Tcl_Interp*);
-	//	extern int Sqlitetesttclvar_Init(Tcl_Interp*);
-	//	extern int Sqlitetestfs_Init(Tcl_Interp*);
-	//	extern int SqlitetestThread_Init(Tcl_Interp*);
-	//	extern int SqlitetestOnefile_Init(Tcl_Interp*);
-	//	extern int SqlitetestOsinst_Init(Tcl_Interp*);
-	//	extern int Sqlitetestbackup_Init(Tcl_Interp*);
-	//	extern int Sqlitetestintarray_Init(Tcl_Interp*);
-	//	extern int Sqlitetestvfs_Init(Tcl_Interp *);
-	//	extern int Sqlitetestrtree_Init(Tcl_Interp*);
-	//	extern int Sqlitequota_Init(Tcl_Interp*);
-	//	extern int Sqlitemultiplex_Init(Tcl_Interp*);
-	//	extern int SqliteSuperlock_Init(Tcl_Interp*);
-	//	extern int SqlitetestSyscall_Init(Tcl_Interp*);
-	//	extern int Sqlitetestfuzzer_Init(Tcl_Interp*);
-	//	extern int Sqlitetestwholenumber_Init(Tcl_Interp*);
-	//	extern int Sqlitetestregexp_Init(Tcl_Interp*);
+	//	extern int Sqliteconfig_Init(Jim_Interp*);
+	//	extern int Sqlitetest1_Init(Jim_Interp*);
+	//	extern int Sqlitetest2_Init(Jim_Interp*);
+	//	extern int Sqlitetest3_Init(Jim_Interp*);
+	//	extern int Sqlitetest4_Init(Jim_Interp*);
+	//	extern int Sqlitetest5_Init(Jim_Interp*);
+	//	extern int Sqlitetest6_Init(Jim_Interp*);
+	//	extern int Sqlitetest7_Init(Jim_Interp*);
+	//	extern int Sqlitetest8_Init(Jim_Interp*);
+	//	extern int Sqlitetest9_Init(Jim_Interp*);
+	//	extern int Sqlitetestasync_Init(Jim_Interp*);
+	//	extern int Sqlitetest_autoext_Init(Jim_Interp*);
+	//	extern int Sqlitetest_demovfs_Init(Jim_Interp *);
+	//	extern int Sqlitetest_func_Init(Jim_Interp*);
+	//	extern int Sqlitetest_hexio_Init(Jim_Interp*);
+	//	extern int Sqlitetest_init_Init(Jim_Interp*);
+	//	extern int Sqlitetest_malloc_Init(Jim_Interp*);
+	//	extern int Sqlitetest_mutex_Init(Jim_Interp*);
+	//	extern int Sqlitetestschema_Init(Jim_Interp*);
+	//	extern int Sqlitetestsse_Init(Jim_Interp*);
+	//	extern int Sqlitetesttclvar_Init(Jim_Interp*);
+	//	extern int Sqlitetestfs_Init(Jim_Interp*);
+	//	extern int SqlitetestThread_Init(Jim_Interp*);
+	//	extern int SqlitetestOnefile_Init(Jim_Interp*);
+	//	extern int SqlitetestOsinst_Init(Jim_Interp*);
+	//	extern int Sqlitetestbackup_Init(Jim_Interp*);
+	//	extern int Sqlitetestintarray_Init(Jim_Interp*);
+	//	extern int Sqlitetestvfs_Init(Jim_Interp *);
+	//	extern int Sqlitetestrtree_Init(Jim_Interp*);
+	//	extern int Sqlitequota_Init(Jim_Interp*);
+	//	extern int Sqlitemultiplex_Init(Jim_Interp*);
+	//	extern int SqliteSuperlock_Init(Jim_Interp*);
+	//	extern int SqlitetestSyscall_Init(Jim_Interp*);
+	//	extern int Sqlitetestfuzzer_Init(Jim_Interp*);
+	//	extern int Sqlitetestwholenumber_Init(Jim_Interp*);
+	//	extern int Sqlitetestregexp_Init(Jim_Interp*);
 	//#if defined(ENABLE_FTS3) || defined(ENABLE_FTS4)
-	//	extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
+	//	extern int Sqlitetestfts3_Init(Jim_Interp *interp);
 	//#endif
 	//#ifdef ENABLE_ZIPVFS
-	//	extern int Zipvfs_Init(Tcl_Interp*);
+	//	extern int Zipvfs_Init(Jim_Interp*);
 	//	Zipvfs_Init(interp);
 	//#endif
 	//	Sqliteconfig_Init(interp);
@@ -448,7 +448,7 @@ __device__ static void init_all(Tcl_Interp *interp)
 	//	Sqlitetestfts3_Init(interp);
 	//#endif
 
-	Tcl_CreateCommand(interp, "load_testfixture_extensions", (Tcl_CmdProc *)init_all_cmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "load_testfixture_extensions", (Jim_CmdProc *)init_all_cmd, nullptr, nullptr);
 #ifdef _SSE
 	Sqlitetestsse_Init(interp);
 #endif
@@ -501,17 +501,18 @@ static void CudaShutdown(cudaDeviceHeap deviceHeap)
 	cudaDeviceReset();
 }
 
+/*
 int main(int argc, char **argv)
 {
 #if __CUDACC__
 	cudaDeviceHeap deviceHeap = CudaInit();
 #endif
 
-	// Call sqlite3_shutdown() once before doing anything else. This is to test that sqlite3_shutdown() can be safely called by a process before sqlite3_initialize() is. */
+	// Call sqlite3_shutdown() once before doing anything else. This is to test that sqlite3_shutdown() can be safely called by a process before sqlite3_initialize() is.
 	Main::Shutdown();
 
-	//Tcl_FindExecutable(argv[0]);
-	Tcl_Interp *interp = Tcl_CreateInterp();
+	//Jim_FindExecutable(argv[0]);
+	Jim_Interp *interp = Jim_CreateInterp();
 	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
 
 	init_all(interp);
@@ -519,21 +520,21 @@ int main(int argc, char **argv)
 	{
 		char b[32];
 		__snprintf(b, sizeof(b), "%d", argc-2);
-		Tcl_SetVar(interp, "argc", b, TCL_GLOBAL_ONLY);
-		Tcl_SetVar(interp, "argv0", argv[1], TCL_GLOBAL_ONLY);
-		Tcl_SetVar(interp, "argv", "", TCL_GLOBAL_ONLY);
+		Jim_SetVar(interp, "argc", b, JIM_GLOBAL_ONLY);
+		Jim_SetVar(interp, "argv0", argv[1], JIM_GLOBAL_ONLY);
+		Jim_SetVar(interp, "argv", "", JIM_GLOBAL_ONLY);
 		for (int i = 3; i < argc; i++)
-			Tcl_SetVar(interp, "argv", argv[i], TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
-		if (Tcl_EvalFile(interp, argv[1]) != TCL_OK)
+			Jim_SetVar(interp, "argv", argv[i], JIM_GLOBAL_ONLY | JIM_LIST_ELEMENT | JIM_APPEND_VALUE);
+		if (Jim_EvalFile(interp, argv[1]) != JIM_OK)
 		{
-			const char *info = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+			const char *info = Jim_GetVar(interp, "errorInfo", JIM_GLOBAL_ONLY);
 			if (!info) info = interp->result;
 			fprintf(stderr, "%s: %s\n", *argv, info);
 			return 1;
 		}
 	}
 	if (argc <= 1)
-		Tcl_GlobalEval(interp, tclsh_main_loop());
+		Jim_GlobalEval(interp, tclsh_main_loop());
 
 #if __CUDACC__
 	CudaShutdown(deviceHeap);
@@ -541,4 +542,4 @@ int main(int argc, char **argv)
 	printf("\nEnd."); char c; scanf("%c", &c);
 	return 0;
 }
-
+*/

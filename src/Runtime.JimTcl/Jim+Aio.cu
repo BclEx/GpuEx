@@ -311,7 +311,7 @@ __device__ static void JimAioSetError(Jim_Interp *interp, Jim_Obj *name)
 	}
 }
 
-__device__ static void JimAioDelProc(Jim_Interp *interp, void *privData)
+__device__ static void JimAioDelProc(ClientData privData, Jim_Interp *interp)
 {
 	AioFile *af = (AioFile *)privData;
 

@@ -2,25 +2,25 @@
 // testing of the SQLite library.
 #include <Core+Btree\Core+Btree.cu.h>
 #include <Core+Btree\BtreeInt.cu.h>
-#include <Tcl.h>
+#include <Jim.h>
 
 // Usage: sqlite3_shared_cache_report
 //
 // Return a list of file that are shared and the number of references to each file.
-__device__ int sqlite3BtreeSharedCacheReport(void *clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ int sqlite3BtreeSharedCacheReport(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 #ifndef OMIT_SHARED_CACHE
 	extern BtShared *sqlite3SharedCacheList;
-	char *r = Tcl_NewObj();
+	Jim_Obj *r = Jim_NewListObj(interp, nullptr, 0);
 	for (BtShared *bt = _GLOBAL(BtShared *, sqlite3SharedCacheList); bt; bt = bt->Next)
 	{
 		const char *file = bt->Pager->get_Filename(true);
-		Tcl_ListObjAppendElement(interp, r, file);
-		Tcl_ListObjAppendElement(interp, r, bt->Refs);
+		Jim_ListAppendElement(interp, r, Jim_NewStringObj(interp, file, -1));
+		Jim_ListAppendElement(interp, r, Jim_NewIntObj(interp, bt->Refs));
 	}
-	Tcl_SetObjResult(interp, r);
+	Jim_SetResult(interp, r);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Print debugging information about all cursors to standard output.

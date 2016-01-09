@@ -242,9 +242,9 @@ __device__ static void FlushStmtCache(TclContext *tctx)
 }
 
 // JIM calls this procedure when an sqlite3 database command is deleted.
-__device__ static void DbDeleteCmd(Jim_Interp *interp, ClientData db)
+__device__ static void DbDeleteCmd(ClientData data, Jim_Interp *interp)
 {
-	TclContext *tctx = (TclContext *)db;
+	TclContext *tctx = (TclContext *)data;
 	FlushStmtCache(tctx);
 	CloseIncrblobChannels(tctx);
 	Main::Close(tctx->Ctx);
@@ -2311,7 +2311,7 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, Jim_Obj *co
 	// In normal use, each JIM interpreter runs in a single thread.  So by default, we can turn of mutexing on SQLite database connections.
 	// However, for testing purposes it is useful to have mutexes turned on.  So, by default, mutexes default off.  But if compiled with
 	// SQLITE_JIM_DEFAULT_FULLMUTEX then mutexes default on.
-#ifdef TCL_DEFAULT_FULLMUTEX
+#ifdef JIM_DEFAULT_FULLMUTEX
 	VSystem::OPEN flags = (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_FULLMUTEX);
 #else
 	VSystem::OPEN flags = (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_NOMUTEX);

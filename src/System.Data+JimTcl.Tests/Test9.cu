@@ -1,16 +1,14 @@
 // This file contains obscure tests of the C-interface required for completeness. Test code is written in C for these cases
 // as there is not much point in binding to Tcl.
 #include "Test.cu.h"
-#include <stdlib.h>
-#include <string.h>
 
 // c_collation_test
-__device__ static int c_collation_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int c_collation_test(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 1)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, nullptr);
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, nullptr);
+		return JIM_ERROR;
 	}
 	const char *errFunction = "N/A";
 
@@ -32,21 +30,21 @@ __device__ static int c_collation_test(ClientData clientData, Tcl_Interp *interp
 	}
 
 	Main::Close(ctx);
-	return TCL_OK;
+	return JIM_OK;
 
 error_out:
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "Error testing function: ", errFunction, nullptr);
-	return TCL_ERROR;
+	Jim_ResetResult(interp);
+	Jim_AppendResult(interp, "Error testing function: ", errFunction, nullptr);
+	return JIM_ERROR;
 }
 
 // c_realloc_test
-__device__ static int c_realloc_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int c_realloc_test(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 1)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, nullptr);
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, nullptr);
+		return JIM_ERROR;
 	}
 	const char *errFunction = "N/A";
 
@@ -64,21 +62,21 @@ __device__ static int c_realloc_test(ClientData clientData, Tcl_Interp *interp, 
 		errFunction = "sqlite3_realloc";
 		goto error_out;
 	}
-	return TCL_OK;
+	return JIM_OK;
 
 error_out:
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "Error testing function: ", errFunction, nullptr);
-	return TCL_ERROR;
+	Jim_ResetResult(interp);
+	Jim_AppendResult(interp, "Error testing function: ", errFunction, nullptr);
+	return JIM_ERROR;
 }
 
 // c_misuse_test
-__device__ static int c_misuse_test(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int c_misuse_test(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 1)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, nullptr);
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, nullptr);
+		return JIM_ERROR;
 	}
 	const char *errFunction = "N/A";
 
@@ -135,28 +133,28 @@ __device__ static int c_misuse_test(ClientData clientData, Tcl_Interp *interp, i
 	}
 	_assert(!stmt);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 
 error_out:
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "Error testing function: ", errFunction, nullptr);
-	return TCL_ERROR;
+	Jim_ResetResult(interp);
+	Jim_AppendResult(interp, "Error testing function: ", errFunction, nullptr);
+	return JIM_ERROR;
 }
 
 // Register commands with the TCL interpreter.
 __constant__ static struct
 {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 	ClientData ClientData;
 } _objCmds[] = {
 	{ "c_misuse_test",    c_misuse_test, nullptr },
 	{ "c_realloc_test",   c_realloc_test, nullptr },
 	{ "c_collation_test", c_collation_test, nullptr },
 };
-__device__ int Sqlitetest9_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest9_Init(Jim_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
-	return TCL_OK;
+		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+	return JIM_OK;
 }

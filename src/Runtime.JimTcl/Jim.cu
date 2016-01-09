@@ -2003,6 +2003,7 @@ __device__ int Jim_Length(Jim_Obj *objPtr)
 // Just returns object's string rep
 __device__ const char *Jim_String(Jim_Obj *objPtr)
 {
+	if (!objPtr) return nullptr;
 	if (objPtr->bytes == NULL) {
 		// Invalid string repr. Generate it.
 		JimPanic(objPtr->typePtr == NULL, "UpdateStringProc called against typeless value.");
@@ -3125,6 +3126,7 @@ __device__ static int JimScriptValid(Jim_Interp *interp, ScriptObj *script)
 // Commands
 // -----------------------------------------------------------------------------
 #pragma region Commands
+
 __device__ static void JimIncrCmdRefCount(Jim_Cmd *cmdPtr)
 {
 	cmdPtr->inUse++;
@@ -3144,7 +3146,7 @@ __device__ static void JimDecrCmdRefCount(Jim_Interp *interp, Jim_Cmd *cmdPtr)
 		}
 		// native (C)
 		else if (cmdPtr->u.native.delProc)
-			cmdPtr->u.native.delProc(interp, cmdPtr->u.native.privData);
+			cmdPtr->u.native.delProc(cmdPtr->u.native.privData, interp);
 		// Delete any pushed command too
 		if (cmdPtr->prevCmd)
 			JimDecrCmdRefCount(interp, cmdPtr->prevCmd);
@@ -3464,6 +3466,7 @@ __device__ int Jim_RenameCommand(Jim_Interp *interp, const char *oldName, const 
 	JimFreeQualifiedName(interp, qualifiedNewNameObj);
 	return ret;
 }
+
 #pragma endregion
 
 // -----------------------------------------------------------------------------
@@ -10500,7 +10503,7 @@ __device__ static int JimAliasCmd(ClientData dummy, Jim_Interp *interp, int argc
 	return JimEvalObjList(interp, cmdList);
 }
 
-__device__ static void JimAliasCmdDelete(Jim_Interp *interp, void *privData)
+__device__ static void JimAliasCmdDelete(ClientData privData, Jim_Interp *interp)
 {
 	Jim_Obj *prefixListObj = (Jim_Obj *)privData;
 	Jim_DecrRefCount(interp, prefixListObj);

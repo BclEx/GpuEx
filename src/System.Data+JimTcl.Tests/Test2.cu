@@ -1,8 +1,4 @@
-//#include <RuntimeEx.h>
 #include "Test.cu.h"
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 
 // Interpret an SQLite error number
 __device__ static char *errorName(int rc)
@@ -46,340 +42,340 @@ __device__ static void pager_test_reiniter(IPage *notUsed)
 // Usage:   pager_open FILENAME N-PAGE
 //
 // Open a new pager
-__device__ static int pager_open(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_open(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME N-PAGE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FILENAME N-PAGE\"", nullptr);
+		return JIM_ERROR;
 	}
 	int pages;
-	if (Tcl_GetInt(interp, (char *)args[2], &pages)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[2], &pages)) return JIM_ERROR;
 	Pager *pager;
-	RC rc = Pager::Open(VSystem::FindVfs(nullptr), &pager, args[1], 0, (IPager::PAGEROPEN)0, (VSystem::OPEN)(VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE | VSystem::OPEN_MAIN_DB), pager_test_reiniter);
+	RC rc = Pager::Open(VSystem::FindVfs(nullptr), &pager, Jim_String(args[1]), 0, (IPager::PAGEROPEN)0, (VSystem::OPEN)(VSystem::OPEN_READWRITE | VSystem::OPEN_CREATE | VSystem::OPEN_MAIN_DB), pager_test_reiniter);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	pager->SetCacheSize(pages);
 	uint32 pageSize = test_pagesize;
 	pager->SetPageSize(&pageSize, -1);
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%p", pager);
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // Usage:   pager_close ID
 //
 // Close the given pager.
-__device__ static int pager_close(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_close(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = pager->Close();
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_rollback ID
 //
 // Rollback changes
-__device__ static int pager_rollback(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_rollback(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = pager->Rollback();
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_commit ID
 //
 // Commit all changes
-__device__ static int pager_commit(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_commit(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = pager->CommitPhaseOne(nullptr, false);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	rc = pager->CommitPhaseTwo();
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_stmt_begin ID
 //
 // Start a new checkpoint.
-__device__ static int pager_stmt_begin(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_stmt_begin(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = pager->OpenSavepoint(1);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_stmt_rollback ID
 //
 // Rollback changes to a checkpoint
-__device__ static int pager_stmt_rollback(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_stmt_rollback(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = pager->Savepoint(IPager::SAVEPOINT_ROLLBACK, 0);
 	pager->Savepoint(IPager::SAVEPOINT_RELEASE, 0);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_stmt_commit ID
 //
 // Commit changes to a checkpoint
-__device__ static int pager_stmt_commit(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_stmt_commit(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = pager->Savepoint(IPager::SAVEPOINT_RELEASE, 0);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_stats ID
 //
 // Return pager statistics.
-__constant__ static char *_names[] = {
+__constant__ static char *_stats_names[] = {
 	"ref", "page", "max", "size", "state", "err",
 	"hit", "miss", "ovfl",
 };
-__device__ static int pager_stats(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_stats(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	int *a = pager->Stats;
 	for (int i = 0; i < 9; i++)
 	{
 		char buf[100];
-		Tcl_AppendElement(interp, _names[i]);
+		Jim_AppendElement(interp, _stats_names[i]);
 		__snprintf(buf, sizeof(buf), "%d", a[i]);
-		Tcl_AppendElement(interp, buf);
+		Jim_AppendElement(interp, buf);
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_pagecount ID
 //
 // Return the size of the database file.
-__device__ static int pager_pagecount(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_pagecount(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	Pid pages;
 	pager->Pages(&pages);
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%d", pages);
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // Usage:   page_get ID PGNO
 //
 // Return a pointer to a page from the database.
-__device__ static int page_get(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int page_get(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID PGNO\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID PGNO\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	int pgid;
-	if (Tcl_GetInt(interp, (char *)args[2], &pgid)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[2], &pgid)) return JIM_ERROR;
 	RC rc = pager->SharedLock();
 	IPage *page;
 	if (rc == RC_OK)
 		rc = pager->Acquire(pgid, &page, false);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%p", page);
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // Usage:   page_lookup ID PGNO
 //
 // Return a pointer to a page if the page is already in cache. If not in cache, return an empty string.
-__device__ static int page_lookup(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int page_lookup(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID PGNO\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID PGNO\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	int pgid;
-	if (Tcl_GetInt(interp, (char *)args[2], &pgid)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[2], &pgid)) return JIM_ERROR;
 	IPage *page = pager->Lookup(pgid);
 	if (page)
 	{
 		char buf[100];
 		__snprintf(buf, sizeof(buf), "%p", page);
-		Tcl_AppendResult(interp, buf, nullptr);
+		Jim_AppendResult(interp, buf, nullptr);
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   pager_truncate ID PGNO
-__device__ static int pager_truncate(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int pager_truncate(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID PGNO\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID PGNO\"", nullptr);
+		return JIM_ERROR;
 	}
-	Pager *pager = (Pager *)sqlite3TestTextToPtr(args[1]);
+	Pager *pager = (Pager *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	int pgid;
-	if (Tcl_GetInt(interp, (char *)args[2], &pgid)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[2], &pgid)) return JIM_ERROR;
 	pager->TruncateImage(pgid);
-	return TCL_OK;
+	return JIM_OK;
 }
 
 
 // Usage:   page_unref PAGE
 //
 // Drop a pointer to a page.
-__device__ static int page_unref(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int page_unref(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " PAGE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " PAGE\"", nullptr);
+		return JIM_ERROR;
 	}
-	IPage *page = (IPage *)sqlite3TestTextToPtr(args[1]);
+	IPage *page = (IPage *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	Pager::Unref(page);
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   page_read PAGE
 //
 // Return the content of a page
-__device__ static int page_read(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int page_read(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " PAGE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " PAGE\"", nullptr);
+		return JIM_ERROR;
 	}
-	IPage *page = (IPage *)sqlite3TestTextToPtr(args[1]);
+	IPage *page = (IPage *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	char buf[100];
 	_memcpy(buf, Pager::GetData(page), sizeof(buf));
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // Usage:   page_number PAGE
 //
 // Return the page number for a page.
-__device__ static int page_number(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int page_number(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " PAGE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " PAGE\"", nullptr);
+		return JIM_ERROR;
 	}
-	IPage *page = (IPage *)sqlite3TestTextToPtr(args[1]);
+	IPage *page = (IPage *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%d", Pager::get_PageID(page));
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // Usage:   page_write PAGE DATA
 //
 // Write something into a page.
-__device__ static int page_write(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int page_write(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " PAGE DATA\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " PAGE DATA\"", nullptr);
+		return JIM_ERROR;
 	}
-	IPage *page = (IPage *)sqlite3TestTextToPtr(args[1]);
+	IPage *page = (IPage *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = Pager::Write(page);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	char *data = (char *)Pager::GetData(page);
-	_strncpy(data, args[2], test_pagesize-1);
+	_strncpy(data, Jim_String(args[2]), test_pagesize-1);
 	data[test_pagesize-1] = 0;
-	return TCL_OK;
+	return JIM_OK;
 }
 
 #ifndef OMIT_DISKIO
@@ -388,28 +384,28 @@ __device__ static int page_write(ClientData notUsed, Tcl_Interp *interp, int arg
 // Write a few bytes at the N megabyte point of FILENAME.  This will create a large file.  If the file was a valid SQLite database, then
 // the next time the database is opened, SQLite will begin allocating new pages after N.  If N is 2096 or bigger, this will test the
 // ability of SQLite to write to large files.
-__device__ static int fake_big_file(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int fake_big_file(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " N-MEGABYTES FILE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " N-MEGABYTES FILE\"", nullptr);
+		return JIM_ERROR;
 	}
 	int n;
-	if (Tcl_GetInt(interp, args[1], &n)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[1], &n)) return JIM_ERROR;
 	VSystem *vfs = VSystem::FindVfs(nullptr);
-	int fileLength = (int)_strlen(args[2]);
+	int fileLength = (int)_strlen(Jim_String(args[2]));
 	char *file = (char *)_alloc(fileLength+2);
-	if (!file) return TCL_ERROR;
-	_memcpy(file, args[2], fileLength+1);
+	if (!file) return JIM_ERROR;
+	_memcpy(file, Jim_String(args[2]), fileLength+1);
 	file[fileLength+1] = 0;
 	VFile *fd = nullptr;
 	RC rc = vfs->OpenAndAlloc(file, &fd, (VSystem::OPEN)(VSystem::OPEN_CREATE|VSystem::OPEN_READWRITE|VSystem::OPEN_MAIN_DB), nullptr);
 	if (rc)
 	{
-		Tcl_AppendResult(interp, "open failed: ", errorName(rc), nullptr);
+		Jim_AppendResult(interp, "open failed: ", errorName(rc), nullptr);
 		_free(file);
-		return TCL_ERROR;
+		return JIM_ERROR;
 	}
 	int64 offset = n;
 	offset *= 1024*1024;
@@ -418,42 +414,42 @@ __device__ static int fake_big_file(ClientData notUsed, Tcl_Interp *interp, int 
 	_free(file);
 	if (rc)
 	{
-		Tcl_AppendResult(interp, "write failed: ", errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "write failed: ", errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 #endif
 
 // test_control_pending_byte  PENDING_BYTE
 //
 // Set the PENDING_BYTE using the sqlite3_test_control() interface.
-__device__ static int testPendingByte(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int testPendingByte(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " PENDING-BYTE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " PENDING-BYTE\"", nullptr);
+		return JIM_ERROR;
 	}
 	int byte;
-	if (Tcl_GetInt(interp, (char *)args[1], &byte)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[1], &byte)) return JIM_ERROR;
 	RC rc = Main::TestControl(Main::TESTCTRL_PENDING_BYTE, byte);
-	Tcl_SetObjResult(interp, (int)rc);
-	return TCL_OK;
+	Jim_SetResultInt(interp, rc);
+	return JIM_OK;
 }  
 
 // sqlite3BitvecBuiltinTest SIZE PROGRAM
 //
 // Invoke the SQLITE_TESTCTRL_BITVEC_TEST operator on test_control. See comments on sqlite3BitvecBuiltinTest() for additional information.
-__device__ static int testBitvecBuiltinTest(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int testBitvecBuiltinTest(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " SIZE PROGRAM\"", nullptr);
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " SIZE PROGRAM\"", nullptr);
 	}
 	int sz;
-	if (Tcl_GetInt(interp, (char *)args[1], &sz)) return TCL_ERROR;
-	const char *z = args[2];
+	if (Jim_GetInt(interp, args[1], &sz)) return JIM_ERROR;
+	const char *z = Jim_String(args[2]);
 	int progLength = 0;
 	int prog[100];
 	while (progLength < 99 && *z)
@@ -465,8 +461,8 @@ __device__ static int testBitvecBuiltinTest(ClientData notUsed, Tcl_Interp *inte
 	}
 	prog[progLength] = 0;
 	RC rc = Main::TestControl(Main::TESTCTRL_BITVEC_TEST, sz, prog);
-	Tcl_SetObjResult(interp, (int)rc);
-	return TCL_OK;
+	Jim_SetResultInt(interp, rc);
+	return JIM_OK;
 }  
 
 // Register commands with the TCL interpreter.
@@ -478,7 +474,7 @@ extern int sqlite3_diskfull_pending;
 extern int sqlite3_diskfull;
 __constant__ static struct {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 } _cmds[] = {
 	{ "pager_open",              pager_open          },
 	{ "pager_close",             pager_close         },
@@ -502,18 +498,18 @@ __constant__ static struct {
 	{ "sqlite3BitvecBuiltinTest",testBitvecBuiltinTest     },
 	{ "sqlite3_test_control_pending_byte", testPendingByte },
 };
-__device__ int Sqlitetest2_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest2_Init(Jim_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_cmds); i++)
-		Tcl_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
-	Tcl_LinkVar(interp, "sqlite_io_error_pending", (char *)&sqlite3_io_error_pending, TCL_LINK_INT);
-	Tcl_LinkVar(interp, "sqlite_io_error_persist", (char *)&sqlite3_io_error_persist, TCL_LINK_INT);
-	Tcl_LinkVar(interp, "sqlite_io_error_hit", (char *)&sqlite3_io_error_hit, TCL_LINK_INT);
-	Tcl_LinkVar(interp, "sqlite_io_error_hardhit", (char *)&sqlite3_io_error_hardhit, TCL_LINK_INT);
-	Tcl_LinkVar(interp, "sqlite_diskfull_pending", (char *)&sqlite3_diskfull_pending, TCL_LINK_INT);
-	Tcl_LinkVar(interp, "sqlite_diskfull", (char *)&sqlite3_diskfull, TCL_LINK_INT);
+		Jim_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
+	Jim_LinkVar(interp, "sqlite_io_error_pending", (char *)&sqlite3_io_error_pending, JIM_LINK_INT);
+	Jim_LinkVar(interp, "sqlite_io_error_persist", (char *)&sqlite3_io_error_persist, JIM_LINK_INT);
+	Jim_LinkVar(interp, "sqlite_io_error_hit", (char *)&sqlite3_io_error_hit, JIM_LINK_INT);
+	Jim_LinkVar(interp, "sqlite_io_error_hardhit", (char *)&sqlite3_io_error_hardhit, JIM_LINK_INT);
+	Jim_LinkVar(interp, "sqlite_diskfull_pending", (char *)&sqlite3_diskfull_pending, JIM_LINK_INT);
+	Jim_LinkVar(interp, "sqlite_diskfull", (char *)&sqlite3_diskfull, JIM_LINK_INT);
 #ifndef OMIT_WSD
-	Tcl_LinkVar(interp, "sqlite_pending_byte", (char *)&_Core_PendingByte, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+	Jim_LinkVar(interp, "sqlite_pending_byte", (char *)&_Core_PendingByte, JIM_LINK_INT|JIM_LINK_READ_ONLY);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 }

@@ -129,15 +129,15 @@ __device__ static bool _crashTestEnable = false;
 
 __device__ static void *crash_malloc(int bytes)
 {
-	return (void *)Tcl_Alloc((size_t)bytes);
+	return (void *)Jim_Alloc((size_t)bytes);
 }
 __device__ static void crash_free(void *p)
 {
-	Tcl_Free(p);
+	Jim_Free(p);
 }
 __device__ static void *crash_realloc(void *p, int n)
 {
-	return (void *)Tcl_Realloc(p, (size_t)n);
+	return (void *)Jim_Realloc(p, (size_t)n);
 }
 
 // Wrapper around the sqlite3OsWrite() function that avoids writing to the 512 byte block begining at offset PENDING_BYTE.
@@ -577,7 +577,7 @@ __constant__ struct DeviceFlag
 	{ "powersafe_overwrite", VFile::IOCAP_POWERSAFE_OVERWRITE   },
 	{ nullptr, (VFile::IOCAP)0 }
 };
-__device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, const char *args[], VFile::IOCAP *deviceCharOut, int *sectorSizeOut)
+__device__ static int processDevSymArgs(Jim_Interp *interp, char argc, Jim_Obj *const args[], VFile::IOCAP *deviceCharOut, int *sectorSizeOut)
 {
 	int sectorSize = 0;
 	int deviceChar = 0;
@@ -586,37 +586,40 @@ __device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, const cha
 	for (int i = 0; i < argc; i += 2)
 	{
 		int optLength;
-		char *opt = Tcl_GetString(interp, args[i], &optLength);
+		const char *opt = Jim_GetString(args[i], &optLength);
 		if ((optLength > 11 || optLength < 2 || _strncmp("-sectorsize", opt, optLength)) && (optLength > 16 || optLength < 2 || _strncmp("-characteristics", opt, optLength)))
 		{
-			Tcl_AppendResult(interp, "Bad option: \"", opt, "\" - must be \"-characteristics\" or \"-sectorsize\"", nullptr);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "Bad option: \"", opt, "\" - must be \"-characteristics\" or \"-sectorsize\"", nullptr);
+			return JIM_ERROR;
 		}
 		if (i == argc-1)
 		{
-			Tcl_AppendResult(interp, "Option requires an argument: \"", opt, "\"", nullptr);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "Option requires an argument: \"", opt, "\"", nullptr);
+			return JIM_ERROR;
 		}
 
 		if (opt[1] == 's')
 		{
-			if (Tcl_GetInt(interp, args[i+1], &sectorSize))
-				return TCL_ERROR;
+			if (Jim_GetInt(interp, args[i+1], &sectorSize))
+				return JIM_ERROR;
 			setSectorsize = true;
 		}
 		else
 		{
-			const char **objs;
+			Jim_Obj **objs;
 			int objc;
-			if (Tcl_ListObjGetElements(interp, (char *)args[i+1], &objc, &objs))
-				return TCL_ERROR;
+			if (Jim_ListObjGetElements(interp, args[i+1], &objc, &objs))
+				return JIM_ERROR;
 			for (int j = 0; j < objc; j++)
 			{
-				const char *flag = objs[j];
+				Jim_Obj *flag = objs[j];
+				Jim_IncrRefCount(flag);
+				Jim_UtfToLower(Jim_String(flag));
+
 				int choice;
-				int rc = Tcl_GetIndex(interp, flag, (const void **)_flags, sizeof(_flags[0]), "no such flag", 0, &choice, true);
+				int rc = Jim_GetEnumFromObjStruct(interp, flag, (const void **)_flags, sizeof(_flags[0]), &choice, "no such flag", 0);
 				if (rc)
-					return TCL_ERROR;
+					return JIM_ERROR;
 				deviceChar |= _flags[choice].Value;
 			}
 			setDeviceChar = true;
@@ -626,27 +629,27 @@ __device__ static int processDevSymArgs(Tcl_Interp *interp, char argc, const cha
 		*deviceCharOut = (VFile::IOCAP)deviceChar;
 	if (setSectorsize)
 		*sectorSizeOut = sectorSize;
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // tclcmd:   sqlite_crash_enable ENABLE
 //
 // Parameter ENABLE must be a boolean value. If true, then the "crash" vfs is added to the system. If false, it is removed.
 __device__ CrashVfs _crashVfs;
-__device__ static int crashEnableCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int crashEnableCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "ENABLE");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "ENABLE");
+		return JIM_ERROR;
 	}
 
 	bool isEnable;
-	if (Tcl_GetBoolean(interp, args[1], &isEnable))
-		return TCL_ERROR;
+	if (Jim_GetBoolean(interp, args[1], &isEnable))
+		return JIM_ERROR;
 
 	if ((isEnable && _crashVfs.Orig) || (!isEnable && !_crashVfs.Orig))
-		return TCL_OK;
+		return JIM_OK;
 
 	if (!_crashVfs.Orig)
 	{
@@ -662,7 +665,7 @@ __device__ static int crashEnableCmd(ClientData clientData, Tcl_Interp *interp, 
 		_crashVfs.Orig = nullptr;
 		VSystem::UnregisterVfs(&_crashVfs);
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // tclcmd:   sqlite_crashparams ?OPTIONS? DELAY CRASHFILE
@@ -675,28 +678,28 @@ __device__ static int crashEnableCmd(ClientData clientData, Tcl_Interp *interp, 
 //
 // Example:
 //   sqlite_crashparams -sect 1024 -char {atomic sequential} ./test.db 1
-__device__ static int crashParamsObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int crashParamsObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc < 3)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "?OPTIONS? DELAY CRASHFILE");
+		Jim_WrongNumArgs(interp, 1, args, "?OPTIONS? DELAY CRASHFILE");
 		goto error;
 	}
 
 	int crashFileLength;
-	const char *crashFile = Tcl_GetString(interp, args[argc-1], &crashFileLength);
+	const char *crashFile = Jim_GetString(args[argc-1], &crashFileLength);
 	if (crashFileLength >= sizeof(_g.CrashFile) ){
-		Tcl_AppendResult(interp, "Filename is too long: \"", crashFile, "\"", 0);
+		Jim_AppendResult(interp, "Filename is too long: \"", crashFile, "\"", 0);
 		goto error;
 	}
 	int delayAt;
-	if (Tcl_GetInt(interp, args[argc-2], &delayAt))
+	if (Jim_GetInt(interp, args[argc-2], &delayAt))
 		goto error;
 
 	VFile::IOCAP deviceChar = (VFile::IOCAP)-1;
 	int sectorSize = -1;
 	if (processDevSymArgs(interp, argc-3, &args[1], &deviceChar, &sectorSize))
-		return TCL_ERROR;
+		return JIM_ERROR;
 
 	if (deviceChar >= 0)
 		_g.DeviceCharacteristics = deviceChar;
@@ -706,76 +709,76 @@ __device__ static int crashParamsObjCmd(ClientData clientData, Tcl_Interp *inter
 	_g.CrashAt = delayAt;
 	_memcpy(_g.CrashFile, crashFile, crashFileLength+1);
 	_crashTestEnable = true;
-	return TCL_OK;
+	return JIM_OK;
 
 error:
-	return TCL_ERROR;
+	return JIM_ERROR;
 }
 
 __device__ extern void devsym_register(int deviceChar, int sectorSize);
-__device__ static int devSymObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int devSymObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	VFile::IOCAP deviceChar = (VFile::IOCAP)-1;
 	int sectorSize = -1;
 	if (processDevSymArgs(interp, argc-1, &args[1], &deviceChar, &sectorSize))
-		return TCL_ERROR;
+		return JIM_ERROR;
 	devsym_register(deviceChar, sectorSize);
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // tclcmd: register_jt_vfs ?-default? PARENT-VFS
 __device__ extern int jt_register(char *, int);
-__device__ static int jtObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int jtObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2 && argc != 3)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "?-default? PARENT-VFS");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "?-default? PARENT-VFS");
+		return JIM_ERROR;
 	}
-	char *parent = (char *)args[1];
+	const char *parent = Jim_String(args[1]);
 	if (argc == 3)
 	{
 		if (!_strcmp(parent, "-default"))
 		{
-			Tcl_AppendResult(interp, "bad option \"", parent, "\": must be -default", nullptr);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, "bad option \"", parent, "\": must be -default", nullptr);
+			return JIM_ERROR;
 		}
 		parent = (char *)args[2];
 	}
 	if (!(*parent))
 		parent = 0;
-	if (jt_register(parent, argc == 3))
+	if (jt_register((char *)parent, argc == 3))
 	{
-		Tcl_AppendResult(interp, "Error in jt_register", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "Error in jt_register", nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // tclcmd: unregister_jt_vfs
 __device__ extern void jt_unregister(void);
-__device__ static int jtUnregisterObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int jtUnregisterObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 1)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "");
+		return JIM_ERROR;
 	}
 	jt_unregister();
-	return TCL_OK;
+	return JIM_OK;
 }
 
 #endif
 
 // This procedure registers the TCL procedures defined in this file.
-__device__ int Sqlitetest6_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest6_Init(Jim_Interp *interp)
 {
 #ifndef OMIT_DISKIO
-	Tcl_CreateCommand(interp, "sqlite3_crash_enable", crashEnableCmd, nullptr, nullptr);
-	Tcl_CreateCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, nullptr, nullptr);
-	Tcl_CreateCommand(interp, "sqlite3_simulate_device", devSymObjCmd, nullptr, nullptr);
-	Tcl_CreateCommand(interp, "register_jt_vfs", jtObjCmd, nullptr, nullptr);
-	Tcl_CreateCommand(interp, "unregister_jt_vfs", jtUnregisterObjCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_crash_enable", crashEnableCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_simulate_device", devSymObjCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "register_jt_vfs", jtObjCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "unregister_jt_vfs", jtUnregisterObjCmd, nullptr, nullptr);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 }

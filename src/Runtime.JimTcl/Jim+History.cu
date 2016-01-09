@@ -86,7 +86,7 @@ __device__ static int JimHistorySubCmdProc(ClientData dummy, Jim_Interp *interp,
 	return Jim_CallSubCmd(interp, Jim_ParseSubCmd(interp, _history_command_table, argc, argv), argc, argv);
 }
 
-__device__ static void JimHistoryDelProc(Jim_Interp *interp, void *privData)
+__device__ static void JimHistoryDelProc(ClientData privData, Jim_Interp *interp)
 {
 	Jim_Free(privData);
 }

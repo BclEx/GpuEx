@@ -5,30 +5,29 @@
 // The code in this file defines a sqlite3 virtual-table module that provides a read-only view of the current database schema. There is one
 // row in the schema table for each column in the database schema.
 #define _SCHEMA_ \
-	"CREATE TABLE x("                                                            \
-	"database,"          /* Name of database (i.e. main, temp etc.) */         \
-	"tablename,"         /* Name of table */                                   \
-	"cid,"               /* Column number (from left-to-right, 0 upward) */    \
-	"name,"              /* Column name */                                     \
-	"type,"              /* Specified type (i.e. VARCHAR(32)) */               \
-	"not_null,"          /* Boolean. True if NOT NULL was specified */         \
-	"dflt_value,"        /* Default value for this column */                   \
-	"pk"                 /* True if this column is part of the primary key */  \
+	"CREATE TABLE x(" \
+	"database,"          /* Name of database (i.e. main, temp etc.) */ \
+	"tablename,"         /* Name of table */ \
+	"cid,"               /* Column number (from left-to-right, 0 upward) */ \
+	"name,"              /* Column name */ \
+	"type,"              /* Specified type (i.e. VARCHAR(32)) */ \
+	"not_null,"          /* Boolean. True if NOT NULL was specified */ \
+	"dflt_value,"        /* Default value for this column */ \
+	"pk"                 /* True if this column is part of the primary key */ \
 	")"
 
 // If SQLITE_TEST is defined this code is preprocessed for use as part of the sqlite test binary "testfixture". Otherwise it is preprocessed
 // to be compiled into an sqlite dynamic extension.
-//#ifdef _TEST
+#ifdef _TEST
 #include <Core+Vdbe\VdbeInt.cu.h>
-#include <Tcl.h>
-//#else
-//#include "sqlite3ext.h"
-//SQLITE_EXTENSION_INIT1
-//#endif
-
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <Jim.h>
+#else
+#include <Core+Vdbe\Core+Ext.cu.h>
+EXTENSION_INIT1
+#endif
+//#include <stdlib.h>
+//#include <string.h>
+//#include <assert.h>
 
 typedef struct schema_vtab schema_vtab;
 typedef struct schema_cursor schema_cursor;
@@ -243,37 +242,37 @@ __constant__ static ITableModule _schemaModule =
 #ifdef _TEST
 
 // Decode a pointer to an sqlite3 object.
-__device__ extern int GetDbPointer(Tcl_Interp *interp, char *a, Context **ctx);
+__device__ extern int GetDbPointer(Jim_Interp *interp, char *a, Context **ctx);
 
 // Register the schema virtual table module.
-__device__ static int register_schema_module(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int register_schema_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_WrongNumArgs(interp, 1, args, "DB");
-		return TCL_ERROR;
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, (char *)args[1], &ctx)) return TCL_ERROR;
+	if (GetDbPointer(interp, (char *)args[1], &ctx)) return JIM_ERROR;
 #ifndef OMIT_VIRTUALTABLE
 	VTable::CreateModule(ctx, "schema", &_schemaModule, nullptr, nullptr);
 #endif
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Register commands with the TCL interpreter.
 __constant__ static struct {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 	ClientData ClientData;
 } _objCmds[] = {
 	{ "register_schema_module", register_schema_module, nullptr },
 };
-__device__ int Sqlitetestschema_Init(Tcl_Interp *interp)
+__device__ int Sqlitetestschema_Init(Jim_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_objCmds); i++)
-		Tcl_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
-	return TCL_OK;
+		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
+	return JIM_OK;
 }
 
 #else

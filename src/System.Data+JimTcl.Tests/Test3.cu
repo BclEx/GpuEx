@@ -1,7 +1,5 @@
 #include "Test.cu.h"
 #include "..\System.Data.net\Core+Btree\BtreeInt.cu.h"
-#include <stdlib.h>
-#include <string.h>
 
 // Interpret an SQLite error number
 __device__ static char *errorName(int rc)
@@ -36,15 +34,15 @@ __device__ static int _refsSqlite3 = 0;
 // Usage:   btree_open FILENAME NCACHE
 //
 // Open a new database
-__device__ static int btree_open(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_open(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " FILENAME NCACHE FLAGS\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " FILENAME NCACHE FLAGS\"", nullptr);
+		return JIM_ERROR;
 	}
 	int cacheSize;
-	if (Tcl_GetInt(interp, (char *)args[2], &cacheSize)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[2], &cacheSize)) return JIM_ERROR;
 	_refsSqlite3++;
 	if (_refsSqlite3 == 1)
 	{
@@ -52,42 +50,42 @@ __device__ static int btree_open(ClientData notUsed, Tcl_Interp *interp, int arg
 		_sCtx.Mutex = _mutex_alloc(MUTEX_RECURSIVE);
 		_mutex_enter(_sCtx.Mutex);
 	}
-	int n = (int)_strlen(args[1]);
+	int n = (int)_strlen(Jim_String(args[1]));
 	char *filename = (char *)_alloc(n+2);
-	if (!filename) return TCL_ERROR;
-	_memcpy(filename, args[1], n+1);
+	if (!filename) return JIM_ERROR;
+	_memcpy(filename, Jim_String(args[1]), n+1);
 	filename[n+1] = 0;
 	Btree *bt;
 	RC rc = Btree::Open(_sCtx.Vfs, filename, &_sCtx, &bt, (Btree::OPEN)0, (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE|VSystem::OPEN_MAIN_DB));
 	_free(filename);
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	bt->SetCacheSize(cacheSize);
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%p", bt);
-	Tcl_AppendResult(interp, buf, nullptr);
-	return TCL_OK;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 // Usage:   btree_close ID
 //
 // Close the given database.
-__device__ static int btree_close(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_close(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	RC rc = bt->Close();
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	_refsSqlite3--;
 	if (_refsSqlite3 == 0)
@@ -97,46 +95,46 @@ __device__ static int btree_close(ClientData notUsed, Tcl_Interp *interp, int ar
 		_sCtx.Mutex = 0;
 		_sCtx.Vfs = 0;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   btree_begin_transaction ID
 //
 // Start a new transaction
-__device__ static int btree_begin_transaction(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_begin_transaction(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	bt->Enter();
 	RC rc = bt->BeginTrans(1);
 	bt->Leave();
 	if (rc != RC_OK)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   btree_pager_stats ID
 //
 // Returns pager statistics
-__constant__ static char *_names[] = {
+__constant__ static char *_stats_names[] = {
 	"ref", "page", "max", "size", "state", "err",
 	"hit", "miss", "ovfl", "read", "write"
 };
-__device__ static int btree_pager_stats(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_pager_stats(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(Jim_String(args[1]));
 
 	// Normally in this file, with a b-tree handle opened using the [btree_open] command it is safe to call sqlite3BtreeEnter() directly.
 	// But this function is sometimes called with a btree handle obtained from an open SQLite connection (using [btree_from_db]). In this case
@@ -148,33 +146,33 @@ __device__ static int btree_pager_stats(ClientData notUsed, Tcl_Interp *interp, 
 	for (int i = 0; i < 11; i++)
 	{
 		char buf[100];
-		Tcl_AppendElement(interp, _names[i]);
+		Jim_AppendElement(interp, _stats_names[i]);
 		__snprintf(buf, sizeof(buf), "%d", a[i]);
-		Tcl_AppendElement(interp, buf);
+		Jim_AppendElement(interp, buf);
 	}
 	bt->Leave();
 
 	// Release the mutex on the SQLite handle that controls this b-tree
 	_mutex_leave(bt->Ctx->Mutex);
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // Usage:   btree_cursor ID TABLENUM WRITEABLE
 //
 // Create a new cursor.  Return the ID for the cursor.
-__device__ static int btree_cursor(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_cursor(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 4)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID TABLENUM WRITEABLE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID TABLENUM WRITEABLE\"", nullptr);
+		return JIM_ERROR;
 	}
-	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	int tableId;
-	if (Tcl_GetInt(interp, (char *)args[2], &tableId)) return TCL_ERROR;
 	bool wrFlag;
-	if (Tcl_GetBoolean(interp, (char *)args[3], &wrFlag)) return TCL_ERROR;
-	BtCursor *cur = (BtCursor *)Tcl_Alloc(Btree::CursorSize());
+	if (Jim_GetInt(interp, args[2], &tableId)) return JIM_ERROR;
+	if (Jim_GetBoolean(interp, args[3], &wrFlag)) return JIM_ERROR;
+	BtCursor *cur = (BtCursor *)Jim_Alloc(Btree::CursorSize());
 	_memset(cur, 0, Btree::CursorSize());
 	bt->Enter();
 	RC rc = RC_OK;
@@ -186,36 +184,36 @@ __device__ static int btree_cursor(ClientData notUsed, Tcl_Interp *interp, int a
 	bt->Leave();
 	if (rc)
 	{
-		Tcl_Free((char *)cur);
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_Free((char *)cur);
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	char buf[30];
 	__snprintf(buf, sizeof(buf), "%p", cur);
-	Tcl_AppendResult(interp, buf, nullptr);
+	Jim_AppendResult(interp, buf, nullptr);
 	return RC_OK;
 }
 
 // Usage:   btree_close_cursor ID
 //
 // Close a cursor opened using btree_cursor.
-__device__ static int btree_close_cursor(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_close_cursor(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	Btree *bt = cur->Btree;
 	bt->Enter();
 	RC rc = Btree::CloseCursor(cur);
 	bt->Leave();
-	Tcl_Free((char *)cur);
+	Jim_Free((char *)cur);
 	if (rc)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	return RC_OK;
 }
@@ -224,52 +222,52 @@ __device__ static int btree_close_cursor(ClientData notUsed, Tcl_Interp *interp,
 //
 // Move the cursor to the next entry in the table.  Return 0 on success or 1 if the cursor was already on the last entry in the table or if
 // the table is empty.
-__device__ static int btree_next(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_next(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	cur->Btree->Enter();
 	int res = 0;
 	RC rc = Btree::Next_(cur->Next, &res);
 	cur->Btree->Leave();
 	if (rc)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%d", res);
-	Tcl_AppendResult(interp, buf, nullptr);
+	Jim_AppendResult(interp, buf, nullptr);
 	return RC_OK;
 }
 
 // Usage:   btree_first ID
 //
 // Move the cursor to the first entry in the table.  Return 0 if the cursor was left point to something and 1 if the table is empty.
-__device__ static int btree_first(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_first(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	cur->Btree->Enter();
 	int res = 0;
 	RC rc = Btree::First(cur, &res);
 	cur->Btree->Leave();
 	if (rc)
 	{
-		Tcl_AppendResult(interp, errorName(rc), nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, errorName(rc), nullptr);
+		return JIM_ERROR;
 	}
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%d", res);
-	Tcl_AppendResult(interp, buf, nullptr);
+	Jim_AppendResult(interp, buf, nullptr);
 	return RC_OK;
 }
 
@@ -277,34 +275,34 @@ __device__ static int btree_first(ClientData notUsed, Tcl_Interp *interp, int ar
 //
 // Return TRUE if the given cursor is not pointing at a valid entry.
 // Return FALSE if the cursor does point to a valid entry.
-__device__ static int btree_eof(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_eof(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	cur->Btree->Enter();
 	bool rc = Btree::Eof(cur);
 	cur->Btree->Leave();
 	char buf[50];
 	__snprintf(buf, sizeof(buf), "%d", rc);
-	Tcl_AppendResult(interp, buf, nullptr);
+	Jim_AppendResult(interp, buf, nullptr);
 	return RC_OK;
 }
 
 // Usage:   btree_payload_size ID
 //
 // Return the number of bytes of payload
-__device__ static int btree_payload_size(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_payload_size(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(args[1]);
+	BtCursor *cur = (BtCursor *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	cur->Btree->Enter();
 
 	// The cursor may be in "require-seek" state. If this is the case, the call to BtreeDataSize() will fix it.
@@ -318,7 +316,7 @@ __device__ static int btree_payload_size(ClientData notUsed, Tcl_Interp *interp,
 	cur->Btree->Leave();
 	char buf[50];
 	__snprintf(buf, sizeof(buf), "%d", (int)(n1+n2));
-	Tcl_AppendResult(interp, buf, nullptr);
+	Jim_AppendResult(interp, buf, nullptr);
 	return RC_OK;
 }
 
@@ -330,19 +328,19 @@ __device__ static int btree_payload_size(ClientData notUsed, Tcl_Interp *interp,
 // times.  The first integer is START*MULTIPLIER.  Each iteration increases the integer by INCREMENT.
 //
 // This command returns nothing if it works.  It returns an error message if something goes wrong.
-__device__ static int btree_varint_test(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_varint_test(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	int n1, n2, i, j;
 	if (argc != 5)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " START MULTIPLIER COUNT INCREMENT\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " START MULTIPLIER COUNT INCREMENT\"", nullptr);
+		return JIM_ERROR;
 	}
 	uint32 start, mult, count, incr;
-	if (Tcl_GetInt(interp, (char *)args[1], (int *)&start)) return TCL_ERROR;
-	if (Tcl_GetInt(interp, (char *)args[2], (int *)&mult)) return TCL_ERROR;
-	if (Tcl_GetInt(interp, (char *)args[3], (int *)&count)) return TCL_ERROR;
-	if (Tcl_GetInt(interp, (char *)args[4], (int *)&incr)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[1], (int *)&start)) return JIM_ERROR;
+	if (Jim_GetInt(interp, args[2], (int *)&mult)) return JIM_ERROR;
+	if (Jim_GetInt(interp, args[3], (int *)&count)) return JIM_ERROR;
+	if (Jim_GetInt(interp, args[4], (int *)&incr)) return JIM_ERROR;
 	uint64 in = start;
 	in *= mult;
 	uint64 out;
@@ -354,21 +352,21 @@ __device__ static int btree_varint_test(ClientData notUsed, Tcl_Interp *interp, 
 		if (n1 > 9 || n1 < 1)
 		{
 			_sprintf(err, "putVarint returned %d - should be between 1 and 9", n1);
-			Tcl_AppendResult(interp, err, nullptr);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, err, nullptr);
+			return JIM_ERROR;
 		}
 		n2 = _convert_getvarint(buf, &out);
 		if (n1 != n2)
 		{
 			_sprintf(err, "putVarint returned %d and getVarint returned %d", n1, n2);
-			Tcl_AppendResult(interp, err, nullptr);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, err, nullptr);
+			return JIM_ERROR;
 		}
 		if (in != out)
 		{
 			_sprintf(err, "Wrote 0x%016llx and got back 0x%016llx", in, out);
-			Tcl_AppendResult(interp, err, nullptr);
-			return TCL_ERROR;
+			Jim_AppendResult(interp, err, nullptr);
+			return JIM_ERROR;
 		}
 		if ((in & 0xffffffff) == in)
 		{
@@ -378,14 +376,14 @@ __device__ static int btree_varint_test(ClientData notUsed, Tcl_Interp *interp, 
 			if (n1 != n2)
 			{
 				_sprintf(err, "putVarint returned %d and GetVarint32 returned %d", n1, n2);
-				Tcl_AppendResult(interp, err, nullptr);
-				return TCL_ERROR;
+				Jim_AppendResult(interp, err, nullptr);
+				return JIM_ERROR;
 			}
 			if (in != out)
 			{
 				_sprintf(err, "Wrote 0x%016llx and got back 0x%016llx from GetVarint32", in, out);
-				Tcl_AppendResult(interp, err, nullptr);
-				return TCL_ERROR;
+				Jim_AppendResult(interp, err, nullptr);
+				return JIM_ERROR;
 			}
 		}
 
@@ -394,7 +392,7 @@ __device__ static int btree_varint_test(ClientData notUsed, Tcl_Interp *interp, 
 			_convert_getvarint(buf, &out);
 		in += incr;
 	}
-	return TCL_OK;
+	return JIM_OK;
 }
 
 // usage:   btree_from_db  DB-HANDLE
@@ -404,20 +402,20 @@ __device__ static int btree_varint_test(ClientData notUsed, Tcl_Interp *interp, 
 //
 // sqlite3 db test.db
 // set bt [btree_from_db db]
-__device__ static int btree_from_db(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_from_db(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2 && argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " DB-HANDLE ?N?\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB-HANDLE ?N?\"", nullptr);
+		return JIM_ERROR;
 	}
-	Tcl_CmdInfo info;
-	if (Tcl_GetCommandInfo(interp, args[1], &info) != 1)
+	Jim_CmdInfo info;
+	if (Jim_GetCommandInfo(interp, Jim_String(args[1]), &info) != 1)
 	{
-		Tcl_AppendResult(interp, "No such db-handle: \"", args[1], "\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "No such db-handle: \"", args[1], "\"", nullptr);
+		return JIM_ERROR;
 	}
-	int db = (argc == 3 ? _atoi(args[2]) : 0);
+	int db = (argc == 3 ? _atoi(Jim_String(args[2])) : 0);
 
 	Context *ctx = *((Context **)info.objClientData);
 	_assert(ctx);
@@ -425,56 +423,56 @@ __device__ static int btree_from_db(ClientData notUsed, Tcl_Interp *interp, int 
 	Btree *bt = ctx->DBs[db].Bt;
 	char buf[100];
 	__snprintf(buf, sizeof(buf), "%p", bt);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
-	return TCL_OK;
+	Jim_SetResultString(interp, buf, -1);
+	return JIM_OK;
 }
 
 // Usage:   btree_ismemdb ID
 //
 // Return true if the B-Tree is in-memory.
-__device__ static int btree_ismemdb(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_ismemdb(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " ID\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " ID\"", nullptr);
+		return JIM_ERROR;
 	}
-	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	_mutex_enter(bt->Ctx->Mutex);
 	bt->Enter();
 	bool res = bt->get_Pager()->MemoryDB;
 	bt->Leave();
 	_mutex_leave(bt->Ctx->Mutex);
-	Tcl_SetObjResult(interp, res);
+	Jim_SetResultBool(interp, res);
 	return RC_OK;
 }
 
 // usage:   btree_set_cache_size ID NCACHE
 //
 // Set the size of the cache used by btree $ID.
-__device__ static int btree_set_cache_size(ClientData notUsed, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int btree_set_cache_size(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 3)
 	{
-		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " BT NCACHE\"", nullptr);
-		return TCL_ERROR;
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " BT NCACHE\"", nullptr);
+		return JIM_ERROR;
 	}
-	Btree *bt = (Btree *)sqlite3TestTextToPtr(args[1]);
+	Btree *bt = (Btree *)sqlite3TestTextToPtr(Jim_String(args[1]));
 	int cacheSize;
-	if (Tcl_GetInt(interp, (char *)args[2], &cacheSize)) return TCL_ERROR;
+	if (Jim_GetInt(interp, args[2], &cacheSize)) return JIM_ERROR;
 
 	_mutex_enter(bt->Ctx->Mutex);
 	bt->Enter();
 	bt->SetCacheSize(cacheSize);
 	bt->Leave();
 	_mutex_leave(bt->Ctx->Mutex);
-	return TCL_OK;
+	return JIM_OK;
 }      
 
 // Register commands with the TCL interpreter.
 __constant__ static struct {
 	char *Name;
-	Tcl_CmdProc *Proc;
+	Jim_CmdProc *Proc;
 } _cmds[] = {
 	{ "btree_open",               btree_open               },
 	{ "btree_close",              btree_close              },
@@ -491,9 +489,9 @@ __constant__ static struct {
 	{ "btree_ismemdb",            btree_ismemdb            },
 	{ "btree_set_cache_size",     btree_set_cache_size     }
 };
-__device__ int Sqlitetest3_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest3_Init(Jim_Interp *interp)
 {
 	for (int i = 0; i < _lengthof(_cmds); i++)
-		Tcl_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
-	return TCL_OK;
+		Jim_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
+	return JIM_OK;
 }

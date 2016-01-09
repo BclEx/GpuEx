@@ -107,7 +107,7 @@ static int next2(Tcl_Interp *interp, tclvar_cursor *pCur, Tcl_Obj *pObj){
       p = Tcl_NewStringObj("array names", -1);
       Tcl_IncrRefCount(p);
       Tcl_ListObjAppendElement(0, p, pObj);
-      Tcl_EvalObjEx(interp, p, TCL_EVAL_GLOBAL);
+      Tcl_EvalObjEx(interp, p, JIM_EVAL_GLOBAL);
       Tcl_DecrRefCount(p);
       pCur->pList2 = Tcl_GetObjResult(interp);
       Tcl_IncrRefCount(pCur->pList2);
@@ -164,7 +164,7 @@ static int tclvarFilter(
     Tcl_Obj *pArg = Tcl_NewStringObj((char*)sqlite3_value_text(argv[0]), -1);
     Tcl_ListObjAppendElement(0, p, pArg);
   }
-  Tcl_EvalObjEx(interp, p, TCL_EVAL_GLOBAL);
+  Tcl_EvalObjEx(interp, p, JIM_EVAL_GLOBAL);
   if( pCur->pList1 ){
     Tcl_DecrRefCount(pCur->pList1);
   }
@@ -206,7 +206,7 @@ static int tclvarColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
       break;
     }
     case 2: {
-      Tcl_Obj *pVal = Tcl_GetVar2Ex(interp, z1, *z2?z2:0, TCL_GLOBAL_ONLY);
+      Tcl_Obj *pVal = Tcl_GetVar2Ex(interp, z1, *z2?z2:0, JIM_GLOBAL_ONLY);
       sqlite3_result_text(ctx, Tcl_GetString(pVal), -1, SQLITE_TRANSIENT);
       break;
     }
@@ -298,13 +298,13 @@ static int register_tclvar_module(
   sqlite3 *db;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_create_module(db, "tclvar", &tclvarModule, (void *)interp);
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }
 
 #endif
@@ -328,5 +328,5 @@ int Sqlitetesttclvar_Init(Tcl_Interp *interp){
         aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
   }
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }

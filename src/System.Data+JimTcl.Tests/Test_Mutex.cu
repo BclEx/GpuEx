@@ -144,12 +144,12 @@ static int test_shutdown(
 
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   rc = sqlite3_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
+  return JIM_OK;
 }
 
 /*
@@ -165,12 +165,12 @@ static int test_initialize(
 
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   rc = sqlite3_initialize();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
+  return JIM_OK;
 }
 
 /*
@@ -199,10 +199,10 @@ static int test_install_mutex_counters(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[1], &isInstall) ){
-    return TCL_ERROR;
+  if( JIM_OK!=Tcl_GetBooleanFromObj(interp, objv[1], &isInstall) ){
+    return JIM_ERROR;
   }
 
   assert(isInstall==0 || isInstall==1);
@@ -210,7 +210,7 @@ static int test_install_mutex_counters(
   if( isInstall==g.isInstalled ){
     Tcl_AppendResult(interp, "mutex counters are ", 0);
     Tcl_AppendResult(interp, isInstall?"already installed":"not installed", 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   if( isInstall ){
@@ -230,8 +230,8 @@ static int test_install_mutex_counters(
     g.isInstalled = isInstall;
   }
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
+  return JIM_OK;
 }
 
 /*
@@ -252,7 +252,7 @@ static int test_read_mutex_counters(
 
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   pRet = Tcl_NewObj();
@@ -264,7 +264,7 @@ static int test_read_mutex_counters(
   Tcl_SetObjResult(interp, pRet);
   Tcl_DecrRefCount(pRet);
 
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -280,13 +280,13 @@ static int test_clear_mutex_counters(
 
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   for(ii=0; ii<8; ii++){
     g.aCounter[ii] = 0;
   }
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -307,7 +307,7 @@ static int test_alloc_mutex(
   sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", p);
   Tcl_AppendResult(interp, zBuf, (char*)0);
 #endif
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /*
@@ -342,20 +342,20 @@ static int test_config(
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   if( Tcl_GetIndexFromObjStruct(interp, objv[1], aOpt, s, "flag", 0, &i) ){
     if( Tcl_GetIntFromObj(interp, objv[1], &i) ){
-      return TCL_ERROR;
+      return JIM_ERROR;
     }
   }else{
     i = aOpt[i].iValue;
   }
 
   rc = sqlite3_config(i);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
+  return JIM_OK;
 }
 
 static sqlite3 *getDbPointer(Tcl_Interp *pInterp, Tcl_Obj *pObj){
@@ -380,14 +380,14 @@ static int test_enter_db_mutex(
   sqlite3 *db;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   db = getDbPointer(interp, objv[1]);
   if( !db ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   sqlite3_mutex_enter(sqlite3_db_mutex(db));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int test_leave_db_mutex(
@@ -399,14 +399,14 @@ static int test_leave_db_mutex(
   sqlite3 *db;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   db = getDbPointer(interp, objv[1]);
   if( !db ){
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 int Sqlitetest_mutex_Init(Tcl_Interp *interp){
@@ -432,8 +432,8 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
   }
 
   Tcl_LinkVar(interp, "disable_mutex_init", 
-              (char*)&g.disableInit, TCL_LINK_INT);
+              (char*)&g.disableInit, JIM_LINK_INT);
   Tcl_LinkVar(interp, "disable_mutex_try", 
-              (char*)&g.disableTry, TCL_LINK_INT);
+              (char*)&g.disableTry, JIM_LINK_INT);
   return SQLITE_OK;
 }

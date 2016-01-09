@@ -752,11 +752,11 @@ static int tclSqlite3AddRegexpFunc(
   sqlite3 *db;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   sqlite3_add_regexp_func(db);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 /* Register the sqlite3_add_regexp_func TCL command with the TCL interpreter.
@@ -764,7 +764,7 @@ static int tclSqlite3AddRegexpFunc(
 int Sqlitetestregexp_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3_add_regexp_func",
                        tclSqlite3AddRegexpFunc, 0, 0);
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif /* SQLITE_TEST */
 /**************************** End Of Test Code *******************************/

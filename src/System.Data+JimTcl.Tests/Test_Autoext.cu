@@ -1,5 +1,5 @@
 // Test extension for testing the sqlite3_auto_extension() function.
-#include <Tcl.h>
+#include <Jim.h>
 #include <Core+Vdbe\Core+Ext.cu.h>
 
 #ifndef OMIT_LOAD_EXTENSION
@@ -46,30 +46,30 @@ __device__ static int broken_init(Context *ctx, char **errMsg, const core_api_ro
 // tclcmd:   sqlite3_auto_extension_sqr
 //
 // Register the "sqr" extension to be loaded automatically.
-__device__ static int autoExtSqrObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int autoExtSqrObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	RC rc = Main::AutoExtension((void(*)())sqr_init);
-	Tcl_SetObjResult(interp, (int)rc);
+	Jim_SetResultInt(interp, rc);
 	return RC_OK;
 }
 
 // tclcmd:   sqlite3_auto_extension_cube
 //
 // Register the "cube" extension to be loaded automatically.
-__device__ static int autoExtCubeObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int autoExtCubeObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	RC rc = Main::AutoExtension((void(*)())cube_init);
-	Tcl_SetObjResult(interp, (int)rc);
+	Jim_SetResultInt(interp, rc);
 	return RC_OK;
 }
 
 // tclcmd:   sqlite3_auto_extension_broken
 //
 // Register the broken extension to be loaded automatically.
-__device__ static int autoExtBrokenObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int autoExtBrokenObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	RC rc = Main::AutoExtension((void(*)())broken_init);
-	Tcl_SetObjResult(interp, (int)rc);
+	Jim_SetResultInt(interp, rc);
 	return RC_OK;
 }
 
@@ -78,20 +78,20 @@ __device__ static int autoExtBrokenObjCmd(ClientData clientData, Tcl_Interp *int
 // tclcmd:   sqlite3_reset_auto_extension
 //
 // Reset all auto-extensions
-__device__ static int resetAutoExtObjCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+__device__ static int resetAutoExtObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	Main::ResetAutoExtension();
 	return RC_OK;
 }
 
 // This procedure registers the TCL procs defined in this file.
-__device__ int Sqlitetest_autoext_Init(Tcl_Interp *interp)
+__device__ int Sqlitetest_autoext_Init(Jim_Interp *interp)
 {
 #ifndef OMIT_LOAD_EXTENSION
-	Tcl_CreateCommand(interp, "sqlite3_auto_extension_sqr", autoExtSqrObjCmd, nullptr, nullptr);
-	Tcl_CreateCommand(interp, "sqlite3_auto_extension_cube", autoExtCubeObjCmd, nullptr, nullptr);
-	Tcl_CreateCommand(interp, "sqlite3_auto_extension_broken", autoExtBrokenObjCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_auto_extension_sqr", autoExtSqrObjCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_auto_extension_cube", autoExtCubeObjCmd, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_auto_extension_broken", autoExtBrokenObjCmd, nullptr, nullptr);
 #endif
-	Tcl_CreateCommand(interp, "sqlite3_reset_auto_extension", resetAutoExtObjCmd, nullptr, nullptr);
-	return TCL_OK;
+	Jim_CreateCommand(interp, "sqlite3_reset_auto_extension", resetAutoExtObjCmd, nullptr, nullptr);
+	return JIM_OK;
 }

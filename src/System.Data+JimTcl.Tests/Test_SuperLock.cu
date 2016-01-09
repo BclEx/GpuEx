@@ -276,10 +276,10 @@ static int superunlock_cmd(
 ){
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
   Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
-  return TCL_OK;
+  return JIM_OK;
 }
 
 static int superlock_busy(void *pCtx, int nBusy){
@@ -290,7 +290,7 @@ static int superlock_busy(void *pCtx, int nBusy){
   pEval = Tcl_DuplicateObj(p->pScript);
   Tcl_IncrRefCount(pEval);
   Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewIntObj(nBusy));
-  Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
+  Tcl_EvalObjEx(p->interp, pEval, JIM_EVAL_GLOBAL);
   Tcl_GetIntFromObj(p->interp, Tcl_GetObjResult(p->interp), &iVal);
   Tcl_DecrRefCount(pEval);
 
@@ -316,7 +316,7 @@ static int superlock_cmd(
   if( objc<3 || objc>5 ){
     Tcl_WrongNumArgs(
         interp, 1, objv, "CMDNAME PATH ?VFS? ?BUSY-HANDLER-SCRIPT?");
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   zPath = Tcl_GetString(objv[2]);
@@ -339,18 +339,18 @@ static int superlock_cmd(
     extern const char *sqlite3ErrStr(int);
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
-    return TCL_ERROR;
+    return JIM_ERROR;
   }
 
   Tcl_CreateObjCommand(
       interp, Tcl_GetString(objv[1]), superunlock_cmd, pLock, superunlock_del
   );
   Tcl_SetObjResult(interp, objv[1]);
-  return TCL_OK;
+  return JIM_OK;
 }
 
 int SqliteSuperlock_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3demo_superlock", superlock_cmd, 0, 0);
-  return TCL_OK;
+  return JIM_OK;
 }
 #endif

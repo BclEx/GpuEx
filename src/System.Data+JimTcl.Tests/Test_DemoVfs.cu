@@ -604,7 +604,7 @@ static int register_demovfs(
 	Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
 	sqlite3_vfs_register(sqlite3_demovfs(), 1);
-	return TCL_OK;
+	return JIM_OK;
 }
 static int unregister_demovfs(
 	ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
@@ -613,7 +613,7 @@ static int unregister_demovfs(
 	Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
 	sqlite3_vfs_unregister(sqlite3_demovfs());
-	return TCL_OK;
+	return JIM_OK;
 }
 
 /*
@@ -622,11 +622,11 @@ static int unregister_demovfs(
 int Sqlitetest_demovfs_Init(Tcl_Interp *interp){
 	Tcl_CreateObjCommand(interp, "register_demovfs", register_demovfs, 0, 0);
 	Tcl_CreateObjCommand(interp, "unregister_demovfs", unregister_demovfs, 0, 0);
-	return TCL_OK;
+	return JIM_OK;
 }
 
 #else
-int Sqlitetest_demovfs_Init(Tcl_Interp *interp){ return TCL_OK; }
+int Sqlitetest_demovfs_Init(Tcl_Interp *interp){ return JIM_OK; }
 #endif
 
 #endif
