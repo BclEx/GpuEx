@@ -284,7 +284,7 @@ static sqlite3_module tclvarModule = {
 /*
 ** Decode a pointer to an sqlite3 object.
 */
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+extern int GetDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 
 /*
 ** Register the echo virtual table module.
@@ -300,7 +300,7 @@ static int register_tclvar_module(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_create_module(db, "tclvar", &tclvarModule, (void *)interp);
 #endif

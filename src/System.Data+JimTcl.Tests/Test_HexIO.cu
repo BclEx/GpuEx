@@ -1,388 +1,278 @@
-/*
-** 2007 April 6
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** Code for testing all sorts of SQLite interfaces.  This code
-** implements TCL commands for reading and writing the binary
-** database files and displaying the content of those files as
-** hexadecimal.  We could, in theory, use the built-in "binary"
-** command of TCL to do a lot of this, but there are some issues
-** with historical versions of the "binary" command.  So it seems
-** easier and safer to build our own mechanism.
-*/
-#include "sqliteInt.h"
-#include "tcl.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 
+// Code for testing all sorts of SQLite interfaces.  This code implements TCL commands for reading and writing the binary
+// database files and displaying the content of those files as hexadecimal.  We could, in theory, use the built-in "binary"
+// command of TCL to do a lot of this, but there are some issues with historical versions of the "binary" command.  So it seems
+// easier and safer to build our own mechanism.
+#include <Core+Vdbe\VdbeInt.cu.h>
+#include "JimEx.h"
 
-/*
-** Convert binary to hex.  The input zBuf[] contains N bytes of
-** binary data.  zBuf[] is 2*n+1 bytes long.  Overwrite zBuf[]
-** with a hexadecimal representation of its original binary input.
-*/
-void sqlite3TestBinToHex(unsigned char *zBuf, int N){
-  const unsigned char zHex[] = "0123456789ABCDEF";
-  int i, j;
-  unsigned char c;
-  i = N*2;
-  zBuf[i--] = 0;
-  for(j=N-1; j>=0; j--){
-    c = zBuf[j];
-    zBuf[i--] = zHex[c&0xf];
-    zBuf[i--] = zHex[c>>4];
-  }
-  assert( i==-1 );
+// Convert binary to hex.  The input zBuf[] contains N bytes of binary data.  zBuf[] is 2*n+1 bytes long.  Overwrite zBuf[]
+// with a hexadecimal representation of its original binary input.
+__device__ void sqlite3TestBinToHex(unsigned char *buf, int value)
+{
+	const unsigned char hex[] = "0123456789ABCDEF";
+	unsigned char c;
+	int i = value*2;
+	buf[i--] = 0;
+	for (int j = value-1; j >= 0; j--)
+	{
+		c = buf[j];
+		buf[i--] = hex[c&0xf];
+		buf[i--] = hex[c>>4];
+	}
+	_assert(i == -1);
 }
 
-/*
-** Convert hex to binary.  The input zIn[] contains N bytes of
-** hexadecimal.  Convert this into binary and write aOut[] with
-** the binary data.  Spaces in the original input are ignored.
-** Return the number of bytes of binary rendered.
-*/
-int sqlite3TestHexToBin(const unsigned char *zIn, int N, unsigned char *aOut){
-  const unsigned char aMap[] = {
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     1, 2, 3, 4, 5, 6, 7, 8,  9,10, 0, 0, 0, 0, 0, 0,
-     0,11,12,13,14,15,16, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0,11,12,13,14,15,16, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-  };
-  int i, j;
-  int hi=1;
-  unsigned char c;
-
-  for(i=j=0; i<N; i++){
-    c = aMap[zIn[i]];
-    if( c==0 ) continue;
-    if( hi ){
-      aOut[j] = (c-1)<<4;
-      hi = 0;
-    }else{
-      aOut[j++] |= c-1;
-      hi = 1;
-    }
-  }
-  return j;
+// Convert hex to binary.  The input zIn[] contains N bytes of hexadecimal.  Convert this into binary and write aOut[] with
+// the binary data.  Spaces in the original input are ignored. Return the number of bytes of binary rendered.
+__device__ int sqlite3TestHexToBin(const unsigned char *in_, int value, unsigned char *out_)
+{
+	const unsigned char map[] = {
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		1, 2, 3, 4, 5, 6, 7, 8,  9,10, 0, 0, 0, 0, 0, 0,
+		0,11,12,13,14,15,16, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0,11,12,13,14,15,16, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+	};
+	int hi = 1;
+	int i, j;
+	for (i = j =0; i < value; i++)
+	{
+		unsigned char c = map[in_[i]];
+		if (!c) continue;
+		if (hi) { out_[j] = (c-1)<<4; hi = 0; }
+		else { out_[j++] |= c-1; hi = 1; }
+	}
+	return j;
 }
 
-
-/*
-** Usage:   hexio_read  FILENAME  OFFSET  AMT
-**
-** Read AMT bytes from file FILENAME beginning at OFFSET from the
-** beginning of the file.  Convert that information to hexadecimal
-** and return the resulting HEX string.
-*/
-static int hexio_read(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int offset;
-  int amt, got;
-  const char *zFile;
-  unsigned char *zBuf;
-  FILE *in;
-
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME OFFSET AMT");
-    return JIM_ERROR;
-  }
-  if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return JIM_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &amt) ) return JIM_ERROR;
-  zFile = Tcl_GetString(objv[1]);
-  zBuf = sqlite3_malloc( amt*2+1 );
-  if( zBuf==0 ){
-    return JIM_ERROR;
-  }
-  in = fopen(zFile, "rb");
-  if( in==0 ){
-    in = fopen(zFile, "r");
-  }
-  if( in==0 ){
-    Tcl_AppendResult(interp, "cannot open input file ", zFile, 0);
-    return JIM_ERROR;
-  }
-  fseek(in, offset, SEEK_SET);
-  got = (int)fread(zBuf, 1, amt, in);
-  fclose(in);
-  if( got<0 ){
-    got = 0;
-  }
-  sqlite3TestBinToHex(zBuf, got);
-  Tcl_AppendResult(interp, zBuf, 0);
-  sqlite3_free(zBuf);
-  return JIM_OK;
+// Usage:   hexio_read  FILENAME  OFFSET  AMT
+// Read AMT bytes from file FILENAME beginning at OFFSET from the beginning of the file.  Convert that information to hexadecimal
+// and return the resulting HEX string.
+__device__ static int hexio_read(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 4)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "FILENAME OFFSET AMT");
+		return JIM_ERROR;
+	}
+	int offset;
+	int amt;
+	if (Jim_GetInt(interp, args[2], &offset)) return JIM_ERROR;
+	if (Jim_GetInt(interp, args[3], &amt)) return JIM_ERROR;
+	const char *file = Jim_String(args[1]);
+	unsigned char *buf = (unsigned char *)_alloc(amt*2+1 );
+	if (!buf)
+		return JIM_ERROR;
+	FILE *in_ = _fopen(file, "rb");
+	if (!in_)
+		in_ = fopen(file, "r");
+	if (!in_)
+	{
+		Jim_AppendResult(interp, "cannot open input file ", file, nullptr);
+		return JIM_ERROR;
+	}
+	_fseek(in_, offset, SEEK_SET);
+	int got = (int)_fread(buf, 1, amt, in_);
+	_fclose(in_);
+	if (got < 0)
+		got = 0;
+	sqlite3TestBinToHex(buf, got);
+	Jim_AppendResult(interp, buf, nullptr);
+	_free(buf);
+	return JIM_OK;
 }
 
-
-/*
-** Usage:   hexio_write  FILENAME  OFFSET  DATA
-**
-** Write DATA into file FILENAME beginning at OFFSET from the
-** beginning of the file.  DATA is expressed in hexadecimal.
-*/
-static int hexio_write(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int offset;
-  int nIn, nOut, written;
-  const char *zFile;
-  const unsigned char *zIn;
-  unsigned char *aOut;
-  FILE *out;
-
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME OFFSET HEXDATA");
-    return JIM_ERROR;
-  }
-  if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return JIM_ERROR;
-  zFile = Tcl_GetString(objv[1]);
-  zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[3], &nIn);
-  aOut = sqlite3_malloc( nIn/2 );
-  if( aOut==0 ){
-    return JIM_ERROR;
-  }
-  nOut = sqlite3TestHexToBin(zIn, nIn, aOut);
-  out = fopen(zFile, "r+b");
-  if( out==0 ){
-    out = fopen(zFile, "r+");
-  }
-  if( out==0 ){
-    Tcl_AppendResult(interp, "cannot open output file ", zFile, 0);
-    return JIM_ERROR;
-  }
-  fseek(out, offset, SEEK_SET);
-  written = (int)fwrite(aOut, 1, nOut, out);
-  sqlite3_free(aOut);
-  fclose(out);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(written));
-  return JIM_OK;
+// Usage:   hexio_write  FILENAME  OFFSET  DATA
+// Write DATA into file FILENAME beginning at OFFSET from the beginning of the file.  DATA is expressed in hexadecimal.
+__device__ static int hexio_write(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 4)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "FILENAME OFFSET HEXDATA");
+		return JIM_ERROR;
+	}
+	int offset;
+	if (Jim_GetInt(interp, args[2], &offset)) return JIM_ERROR;
+	const char *file = Jim_String(args[1]);
+	int inLength;
+	const unsigned char *in_ = (const unsigned char *)Jim_GetString(args[3], &inLength);
+	unsigned char *out_ = (unsigned char *)_alloc(inLength/2);
+	if (!out_)
+		return JIM_ERROR;
+	int outLength = sqlite3TestHexToBin(in_, inLength, out_);
+	FILE *outFile = _fopen(file, "r+b");
+	if (!outFile)
+		outFile = _fopen(file, "r+");
+	if (!outFile)
+	{
+		Jim_AppendResult(interp, "cannot open output file ", file, nullptr);
+		return JIM_ERROR;
+	}
+	_fseek(outFile, offset, SEEK_SET);
+	int written = (int)fwrite(out_, 1, outLength, outFile);
+	_free(out_);
+	fclose(outFile);
+	Jim_SetResultInt(interp, written);
+	return JIM_OK;
 }
 
-/*
-** USAGE:   hexio_get_int   HEXDATA
-**
-** Interpret the HEXDATA argument as a big-endian integer.  Return
-** the value of that integer.  HEXDATA can contain between 2 and 8
-** hexadecimal digits.
-*/
-static int hexio_get_int(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int val;
-  int nIn, nOut;
-  const unsigned char *zIn;
-  unsigned char *aOut;
-  unsigned char aNum[4];
+// USAGE:   hexio_get_int   HEXDATA
+// Interpret the HEXDATA argument as a big-endian integer.  Return the value of that integer.  HEXDATA can contain between 2 and 8 hexadecimal digits.
+__device__ static int hexio_get_int(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "HEXDATA");
+		return JIM_ERROR;
+	}
+	int inLength;
+	const unsigned char *in_ = (const unsigned char *)Jim_GetString(args[1], &inLength);
+	unsigned char *out_ = (unsigned char *)_alloc(inLength/2);
+	if (!out_)
+		return JIM_ERROR;
+	unsigned char num[4];
+	int outLength = sqlite3TestHexToBin(in_, inLength, out_);
+	if (outLength >= 4)
+		_memcpy(num, out_, 4);
+	else
+	{
+		_memset(num, 0, sizeof(num));
+		_memcpy(&num[4-outLength], out_, outLength);
+	}
+	_free(out_);
+	int val = (num[0]<<24) | (num[1]<<16) | (num[2]<<8) | num[3];
+	Jim_SetResultInt(interp, val);
+	return JIM_OK;
+}
 
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "HEXDATA");
-    return JIM_ERROR;
-  }
-  zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &nIn);
-  aOut = sqlite3_malloc( nIn/2 );
-  if( aOut==0 ){
-    return JIM_ERROR;
-  }
-  nOut = sqlite3TestHexToBin(zIn, nIn, aOut);
-  if( nOut>=4 ){
-    memcpy(aNum, aOut, 4);
-  }else{
-    memset(aNum, 0, sizeof(aNum));
-    memcpy(&aNum[4-nOut], aOut, nOut);
-  }
-  sqlite3_free(aOut);
-  val = (aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(val));
-  return JIM_OK;
+// USAGE:   hexio_render_int16   INTEGER
+// Render INTEGER has a 16-bit big-endian integer in hexadecimal.
+__device__ static int hexio_render_int16(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "INTEGER");
+		return JIM_ERROR;
+	}
+	int val;
+	if (Jim_GetInt(interp, args[1], &val)) return JIM_ERROR;
+	unsigned char num[10];
+	num[0] = val>>8;
+	num[1] = val;
+	sqlite3TestBinToHex(num, 2);
+	Jim_SetResultString(interp, (char*)num, 4);
+	return JIM_OK;
 }
 
 
-/*
-** USAGE:   hexio_render_int16   INTEGER
-**
-** Render INTEGER has a 16-bit big-endian integer in hexadecimal.
-*/
-static int hexio_render_int16(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int val;
-  unsigned char aNum[10];
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "INTEGER");
-    return JIM_ERROR;
-  }
-  if( Tcl_GetIntFromObj(interp, objv[1], &val) ) return JIM_ERROR;
-  aNum[0] = val>>8;
-  aNum[1] = val;
-  sqlite3TestBinToHex(aNum, 2);
-  Tcl_SetObjResult(interp, Tcl_NewStringObj((char*)aNum, 4));
-  return JIM_OK;
+// USAGE:   hexio_render_int32   INTEGER
+// Render INTEGER has a 32-bit big-endian integer in hexadecimal.
+__device__ static int hexio_render_int32(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "INTEGER");
+		return JIM_ERROR;
+	}
+	int val;
+	if (Jim_GetInt(interp, args[1], &val)) return JIM_ERROR;
+	unsigned char num[10];
+	num[0] = val>>24;
+	num[1] = val>>16;
+	num[2] = val>>8;
+	num[3] = val;
+	sqlite3TestBinToHex(num, 4);
+	Jim_SetResultString(interp, (char*)num, 8);
+	return JIM_OK;
 }
 
-
-/*
-** USAGE:   hexio_render_int32   INTEGER
-**
-** Render INTEGER has a 32-bit big-endian integer in hexadecimal.
-*/
-static int hexio_render_int32(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int val;
-  unsigned char aNum[10];
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "INTEGER");
-    return JIM_ERROR;
-  }
-  if( Tcl_GetIntFromObj(interp, objv[1], &val) ) return JIM_ERROR;
-  aNum[0] = val>>24;
-  aNum[1] = val>>16;
-  aNum[2] = val>>8;
-  aNum[3] = val;
-  sqlite3TestBinToHex(aNum, 4);
-  Tcl_SetObjResult(interp, Tcl_NewStringObj((char*)aNum, 8));
-  return JIM_OK;
-}
-
-/*
-** USAGE:  utf8_to_utf8  HEX
-**
-** The argument is a UTF8 string represented in hexadecimal.
-** The UTF8 might not be well-formed.  Run this string through
-** sqlite3Utf8to8() convert it back to hex and return the result.
-*/
-static int utf8_to_utf8(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-#ifdef SQLITE_DEBUG
-  int n;
-  int nOut;
-  const unsigned char *zOrig;
-  unsigned char *z;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "HEX");
-    return JIM_ERROR;
-  }
-  zOrig = (unsigned char *)Tcl_GetStringFromObj(objv[1], &n);
-  z = sqlite3_malloc( n+3 );
-  n = sqlite3TestHexToBin(zOrig, n, z);
-  z[n] = 0;
-  nOut = sqlite3Utf8To8(z);
-  sqlite3TestBinToHex(z,nOut);
-  Tcl_AppendResult(interp, (char*)z, 0);
-  sqlite3_free(z);
-  return JIM_OK;
+// USAGE:  utf8_to_utf8  HEX
+// The argument is a UTF8 string represented in hexadecimal. The UTF8 might not be well-formed.  Run this string through sqlite3Utf8to8() convert it back to hex and return the result.
+__device__ static int utf8_to_utf8(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[]){
+#ifdef _DEBUG
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "HEX");
+		return JIM_ERROR;
+	}
+	int n;
+	const unsigned char *orig = (unsigned char *)Jim_GetString(args[1], &n);
+	unsigned char *z = (unsigned char *)_alloc(n+3);
+	n = sqlite3TestHexToBin(orig, n, z);
+	z[n] = 0;
+	int outLength = _utf8to8(z);
+	sqlite3TestBinToHex(z, outLength);
+	Jim_AppendResult(interp, (char*)z, nullptr);
+	_free(z);
+	return JIM_OK;
 #else
-  Tcl_AppendResult(interp, 
-      "[utf8_to_utf8] unavailable - SQLITE_DEBUG not defined", 0
-  );
-  return JIM_ERROR;
+	Jim_AppendResult(interp, "[utf8_to_utf8] unavailable - _DEBUG not defined", nullptr);
+	return JIM_ERROR;
 #endif
 }
 
-static int getFts3Varint(const char *p, sqlite_int64 *v){
-  const unsigned char *q = (const unsigned char *) p;
-  sqlite_uint64 x = 0, y = 1;
-  while( (*q & 0x80) == 0x80 ){
-    x += y * (*q++ & 0x7f);
-    y <<= 7;
-  }
-  x += y * (*q++);
-  *v = (sqlite_int64) x;
-  return (int) (q - (unsigned char *)p);
+__device__ static int getFts3Varint(const char *p, int64 *v)
+{
+	const unsigned char *q = (const unsigned char *)p;
+	uint64 x = 0, y = 1;
+	while ((*q & 0x80) == 0x80)
+	{
+		x += y * (*q++ & 0x7f);
+		y <<= 7;
+	}
+	x += y * (*q++);
+	*v = (int64)x;
+	return (int)(q - (unsigned char *)p);
 }
-
 
 /*
 ** USAGE:  read_fts3varint BLOB VARNAME
-**
-** Read a varint from the start of BLOB. Set variable VARNAME to contain
-** the interpreted value. Return the number of bytes of BLOB consumed.
+** Read a varint from the start of BLOB. Set variable VARNAME to contain the interpreted value. Return the number of bytes of BLOB consumed.
 */
-static int read_fts3varint(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int nBlob;
-  unsigned char *zBlob;
-  sqlite3_int64 iVal;
-  int nVal;
-
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "BLOB VARNAME");
-    return JIM_ERROR;
-  }
-  zBlob = Tcl_GetByteArrayFromObj(objv[1], &nBlob);
-
-  nVal = getFts3Varint((char*)zBlob, (sqlite3_int64 *)(&iVal));
-  Tcl_ObjSetVar2(interp, objv[2], 0, Tcl_NewWideIntObj(iVal), 0);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(nVal));
-  return JIM_OK;
+__device__ static int read_fts3varint(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 3)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "BLOB VARNAME");
+		return JIM_ERROR;
+	}
+	int blobLength;
+	unsigned char *blob = (unsigned char *)Jim_GetByteArray(args[1], &blobLength);
+	int64 val;
+	int valLength = getFts3Varint((char*)blob, (int64 *)(&val));
+	Jim_ObjSetVar2(interp, args[2], nullptr, Jim_NewWideObj(interp, val));
+	Jim_SetResultInt(interp, valLength);
+	return JIM_OK;
 }
 
-
-/*
-** Register commands with the TCL interpreter.
-*/
-int Sqlitetest_hexio_Init(Tcl_Interp *interp){
-  static struct {
-     char *zName;
-     Tcl_ObjCmdProc *xProc;
-  } aObjCmd[] = {
-     { "hexio_read",                   hexio_read            },
-     { "hexio_write",                  hexio_write           },
-     { "hexio_get_int",                hexio_get_int         },
-     { "hexio_render_int16",           hexio_render_int16    },
-     { "hexio_render_int32",           hexio_render_int32    },
-     { "utf8_to_utf8",                 utf8_to_utf8          },
-     { "read_fts3varint",              read_fts3varint       },
-  };
-  int i;
-  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
-  }
-  return JIM_OK;
+// Register commands with the TCL interpreter.
+__constant__ static struct {
+	char *Name;
+	Jim_CmdProc *Proc;
+} _cmds[] = {
+	{ "hexio_read",                   hexio_read            },
+	{ "hexio_write",                  hexio_write           },
+	{ "hexio_get_int",                hexio_get_int         },
+	{ "hexio_render_int16",           hexio_render_int16    },
+	{ "hexio_render_int32",           hexio_render_int32    },
+	{ "utf8_to_utf8",                 utf8_to_utf8          },
+	{ "read_fts3varint",              read_fts3varint       },
+};
+__device__ int Sqlitetest_hexio_Init(Jim_Interp *interp)
+{
+	for (int i = 0; i < _lengthof(_cmds); i++)
+		Jim_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
+	return JIM_OK;
 }

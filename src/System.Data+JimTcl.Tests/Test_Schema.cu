@@ -242,7 +242,7 @@ __constant__ static ITableModule _schemaModule =
 #ifdef _TEST
 
 // Decode a pointer to an sqlite3 object.
-__device__ extern int GetDbPointer(Jim_Interp *interp, char *a, Context **ctx);
+__device__ extern int GetDbPointer(Jim_Interp *interp, const char *a, Context **ctx);
 
 // Register the schema virtual table module.
 __device__ static int register_schema_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
@@ -253,7 +253,7 @@ __device__ static int register_schema_module(ClientData clientData, Jim_Interp *
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, (char *)args[1], &ctx)) return JIM_ERROR;
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 #ifndef OMIT_VIRTUALTABLE
 	VTable::CreateModule(ctx, "schema", &_schemaModule, nullptr, nullptr);
 #endif

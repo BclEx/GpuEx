@@ -242,7 +242,7 @@ __constant__ static ITableModule _fsModule = {
 };
 
 // Decode a pointer to an sqlite3 object.
-__device__ extern int GetDbPointer(Jim_Interp *interp, char *a, Context **ctx);
+__device__ extern int GetDbPointer(Jim_Interp *interp, const char *a, Context **ctx);
 
 // Register the echo virtual table module.
 __device__ static int register_fs_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
@@ -253,7 +253,7 @@ __device__ static int register_fs_module(ClientData clientData, Jim_Interp *inte
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, (char *)Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 #ifndef OMIT_VIRTUALTABLE
 	VTable::CreateModule(ctx, "fs", &_fsModule, (void *)interp, nullptr);
 #endif

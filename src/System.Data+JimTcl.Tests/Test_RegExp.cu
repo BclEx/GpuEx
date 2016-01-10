@@ -737,7 +737,7 @@ int sqlite3_add_regexp_func(sqlite3 *db){
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
 #include <tcl.h>
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+extern int GetDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 
 /* Implementation of the TCL command:
 **
@@ -754,7 +754,7 @@ static int tclSqlite3AddRegexpFunc(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   sqlite3_add_regexp_func(db);
   return JIM_OK;
 }

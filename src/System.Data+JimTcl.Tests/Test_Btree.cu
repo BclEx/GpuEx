@@ -7,12 +7,17 @@
 // Usage: sqlite3_shared_cache_report
 //
 // Return a list of file that are shared and the number of references to each file.
+#ifndef OMIT_SHARED_CACHE
+namespace CORE_NAME
+{
+	extern BtShared *g_sharedCacheList;
+}
+#endif
 __device__ int sqlite3BtreeSharedCacheReport(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 #ifndef OMIT_SHARED_CACHE
-	extern BtShared *sqlite3SharedCacheList;
 	Jim_Obj *r = Jim_NewListObj(interp, nullptr, 0);
-	for (BtShared *bt = _GLOBAL(BtShared *, sqlite3SharedCacheList); bt; bt = bt->Next)
+	for (BtShared *bt = _GLOBAL(BtShared *, g_sharedCacheList); bt; bt = bt->Next)
 	{
 		const char *file = bt->Pager->get_Filename(true);
 		Jim_ListAppendElement(interp, r, Jim_NewStringObj(interp, file, -1));

@@ -399,7 +399,7 @@ __device__ static void tFinal(FuncContext *a) { }
 // Make various calls to sqlite3_create_function that do not have valid parameters.  Verify that the error condition is detected and reported.
 __device__ static int abuse_create_function(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	__device__ extern int GetDbPointer(Jim_Interp *, char *, Context **);
+	__device__ extern int GetDbPointer(Jim_Interp *, const char *, Context **);
 	Context *ctx;
 	if (GetDbPointer(interp, (char *)Jim_String(args[1]), &ctx)) return JIM_ERROR;
 

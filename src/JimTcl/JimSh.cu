@@ -46,11 +46,8 @@
 
 __device__ static void JimSetArgv(Jim_Interp *interp, int argc, char *const argv[]) {
 	Jim_Obj *listObj = Jim_NewListObj(interp, NULL, 0);
-	// Populate argv global var
-	for (int n = 0; n < argc; n++) {
-		Jim_Obj *obj = Jim_NewStringObj(interp, argv[n], -1);
-		Jim_ListAppendElement(interp, listObj, obj);
-	}
+	for (int n = 0; n < argc; n++)
+		Jim_ListAppendElement(interp, listObj, Jim_NewStringObj(interp, argv[n], -1));
 	Jim_SetVariableStr(interp, "argv", listObj);
 	Jim_SetVariableStr(interp, "argc", Jim_NewIntObj(interp, argc));
 }

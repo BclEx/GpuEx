@@ -358,7 +358,7 @@ static int test_config(
   return JIM_OK;
 }
 
-static sqlite3 *getDbPointer(Tcl_Interp *pInterp, Tcl_Obj *pObj){
+static sqlite3 *GetDbPointer(Tcl_Interp *pInterp, Tcl_Obj *pObj){
   sqlite3 *db;
   Tcl_CmdInfo info;
   char *zCmd = Tcl_GetString(pObj);
@@ -382,7 +382,7 @@ static int test_enter_db_mutex(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return JIM_ERROR;
   }
-  db = getDbPointer(interp, objv[1]);
+  db = GetDbPointer(interp, objv[1]);
   if( !db ){
     return JIM_ERROR;
   }
@@ -401,7 +401,7 @@ static int test_leave_db_mutex(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return JIM_ERROR;
   }
-  db = getDbPointer(interp, objv[1]);
+  db = GetDbPointer(interp, objv[1]);
   if( !db ){
     return JIM_ERROR;
   }

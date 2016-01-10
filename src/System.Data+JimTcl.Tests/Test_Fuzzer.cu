@@ -1171,7 +1171,7 @@ int fuzzer_register(sqlite3 *db){
 /*
 ** Decode a pointer to an sqlite3 object.
 */
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+extern int GetDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 
 /*
 ** Register the echo virtual table module.
@@ -1187,7 +1187,7 @@ static int register_fuzzer_module(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return JIM_ERROR;
   }
-  getDbPointer(interp, Tcl_GetString(objv[1]), &db);
+  GetDbPointer(interp, Tcl_GetString(objv[1]), &db);
   fuzzer_register(db);
   return JIM_OK;
 }

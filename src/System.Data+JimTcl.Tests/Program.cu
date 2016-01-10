@@ -353,55 +353,54 @@ __device__ static int init_all_cmd(ClientData cd, Jim_Interp *interp, int argc, 
 	return JIM_OK;
 }
 
-__device__ extern int Main_Init(Jim_Interp *interp);
+extern __device__ int Jim_sqlite3Init(Jim_Interp *interp);
 __device__ static void init_all(Jim_Interp *interp)
 {
-	Main_Init(interp);
+	Jim_sqlite3Init(interp);
 #if defined(_TEST) || defined(_TCLMD5)
 	Md5_Init(interp);
 #endif
 
 	//	// Install the [register_dbstat_vtab] command to access the implementation of virtual table dbstat (source file test_stat.c). This command is
 	//	// required for testfixture and sqlite3_analyzer, but not by the production Tcl extension.
-	//#if defined(_TEST)
-	//	extern int SqlitetestStat_Init(Jim_Interp *);
-	//	SqlitetestStat_Init(interp);
-	//	extern int Sqliteconfig_Init(Jim_Interp*);
-	//	extern int Sqlitetest1_Init(Jim_Interp*);
-	//	extern int Sqlitetest2_Init(Jim_Interp*);
-	//	extern int Sqlitetest3_Init(Jim_Interp*);
-	//	extern int Sqlitetest4_Init(Jim_Interp*);
-	//	extern int Sqlitetest5_Init(Jim_Interp*);
-	//	extern int Sqlitetest6_Init(Jim_Interp*);
-	//	extern int Sqlitetest7_Init(Jim_Interp*);
-	//	extern int Sqlitetest8_Init(Jim_Interp*);
-	//	extern int Sqlitetest9_Init(Jim_Interp*);
+	/*extern int SqlitetestStat_Init(Jim_Interp *);
+	SqlitetestStat_Init(interp);*/
+	extern __device__ int Sqliteconfig_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest1_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest2_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest3_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest4_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest5_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest6_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest7_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest8_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest9_Init(Jim_Interp *);
 	//	extern int Sqlitetestasync_Init(Jim_Interp*);
-	//	extern int Sqlitetest_autoext_Init(Jim_Interp*);
-	//	extern int Sqlitetest_demovfs_Init(Jim_Interp *);
-	//	extern int Sqlitetest_func_Init(Jim_Interp*);
-	//	extern int Sqlitetest_hexio_Init(Jim_Interp*);
-	//	extern int Sqlitetest_init_Init(Jim_Interp*);
-	//	extern int Sqlitetest_malloc_Init(Jim_Interp*);
-	//	extern int Sqlitetest_mutex_Init(Jim_Interp*);
-	//	extern int Sqlitetestschema_Init(Jim_Interp*);
-	//	extern int Sqlitetestsse_Init(Jim_Interp*);
-	//	extern int Sqlitetesttclvar_Init(Jim_Interp*);
-	//	extern int Sqlitetestfs_Init(Jim_Interp*);
-	//	extern int SqlitetestThread_Init(Jim_Interp*);
-	//	extern int SqlitetestOnefile_Init(Jim_Interp*);
-	//	extern int SqlitetestOsinst_Init(Jim_Interp*);
-	//	extern int Sqlitetestbackup_Init(Jim_Interp*);
-	//	extern int Sqlitetestintarray_Init(Jim_Interp*);
-	//	extern int Sqlitetestvfs_Init(Jim_Interp *);
-	//	extern int Sqlitetestrtree_Init(Jim_Interp*);
-	//	extern int Sqlitequota_Init(Jim_Interp*);
-	//	extern int Sqlitemultiplex_Init(Jim_Interp*);
-	//	extern int SqliteSuperlock_Init(Jim_Interp*);
-	//	extern int SqlitetestSyscall_Init(Jim_Interp*);
-	//	extern int Sqlitetestfuzzer_Init(Jim_Interp*);
-	//	extern int Sqlitetestwholenumber_Init(Jim_Interp*);
-	//	extern int Sqlitetestregexp_Init(Jim_Interp*);
+	extern __device__ int Sqlitetest_autoext_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest_demovfs_Init(Jim_Interp *);
+	extern __device__ int Sqlitetest_func_Init(Jim_Interp*);
+	extern __device__ int Sqlitetest_hexio_Init(Jim_Interp*);
+	extern __device__ int Sqlitetest_init_Init(Jim_Interp*);
+	extern __device__ int Sqlitetest_malloc_Init(Jim_Interp*);
+	extern __device__ int Sqlitetest_mutex_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestschema_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestsse_Init(Jim_Interp*);
+	extern __device__ int Sqlitetesttclvar_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestfs_Init(Jim_Interp*);
+	extern __device__ int SqlitetestThread_Init(Jim_Interp*);
+	extern __device__ int SqlitetestOnefile_Init(Jim_Interp*);
+	extern __device__ int SqlitetestOsinst_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestbackup_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestintarray_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestvfs_Init(Jim_Interp *);
+	extern __device__ int Sqlitetestrtree_Init(Jim_Interp*);
+	extern __device__ int Sqlitequota_Init(Jim_Interp*);
+	extern __device__ int Sqlitemultiplex_Init(Jim_Interp*);
+	extern __device__ int SqliteSuperlock_Init(Jim_Interp*);
+	extern __device__ int SqlitetestSyscall_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestfuzzer_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestwholenumber_Init(Jim_Interp*);
+	extern __device__ int Sqlitetestregexp_Init(Jim_Interp*);
 	//#if defined(ENABLE_FTS3) || defined(ENABLE_FTS4)
 	//	extern int Sqlitetestfts3_Init(Jim_Interp *interp);
 	//#endif
@@ -409,25 +408,25 @@ __device__ static void init_all(Jim_Interp *interp)
 	//	extern int Zipvfs_Init(Jim_Interp*);
 	//	Zipvfs_Init(interp);
 	//#endif
-	//	Sqliteconfig_Init(interp);
-	//	Sqlitetest1_Init(interp);
-	//	Sqlitetest2_Init(interp);
-	//	Sqlitetest3_Init(interp);
-	//	Sqlitetest4_Init(interp);
-	//	Sqlitetest5_Init(interp);
-	//	Sqlitetest6_Init(interp);
-	//	Sqlitetest7_Init(interp);
-	//	Sqlitetest8_Init(interp);
-	//	Sqlitetest9_Init(interp);
+	//Sqliteconfig_Init(interp);
+	Sqlitetest1_Init(interp);
+	Sqlitetest2_Init(interp);
+	Sqlitetest3_Init(interp);
+	Sqlitetest4_Init(interp);
+	Sqlitetest5_Init(interp);
+	Sqlitetest6_Init(interp);
+	Sqlitetest7_Init(interp);
+	Sqlitetest8_Init(interp);
+	Sqlitetest9_Init(interp);
 	//	Sqlitetestasync_Init(interp);
-	//	Sqlitetest_autoext_Init(interp);
-	//	Sqlitetest_demovfs_Init(interp);
-	//	Sqlitetest_func_Init(interp);
-	//	Sqlitetest_hexio_Init(interp);
+	Sqlitetest_autoext_Init(interp);
+	Sqlitetest_demovfs_Init(interp);
+	Sqlitetest_func_Init(interp);
+	Sqlitetest_hexio_Init(interp);
 	//	Sqlitetest_init_Init(interp);
 	//	Sqlitetest_malloc_Init(interp);
 	//	Sqlitetest_mutex_Init(interp);
-	//	Sqlitetestschema_Init(interp);
+	Sqlitetestschema_Init(interp);
 	//	Sqlitetesttclvar_Init(interp);
 	//	Sqlitetestfs_Init(interp);
 	//	SqlitetestThread_Init(interp);
@@ -442,7 +441,7 @@ __device__ static void init_all(Jim_Interp *interp)
 	//	SqliteSuperlock_Init(interp);
 	//	SqlitetestSyscall_Init(interp);
 	//	Sqlitetestfuzzer_Init(interp);
-	//	Sqlitetestwholenumber_Init(interp);
+	Sqlitetestwholenumber_Init(interp);
 	//	Sqlitetestregexp_Init(interp);
 	//#if defined(ENABLE_FTS3) || defined(ENABLE_FTS4)
 	//	Sqlitetestfts3_Init(interp);
@@ -486,6 +485,7 @@ __device__ static char *tclsh_main_loop()
 __device__ static char *tclsh_main_loop();
 #endif
 
+#if __CUDACC__
 cudaDeviceHeap CudaInit()
 {
 	cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
@@ -500,8 +500,13 @@ static void CudaShutdown(cudaDeviceHeap deviceHeap)
 	cudaDeviceHeapDestroy(deviceHeap);
 	cudaDeviceReset();
 }
+#endif
 
-/*
+__device__ static void JimPrintErrorMessage(Jim_Interp *interp) {
+	Jim_MakeErrorMessage(interp);
+	printf("%s\n", Jim_String(Jim_GetResult(interp)));
+}
+
 int main(int argc, char **argv)
 {
 #if __CUDACC__
@@ -513,28 +518,41 @@ int main(int argc, char **argv)
 
 	//Jim_FindExecutable(argv[0]);
 	Jim_Interp *interp = Jim_CreateInterp();
-	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
+	Jim_RegisterCoreCommands(interp);
+	// Register static extensions
+	if (Jim_InitStaticExtensions(interp) != JIM_OK)
+		JimPrintErrorMessage(interp);
 
+	SysEx::Config(SysEx::CONFIG_SINGLETHREAD);
 	init_all(interp);
 	if (argc >= 2)
 	{
 		char b[32];
 		__snprintf(b, sizeof(b), "%d", argc-2);
-		Jim_SetVar(interp, "argc", b, JIM_GLOBAL_ONLY);
-		Jim_SetVar(interp, "argv0", argv[1], JIM_GLOBAL_ONLY);
-		Jim_SetVar(interp, "argv", "", JIM_GLOBAL_ONLY);
+		Jim_SetVariableStrWithStr(interp, "argc", b);
+		Jim_SetVariableStrWithStr(interp, "argv0", argv[1]);
+		Jim_Obj *argvObj = Jim_NewListObj(interp, nullptr, 0);
 		for (int i = 3; i < argc; i++)
-			Jim_SetVar(interp, "argv", argv[i], JIM_GLOBAL_ONLY | JIM_LIST_ELEMENT | JIM_APPEND_VALUE);
+			Jim_ListAppendElement(interp, argvObj, Jim_NewStringObj(interp, argv[i], -1));
+		Jim_SetVariableStr(interp, "argv", argvObj);
+#if 0
 		if (Jim_EvalFile(interp, argv[1]) != JIM_OK)
 		{
-			const char *info = Jim_GetVar(interp, "errorInfo", JIM_GLOBAL_ONLY);
-			if (!info) info = interp->result;
+			const char *info = Jim_String(Jim_GetGlobalVariableStr(interp, "errorInfo", JIM_ERRMSG));
+			if (!info) info = Jim_String(Jim_GetResult(interp));
 			fprintf(stderr, "%s: %s\n", *argv, info);
 			return 1;
 		}
+#endif
 	}
+#if 1
 	if (argc <= 1)
-		Jim_GlobalEval(interp, tclsh_main_loop());
+	{
+		int retcode = Jim_Eval(interp, tclsh_main_loop());
+		if (retcode == JIM_ERROR)
+			JimPrintErrorMessage(interp);
+	}
+#endif
 
 #if __CUDACC__
 	CudaShutdown(deviceHeap);
@@ -542,4 +560,3 @@ int main(int argc, char **argv)
 	printf("\nEnd."); char c; scanf("%c", &c);
 	return 0;
 }
-*/

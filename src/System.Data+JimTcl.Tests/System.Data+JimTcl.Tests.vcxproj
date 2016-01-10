@@ -48,36 +48,28 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
     <ClCompile Include="..\Runtime.JimTcl\_content\TclContext.cu" />
-    <ClCompile Include="TclContext+Test.cu" />
+    <ClCompile Include="Program.cu" />
     <ClCompile Include="Test_Autoext.cu" />
     <ClCompile Include="Test_Backup.cu" />
     <ClCompile Include="Test_Btree.cu" />
     <ClCompile Include="Test_Config.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Test_DemoVfs.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Test_DevSym.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_DemoVfs.cu" />
+    <ClCompile Include="Test_DevSym.cu" />
     <ClCompile Include="Test_FS.cu" />
     <ClCompile Include="Test_Func.cu" />
     <ClCompile Include="Test_Fuzzer.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Test_HexIO.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_HexIO.cu" />
     <ClCompile Include="Test_Init.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_IntArray.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Test_Journal.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_Journal.cu" />
     <ClCompile Include="Test_LoadExt.cu" />
     <ClCompile Include="Test_Malloc.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>

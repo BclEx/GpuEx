@@ -6,12 +6,8 @@ extern "C" {
 #endif
 
 	JIM_EXPORT __device__ int Jim_UtfToLower(const char *objPtr);
-
-
-	//JIM_EXPORT __device__ int Jim_GetEnum(Jim_Interp *interp, Jim_Obj *objPtr, const char * const *tablePtr, int *indexPtr, const char *name, int flags);
-
-	//static int Jim_ObjSetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, Jim_Obj *valObjPtr) { return Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0); }
 	__inline __device__ static int Jim_ObjSetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, Jim_Obj *valObjPtr) { return Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0); }
+	JIM_EXPORT __device__ int Jim_ListGetElements(Jim_Interp *interp, Jim_Obj *obj, int *length, Jim_Obj ***flags);
 
 #define Jim_AppendResult(i, ...) Jim_AppendStrings(i, Jim_GetResult(i), __VA_ARGS__)
 #define Jim_AppendElement(i, s) Jim_ListAppendElement(i, Jim_GetResult(i), Jim_NewStringObj(i, s, -1))
@@ -20,7 +16,6 @@ extern "C" {
 #define JIM_LINK_READ_ONLY 0
 #define JIM_LINK_INT 0
 
-#define Jim_ListObjGetElements (int)0
 
 	typedef struct Jim_CmdInfo {
 		Jim_CmdProc *objProc;

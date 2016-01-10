@@ -203,7 +203,7 @@ __device__ int wholenumber_register(Context *ctx)
 #ifdef _TEST
 #include <Jim.h>
 // Decode a pointer to an sqlite3 object.
-__device__ extern int GetDbPointer(Jim_Interp *interp, char *a, Context **ctx);
+__device__ extern int GetDbPointer(Jim_Interp *interp, const char *a, Context **ctx);
 
 // Register the echo virtual table module.
 __device__ static int register_wholenumber_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
@@ -214,7 +214,7 @@ __device__ static int register_wholenumber_module(ClientData clientData, Jim_Int
 		return JIM_ERROR;
 	}
 	Context *ctx;
-	if (GetDbPointer(interp, (char *)args[1], &ctx)) return JIM_ERROR;
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	wholenumber_register(ctx);
 	return JIM_OK;
 }

@@ -63,7 +63,7 @@ int Sqlite3_Init(Tcl_Interp *);
 /* Functions from test1.c */
 void *sqlite3TestTextToPtr(const char *);
 const char *sqlite3TestErrorName(int);
-int getDbPointer(Tcl_Interp *, const char *, sqlite3 **);
+int GetDbPointer(Tcl_Interp *, const char *, sqlite3 **);
 int sqlite3TestMakePointerStr(Tcl_Interp *, char *, void *);
 int sqlite3TestErrCode(Tcl_Interp *, sqlite3 *, int);
 
@@ -587,7 +587,7 @@ static int blocking_prepare_v2_proc(
        Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
     return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   zSql = Tcl_GetString(objv[2]);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return JIM_ERROR;
 

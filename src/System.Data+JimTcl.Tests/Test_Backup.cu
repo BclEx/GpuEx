@@ -3,7 +3,7 @@
 #include <Core+Vdbe\Core+Vdbe.cu.h>
 
 // These functions are implemented in test1.c.
-__device__ extern int getDbPointer(Jim_Interp *, const char *, Context **);
+__device__ extern int GetDbPointer(Jim_Interp *, const char *, Context **);
 __device__ extern const char *sqlite3TestErrorName(int);
 
 enum BackupSubCommandEnum
@@ -27,7 +27,7 @@ __device__ static int backupTestCmd(ClientData clientData, Jim_Interp *interp, i
 {
 	Backup *p = (Backup *)clientData;
 	int cmd;
-	int rc2 = Jim_GetEnumFromObjStruct(interp, args[1], (const void **)_subs, sizeof(_subs[0]), &cmd, "option", 0);
+	int rc2 = Jim_GetEnumFromStruct(interp, args[1], (const void **)_subs, sizeof(_subs[0]), &cmd, "option", 0);
 	if (rc2 != JIM_OK)
 		return rc2;
 	if (argc != (2 + _subs[cmd].Argc))
@@ -83,10 +83,10 @@ __device__ static int backupTestInit(ClientData clientData, Jim_Interp *interp, 
 
 	const char *cmd = Jim_String(args[1]);
 	Context *destCtx;
-	getDbPointer(interp, Jim_String(args[2]), &destCtx);
+	GetDbPointer(interp, Jim_String(args[2]), &destCtx);
 	const char *destName = Jim_String(args[3]);
 	Context *srcCtx;
-	getDbPointer(interp, Jim_String(args[4]), &srcCtx);
+	GetDbPointer(interp, Jim_String(args[4]), &srcCtx);
 	const char *srcName = Jim_String(args[5]);
 
 	Backup *p = Backup::Init(destCtx, destName, srcCtx, srcName);

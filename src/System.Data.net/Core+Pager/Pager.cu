@@ -1745,19 +1745,19 @@ end_playback:
 	}
 
 #ifdef _TEST
-	__device__ int _io_error_pending;
-	__device__ int _io_error_hit;
+	extern __device__ int g_io_error_pending;
+	extern __device__ int g_io_error_hit;
 	__device__ static int saved_cnt;
 
 	__device__ void disable_simulated_io_errors()
 	{
-		saved_cnt = _io_error_pending;
-		_io_error_pending = -1;
+		saved_cnt = g_io_error_pending;
+		g_io_error_pending = -1;
 	}
 
 	__device__ void enable_simulated_io_errors()
 	{
-		_io_error_pending = saved_cnt;
+		g_io_error_pending = saved_cnt;
 	}
 #else
 #define disable_simulated_io_errors()

@@ -1072,12 +1072,12 @@ static int test_db_config_lookaside(
   sqlite3 *db;
   int bufid;
   static char azBuf[2][10000];
-  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  int GetDbPointer(Tcl_Interp*, const char*, sqlite3**);
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BUFID SIZE COUNT");
     return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &bufid) ) return JIM_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[3], &sz) ) return JIM_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[4], &cnt) ) return JIM_ERROR;
@@ -1143,14 +1143,14 @@ static int test_config_error(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3 *db;
-  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  int GetDbPointer(Tcl_Interp*, const char*, sqlite3**);
 
   if( objc!=2 && objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "[DB]");
     return JIM_ERROR;
   }
   if( objc==2 ){
-    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+    if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
     if( sqlite3_db_config(db, 99999)!=SQLITE_ERROR ){
       Tcl_AppendResult(interp, 
             "sqlite3_db_config(db, 99999) does not return SQLITE_ERROR",
@@ -1336,7 +1336,7 @@ static int test_db_status(
   int i, op, resetFlag;
   const char *zOpName;
   sqlite3 *db;
-  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  int GetDbPointer(Tcl_Interp*, const char*, sqlite3**);
   static const struct {
     const char *zName;
     int op;
@@ -1357,7 +1357,7 @@ static int test_db_status(
     Tcl_WrongNumArgs(interp, 1, objv, "DB PARAMETER RESETFLAG");
     return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   zOpName = Tcl_GetString(objv[2]);
   if( memcmp(zOpName, "SQLITE_", 7)==0 ) zOpName += 7;
   if( memcmp(zOpName, "DBSTATUS_", 9)==0 ) zOpName += 9;

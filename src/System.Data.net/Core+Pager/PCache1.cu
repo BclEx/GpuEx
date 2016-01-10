@@ -668,18 +668,18 @@ fetch_out:
 
 #pragma	region Tests
 #ifdef _TEST
-
-	__device__ void PCache1_testStats(uint *current, uint *max, uint *min, uint *recyclables)
-	{
-		uint recyclables2 = 0;
-		for (PgHdr1 *p = _pcache1.Group.LruHead; p; p = p->LruNext)
-			recyclables2++;
-		*current = _pcache1.Group.CurrentPages;
-		*max = _pcache1.Group.MaxPages;
-		*min = _pcache1.Group.MinPages;
-		*recyclables = recyclables2;
+	extern "C" {
+		__device__ void PCache1_testStats(uint *current, uint *max, uint *min, uint *recyclables)
+		{
+			uint recyclables2 = 0;
+			for (PgHdr1 *p = _pcache1.Group.LruHead; p; p = p->LruNext)
+				recyclables2++;
+			*current = _pcache1.Group.CurrentPages;
+			*max = _pcache1.Group.MaxPages;
+			*min = _pcache1.Group.MinPages;
+			*recyclables = recyclables2;
+		}
 	}
-
 #endif
 #pragma endregion
 }

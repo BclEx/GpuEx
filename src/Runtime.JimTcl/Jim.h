@@ -663,7 +663,7 @@ extern "C" {
 	// commands utilities
 	JIM_EXPORT __device__ void Jim_WrongNumArgs(Jim_Interp *interp, int argc, Jim_Obj *const *argv, const char *msg);
 	JIM_EXPORT __device__ int Jim_GetEnum(Jim_Interp *interp, Jim_Obj *objPtr, const char *const *tablePtr, int *indexPtr, const char *name, int flags);
-	JIM_EXPORT __device__ int Jim_GetEnumFromObjStruct(Jim_Interp *interp, Jim_Obj *objPtr, const void **tablePtr, int elementSize, int *indexPtr, const char *name, int flags);
+	JIM_EXPORT __device__ int Jim_GetEnumFromStruct(Jim_Interp *interp, Jim_Obj *objPtr, const void **tablePtr, int elementSize, int *indexPtr, const char *name, int flags);
 	JIM_EXPORT __device__ int Jim_ScriptIsComplete(const char *s, int len, char *stateCharPtr);
 	// Find a matching name in the array of the given length.
 	// NULL entries are ignored.

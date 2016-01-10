@@ -12301,6 +12301,45 @@ ambiguous:
 	return JIM_ERROR;
 }
 
+__device__ int Jim_GetEnumFromStruct(Jim_Interp *interp, Jim_Obj *objPtr, const void **tablePtr, int elementSize, int *indexPtr, const char *name, int flags)
+{
+	const char *bad = "bad ";
+	const void **entryPtrStruct = NULL;
+	const char *const *entryPtr = NULL;
+	int i;
+	int arglen;
+	const char *arg = Jim_GetString(objPtr, &arglen);
+	int match = -1;
+	*indexPtr = -1;
+	for (entryPtrStruct = tablePtr, i = 0; *entryPtrStruct != NULL; entryPtrStruct+=elementSize, i++) {
+		entryPtr = (const char *const *)entryPtrStruct;
+		if (Jim_CompareStringImmediate(interp, objPtr, *entryPtr)) {
+			// Found an exact match
+			*indexPtr = i;
+			return JIM_OK;
+		}
+		// Accept an unambiguous abbreviation. Note that '-' doesnt' consitute a valid abbreviation
+		if (flags & JIM_ENUM_ABBREV && !_strncmp(arg, *entryPtr, arglen)) {
+			if (*arg == '-' && arglen == 1)
+				break;
+			if (match >= 0) {
+				bad = "ambiguous ";
+				goto ambiguous;
+			}
+			match = i;
+		}
+	}
+	// If we had an unambiguous partial match
+	if (match >= 0) {
+		*indexPtr = match;
+		return JIM_OK;
+	}
+ambiguous:
+	if (flags & JIM_ERRMSG)
+		JimSetFailedEnumResult(interp, arg, bad, "", (const char *const *)tablePtr, name);
+	return JIM_ERROR;
+}
+
 __device__ int Jim_FindByName(const char *name, const char * const array[], size_t len)
 {
 	for (int i = 0; i < (int)len; i++)

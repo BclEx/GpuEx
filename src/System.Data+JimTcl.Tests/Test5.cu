@@ -111,12 +111,12 @@ __device__ static int test_translate(ClientData clientData, Jim_Interp *interp, 
 
 // Usage: translate_selftest
 //
-// Call sqlite3UtfSelfTest() to run the internal tests for unicode translation. If there is a problem an assert() will fail.
-__device__ void sqlite3UtfSelfTest();
+// Call _runtime_utfselftest() to run the internal tests for unicode translation. If there is a problem an assert() will fail.
+__device__ void _runtime_utfselftest();
 __device__ static int test_translate_selftest(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 #ifndef OMIT_UTF16
-	sqlite3UtfSelfTest();
+	_runtime_utfselftest();
 #endif
 	return RC_OK;
 }

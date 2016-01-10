@@ -676,7 +676,7 @@ __device__ RC Vdbe::Bind_Text(Vdbe *p, int i, const char *z, int n, void (*del)(
 #ifndef OMIT_UTF16
 __device__ RC Vdbe::Bind_Text16(Vdbe *p, int i, const void *z, int n, void (*del)(void *)) { return BindText(p, i, z, n, del, TEXTENCODE_UTF16NATIVE); }
 #endif
-__device__ RC Bind_Value(Vdbe *p, int i, const Mem *value)
+__device__ RC Vdbe::Bind_Value(Vdbe *p, int i, const Mem *value)
 {
 	RC rc;
 	switch (value->Type)

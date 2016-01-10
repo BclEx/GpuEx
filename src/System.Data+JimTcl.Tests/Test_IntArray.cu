@@ -260,7 +260,7 @@ int sqlite3_intarray_bind(
 /*
 ** Routines to encode and decode pointers
 */
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+extern int GetDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 extern void *sqlite3TestTextToPtr(const char*);
 extern int sqlite3TestMakePointerStr(Tcl_Interp*, char *zPtr, void*);
 extern const char *sqlite3TestErrorName(int);
@@ -287,7 +287,7 @@ static int test_intarray_create(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return JIM_ERROR;
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
+  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
   zName = Tcl_GetString(objv[2]);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_intarray_create(db, zName, &pArray);

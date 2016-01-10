@@ -2,12 +2,14 @@
 #include <windows.h>
 #include <new.h>
 #include "Core.cu.h"
-#if OS_WIN // This file is used for Windows only
-#define POWERSAFE_OVERWRITE 1
 
 namespace CORE_NAME
 {
+
 #pragma region Preamble
+
+#if OS_WIN // This file is used for Windows only
+#define POWERSAFE_OVERWRITE 1
 
 #if defined(_TEST) || defined(_DEBUG)
 	bool OsTrace = false;
@@ -40,7 +42,7 @@ namespace CORE_NAME
 
 	// When testing, keep a count of the number of open files.
 #ifdef _TEST
-	int g_open_file_count = 0;
+	__device__ int g_open_file_count = 0;
 #define OpenCounter(X) g_open_file_count += (X)
 #else
 #define OpenCounter(X)

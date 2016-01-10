@@ -608,7 +608,7 @@ __device__ static int processDevSymArgs(Jim_Interp *interp, char argc, Jim_Obj *
 		{
 			Jim_Obj **objs;
 			int objc;
-			if (Jim_ListObjGetElements(interp, args[i+1], &objc, &objs))
+			if (Jim_ListGetElements(interp, args[i+1], &objc, &objs))
 				return JIM_ERROR;
 			for (int j = 0; j < objc; j++)
 			{
@@ -617,7 +617,7 @@ __device__ static int processDevSymArgs(Jim_Interp *interp, char argc, Jim_Obj *
 				Jim_UtfToLower(Jim_String(flag));
 
 				int choice;
-				int rc = Jim_GetEnumFromObjStruct(interp, flag, (const void **)_flags, sizeof(_flags[0]), &choice, "no such flag", 0);
+				int rc = Jim_GetEnumFromStruct(interp, flag, (const void **)_flags, sizeof(_flags[0]), &choice, "no such flag", 0);
 				if (rc)
 					return JIM_ERROR;
 				deviceChar |= _flags[choice].Value;
@@ -715,7 +715,7 @@ error:
 	return JIM_ERROR;
 }
 
-__device__ extern void devsym_register(int deviceChar, int sectorSize);
+__device__ extern void devsym_register(VFile::IOCAP deviceChar, int sectorSize);
 __device__ static int devSymObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	VFile::IOCAP deviceChar = (VFile::IOCAP)-1;
@@ -727,7 +727,7 @@ __device__ static int devSymObjCmd(ClientData clientData, Jim_Interp *interp, in
 }
 
 // tclcmd: register_jt_vfs ?-default? PARENT-VFS
-__device__ extern int jt_register(char *, int);
+__device__ extern int jt_register(char *, bool);
 __device__ static int jtObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 2 && argc != 3)
@@ -756,7 +756,7 @@ __device__ static int jtObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 }
 
 // tclcmd: unregister_jt_vfs
-__device__ extern void jt_unregister(void);
+__device__ extern void jt_unregister();
 __device__ static int jtUnregisterObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	if (argc != 1)
