@@ -61,9 +61,9 @@ public:
 
 #ifndef OMIT_LOAD_EXTENSION
 	__device__ virtual void *DlOpen(const char *filename) { return _g.Vfs->DlOpen(filename); }
-	__device__ virtual void DlError(int bufLength, char *buf) { return _g.Vfs->DlError(bufLength, buf); }
+	__device__ virtual void DlError(int bufLength, char *buf) { _g.Vfs->DlError(bufLength, buf); }
 	__device__ virtual void (*DlSym(void *handle, const char *symbol))() { return _g.Vfs->DlSym(handle, symbol); }
-	__device__ virtual void DlClose(void *handle) { return _g.Vfs->DlClose(handle); }
+	__device__ virtual void DlClose(void *handle) { _g.Vfs->DlClose(handle); }
 #endif
 	__device__ virtual int Randomness(int bufLength, char *buf) { return _g.Vfs->Randomness(bufLength, buf); }
 	__device__ virtual int Sleep(int microseconds) { return _g.Vfs->Sleep(microseconds); }
