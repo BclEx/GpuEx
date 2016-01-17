@@ -59,6 +59,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="GpuEx-Runtime.Native.xml" />
+    <Xml Include="GpuEx-Runtime.Native.xml_" />
   </ItemGroup>
 </Project>

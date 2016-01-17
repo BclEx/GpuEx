@@ -89,8 +89,8 @@ task Dependency -precondition { return $false } {
 	}
 }
 
-task Package -depends Dependency, Compile, Test {
-#task Package {
+#task Package -depends Dependency, Compile, Test {
+task Package {
 	$spec_files = @(Get-ChildItem $base_dir\src -include *.nuspec -recurse)
 	foreach ($spec in $spec_files)
 	{

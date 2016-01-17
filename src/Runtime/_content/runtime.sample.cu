@@ -1,3 +1,6 @@
+// set to 1 for examples
+#if 0
+
 #include <RuntimeHost.h>
 #include <Runtime.h>
 
@@ -74,3 +77,5 @@ Error:
     cudaFree(dev_b);
 	cudaDeviceHeapDestroy(deviceHeap);
 }
+
+#endif

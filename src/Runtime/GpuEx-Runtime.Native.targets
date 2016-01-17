@@ -1,22 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" >
+  <PropertyGroup>
+    <CodeGeneration_Len>@(CudaCompile->Count())</CodeGeneration_Len>
+    <CodeGeneration_11>@(CudaCompile->Metadata('CodeGeneration')->IndexOf('11'))</CodeGeneration_11>
+    <CodeGeneration_20>@(CudaCompile->Metadata('CodeGeneration')->IndexOf('20'))</CodeGeneration_20>
+    <CodeGeneration_30>@(CudaCompile->Metadata('CodeGeneration')->IndexOf('30'))</CodeGeneration_30>
+    <CodeGeneration_35>@(CudaCompile->Metadata('CodeGeneration')->IndexOf('35'))</CodeGeneration_35>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions Condition="'%(CudaCompile.CodeGeneration)'!='cpu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(CodeGeneration_Len)!=0">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HASRUNTIME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='cpu'">Runtime.cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_11'">Runtime.11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_20'">Runtime.20.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'==''">Runtime.30.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_35'">Runtime.35.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)==0">Runtime.cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_11.Contains('-1'))">Runtime.11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_20.Contains('-1'))">Runtime.20.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_30.Contains('-1'))">Runtime.30.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_35.Contains('-1'))">Runtime.35.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)lib\$(Platform).$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
   </ItemDefinitionGroup>
+  <Target Name="Build">
+    <Message Importance="High" Text="%(CodeGeneration_20)" />
+    <Message Condition="$(CodeGeneration_Len)==0" Importance="High" Text="cpu" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_11.Contains('-1'))" Importance="High" Text="11" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_20.Contains('-1'))" Importance="High" Text="20" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_30.Contains('-1'))" Importance="High" Text="30" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_35.Contains('-1'))" Importance="High" Text="35" />
+  </Target>
 </Project>

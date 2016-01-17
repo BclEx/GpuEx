@@ -115,11 +115,13 @@
     <ClCompile Include="VisualHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="GpuEx-Runtime.Native.nuspec" />
+    <None Include="GpuEx-Runtime.Native.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="GpuEx-Runtime.Native.targets">
       <SubType>Designer</SubType>
     </None>
-    <Xml Include="GpuEx-Runtime.Native.xml">
+    <Xml Include="GpuEx-Runtime.Native.xml_">
       <SubType>Designer</SubType>
     </Xml>
     <None Include="_content\runtime.sample.cu" />
