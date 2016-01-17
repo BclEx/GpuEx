@@ -16,22 +16,21 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies Condition="$(CodeGeneration_Len)==0">Runtime.cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_11.Contains('-1'))">Runtime.11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_20.Contains('-1'))">Runtime.20.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_30.Contains('-1'))">Runtime.30.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_35.Contains('-1'))">Runtime.35.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('11'))">Runtime.11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('20'))">Runtime.20.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('30'))">Runtime.30.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('35'))">Runtime.35.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)lib\$(Platform).$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
   </ItemDefinitionGroup>
-  <Target Name="Build">
-    <Message Importance="High" Text="%(CodeGeneration_20)" />
+  <Target Name="Build_">
     <Message Condition="$(CodeGeneration_Len)==0" Importance="High" Text="cpu" />
-    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_11.Contains('-1'))" Importance="High" Text="11" />
-    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_20.Contains('-1'))" Importance="High" Text="20" />
-    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_30.Contains('-1'))" Importance="High" Text="30" />
-    <Message Condition="$(CodeGeneration_Len)!=0 And !$(CodeGeneration_35.Contains('-1'))" Importance="High" Text="35" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('11'))" Importance="High" Text="11" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('20'))" Importance="High" Text="20" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('30'))" Importance="High" Text="30" />
+    <Message Condition="$(CodeGeneration_Len)!=0 And $([System.String]::new('%(CudaCompile.CodeGeneration)').Contains('35'))" Importance="High" Text="35" />
   </Target>
 </Project>
