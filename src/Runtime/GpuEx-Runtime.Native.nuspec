@@ -16,7 +16,7 @@
   </metadata>
   <files>
     <file src="_build\**\Runtime.*.lib" exclude="_build\**\Runtime.TinyTcl.*.lib;_build\**\Runtime.JimTcl.*.lib;" target="build\native\lib" />
-    <file src="src\Runtime\*.props" target="build\native" />
+    <file src="src\Runtime\*.targets" target="build\native" />
     <file src="src\Runtime\**\*.h" exclude="src\Runtime\_*\**\*;src\Runtime\GL\*" target="build\native\include" />
     <file src="src\Runtime\_content\*" target="content" />
     <file src="src\Runtime\**\*.cpp" exclude="src\Runtime\Debug.*\*;src\Runtime\Release.*\*;src\Runtime\x64\**\*" target="src" />
