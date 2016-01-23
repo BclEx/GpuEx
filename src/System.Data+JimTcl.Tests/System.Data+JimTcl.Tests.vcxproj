@@ -59,9 +59,7 @@
     <ClCompile Include="Test_DevSym.cu" />
     <ClCompile Include="Test_FS.cu" />
     <ClCompile Include="Test_Func.cu" />
-    <ClCompile Include="Test_Fuzzer.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_Fuzzer.cu" />
     <ClCompile Include="Test_HexIO.cu" />
     <ClCompile Include="Test_Init.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
@@ -114,6 +112,7 @@
     </ClCompile>
     <ClCompile Include="Test_TclVar.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_Thread.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>

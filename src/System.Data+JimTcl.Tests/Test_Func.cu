@@ -1,9 +1,9 @@
 // Code for testing all sorts of SQLite interfaces.  This code implements new SQL functions used by the test scripts.
 #include <Core+Vdbe\Core+Vdbe.cu.h>
 #include <JimEx.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <assert.h>
 
 // Allocate nByte bytes of space using sqlite3_malloc(). If the allocation fails, call sqlite3_result_error_nomem() to notify
 // the database handle that malloc() has failed.

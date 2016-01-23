@@ -44,21 +44,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="GpuEx-Runtime.Native.nuspec" />
-    <None Include="_content\runtime.sample.cu">
-      <Filter>_content</Filter>
-    </None>
-    <None Include="_content\runtime.ganging.sample.cu">
-      <Filter>_content</Filter>
-    </None>
     <None Include="RT.cu" />
     <None Include="GpuEx-Runtime.Native.targets" />
+    <None Include="_content\sample.runtime.ganging.cu">
+      <Filter>_content</Filter>
+    </None>
+    <None Include="_content\sample.runtime.cu">
+      <Filter>_content</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="_content">
       <UniqueIdentifier>{ef2be218-740b-4db9-879c-c266469963f5}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="GpuEx-Runtime.Native.xml_" />
   </ItemGroup>
 </Project>

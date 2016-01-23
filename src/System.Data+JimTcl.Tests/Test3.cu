@@ -330,7 +330,6 @@ __device__ static int btree_payload_size(ClientData notUsed, Jim_Interp *interp,
 // This command returns nothing if it works.  It returns an error message if something goes wrong.
 __device__ static int btree_varint_test(ClientData notUsed, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	int n1, n2, i, j;
 	if (argc != 5)
 	{
 		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " START MULTIPLIER COUNT INCREMENT\"", nullptr);
@@ -348,14 +347,14 @@ __device__ static int btree_varint_test(ClientData notUsed, Jim_Interp *interp, 
 	for (int i = 0; i < (int)count; i++)
 	{
 		char err[200];
-		n1 = _convert_putvarint(buf, in);
+		int n1 = _convert_putvarint(buf, in);
 		if (n1 > 9 || n1 < 1)
 		{
 			_sprintf(err, "putVarint returned %d - should be between 1 and 9", n1);
 			Jim_AppendResult(interp, err, nullptr);
 			return JIM_ERROR;
 		}
-		n2 = _convert_getvarint(buf, &out);
+		int n2 = _convert_getvarint(buf, &out);
 		if (n1 != n2)
 		{
 			_sprintf(err, "putVarint returned %d and getVarint returned %d", n1, n2);

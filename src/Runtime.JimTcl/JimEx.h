@@ -6,6 +6,11 @@ extern "C" {
 #endif
 
 	JIM_EXPORT __device__ int Jim_UtfToLower(const char *objPtr);
+
+	__inline __device__ static Jim_Obj *Jim_GetVar2(Jim_Interp *interp, const char *name, const char *key, int flags) { Jim_Obj *obj; /*Jim_DictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, &obj, flags);*/ return obj; }
+	//__inline __device__ static int Jim_SetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, Jim_Obj *valObjPtr) { return Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0); }
+
+	__inline __device__ static Jim_Obj *Jim_ObjGetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, int flags) { Jim_Obj *obj; Jim_DictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, &obj, flags); return obj; }
 	__inline __device__ static int Jim_ObjSetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, Jim_Obj *valObjPtr) { return Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0); }
 	JIM_EXPORT __device__ int Jim_ListGetElements(Jim_Interp *interp, Jim_Obj *obj, int *length, Jim_Obj ***flags);
 
@@ -15,8 +20,7 @@ extern "C" {
 #define JIM_LINK_STRING 0
 #define JIM_LINK_READ_ONLY 0
 #define JIM_LINK_INT 0
-
-
+	
 	typedef struct Jim_CmdInfo {
 		Jim_CmdProc *objProc;
 		ClientData objClientData;

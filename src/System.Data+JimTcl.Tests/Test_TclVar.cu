@@ -1,332 +1,272 @@
-/*
-** 2006 June 13
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** Code for testing the virtual table interfaces.  This code
-** is not included in the SQLite library.  It is used for automated
-** testing of the SQLite library.
-**
-** The emphasis of this file is a virtual table that provides
-** access to TCL variables.
-*/
-#include "sqliteInt.h"
-#include "tcl.h"
-#include <stdlib.h>
-#include <string.h>
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
+// Code for testing the virtual table interfaces.  This code is not included in the SQLite library.  It is used for automated
+// testing of the SQLite library.
+//
+// The emphasis of this file is a virtual table that provides access to TCL variables.
+#include <Core+Vdbe\Core+Vdbe.cu.h>
+#include <JimEx.h>
+
+#ifndef OMIT_VIRTUALTABLE
 
 typedef struct tclvar_vtab tclvar_vtab;
 typedef struct tclvar_cursor tclvar_cursor;
 
-/* 
-** A tclvar virtual-table object 
-*/
-struct tclvar_vtab {
-  sqlite3_vtab base;
-  Tcl_Interp *interp;
+// A tclvar virtual-table object 
+struct tclvar_vtab
+{
+	IVTable base;
+	Jim_Interp *interp;
 };
 
-/* A tclvar cursor object */
-struct tclvar_cursor {
-  sqlite3_vtab_cursor base;
-
-  Tcl_Obj *pList1;     /* Result of [info vars ?pattern?] */
-  Tcl_Obj *pList2;     /* Result of [array names [lindex $pList1 $i1]] */
-  int i1;              /* Current item in pList1 */
-  int i2;              /* Current item (if any) in pList2 */
+// A tclvar cursor object 
+struct tclvar_cursor
+{
+	IVTableCursor base;
+	Jim_Obj *List1;     // Result of [info vars ?pattern?]
+	Jim_Obj *List2;     // Result of [array names [lindex $pList1 $i1]]
+	int I1;             // Current item in pList1
+	int I2;             // Current item (if any) in pList2
 };
 
-/* Methods for the tclvar module */
-static int tclvarConnect(
-  sqlite3 *db,
-  void *pAux,
-  int argc, const char *const*argv,
-  sqlite3_vtab **ppVtab,
-  char **pzErr
-){
-  tclvar_vtab *pVtab;
-  static const char zSchema[] = 
-     "CREATE TABLE whatever(name TEXT, arrayname TEXT, value TEXT)";
-  pVtab = sqlite3MallocZero( sizeof(*pVtab) );
-  if( pVtab==0 ) return SQLITE_NOMEM;
-  *ppVtab = &pVtab->base;
-  pVtab->interp = (Tcl_Interp *)pAux;
-  sqlite3_declare_vtab(db, zSchema);
-  return SQLITE_OK;
-}
-/* Note that for this virtual table, the xCreate and xConnect
-** methods are identical. */
-
-static int tclvarDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
-  return SQLITE_OK;
-}
-/* The xDisconnect and xDestroy methods are also the same */
-
-/*
-** Open a new tclvar cursor.
-*/
-static int tclvarOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
-  tclvar_cursor *pCur;
-  pCur = sqlite3MallocZero(sizeof(tclvar_cursor));
-  *ppCursor = &pCur->base;
-  return SQLITE_OK;
+// Methods for the tclvar module
+__constant__ static const char _schema[] = "CREATE TABLE whatever(name TEXT, arrayname TEXT, value TEXT)";
+// Note that for this virtual table, the xCreate and xConnect methods are identical.
+__device__ static RC tclvarConnect(Context *ctx, void *aux, int argc, const char *const args[], IVTable **vtabOut, char **err)
+{
+	tclvar_vtab *vtab = (tclvar_vtab *)_allocZero(sizeof(*vtab));
+	if (!vtab) return RC_NOMEM;
+	*vtabOut = &vtab->base;
+	vtab->interp = (Jim_Interp *)aux;
+	VTable::DeclareVTable(ctx, _schema);
+	return RC_OK;
 }
 
-/*
-** Close a tclvar cursor.
-*/
-static int tclvarClose(sqlite3_vtab_cursor *cur){
-  tclvar_cursor *pCur = (tclvar_cursor *)cur;
-  if( pCur->pList1 ){
-    Tcl_DecrRefCount(pCur->pList1);
-  }
-  if( pCur->pList2 ){
-    Tcl_DecrRefCount(pCur->pList2);
-  }
-  sqlite3_free(pCur);
-  return SQLITE_OK;
+// The xDisconnect and xDestroy methods are also the same
+__device__ static RC tclvarDisconnect(IVTable *vtab)
+{
+	_free(vtab);
+	return RC_OK;
 }
 
-/*
-** Returns 1 if data is ready, or 0 if not.
-*/
-static int next2(Tcl_Interp *interp, tclvar_cursor *pCur, Tcl_Obj *pObj){
-  Tcl_Obj *p;
-
-  if( pObj ){
-    if( !pCur->pList2 ){
-      p = Tcl_NewStringObj("array names", -1);
-      Tcl_IncrRefCount(p);
-      Tcl_ListObjAppendElement(0, p, pObj);
-      Tcl_EvalObjEx(interp, p, JIM_EVAL_GLOBAL);
-      Tcl_DecrRefCount(p);
-      pCur->pList2 = Tcl_GetObjResult(interp);
-      Tcl_IncrRefCount(pCur->pList2);
-      assert( pCur->i2==0 );
-    }else{
-      int n = 0;
-      pCur->i2++;
-      Tcl_ListObjLength(0, pCur->pList2, &n);
-      if( pCur->i2>=n ){
-        Tcl_DecrRefCount(pCur->pList2);
-        pCur->pList2 = 0;
-        pCur->i2 = 0;
-        return 0;
-      }
-    }
-  }
-
-  return 1;
+// Open a new tclvar cursor.
+__device__ static RC tclvarOpen(IVTable *vtab, IVTableCursor **cursor)
+{
+	tclvar_cursor *cur = (tclvar_cursor *)_allocZero(sizeof(tclvar_cursor));
+	*cursor = &cur->base;
+	return RC_OK;
 }
 
-static int tclvarNext(sqlite3_vtab_cursor *cur){
-  Tcl_Obj *pObj;
-  int n = 0;
-  int ok = 0;
-
-  tclvar_cursor *pCur = (tclvar_cursor *)cur;
-  Tcl_Interp *interp = ((tclvar_vtab *)(cur->pVtab))->interp;
-
-  Tcl_ListObjLength(0, pCur->pList1, &n);
-  while( !ok && pCur->i1<n ){
-    Tcl_ListObjIndex(0, pCur->pList1, pCur->i1, &pObj);
-    ok = next2(interp, pCur, pObj);
-    if( !ok ){
-      pCur->i1++;
-    }
-  }
-
-  return 0;
+// Close a tclvar cursor.
+__device__ static RC tclvarClose(IVTableCursor *cur_)
+{
+	tclvar_cursor *cur = (tclvar_cursor *)cur_;
+	Jim_Interp *interp = ((tclvar_vtab *)(cur_->IVTable))->interp;
+	if (cur->List1)
+		Jim_DecrRefCount(interp, cur->List1);
+	if (cur->List2)
+		Jim_DecrRefCount(interp, cur->List2);
+	_free(cur);
+	return RC_OK;
 }
 
-static int tclvarFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
-  int idxNum, const char *idxStr,
-  int argc, sqlite3_value **argv
-){
-  tclvar_cursor *pCur = (tclvar_cursor *)pVtabCursor;
-  Tcl_Interp *interp = ((tclvar_vtab *)(pVtabCursor->pVtab))->interp;
-
-  Tcl_Obj *p = Tcl_NewStringObj("info vars", -1);
-  Tcl_IncrRefCount(p);
-
-  assert( argc==0 || argc==1 );
-  if( argc==1 ){
-    Tcl_Obj *pArg = Tcl_NewStringObj((char*)sqlite3_value_text(argv[0]), -1);
-    Tcl_ListObjAppendElement(0, p, pArg);
-  }
-  Tcl_EvalObjEx(interp, p, JIM_EVAL_GLOBAL);
-  if( pCur->pList1 ){
-    Tcl_DecrRefCount(pCur->pList1);
-  }
-  if( pCur->pList2 ){
-    Tcl_DecrRefCount(pCur->pList2);
-    pCur->pList2 = 0;
-  }
-  pCur->i1 = 0;
-  pCur->i2 = 0;
-  pCur->pList1 = Tcl_GetObjResult(interp);
-  Tcl_IncrRefCount(pCur->pList1);
-  assert( pCur->i1==0 && pCur->i2==0 && pCur->pList2==0 );
-
-  Tcl_DecrRefCount(p);
-  return tclvarNext(pVtabCursor);
+// Returns 1 if data is ready, or 0 if not.
+__device__ static bool next2(Jim_Interp *interp, tclvar_cursor *cur, Jim_Obj *obj)
+{
+	if (obj)
+	{
+		if (!cur->List2)
+		{
+			Jim_Obj *p = Jim_NewStringObj(interp, "array names", -1);
+			Jim_IncrRefCount(p);
+			Jim_ListAppendElement(nullptr, p, obj);
+			Jim_EvalObj(interp, p);
+			Jim_DecrRefCount(interp, p);
+			cur->List2 = Jim_GetResult(interp);
+			Jim_IncrRefCount(cur->List2);
+			_assert(cur->I2 == 0);
+		}
+		else
+		{
+			cur->I2++;
+			int n = Jim_ListLength(nullptr, cur->List2);
+			if (cur->I2 >= n)
+			{
+				Jim_DecrRefCount(interp, cur->List2);
+				cur->List2 = nullptr;
+				cur->I2 = 0;
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
-static int tclvarColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
-  Tcl_Obj *p1;
-  Tcl_Obj *p2;
-  const char *z1; 
-  const char *z2 = "";
-  tclvar_cursor *pCur = (tclvar_cursor*)cur;
-  Tcl_Interp *interp = ((tclvar_vtab *)cur->pVtab)->interp;
-
-  Tcl_ListObjIndex(interp, pCur->pList1, pCur->i1, &p1);
-  Tcl_ListObjIndex(interp, pCur->pList2, pCur->i2, &p2);
-  z1 = Tcl_GetString(p1);
-  if( p2 ){
-    z2 = Tcl_GetString(p2);
-  }
-  switch (i) {
-    case 0: {
-      sqlite3_result_text(ctx, z1, -1, SQLITE_TRANSIENT);
-      break;
-    }
-    case 1: {
-      sqlite3_result_text(ctx, z2, -1, SQLITE_TRANSIENT);
-      break;
-    }
-    case 2: {
-      Tcl_Obj *pVal = Tcl_GetVar2Ex(interp, z1, *z2?z2:0, JIM_GLOBAL_ONLY);
-      sqlite3_result_text(ctx, Tcl_GetString(pVal), -1, SQLITE_TRANSIENT);
-      break;
-    }
-  }
-  return SQLITE_OK;
+__device__ static RC tclvarNext(IVTableCursor *cur_)
+{
+	tclvar_cursor *cur = (tclvar_cursor *)cur_;
+	Jim_Interp *interp = ((tclvar_vtab *)(cur_->IVTable))->interp;
+	int n = Jim_ListLength(nullptr, cur->List1);
+	bool ok = false;
+	while (!ok && cur->I1 < n)
+	{
+		Jim_Obj *obj = Jim_ListGetIndex(interp, cur->List1, cur->I1);
+		ok = next2(interp, cur, obj);
+		if (!ok)
+			cur->I1++;
+	}
+	return RC_OK;
 }
 
-static int tclvarRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
-  *pRowid = 0;
-  return SQLITE_OK;
+__device__ static RC tclvarFilter(IVTableCursor *vtabCursor, int idxNum, const char *idxStr, int argc, Mem **args)
+{
+	tclvar_cursor *cur = (tclvar_cursor *)vtabCursor;
+	Jim_Interp *interp = ((tclvar_vtab *)(vtabCursor->IVTable))->interp;
+	Jim_Obj *p = Jim_NewStringObj(interp, "info vars", -1);
+	Jim_IncrRefCount(p);
+	_assert(argc == 0 || argc == 1);
+	if (argc == 1)
+	{
+		Jim_Obj *arg = Jim_NewStringObj(interp, (char *)Vdbe::Value_Text(args[0]), -1);
+		Jim_ListAppendElement(nullptr, p, arg);
+	}
+	Jim_EvalObj(interp, p);
+	if (cur->List1)
+		Jim_DecrRefCount(interp, cur->List1);
+	if (cur->List2)
+	{
+		Jim_DecrRefCount(interp, cur->List2);
+		cur->List2 = nullptr;
+	}
+	cur->I1 = 0;
+	cur->I2 = 0;
+	cur->List1 = Jim_GetResult(interp);
+	Jim_IncrRefCount(cur->List1);
+	assert(cur->I1 == 0 && cur->I2 == 0 && !cur->List2);
+	Jim_DecrRefCount(interp, p);
+	return tclvarNext(vtabCursor);
 }
 
-static int tclvarEof(sqlite3_vtab_cursor *cur){
-  tclvar_cursor *pCur = (tclvar_cursor*)cur;
-  return (pCur->pList2?0:1);
+__device__ static RC tclvarColumn(IVTableCursor *cur_, FuncContext *fctx, int i)
+{
+	tclvar_cursor *cur = (tclvar_cursor*)cur_;
+	Jim_Interp *interp = ((tclvar_vtab *)cur_->IVTable)->interp;
+	Jim_Obj *p1 = Jim_ListGetIndex(interp, cur->List1, cur->I1);
+	Jim_Obj *p2 = Jim_ListGetIndex(interp, cur->List2, cur->I2);
+	const char *z1 = Jim_String(p1);
+	const char *z2 = (p2 ? Jim_String(p2) : "");
+	switch (i) {
+	case 0: {
+		Vdbe::Result_Text(fctx, z1, -1, DESTRUCTOR_TRANSIENT);
+		break; }
+	case 1: {
+		Vdbe::Result_Text(fctx, z2, -1, DESTRUCTOR_TRANSIENT);
+		break; }
+	case 2: {
+		Jim_Obj *val = Jim_GetVar2(interp, z1, (*z2 ? z2 : nullptr), 0);
+		Vdbe::Result_Text(fctx, Jim_String(val), -1, DESTRUCTOR_TRANSIENT);
+		break; }
+	}
+	return RC_OK;
 }
 
-static int tclvarBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
-  int ii;
-
-  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
-    struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
-    if( pCons->iColumn==0 && pCons->usable
-           && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ ){
-      struct sqlite3_index_constraint_usage *pUsage;
-      pUsage = &pIdxInfo->aConstraintUsage[ii];
-      pUsage->omit = 0;
-      pUsage->argvIndex = 1;
-      return SQLITE_OK;
-    }
-  }
-
-  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
-    struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
-    if( pCons->iColumn==0 && pCons->usable
-           && pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
-      struct sqlite3_index_constraint_usage *pUsage;
-      pUsage = &pIdxInfo->aConstraintUsage[ii];
-      pUsage->omit = 1;
-      pUsage->argvIndex = 1;
-      return SQLITE_OK;
-    }
-  }
-
-  return SQLITE_OK;
+__device__ static RC tclvarRowid(IVTableCursor *cur, int64 *rowid)
+{
+	*rowid = 0;
+	return RC_OK;
 }
 
-/*
-** A virtual table module that provides read-only access to a
-** Tcl global variable namespace.
-*/
-static sqlite3_module tclvarModule = {
-  0,                         /* iVersion */
-  tclvarConnect,
-  tclvarConnect,
-  tclvarBestIndex,
-  tclvarDisconnect, 
-  tclvarDisconnect,
-  tclvarOpen,                  /* xOpen - open a cursor */
-  tclvarClose,                 /* xClose - close a cursor */
-  tclvarFilter,                /* xFilter - configure scan constraints */
-  tclvarNext,                  /* xNext - advance a cursor */
-  tclvarEof,                   /* xEof - check for end of scan */
-  tclvarColumn,                /* xColumn - read data */
-  tclvarRowid,                 /* xRowid - read data */
-  0,                           /* xUpdate */
-  0,                           /* xBegin */
-  0,                           /* xSync */
-  0,                           /* xCommit */
-  0,                           /* xRollback */
-  0,                           /* xFindMethod */
-  0,                           /* xRename */
+__device__ static bool tclvarEof(IVTableCursor *cur_)
+{
+	tclvar_cursor *cur = (tclvar_cursor *)cur_;
+	return (cur->List2 ? false : true);
+}
+
+__device__ static RC tclvarBestIndex(IVTable *tab, IIndexInfo *idxInfo)
+{
+	int ii;
+	for (ii = 0; ii < idxInfo->Constraints.length; ii++)
+	{
+		IIndexInfo::Constraint const *cons = &idxInfo->Constraints[ii];
+		if (cons->Column == 0 && cons->Usable && cons->OP == INDEX_CONSTRAINT_EQ)
+		{
+			IIndexInfo::ConstraintUsage *usage = &idxInfo->ConstraintUsages[ii];
+			usage->Omit = 0;
+			usage->ArgvIndex = 1;
+			return RC_OK;
+		}
+	}
+	for (ii = 0; ii < idxInfo->Constraints.length; ii++)
+	{
+		IIndexInfo::Constraint const *cons = &idxInfo->Constraints[ii];
+		if (cons->Column == 0 && cons->Usable && cons->OP == INDEX_CONSTRAINT_MATCH)
+		{
+			IIndexInfo::ConstraintUsage *usage = &idxInfo->ConstraintUsages[ii];
+			usage->Omit = 1;
+			usage->ArgvIndex = 1;
+			return RC_OK;
+		}
+	}
+	return RC_OK;
+}
+
+// A virtual table module that provides read-only access to a Tcl global variable namespace.
+__constant__ static ITableModule _tclvarModule = {
+	0,							// iVersion
+	tclvarConnect,
+	tclvarConnect,
+	tclvarBestIndex,
+	tclvarDisconnect, 
+	tclvarDisconnect,
+	tclvarOpen,					// Open - open a cursor
+	tclvarClose,				// Close - close a cursor
+	tclvarFilter,				// Filter - configure scan constraints
+	tclvarNext,					// Next - advance a cursor
+	tclvarEof,					// Eof - check for end of scan
+	tclvarColumn,				// Column - read data
+	tclvarRowid,				// Rowid - read data
+	nullptr,					// Update
+	nullptr,					// Begin
+	nullptr,					// Sync
+	nullptr,					// Commit
+	nullptr,					// Rollback
+	nullptr,					// FindMethod
+	nullptr,					// Rename
 };
 
-/*
-** Decode a pointer to an sqlite3 object.
-*/
-extern int GetDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
+// Decode a pointer to an sqlite3 object.
+__device__ extern int GetDbPointer(Jim_Interp *interp, const char *a, Context **ctx);
 
-/*
-** Register the echo virtual table module.
-*/
-static int register_tclvar_module(
-  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int objc,              /* Number of arguments */
-  Tcl_Obj *CONST objv[]  /* Command arguments */
-){
-  sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return JIM_ERROR;
-  }
-  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3_create_module(db, "tclvar", &tclvarModule, (void *)interp);
+// Register the echo virtual table module.
+__device__ static int register_tclvar_module(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
+	}
+	Context *ctx;
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+#ifndef OMIT_VIRTUALTABLE
+	VTable::CreateModule(ctx, "tclvar", &_tclvarModule, (void *)interp, nullptr);
 #endif
-  return JIM_OK;
+	return JIM_OK;
 }
 
 #endif
 
-
-/*
-** Register commands with the TCL interpreter.
-*/
-int Sqlitetesttclvar_Init(Tcl_Interp *interp){
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  static struct {
-     char *zName;
-     Tcl_ObjCmdProc *xProc;
-     void *clientData;
-  } aObjCmd[] = {
-     { "register_tclvar_module",   register_tclvar_module, 0 },
-  };
-  int i;
-  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
-        aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
-  }
+// Register commands with the TCL interpreter.
+__constant__ static struct {
+	char *Name;
+	Jim_CmdProc *Proc;
+	ClientData ClientData;
+} _objCmds[] = {
+	{ "register_tclvar_module", register_tclvar_module, nullptr },
+};
+__device__ int Sqlitetesttclvar_Init(Jim_Interp *interp)
+{
+#ifndef OMIT_VIRTUALTABLE
+	for (int i = 0; i < _lengthof(_objCmds); i++)
+		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, _objCmds[i].ClientData, nullptr);
 #endif
-  return JIM_OK;
+	return JIM_OK;
 }

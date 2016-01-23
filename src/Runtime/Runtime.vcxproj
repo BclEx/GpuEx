@@ -121,11 +121,8 @@
     <None Include="GpuEx-Runtime.Native.targets">
       <SubType>Designer</SubType>
     </None>
-    <Xml Include="GpuEx-Runtime.Native.xml_">
-      <SubType>Designer</SubType>
-    </Xml>
-    <None Include="_content\runtime.sample.cu" />
-    <None Include="_content\runtime.ganging.sample.cu" />
+    <None Include="_content\sample.runtime.cu" />
+    <None Include="_content\sample.runtime.ganging.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{821AFA21-3738-4DFC-985B-0F5C080E15E4}</ProjectGuid>

@@ -61,7 +61,7 @@ task Compile -depends Init {
 		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;LC=35;LD=V" /m
 		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=35;LD=V" /m
 	} else {
-		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD="
+		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cpuD;Platform=x64;LC=cpu;LD="
 		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;LC=30;LD="
 		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;LC=20;LD="
 	}
@@ -89,8 +89,8 @@ task Dependency -precondition { return $false } {
 	}
 }
 
-#task Package -depends Dependency, Compile, Test {
-task Package {
+task Package -depends Dependency, Compile, Test {
+#task Package {
 	$spec_files = @(Get-ChildItem $base_dir\src -include *.nuspec -recurse)
 	foreach ($spec in $spec_files)
 	{

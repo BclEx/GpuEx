@@ -17,6 +17,7 @@
 #include <Jim+EventLoop.h>
 #include <new.h>
 
+struct TestvfsBuffer;
 struct TestvfsFd
 {
 	VSystem *Vfs;				// The VFS
@@ -73,29 +74,7 @@ __device__ static void AllocPage(TestvfsBuffer *p, int page, int pagesize)
 }
 
 class TestVfsVSystem;
-struct errcode {
-	RC Code;
-	const char *Name;
-} _codes[] = {
-	{ RC_OK,     "SQLITE_OK"     },
-	{ RC_ERROR,  "SQLITE_ERROR"  },
-	{ RC_IOERR,  "SQLITE_IOERR"  },
-	{ RC_LOCKED, "SQLITE_LOCKED" },
-	{ RC_BUSY,   "SQLITE_BUSY"   },
-};
-__device__ static bool tvfsResultCode(TestVfsVSystem *p, RC *rc)
-{
-	const char *z = Jim_String(Jim_GetResult(p->interp));
-	for (int i = 0; i < _lengthof(_codes); i++)
-	{
-		if (!_strcmp(z, _codes[i].Name))
-		{
-			*rc = _codes[i].Code;
-			return true;
-		}
-	}
-	return false;
-}
+__device__ static bool tvfsResultCode(TestVfsVSystem *p, RC *rc);
 
 #define FAULT_INJECT_NONE       0
 #define FAULT_INJECT_TRANSIENT  1
@@ -162,70 +141,8 @@ public:
 		}
 	}
 
-	__device__ virtual VFile *_AttachFile(void *buffer) { return new (buffer) TestVfsVFile(); }
-	__device__ virtual RC Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags)
-	{
-		TestVfsVFile *testfile = (TestVfsVFile *)file;
-		TestvfsFd *fd = (TestvfsFd *)Jim_Alloc(sizeof(TestvfsFd) + SizeOsFile);
-		memset(fd, 0, sizeof(TestvfsFd) + SizeOsFile);
-		fd->Shm = nullptr;
-		fd->ShmId = nullptr;
-		fd->Filename = path;
-		fd->Vfs = this;
-		fd->Real = (VFile *)&fd[1];
-		memset(testfile, 0, sizeof(TestVfsVFile));
-		testfile->Fd = fd;
-
-		// Evaluate the Tcl script: 
-		//   SCRIPT xOpen FILENAME KEY-VALUE-ARGS
-		//
-		// If the script returns an SQLite error code other than SQLITE_OK, an error is returned to the caller. If it returns SQLITE_OK, the new
-		// connection is named "anon". Otherwise, the value returned by the script is used as the connection name.
-		RC rc;
-		Jim_Obj *id = nullptr;
-		Jim_ResetResult(interp);
-		if (Script && (Mask&TESTVFS_OPEN_MASK))
-		{
-			Jim_Obj *arg = Jim_NewListObj(interp, nullptr, 0);
-			Jim_IncrRefCount(arg);
-			if (flags&VSystem::OPEN_MAIN_DB)
-			{
-				const char *z = &path[_strlen(path)+1];
-				while (*z)
-				{
-					Jim_ListAppendElement(nullptr, arg, Jim_NewStringObj(interp, z, -1));
-					z += _strlen(z) + 1;
-					Jim_ListAppendElement(nullptr, arg, Jim_NewStringObj(interp, z, -1));
-					z += _strlen(z) + 1;
-				}
-			}
-			ExecTcl("xOpen", Jim_NewStringObj(interp, fd->Filename, -1), arg, nullptr, nullptr);
-			Jim_DecrRefCount(interp, arg);
-			if (tvfsResultCode(this, &rc))
-			{
-				if (rc != RC_OK) return rc;
-			}
-			else
-				id = Jim_GetResult(interp);
-		}
-
-		if ((Mask&TESTVFS_OPEN_MASK) && InjectIoerr()) return RC_IOERR;
-		if (InjectCantopenerr()) return RC_CANTOPEN;
-		if (InjectFullerr()) return RC_FULL;
-
-		if (!id)
-			id = Jim_NewStringObj(interp, "anon", -1);
-		Jim_IncrRefCount(id);
-		fd->ShmId = id;
-		Jim_ResetResult(interp);
-
-		rc = Parent->Open(path, fd->Real, flags, outFlags);
-		if (fd->Real->Opened)
-		{
-			file->Opened = true;
-		}
-		return rc;
-	}
+	__device__ virtual VFile *_AttachFile(void *buffer);
+	__device__ virtual RC Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags);
 	__device__ virtual RC Delete(const char *path, bool syncDirectory)
 	{
 		RC rc = RC_OK;
@@ -283,6 +200,30 @@ public:
 	__device__ virtual int Sleep(int microseconds) { return Parent->Sleep(microseconds); }
 	__device__ virtual RC CurrentTime(double *now) { return Parent->CurrentTime(now); }
 };
+
+struct errcode {
+	RC Code;
+	const char *Name;
+} _codes[] = {
+	{ RC_OK,     "SQLITE_OK"     },
+	{ RC_ERROR,  "SQLITE_ERROR"  },
+	{ RC_IOERR,  "SQLITE_IOERR"  },
+	{ RC_LOCKED, "SQLITE_LOCKED" },
+	{ RC_BUSY,   "SQLITE_BUSY"   },
+};
+__device__ static bool tvfsResultCode(TestVfsVSystem *p, RC *rc)
+{
+	const char *z = Jim_String(Jim_GetResult(p->interp));
+	for (int i = 0; i < _lengthof(_codes); i++)
+	{
+		if (!_strcmp(z, _codes[i].Name))
+		{
+			*rc = _codes[i].Code;
+			return true;
+		}
+	}
+	return false;
+}
 
 class TestVfsVFile : public VFile
 {
@@ -606,6 +547,72 @@ public:
 		return rc;
 	}
 };
+
+__device__ VFile *TestVfsVSystem::_AttachFile(void *buffer) { return new (buffer) TestVfsVFile(); }
+__device__ RC TestVfsVSystem::Open(const char *path, VFile *file, OPEN flags, OPEN *outFlags)
+{
+	TestVfsVFile *testfile = (TestVfsVFile *)file;
+	TestvfsFd *fd = (TestvfsFd *)Jim_Alloc(sizeof(TestvfsFd) + SizeOsFile);
+	memset(fd, 0, sizeof(TestvfsFd) + SizeOsFile);
+	fd->Shm = nullptr;
+	fd->ShmId = nullptr;
+	fd->Filename = path;
+	fd->Vfs = this;
+	fd->Real = (VFile *)&fd[1];
+	memset(testfile, 0, sizeof(TestVfsVFile));
+	testfile->Fd = fd;
+
+	// Evaluate the Tcl script: 
+	//   SCRIPT xOpen FILENAME KEY-VALUE-ARGS
+	//
+	// If the script returns an SQLite error code other than SQLITE_OK, an error is returned to the caller. If it returns SQLITE_OK, the new
+	// connection is named "anon". Otherwise, the value returned by the script is used as the connection name.
+	RC rc;
+	Jim_Obj *id = nullptr;
+	Jim_ResetResult(interp);
+	if (Script && (Mask&TESTVFS_OPEN_MASK))
+	{
+		Jim_Obj *arg = Jim_NewListObj(interp, nullptr, 0);
+		Jim_IncrRefCount(arg);
+		if (flags&VSystem::OPEN_MAIN_DB)
+		{
+			const char *z = &path[_strlen(path)+1];
+			while (*z)
+			{
+				Jim_ListAppendElement(nullptr, arg, Jim_NewStringObj(interp, z, -1));
+				z += _strlen(z) + 1;
+				Jim_ListAppendElement(nullptr, arg, Jim_NewStringObj(interp, z, -1));
+				z += _strlen(z) + 1;
+			}
+		}
+		ExecTcl("xOpen", Jim_NewStringObj(interp, fd->Filename, -1), arg, nullptr, nullptr);
+		Jim_DecrRefCount(interp, arg);
+		if (tvfsResultCode(this, &rc))
+		{
+			if (rc != RC_OK) return rc;
+		}
+		else
+			id = Jim_GetResult(interp);
+	}
+
+	if ((Mask&TESTVFS_OPEN_MASK) && InjectIoerr()) return RC_IOERR;
+	if (InjectCantopenerr()) return RC_CANTOPEN;
+	if (InjectFullerr()) return RC_FULL;
+
+	if (!id)
+		id = Jim_NewStringObj(interp, "anon", -1);
+	Jim_IncrRefCount(id);
+	fd->ShmId = id;
+	Jim_ResetResult(interp);
+
+	rc = Parent->Open(path, fd->Real, flags, outFlags);
+	if (fd->Real->Opened)
+	{
+		file->Opened = true;
+	}
+	return rc;
+}
+
 
 __device__ static int testvfs_obj_cmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
