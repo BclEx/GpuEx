@@ -84,14 +84,14 @@ namespace CORE_NAME
 
 #pragma region Interface
 
-	__device__ static IPCache *_pcache;
-	__device__ extern IPCache *new_PCache1();
+	__device__ static IPCache *_pcache = nullptr;
 
-	__device__ RC PCache::Initialize() 
+	__device__ RC PCache::Initialize(IPCache ***global)
 	{ 
+		*global = &_pcache;
 		if (_pcache == nullptr)
-			_pcache = new_PCache1();
-		return _pcache->Init(); 
+			PCacheSetDefault();
+		return _pcache->Init();
 	}
 	__device__ void PCache::Shutdown()
 	{
@@ -457,4 +457,10 @@ namespace CORE_NAME
 	}
 
 #pragma endregion
+
+	__device__ void PCacheSetDefault()
+	{
+		__device__ extern IPCache *GetPCache1();
+		_pcache = GetPCache1();
+	}
 }

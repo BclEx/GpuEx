@@ -156,7 +156,7 @@ namespace CORE_NAME
 		_memset(hash, 0, sizeof(g_globalFunctions));
 		Func::RegisterGlobalFunctions();
 		if (!Main_GlobalStatics.IsPCacheInit)
-			rc = PCache::Initialize();
+			rc = PCache::Initialize(&Main_GlobalStatics.PCache);
 		if (rc == RC_OK)
 		{
 			Main_GlobalStatics.IsPCacheInit = true;
@@ -222,12 +222,12 @@ namespace CORE_NAME
 			rc = RC_ERROR;
 			break; }
 		case CONFIG_PCACHE2: { // Specify an alternative page cache implementation
-			//Main_GlobalStatics.PCache2 = *_va_arg(args, sqlite3_pcache_methods2*);
+			*Main_GlobalStatics.PCache = _va_arg(args, IPCache*);
 			break; }
 		case CONFIG_GETPCACHE2: {
-			//if (Main_GlobalStatics.Pcache2.Init == 0)
-			//	PCacheSetDefault();
-			//*_va_arg(args, sqlite3_pcache_methods2*) = SysEx_GlobalStatics.pcache2;
+			if (!Main_GlobalStatics.PCache)
+				PCacheSetDefault();
+			*_va_arg(args, IPCache*) = **Main_GlobalStatics.PCache;
 			break; }
 		case CONFIG_COVERING_INDEX_SCAN: {
 			Main_GlobalStatics.UseCis = _va_arg(args, bool);

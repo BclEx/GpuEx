@@ -8,10 +8,10 @@
 
 // Convert binary to hex.  The input zBuf[] contains N bytes of binary data.  zBuf[] is 2*n+1 bytes long.  Overwrite zBuf[]
 // with a hexadecimal representation of its original binary input.
-__device__ void sqlite3TestBinToHex(unsigned char *buf, int value)
+__device__ void sqlite3TestBinToHex(char *buf, int value)
 {
-	const unsigned char hex[] = "0123456789ABCDEF";
-	unsigned char c;
+	const char hex[] = "0123456789ABCDEF";
+	char c;
 	int i = value*2;
 	buf[i--] = 0;
 	for (int j = value-1; j >= 0; j--)
@@ -25,7 +25,7 @@ __device__ void sqlite3TestBinToHex(unsigned char *buf, int value)
 
 // Convert hex to binary.  The input zIn[] contains N bytes of hexadecimal.  Convert this into binary and write aOut[] with
 // the binary data.  Spaces in the original input are ignored. Return the number of bytes of binary rendered.
-__device__ int sqlite3TestHexToBin(const unsigned char *in_, int value, unsigned char *out_)
+__device__ int sqlite3TestHexToBin(const char *in_, int value, char *out_)
 {
 	const unsigned char map[] = {
 		0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
@@ -72,7 +72,7 @@ __device__ static int hexio_read(ClientData clientData, Jim_Interp *interp, int 
 	if (Jim_GetInt(interp, args[2], &offset)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[3], &amt)) return JIM_ERROR;
 	const char *file = Jim_String(args[1]);
-	unsigned char *buf = (unsigned char *)_alloc(amt*2+1 );
+	char *buf = (char *)_alloc(amt*2+1 );
 	if (!buf)
 		return JIM_ERROR;
 	FILE *in_ = _fopen(file, "rb");
@@ -107,8 +107,8 @@ __device__ static int hexio_write(ClientData clientData, Jim_Interp *interp, int
 	if (Jim_GetInt(interp, args[2], &offset)) return JIM_ERROR;
 	const char *file = Jim_String(args[1]);
 	int inLength;
-	const unsigned char *in_ = (const unsigned char *)Jim_GetString(args[3], &inLength);
-	unsigned char *out_ = (unsigned char *)_alloc(inLength/2);
+	const char *in_ = (const char *)Jim_GetString(args[3], &inLength);
+	char *out_ = (char *)_alloc(inLength/2);
 	if (!out_)
 		return JIM_ERROR;
 	int outLength = sqlite3TestHexToBin(in_, inLength, out_);
@@ -138,11 +138,11 @@ __device__ static int hexio_get_int(ClientData clientData, Jim_Interp *interp, i
 		return JIM_ERROR;
 	}
 	int inLength;
-	const unsigned char *in_ = (const unsigned char *)Jim_GetString(args[1], &inLength);
-	unsigned char *out_ = (unsigned char *)_alloc(inLength/2);
+	const char *in_ = (const char *)Jim_GetString(args[1], &inLength);
+	char *out_ = (char *)_alloc(inLength/2);
 	if (!out_)
 		return JIM_ERROR;
-	unsigned char num[4];
+	char num[4];
 	int outLength = sqlite3TestHexToBin(in_, inLength, out_);
 	if (outLength >= 4)
 		_memcpy(num, out_, 4);
@@ -168,7 +168,7 @@ __device__ static int hexio_render_int16(ClientData clientData, Jim_Interp *inte
 	}
 	int val;
 	if (Jim_GetInt(interp, args[1], &val)) return JIM_ERROR;
-	unsigned char num[10];
+	char num[10];
 	num[0] = val>>8;
 	num[1] = val;
 	sqlite3TestBinToHex(num, 2);
@@ -188,7 +188,7 @@ __device__ static int hexio_render_int32(ClientData clientData, Jim_Interp *inte
 	}
 	int val;
 	if (Jim_GetInt(interp, args[1], &val)) return JIM_ERROR;
-	unsigned char num[10];
+	char num[10];
 	num[0] = val>>24;
 	num[1] = val>>16;
 	num[2] = val>>8;
@@ -208,11 +208,11 @@ __device__ static int utf8_to_utf8(ClientData clientData, Jim_Interp *interp, in
 		return JIM_ERROR;
 	}
 	int n;
-	const unsigned char *orig = (unsigned char *)Jim_GetString(args[1], &n);
-	unsigned char *z = (unsigned char *)_alloc(n+3);
+	const char *orig = (char *)Jim_GetString(args[1], &n);
+	char *z = (char *)_alloc(n+3);
 	n = sqlite3TestHexToBin(orig, n, z);
 	z[n] = 0;
-	int outLength = _utf8to8(z);
+	int outLength = _utf8to8((unsigned char *)z);
 	sqlite3TestBinToHex(z, outLength);
 	Jim_AppendResult(interp, (char*)z, nullptr);
 	_free(z);

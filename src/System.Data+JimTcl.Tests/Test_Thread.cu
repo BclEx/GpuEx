@@ -1,645 +1,457 @@
-/*
-** 2007 September 9
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-**
-** This file contains the implementation of some Tcl commands used to
-** test that sqlite3 database handles may be concurrently accessed by 
-** multiple threads. Right now this only works on unix.
-*/
+// This file contains the implementation of some Tcl commands used to test that sqlite3 database handles may be concurrently accessed by 
+// multiple threads. Right now this only works on unix.
 
-#include "sqliteInt.h"
-#include <tcl.h>
+#include <Core+Vdbe\Core+Vdbe.cu.h>
+#include <Jim.h>
+#include <Jim+EventLoop.h>
 
-#if SQLITE_THREADSAFE
-
+#ifdef _THREADSAFE
 #include <errno.h>
-
 #if !defined(_MSC_VER)
 #include <unistd.h>
 #endif
 
-/*
-** One of these is allocated for each thread created by [sqlthread spawn].
-*/
+// One of these is allocated for each thread created by [sqlthread spawn].
 typedef struct SqlThread SqlThread;
-struct SqlThread {
-  Tcl_ThreadId parent;     /* Thread id of parent thread */
-  Tcl_Interp *interp;      /* Parent interpreter */
-  char *zScript;           /* The script to execute. */
-  char *zVarname;          /* Varname in parent script */
+struct SqlThread
+{
+	Jim_ThreadId parent;     // Thread id of parent thread
+	Jim_Interp *interp;      // Parent interpreter
+	char *Script;           // The script to execute.
+	char *Varname;          // Varname in parent script
 };
 
-/*
-** A custom Tcl_Event type used by this module. When the event is
-** handled, script zScript is evaluated in interpreter interp. If
-** the evaluation throws an exception (returns JIM_ERROR), then the
-** error is handled by Tcl_BackgroundError(). If no error occurs,
-** the result is simply discarded.
-*/
+// A custom Tcl_Event type used by this module. When the event is handled, script zScript is evaluated in interpreter interp. If
+// the evaluation throws an exception (returns JIM_ERROR), then the error is handled by Tcl_BackgroundError(). If no error occurs,
+// the result is simply discarded.
 typedef struct EvalEvent EvalEvent;
-struct EvalEvent {
-  Tcl_Event base;          /* Base class of type Tcl_Event */
-  char *zScript;           /* The script to execute. */
-  Tcl_Interp *interp;      /* The interpreter to execute it in. */
+struct EvalEvent
+{
+	Jim_Event base;          // Base class of type Tcl_Event
+	char *Script;           // The script to execute.
+	Jim_Interp *interp;      // The interpreter to execute it in.
 };
 
-static Tcl_ObjCmdProc sqlthread_proc;
-static Tcl_ObjCmdProc clock_seconds_proc;
-#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
-static Tcl_ObjCmdProc blocking_step_proc;
-static Tcl_ObjCmdProc blocking_prepare_v2_proc;
+__device__ static Jim_CmdProc _sqlthread_proc;
+__device__ static Jim_CmdProc _clock_seconds_proc;
+#if OS_UNIX && defined(ENABLE_UNLOCK_NOTIFY)
+__device__ static Jim_CmdProc _blocking_step_proc;
+__device__ static Jim_CmdProc _blocking_prepare_v2_proc;
 #endif
-int Sqlitetest1_Init(Tcl_Interp *);
-int Sqlite3_Init(Tcl_Interp *);
+__device__ int Sqlitetest1_Init(Jim_Interp *);
+__device__ int Sqlite3_Init(Jim_Interp *);
 
-/* Functions from test1.c */
-void *sqlite3TestTextToPtr(const char *);
-const char *sqlite3TestErrorName(int);
-int GetDbPointer(Tcl_Interp *, const char *, sqlite3 **);
-int sqlite3TestMakePointerStr(Tcl_Interp *, char *, void *);
-int sqlite3TestErrCode(Tcl_Interp *, sqlite3 *, int);
+// Functions from test1.c
+__device__ void *sqlite3TestTextToPtr(const char *);
+__device__ const char *sqlite3TestErrorName(int);
+__device__ int GetDbPointer(Jim_Interp *, const char *, Context **);
+__device__ int sqlite3TestMakePointerStr(Jim_Interp *, char *, void *);
+__device__ int sqlite3TestErrCode(Jim_Interp *, Context *, int);
 
-/*
-** Handler for events of type EvalEvent.
-*/
-static int tclScriptEvent(Tcl_Event *evPtr, int flags){
-  int rc;
-  EvalEvent *p = (EvalEvent *)evPtr;
-  rc = Tcl_Eval(p->interp, p->zScript);
-  if( rc!=JIM_OK ){
-    Tcl_BackgroundError(p->interp);
-  }
-  UNUSED_PARAMETER(flags);
-  return 1;
+// Handler for events of type EvalEvent.
+__device__ static int tclScriptEvent(Jim_Event *evPtr, int flags)
+{
+	EvalEvent *p = (EvalEvent *)evPtr;
+	int rc = Jim_Eval(p->interp, p->Script);
+	if (rc != JIM_OK)
+		Tcl_BackgroundError(p->interp);
+	return 1;
 }
 
-/*
-** Register an EvalEvent to evaluate the script pScript in the
-** parent interpreter/thread of SqlThread p.
-*/
-static void postToParent(SqlThread *p, Tcl_Obj *pScript){
-  EvalEvent *pEvent;
-  char *zMsg;
-  int nMsg;
-
-  zMsg = Tcl_GetStringFromObj(pScript, &nMsg); 
-  pEvent = (EvalEvent *)ckalloc(sizeof(EvalEvent)+nMsg+1);
-  pEvent->base.nextPtr = 0;
-  pEvent->base.proc = tclScriptEvent;
-  pEvent->zScript = (char *)&pEvent[1];
-  memcpy(pEvent->zScript, zMsg, nMsg+1);
-  pEvent->interp = p->interp;
-
-  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, JIM_QUEUE_TAIL);
-  Tcl_ThreadAlert(p->parent);
+// Register an EvalEvent to evaluate the script pScript in the parent interpreter/thread of SqlThread p.
+__device__ static void postToParent(SqlThread *p, Jim_Obj *script)
+{
+	int msgLength;
+	char *msg = Jim_GetString(script, &msgLength); 
+	EvalEvent *event_ = (EvalEvent *)_alloc(sizeof(EvalEvent)+msgLength+1);
+	event_->base.nextPtr = 0;
+	event_->base.proc = tclScriptEvent;
+	event_->Script = (char *)&event_[1];
+	memcpy(event_->Script, msg, msgLength+1);
+	event_->interp = p->interp;
+	Jim_ThreadQueueEvent(p->parent, (Jim_Event *)event_, JIM_QUEUE_TAIL);
+	Jim_ThreadAlert(p->parent);
 }
 
-/*
-** The main function for threads created with [sqlthread spawn].
-*/
-static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
-  Tcl_Interp *interp;
-  Tcl_Obj *pRes;
-  Tcl_Obj *pList;
-  int rc;
-  SqlThread *p = (SqlThread *)pSqlThread;
-  extern int Sqlitetest_mutex_Init(Tcl_Interp*);
-
-  interp = Tcl_CreateInterp();
-  Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
-  Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, pSqlThread, 0);
-#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
-  Tcl_CreateObjCommand(interp, "sqlite3_blocking_step", blocking_step_proc,0,0);
-  Tcl_CreateObjCommand(interp, 
-      "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, 0);
-  Tcl_CreateObjCommand(interp, 
-      "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, 0, 0);
+// The main function for threads created with [sqlthread spawn].
+__device__ static Tcl_ThreadCreateType tclScriptThread(ClientData sqlThread)
+{
+	__device__ extern int Sqlitetest_mutex_Init(Jim_Interp *);
+	SqlThread *p = (SqlThread *)sqlThread;
+	Jim_Interp *interp = Jim_CreateInterp();
+	Jim_CreateCommand(interp, "clock_seconds", clock_seconds_proc, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlthread", sqlthread_proc, sqlThread, nullptr);
+#if OS_UNIX && defined(ENABLE_UNLOCK_NOTIFY)
+	Jim_CreateCommand(interp, "sqlite3_blocking_step", blocking_step_proc, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, nullptr, nullptr);
 #endif
-  Sqlitetest1_Init(interp);
-  Sqlitetest_mutex_Init(interp);
-  Sqlite3_Init(interp);
+	Sqlitetest1_Init(interp);
+	Sqlitetest_mutex_Init(interp);
+	Sqlite3_Init(interp);
 
-  rc = Tcl_Eval(interp, p->zScript);
-  pRes = Tcl_GetObjResult(interp);
-  pList = Tcl_NewObj();
-  Tcl_IncrRefCount(pList);
-  Tcl_IncrRefCount(pRes);
+	int rc = Jim_Eval(interp, p->Script);
+	Jim_Obj *res = Jim_GetResult(interp);
+	Jim_Obj *list = Jim_NewListObj(interp, nullptr, 0);
+	Jim_IncrRefCount(list);
+	Jim_IncrRefCount(res);
+	if (rc != JIM_OK)
+	{
+		Jim_ListAppendElement(interp, list, Jim_NewStringObj(interp, "error", -1));
+		Jim_ListAppendElement(interp, list, res);
+		postToParent(p, list);
+		Jim_DecrRefCount(interp, list);
+		list = Jim_NewListObj(interp, nullptr, 0);
+	}
+	Jim_ListAppendElement(interp, list, Jim_NewStringObj(interp, "set", -1));
+	Jim_ListAppendElement(interp, list, Jim_NewStringObj(interp, p->Varname, -1));
+	Jim_ListAppendElement(interp, list, res);
+	postToParent(p, list);
 
-  if( rc!=JIM_OK ){
-    Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj("error", -1));
-    Tcl_ListObjAppendElement(interp, pList, pRes);
-    postToParent(p, pList);
-    Tcl_DecrRefCount(pList);
-    pList = Tcl_NewObj();
-  }
-
-  Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj("set", -1));
-  Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj(p->zVarname, -1));
-  Tcl_ListObjAppendElement(interp, pList, pRes);
-  postToParent(p, pList);
-
-  ckfree((void *)p);
-  Tcl_DecrRefCount(pList);
-  Tcl_DecrRefCount(pRes);
-  Tcl_DeleteInterp(interp);
-  while( Tcl_DoOneEvent(JIM_ALL_EVENTS|JIM_DONT_WAIT) );
-  Tcl_ExitThread(0);
-  JIM_THREAD_CREATE_RETURN;
+	_free((void *)p);
+	Jim_DecrRefCount(interp, list);
+	Jim_DecrRefCount(interp, res);
+	Jim_DeleteInterp(interp);
+	while (Tcl_DoOneEvent(JIM_ALL_EVENTS | JIM_DONT_WAIT));
+	Jim_ExitThread(0);
+	JIM_THREAD_CREATE_RETURN;
 }
 
-/*
-** sqlthread spawn VARNAME SCRIPT
-**
-**     Spawn a new thread with its own Tcl interpreter and run the
-**     specified SCRIPT(s) in it. The thread terminates after running
-**     the script. The result of the script is stored in the variable
-**     VARNAME.
-**
-**     The caller can wait for the script to terminate using [vwait VARNAME].
-*/
-static int sqlthread_spawn(
-  ClientData clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  Tcl_ThreadId x;
-  SqlThread *pNew;
-  int rc;
+// sqlthread spawn VARNAME SCRIPT
+//     Spawn a new thread with its own Tcl interpreter and run the specified SCRIPT(s) in it. The thread terminates after running
+//     the script. The result of the script is stored in the variable VARNAME.
+//     The caller can wait for the script to terminate using [vwait VARNAME].
+__device__ static int sqlthread_spawn(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	// Parameters for thread creation
+	const int stack = JIM_THREAD_STACK_DEFAULT;
+	const int flags = JIM_THREAD_NOFLAGS;
+	_assert(argc == 4);
+	int varnameLength, scriptLength;
+	const char *varname = Jim_GetString(args[2], &varnameLength);
+	const char *script = Jim_GetString(args[3], &scriptLength);
 
-  int nVarname; char *zVarname;
-  int nScript; char *zScript;
+	SqlThread *new_ = (SqlThread *)ckalloc(sizeof(SqlThread)+nVarname+nScript+2);
+	new_->zVarname = (char *)&new_[1];
+	new_->zScript = (char *)&new_->zVarname[nVarname+1];
+	memcpy(new_->zVarname, zVarname, nVarname+1);
+	memcpy(new_->zScript, zScript, nScript+1);
+	new_->parent = Tcl_GetCurrentThread();
+	new_->interp = interp;
 
-  /* Parameters for thread creation */
-  const int nStack = JIM_THREAD_STACK_DEFAULT;
-  const int flags = JIM_THREAD_NOFLAGS;
-
-  assert(objc==4);
-  UNUSED_PARAMETER(clientData);
-  UNUSED_PARAMETER(objc);
-
-  zVarname = Tcl_GetStringFromObj(objv[2], &nVarname);
-  zScript = Tcl_GetStringFromObj(objv[3], &nScript);
-
-  pNew = (SqlThread *)ckalloc(sizeof(SqlThread)+nVarname+nScript+2);
-  pNew->zVarname = (char *)&pNew[1];
-  pNew->zScript = (char *)&pNew->zVarname[nVarname+1];
-  memcpy(pNew->zVarname, zVarname, nVarname+1);
-  memcpy(pNew->zScript, zScript, nScript+1);
-  pNew->parent = Tcl_GetCurrentThread();
-  pNew->interp = interp;
-
-  rc = Tcl_CreateThread(&x, tclScriptThread, (void *)pNew, nStack, flags);
-  if( rc!=JIM_OK ){
-    Tcl_AppendResult(interp, "Error in Tcl_CreateThread()", 0);
-    ckfree((char *)pNew);
-    return JIM_ERROR;
-  }
-
-  return JIM_OK;
+	Tcl_ThreadId x;
+	int rc = Jim_CreateThread(&x, tclScriptThread, (void *)new_, stack, flags);
+	if (rc != JIM_OK)
+	{
+		Jim_AppendResult(interp, "Error in Tcl_CreateThread()", nullptr);
+		_free((char *)new_);
+		return JIM_ERROR;
+	}
+	return JIM_OK;
 }
 
-/*
-** sqlthread parent SCRIPT
-**
-**     This can be called by spawned threads only. It sends the specified
-**     script back to the parent thread for execution. The result of
-**     evaluating the SCRIPT is returned. The parent thread must enter
-**     the event loop for this to work - otherwise the caller will
-**     block indefinitely.
-**
-**     NOTE: At the moment, this doesn't work. FIXME.
-*/
-static int sqlthread_parent(
-  ClientData clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  EvalEvent *pEvent;
-  char *zMsg;
-  int nMsg;
-  SqlThread *p = (SqlThread *)clientData;
-
-  assert(objc==3);
-  UNUSED_PARAMETER(objc);
-
-  if( p==0 ){
-    Tcl_AppendResult(interp, "no parent thread", 0);
-    return JIM_ERROR;
-  }
-
-  zMsg = Tcl_GetStringFromObj(objv[2], &nMsg);
-  pEvent = (EvalEvent *)ckalloc(sizeof(EvalEvent)+nMsg+1);
-  pEvent->base.nextPtr = 0;
-  pEvent->base.proc = tclScriptEvent;
-  pEvent->zScript = (char *)&pEvent[1];
-  memcpy(pEvent->zScript, zMsg, nMsg+1);
-  pEvent->interp = p->interp;
-  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, JIM_QUEUE_TAIL);
-  Tcl_ThreadAlert(p->parent);
-
-  return JIM_OK;
+// sqlthread parent SCRIPT
+//     This can be called by spawned threads only. It sends the specified script back to the parent thread for execution. The result of
+//     evaluating the SCRIPT is returned. The parent thread must enter the event loop for this to work - otherwise the caller will
+//     block indefinitely.
+//
+//     NOTE: At the moment, this doesn't work. FIXME.
+__device__ static int sqlthread_parent(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	_assert(argc == 3);
+	SqlThread *p = (SqlThread *)clientData;
+	if (!p)
+	{
+		Jim_AppendResult(interp, "no parent thread", nullptr);
+		return JIM_ERROR;
+	}
+	int msgLength;
+	char *msg = Jim_GetString(args[2], &nMsg);
+	EvalEvent *event_ = (EvalEvent *)_alloc(sizeof(EvalEvent)+msgLength+1);
+	event_->base.nextPtr = 0;
+	event_->base.proc = tclScriptEvent;
+	event_->Script = (char *)&event_[1];
+	_memcpy(event_->Script, msg, msgLength+1);
+	event_->interp = p->interp;
+	Jim_ThreadQueueEvent(p->parent, (Jim_Event *)event_, JIM_QUEUE_TAIL);
+	Jim_ThreadAlert(p->parent);
+	return JIM_OK;
 }
 
-static int xBusy(void *pArg, int nBusy){
-  UNUSED_PARAMETER(pArg);
-  UNUSED_PARAMETER(nBusy);
-  sqlite3_sleep(50);
-  return 1;             /* Try again... */
+__device__ static int xBusy(void *arg, int busy)
+{
+	_sleep(50);
+	return 1; // Try again...
 }
 
-/*
-** sqlthread open
-**
-**     Open a database handle and return the string representation of
-**     the pointer value.
-*/
-static int sqlthread_open(
-  ClientData clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int sqlite3TestMakePointerStr(Tcl_Interp *interp, char *zPtr, void *p);
-
-  const char *zFilename;
-  sqlite3 *db;
-  char zBuf[100];
-  extern void Md5_Register(sqlite3*);
-
-  UNUSED_PARAMETER(clientData);
-  UNUSED_PARAMETER(objc);
-
-  zFilename = Tcl_GetString(objv[2]);
-  sqlite3_open(zFilename, &db);
-#ifdef SQLITE_HAS_CODEC
-  if( db && objc>=4 ){
-    const char *zKey;
-    int nKey;
-    int rc;
-    zKey = Tcl_GetStringFromObj(objv[3], &nKey);
-    rc = sqlite3_key(db, zKey, nKey);
-    if( rc!=SQLITE_OK ){
-      char *zErrMsg = sqlite3_mprintf("error %d: %s", rc, sqlite3_errmsg(db));
-      sqlite3_close(db);
-      Tcl_AppendResult(interp, zErrMsg, (char*)0);
-      sqlite3_free(zErrMsg);
-      return JIM_ERROR;
-    }
-  }
+// sqlthread open
+//     Open a database handle and return the string representation of the pointer value.
+__device__ static int sqlthread_open(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	__device__ extern int sqlite3TestMakePointerStr(Jim_Interp *interp, char *ptr, void *p);
+	__device__ extern void Md5_Register(Context *);
+	const char *filename = Jim_String(args[2]);
+	Context *ctx;
+	Main::Open(filename, &ctx);
+#ifdef HAS_CODEC
+	if (ctx && argc >= 4)
+	{
+		int keyLength;
+		const char *key = Jim_GetString(objv[3], &keyLength);
+		int rc = sqlite3_key(ctx, key, keyLength);
+		if (rc != RC_OK)
+		{
+			char *errMsg = sqlite3_mprintf("error %d: %s", rc, Main::Errmsg(ctx));
+			Main::Close(ctx);
+			Jim_AppendResult(interp, errMsg, nullptr);
+			_free(errMsg);
+			return JIM_ERROR;
+		}
+	}
 #endif
-  Md5_Register(db);
-  sqlite3_busy_handler(db, xBusy, 0);
-  
-  if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return JIM_ERROR;
-  Tcl_AppendResult(interp, zBuf, 0);
-
-  return JIM_OK;
+	Md5_Register(ctx);
+	Main::BusyHandler(ctx, xBusy, nullptr);
+	char buf[100];
+	if (sqlite3TestMakePointerStr(interp, buf, ctx)) return JIM_ERROR;
+	Jim_AppendResult(interp, buf, nullptr);
+	return JIM_OK;
 }
 
 
-/*
-** sqlthread open
-**
-**     Return the current thread-id (Tcl_GetCurrentThread()) cast to
-**     an integer.
-*/
-static int sqlthread_id(
-  ClientData clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  Tcl_ThreadId id = Tcl_GetCurrentThread();
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(SQLITE_PTR_TO_INT(id)));
-  UNUSED_PARAMETER(clientData);
-  UNUSED_PARAMETER(objc);
-  UNUSED_PARAMETER(objv);
-  return JIM_OK;
+// sqlthread open
+//     Return the current thread-id (Tcl_GetCurrentThread()) cast to an integer.
+__device__ static int sqlthread_id(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	Jim_ThreadId id = Jim_GetCurrentThread();
+	Jim_SetResult(interp, Jim_NewIntObj(PTR_TO_INT(id)));
+	return JIM_OK;
+}
+
+// Dispatch routine for the sub-commands of [sqlthread].
+__device__ static int sqlthread_proc(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	struct SubCommand {
+		char *Name;
+		Jim_CmdProc *Proc;
+		int Args;
+		char *Usage;
+	} subs[] = {
+		{ "parent", sqlthread_parent, 1, "SCRIPT" },
+		{ "spawn",  sqlthread_spawn,  2, "VARNAME SCRIPT" },
+		{ "open",   sqlthread_open,   1, "DBNAME" },
+		{ "id",     sqlthread_id,     0, "" },
+		{ nullptr, nullptr, 0, nullptr }
+	};
+	if (argc < 2)
+	{
+		Tcl_WrongNumArgs(interp, 1, args, "SUB-COMMAND");
+		return JIM_ERROR;
+	}
+	int index;
+	int rc = Jim_GetEnumFromStruct(interp, args[1], (const void **)subs, sizeof(subs[0]), &index, "sub-command", 0);
+	if (rc != JIM_OK) return rc;
+	struct SubCommand *sub = &subs[index];
+	if (argc < (sub->Args+2))
+	{
+		Jim_WrongNumArgs(interp, 2, args, sub->Usage);
+		return JIM_ERROR;
+	}
+	return sub->Proc(clientData, interp, argc, args);
+}
+
+// The [clock_seconds] command. This is more or less the same as the regular tcl [clock seconds], except that it is available in testfixture
+// when linked against both Tcl 8.4 and 8.5. Because [clock seconds] is implemented as a script in Tcl 8.5, it is not usually available to testfixture.
+__device__ static int clock_seconds_proc(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	Jim_Time now;
+	Jim_GetTime(&now);
+	Jim_SetResult(interp, Jim_NewIntObj(interp, now.sec));
+	return JIM_OK;
 }
 
 
-/*
-** Dispatch routine for the sub-commands of [sqlthread].
-*/
-static int sqlthread_proc(
-  ClientData clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  struct SubCommand {
-    char *zName;
-    Tcl_ObjCmdProc *xProc;
-    int nArg;
-    char *zUsage;
-  } aSub[] = {
-    {"parent", sqlthread_parent, 1, "SCRIPT"},
-    {"spawn",  sqlthread_spawn,  2, "VARNAME SCRIPT"},
-    {"open",   sqlthread_open,   1, "DBNAME"},
-    {"id",     sqlthread_id,     0, ""},
-    {0, 0, 0}
-  };
-  struct SubCommand *pSub;
-  int rc;
-  int iIndex;
+#pragma region blocking step
+// This block contains the implementation of the [sqlite3_blocking_step] command available to threads created by [sqlthread spawn] commands. It
+// is only available on UNIX for now. This is because pthread condition variables are used.
+//
+// The source code for the C functions sqlite3_blocking_step(), blocking_step_notify() and the structure UnlockNotification is
+// automatically extracted from this file and used as part of the documentation for the sqlite3_unlock_notify() API function. This
+// should be considered if these functions are to be extended (i.e. to support windows) in the future.
+#if OS_UNIX && defined(ENABLE_UNLOCK_NOTIFY)
 
-  if( objc<2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND");
-    return JIM_ERROR;
-  }
-
-  rc = Tcl_GetIndexFromObjStruct(
-      interp, objv[1], aSub, sizeof(aSub[0]), "sub-command", 0, &iIndex
-  );
-  if( rc!=JIM_OK ) return rc;
-  pSub = &aSub[iIndex];
-
-  if( objc<(pSub->nArg+2) ){
-    Tcl_WrongNumArgs(interp, 2, objv, pSub->zUsage);
-    return JIM_ERROR;
-  }
-
-  return pSub->xProc(clientData, interp, objc, objv);
-}
-
-/*
-** The [clock_seconds] command. This is more or less the same as the
-** regular tcl [clock seconds], except that it is available in testfixture
-** when linked against both Tcl 8.4 and 8.5. Because [clock seconds] is
-** implemented as a script in Tcl 8.5, it is not usually available to
-** testfixture.
-*/ 
-static int clock_seconds_proc(
-  ClientData clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  Tcl_Time now;
-  Tcl_GetTime(&now);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(now.sec));
-  UNUSED_PARAMETER(clientData);
-  UNUSED_PARAMETER(objc);
-  UNUSED_PARAMETER(objv);
-  return JIM_OK;
-}
-
-/*************************************************************************
-** This block contains the implementation of the [sqlite3_blocking_step]
-** command available to threads created by [sqlthread spawn] commands. It
-** is only available on UNIX for now. This is because pthread condition
-** variables are used.
-**
-** The source code for the C functions sqlite3_blocking_step(),
-** blocking_step_notify() and the structure UnlockNotification is
-** automatically extracted from this file and used as part of the
-** documentation for the sqlite3_unlock_notify() API function. This
-** should be considered if these functions are to be extended (i.e. to 
-** support windows) in the future.
-*/ 
-#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
-
-/* BEGIN_SQLITE_BLOCKING_STEP */
-/* This example uses the pthreads API */
+// This example uses the pthreads API
 #include <pthread.h>
 
-/*
-** A pointer to an instance of this structure is passed as the user-context
-** pointer when registering for an unlock-notify callback.
-*/
+// A pointer to an instance of this structure is passed as the user-context pointer when registering for an unlock-notify callback.
 typedef struct UnlockNotification UnlockNotification;
-struct UnlockNotification {
-  int fired;                         /* True after unlock event has occurred */
-  pthread_cond_t cond;               /* Condition variable to wait on */
-  pthread_mutex_t mutex;             /* Mutex to protect structure */
+struct UnlockNotification
+{
+	bool Fired;                         // True after unlock event has occurred
+	pthread_cond_t cond;				// Condition variable to wait on
+	pthread_mutex_t mutex;				// Mutex to protect structure
 };
 
-/*
-** This function is an unlock-notify callback registered with SQLite.
-*/
-static void unlock_notify_cb(void **apArg, int nArg){
-  int i;
-  for(i=0; i<nArg; i++){
-    UnlockNotification *p = (UnlockNotification *)apArg[i];
-    pthread_mutex_lock(&p->mutex);
-    p->fired = 1;
-    pthread_cond_signal(&p->cond);
-    pthread_mutex_unlock(&p->mutex);
-  }
+// This function is an unlock-notify callback registered with SQLite.
+__device__ static void unlock_notify_cb(void **args, int argc)
+{
+	for (int i = 0; i < argc; i++)
+	{
+		UnlockNotification *p = (UnlockNotification *)args[i];
+		pthread_mutex_lock(&p->mutex);
+		p->Fired = 1;
+		pthread_cond_signal(&p->cond);
+		pthread_mutex_unlock(&p->mutex);
+	}
 }
 
-/*
-** This function assumes that an SQLite API call (either sqlite3_prepare_v2() 
-** or sqlite3_step()) has just returned SQLITE_LOCKED. The argument is the
-** associated database connection.
-**
-** This function calls sqlite3_unlock_notify() to register for an 
-** unlock-notify callback, then blocks until that callback is delivered 
-** and returns SQLITE_OK. The caller should then retry the failed operation.
-**
-** Or, if sqlite3_unlock_notify() indicates that to block would deadlock 
-** the system, then this function returns SQLITE_LOCKED immediately. In 
-** this case the caller should not retry the operation and should roll 
-** back the current transaction (if any).
-*/
-static int wait_for_unlock_notify(sqlite3 *db){
-  int rc;
-  UnlockNotification un;
-
-  /* Initialize the UnlockNotification structure. */
-  un.fired = 0;
-  pthread_mutex_init(&un.mutex, 0);
-  pthread_cond_init(&un.cond, 0);
-
-  /* Register for an unlock-notify callback. */
-  rc = sqlite3_unlock_notify(db, unlock_notify_cb, (void *)&un);
-  assert( rc==SQLITE_LOCKED || rc==SQLITE_OK );
-
-  /* The call to sqlite3_unlock_notify() always returns either SQLITE_LOCKED 
-  ** or SQLITE_OK. 
-  **
-  ** If SQLITE_LOCKED was returned, then the system is deadlocked. In this
-  ** case this function needs to return SQLITE_LOCKED to the caller so 
-  ** that the current transaction can be rolled back. Otherwise, block
-  ** until the unlock-notify callback is invoked, then return SQLITE_OK.
-  */
-  if( rc==SQLITE_OK ){
-    pthread_mutex_lock(&un.mutex);
-    if( !un.fired ){
-      pthread_cond_wait(&un.cond, &un.mutex);
-    }
-    pthread_mutex_unlock(&un.mutex);
-  }
-
-  /* Destroy the mutex and condition variables. */
-  pthread_cond_destroy(&un.cond);
-  pthread_mutex_destroy(&un.mutex);
-
-  return rc;
+// This function assumes that an SQLite API call (either sqlite3_prepare_v2() or sqlite3_step()) has just returned SQLITE_LOCKED. The argument is the
+// associated database connection.
+//
+// This function calls sqlite3_unlock_notify() to register for an unlock-notify callback, then blocks until that callback is delivered 
+// and returns SQLITE_OK. The caller should then retry the failed operation.
+//
+// Or, if sqlite3_unlock_notify() indicates that to block would deadlock the system, then this function returns SQLITE_LOCKED immediately. In 
+// this case the caller should not retry the operation and should roll back the current transaction (if any).
+__device__ static int wait_for_unlock_notify(Context *ctx)
+{
+	// Initialize the UnlockNotification structure.
+	UnlockNotification un;
+	un.fired = 0;
+	pthread_mutex_init(&un.mutex, 0);
+	pthread_cond_init(&un.cond, 0);
+	// Register for an unlock-notify callback.
+	RC rc = Main::UnlockNotify(ctx, unlock_notify_cb, (void *)&un);
+	_assert(rc == RC_LOCKED || rc == RC_OK);
+	// The call to sqlite3_unlock_notify() always returns either SQLITE_LOCKED or SQLITE_OK. 
+	//
+	// If SQLITE_LOCKED was returned, then the system is deadlocked. In this case this function needs to return SQLITE_LOCKED to the caller so 
+	// that the current transaction can be rolled back. Otherwise, block until the unlock-notify callback is invoked, then return SQLITE_OK.
+	if (rc == RC_OK)
+	{
+		pthread_mutex_lock(&un.mutex);
+		if (!un.Fired)
+			pthread_cond_wait(&un.cond, &un.mutex);
+		pthread_mutex_unlock(&un.mutex);
+	}
+	// Destroy the mutex and condition variables.
+	pthread_cond_destroy(&un.cond);
+	pthread_mutex_destroy(&un.mutex);
+	return rc;
 }
 
-/*
-** This function is a wrapper around the SQLite function sqlite3_step().
-** It functions in the same way as step(), except that if a required
-** shared-cache lock cannot be obtained, this function may block waiting for
-** the lock to become available. In this scenario the normal API step()
-** function always returns SQLITE_LOCKED.
-**
-** If this function returns SQLITE_LOCKED, the caller should rollback
-** the current transaction (if any) and try again later. Otherwise, the
-** system may become deadlocked.
-*/
-int sqlite3_blocking_step(sqlite3_stmt *pStmt){
-  int rc;
-  while( SQLITE_LOCKED==(rc = sqlite3_step(pStmt)) ){
-    rc = wait_for_unlock_notify(sqlite3_db_handle(pStmt));
-    if( rc!=SQLITE_OK ) break;
-    sqlite3_reset(pStmt);
-  }
-  return rc;
+// This function is a wrapper around the SQLite function sqlite3_step(). It functions in the same way as step(), except that if a required
+// shared-cache lock cannot be obtained, this function may block waiting for the lock to become available. In this scenario the normal API step()
+// function always returns SQLITE_LOCKED.
+//
+// If this function returns SQLITE_LOCKED, the caller should rollback the current transaction (if any) and try again later. Otherwise, the
+// system may become deadlocked.
+__device__ int sqlite3_blocking_step(Vdbe *stmt)
+{
+	RC rc;
+	while ((rc = sqlite3_step(pStmt)) == RC_LOCKED)
+	{
+		rc = wait_for_unlock_notify(sqlite3_db_handle(stmt));
+		if (rc != RC_OK) break;
+		stmt->Reset();
+	}
+	return rc;
 }
 
-/*
-** This function is a wrapper around the SQLite function sqlite3_prepare_v2().
-** It functions in the same way as prepare_v2(), except that if a required
-** shared-cache lock cannot be obtained, this function may block waiting for
-** the lock to become available. In this scenario the normal API prepare_v2()
-** function always returns SQLITE_LOCKED.
-**
-** If this function returns SQLITE_LOCKED, the caller should rollback
-** the current transaction (if any) and try again later. Otherwise, the
-** system may become deadlocked.
-*/
-int sqlite3_blocking_prepare_v2(
-  sqlite3 *db,              /* Database handle. */
-  const char *zSql,         /* UTF-8 encoded SQL statement. */
-  int nSql,                 /* Length of zSql in bytes. */
-  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
-  const char **pz           /* OUT: End of parsed string */
-){
-  int rc;
-  while( SQLITE_LOCKED==(rc = sqlite3_prepare_v2(db, zSql, nSql, ppStmt, pz)) ){
-    rc = wait_for_unlock_notify(db);
-    if( rc!=SQLITE_OK ) break;
-  }
-  return rc;
-}
-/* END_SQLITE_BLOCKING_STEP */
-
-/*
-** Usage: sqlite3_blocking_step STMT
-**
-** Advance the statement to the next row.
-*/
-static int blocking_step_proc(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-
-  sqlite3_stmt *pStmt;
-  int rc;
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
-    return JIM_ERROR;
-  }
-
-  pStmt = (sqlite3_stmt*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
-  rc = sqlite3_blocking_step(pStmt);
-
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), 0);
-  return JIM_OK;
+// This function is a wrapper around the SQLite function sqlite3_prepare_v2(). It functions in the same way as prepare_v2(), except that if a required
+// shared-cache lock cannot be obtained, this function may block waiting for the lock to become available. In this scenario the normal API prepare_v2()
+// function always returns SQLITE_LOCKED.
+//
+// If this function returns SQLITE_LOCKED, the caller should rollback the current transaction (if any) and try again later. Otherwise, the
+// system may become deadlocked.
+__device__ int sqlite3_blocking_prepare_v2(Context *ctx, const char *sql, int sqlLength, Vdbe **stmt, const char **z)
+{
+	RC rc;
+	while ((rc = Prepare::Prepare_v2(ctx, sql, sqlLength, stmt, z)) == RC_LOCKED)
+	{
+		rc = wait_for_unlock_notify(ctx);
+		if (rc != RC_OK) break;
+	}
+	return rc;
 }
 
-/*
-** Usage: sqlite3_blocking_prepare_v2 DB sql bytes ?tailvar?
-** Usage: sqlite3_nonblocking_prepare_v2 DB sql bytes ?tailvar?
-*/
-static int blocking_prepare_v2_proc(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3 *db;
-  const char *zSql;
-  int bytes;
-  const char *zTail = 0;
-  sqlite3_stmt *pStmt = 0;
-  char zBuf[50];
-  int rc;
-  int isBlocking = !(clientData==0);
-
-  if( objc!=5 && objc!=4 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
-    return JIM_ERROR;
-  }
-  if( GetDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return JIM_ERROR;
-  zSql = Tcl_GetString(objv[2]);
-  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return JIM_ERROR;
-
-  if( isBlocking ){
-    rc = sqlite3_blocking_prepare_v2(db, zSql, bytes, &pStmt, &zTail);
-  }else{
-    rc = sqlite3_prepare_v2(db, zSql, bytes, &pStmt, &zTail);
-  }
-
-  assert(rc==SQLITE_OK || pStmt==0);
-  if( zTail && objc>=5 ){
-    if( bytes>=0 ){
-      bytes = bytes - (zTail-zSql);
-    }
-    Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
-  }
-  if( rc!=SQLITE_OK ){
-    assert( pStmt==0 );
-    sprintf(zBuf, "%s ", (char *)sqlite3TestErrorName(rc));
-    Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
-    return JIM_ERROR;
-  }
-
-  if( pStmt ){
-    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return JIM_ERROR;
-    Tcl_AppendResult(interp, zBuf, 0);
-  }
-  return JIM_OK;
+// Usage: sqlite3_blocking_step STMT
+// Advance the statement to the next row.
+__device__ static int blocking_step_proc(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "STMT");
+		return JIM_ERROR;
+	}
+	Vdbe *stmt = (Vdbe *)sqlite3TestTextToPtr(Jim_String(args[1]));
+	RC rc = sqlite3_blocking_step(stmt);
+	Jim_SetResult(interp, (char *)sqlite3TestErrorName(rc), nullptr);
+	return JIM_OK;
 }
 
-#endif /* SQLITE_OS_UNIX && SQLITE_ENABLE_UNLOCK_NOTIFY */
-/*
-** End of implementation of [sqlite3_blocking_step].
-************************************************************************/
+// Usage: sqlite3_blocking_prepare_v2 DB sql bytes ?tailvar?
+// Usage: sqlite3_nonblocking_prepare_v2 DB sql bytes ?tailvar?
+__device__ static int blocking_prepare_v2_proc(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 5 && argc != 4)
+	{
+		Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " DB sql bytes tailvar", nullptr);
+		return JIM_ERROR;
+	}
+	Context *ctx;
+	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
+	const char *sql = Jim_String(args[2]);
+	int bytes;
+	if (Jim_GetInt(interp, args[3], &bytes)) return JIM_ERROR;
+	RC rc;
+	const char *tail = nullptr;
+	Vdbe *stmt = nullptr;
+	int isBlocking = !(clientData == 0);
+	if (isBlocking)
+		rc = sqlite3_blocking_prepare_v2(ctx, sql, bytes, &stmt, &tail);
+	else
+		rc = sqlite3_prepare_v2(ctx, sql, bytes, &stmt, &tail);
+	_assert(rc == RC_OK || !stmt);
+	if (tail && argc >= 5)
+	{
+		if (bytes >= 0)
+			bytes = bytes - (int)(tail-sql);
+		Jim_SetVar2(interp, args[4], 0, Jim_NewStringObj(interp, tail, bytes), 0);
+	}
+	char buf[50];
+	if (rc != RC_OK)
+	{
+		_assert(!stmt);
+		_sprintf(buf, "%s ", (char *)sqlite3TestErrorName(rc));
+		Jim_AppendResult(interp, buf, Main::ErrMsg(ctx), nullptr);
+		return JIM_ERROR;
+	}
+	if (stmt)
+	{
+		if (sqlite3TestMakePointerStr(interp, buf, stmt)) return JIM_ERROR;
+		Jim_AppendResult(interp, buf, nullptr);
+	}
+	return JIM_OK;
+}
 
-/*
-** Register commands with the TCL interpreter.
-*/
-int SqlitetestThread_Init(Tcl_Interp *interp){
-  Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, 0, 0);
-  Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
-#if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
-  Tcl_CreateObjCommand(interp, "sqlite3_blocking_step", blocking_step_proc,0,0);
-  Tcl_CreateObjCommand(interp, 
-      "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, 0);
-  Tcl_CreateObjCommand(interp, 
-      "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, 0, 0);
 #endif
-  return JIM_OK;
+#pragma endregion 
+
+// Register commands with the TCL interpreter.
+__device__ int SqlitetestThread_Init(Jim_Interp *interp)
+{
+	Jim_CreateCommand(interp, "sqlthread", sqlthread_proc, nullptr, nullptr);
+	Jim_CreateCommand(interp, "clock_seconds", clock_seconds_proc, nullptr, nullptr);
+#if OS_UNIX && defined(ENABLE_UNLOCK_NOTIFY)
+	Jim_CreateCommand(interp, "sqlite3_blocking_step", blocking_step_proc, nullptr, nullptr);
+	Jim_CreateCommand(interp, "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, nullptr);
+	Tcl_CreateCommand(interp, "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, nullptr, nullptr);
+#endif
+	return JIM_OK;
 }
 #else
-int SqlitetestThread_Init(Tcl_Interp *interp){
-  return JIM_OK;
+__device__ int SqlitetestThread_Init(Jim_Interp *interp)
+{
+	return JIM_OK;
 }
 #endif

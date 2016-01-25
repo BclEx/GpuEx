@@ -363,7 +363,8 @@ namespace CORE_NAME
 
 #pragma region Interface
 
-	__device__ IPCache *new_PCache1() { PCache1 *cache = (PCache1 *)_allocZero(sizeof(PCache1)); return (IPCache *)(new (cache) PCache1()); }
+	__device__ const PCache1 _pcache;
+	__device__ IPCache *GetPCache1() { return (IPCache *)&_pcache; }
 
 	__device__ RC PCache1::Init()
 	{
@@ -401,9 +402,9 @@ namespace CORE_NAME
 		_assert(sizeExtra < 300);
 		int size = sizeof(PCache1) + sizeof(PGroup) * (int)separateCache;
 		PCache1 *cache = (PCache1 *)_allocZero(size);
-		cache = new (cache) PCache1();
 		if (cache)
 		{
+			cache = new (cache) PCache1();
 			PGroup *group;
 			if (separateCache)
 			{

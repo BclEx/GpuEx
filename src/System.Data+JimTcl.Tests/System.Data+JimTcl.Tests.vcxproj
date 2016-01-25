@@ -64,13 +64,12 @@
     <ClCompile Include="Test_Init.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Test_IntArray.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_IntArray.cu" />
     <ClCompile Include="Test_Journal.cu" />
     <ClCompile Include="Test_LoadExt.cu" />
     <ClCompile Include="Test_Malloc.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_Multiplex.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
@@ -84,14 +83,13 @@
     <ClCompile Include="Test_OSInst.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Test_PCache.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_PCache.cu" />
     <ClCompile Include="Test_Quota.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_RegExp.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_Schema.cu" />
     <ClCompile Include="Test_Server.cu">
@@ -101,21 +99,18 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_SqlLog.cu" />
-    <ClCompile Include="Test_Stat.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_Stat.cu" />
     <ClCompile Include="Test_SuperLock.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_SysCall.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Test_TclVar.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Test_TclVar.cu" />
     <ClCompile Include="Test_Thread.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug.cpu|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Test_Vfs.cu" />
     <ClCompile Include="Test_VfsTrace.cu" />

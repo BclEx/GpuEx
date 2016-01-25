@@ -809,6 +809,18 @@ __device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return
 #define _memdbg_nottype(X,Y) true
 #endif
 
+struct _mem_methods
+{
+	void *(*Malloc)(int);         // Memory allocation function
+	void (*Free)(void*);          // Free a prior allocation
+	void *(*Realloc)(void*,int);  // Resize an allocation
+	int (*Size)(void*);           // Return the size of an allocation
+	int (*Roundup)(int);          // Round up request size to allocation size
+	int (*Init)(void*);           // Initialize the memory allocator
+	void (*Shutdown)(void*);      // Deinitialize the memory allocator
+	void *AppData;                // Argument to xInit() and xShutdown()
+};
+
 // BenignMallocHooks
 #ifndef OMIT_BUILTIN_TEST
 __device__ void _benignalloc_hook(void (*benignBegin)(), void (*benignEnd)());
@@ -833,8 +845,8 @@ __device__ void __allocsystem_shutdown(void *p);
 __device__ int _alloc_init();
 __device__ bool _alloc_heapnearlyfull();
 __device__ void _alloc_shutdown();
-//__device__ long long __alloc_memoryused();
-//__device__ long long __alloc_memoryhighwater(bool resetFlag);
+__device__ long long __alloc_memoryused();
+__device__ long long __alloc_memoryhighwater(bool resetFlag);
 __device__ void *_alloc(size_t size);
 __device__ void *_scratchalloc(size_t size);
 __device__ void _scratchfree(void *p);

@@ -1,95 +1,68 @@
-/*
-** 2010 September 31
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-**
-** This file contains a VFS "shim" - a layer that sits in between the
-** pager and the real VFS.
-**
-** This particular shim enforces a quota system on files.  One or more
-** database files are in a "quota group" that is defined by a GLOB
-** pattern.  A quota is set for the combined size of all files in the
-** the group.  A quota of zero means "no limit".  If the total size
-** of all files in the quota group is greater than the limit, then
-** write requests that attempt to enlarge a file fail with SQLITE_FULL.
-**
-** However, before returning SQLITE_FULL, the write requests invoke
-** a callback function that is configurable for each quota group.
-** This callback has the opportunity to enlarge the quota.  If the
-** callback does enlarge the quota such that the total size of all
-** files within the group is less than the new quota, then the write
-** continues as if nothing had happened.
-*/
+// This file contains a VFS "shim" - a layer that sits in between the pager and the real VFS.
+//
+// This particular shim enforces a quota system on files.  One or more database files are in a "quota group" that is defined by a GLOB
+// pattern.  A quota is set for the combined size of all files in the the group.  A quota of zero means "no limit".  If the total size
+// of all files in the quota group is greater than the limit, then write requests that attempt to enlarge a file fail with SQLITE_FULL.
+//
+// However, before returning SQLITE_FULL, the write requests invoke a callback function that is configurable for each quota group.
+// This callback has the opportunity to enlarge the quota.  If the callback does enlarge the quota such that the total size of all
+// files within the group is less than the new quota, then the write continues as if nothing had happened.
+#pragma region Preamble
+
 #include "test_quota.h"
 #include <string.h>
 #include <assert.h>
 
-/*
-** For an build without mutexes, no-op the mutex calls.
-*/
-#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE==0
-#define sqlite3_mutex_alloc(X)    ((sqlite3_mutex*)8)
-#define sqlite3_mutex_free(X)
-#define sqlite3_mutex_enter(X)
-#define sqlite3_mutex_try(X)      SQLITE_OK
-#define sqlite3_mutex_leave(X)
-#define sqlite3_mutex_held(X)     ((void)(X),1)
-#define sqlite3_mutex_notheld(X)  ((void)(X),1)
-#endif /* SQLITE_THREADSAFE==0 */
-
-
-/*
-** Figure out if we are dealing with Unix, Windows, or some other
-** operating system.  After the following block of preprocess macros,
-** all of SQLITE_OS_UNIX, SQLITE_OS_WIN, and SQLITE_OS_OTHER 
-** will defined to either 1 or 0.  One of the four will be 1.  The other 
-** three will be 0.
-*/
-#if defined(SQLITE_OS_OTHER)
-# if SQLITE_OS_OTHER==1
-#   undef SQLITE_OS_UNIX
-#   define SQLITE_OS_UNIX 0
-#   undef SQLITE_OS_WIN
-#   define SQLITE_OS_WIN 0
-# else
-#   undef SQLITE_OS_OTHER
-# endif
+// For an build without mutexes, no-op the mutex calls.
+#if defined(_THREADSAFE) && _THREADSAFE==0
+#define _mutex_alloc(X) ((sqlite3_mutex*)8)
+#define _mutex_free(X)
+#define _mutex_enter(X)
+#define _mutex_try(X) RC_OK
+#define _mutex_leave(X)
+#define _mutex_held(X) ((void)(X),1)
+#define _mutex_notheld(X) ((void)(X),1)
 #endif
-#if !defined(SQLITE_OS_UNIX) && !defined(SQLITE_OS_OTHER)
-# define SQLITE_OS_OTHER 0
-# ifndef SQLITE_OS_WIN
-#   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) \
-                       || defined(__MINGW32__) || defined(__BORLANDC__)
-#     define SQLITE_OS_WIN 1
-#     define SQLITE_OS_UNIX 0
-#   else
-#     define SQLITE_OS_WIN 0
-#     define SQLITE_OS_UNIX 1
-#  endif
+
+// Figure out if we are dealing with Unix, Windows, or some other operating system.  After the following block of preprocess macros,
+// all of SQLITE_OS_UNIX, SQLITE_OS_WIN, and SQLITE_OS_OTHER will defined to either 1 or 0.  One of the four will be 1.  The other three will be 0.
+#if defined(OS_OTHER)
+#if OS_OTHER == 1
+# undef OS_UNIX
+# define OS_UNIX 0
+# undef OS_WIN
+# define OS_WIN 0
+#else
+# undef OS_OTHER
+#endif
+#endif
+#if !defined(OS_UNIX) && !defined(OS_OTHER)
+#define OS_OTHER 0
+#ifndef OS_WIN
+# if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+# define OS_WIN 1
+# define OS_UNIX 0
 # else
-#  define SQLITE_OS_UNIX 0
+# define OS_WIN 0
+# define OS_UNIX 1
 # endif
 #else
-# ifndef SQLITE_OS_WIN
-#  define SQLITE_OS_WIN 0
-# endif
+# define OS_UNIX 0
+#endif
+#else
+#ifndef OS_WIN
+# define OS_WIN 0
+#endif
+#endif
+#if OS_UNIX
+#include <unistd.h>
+#endif
+#if OS_WIN
+#include <windows.h>
+#include <io.h>
 #endif
 
-#if SQLITE_OS_UNIX
-# include <unistd.h>
-#endif
-#if SQLITE_OS_WIN
-# include <windows.h>
-# include <io.h>
-#endif
-
+#pragma endregion
 
 /************************ Object Definitions ******************************/
 

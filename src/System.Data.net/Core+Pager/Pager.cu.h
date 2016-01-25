@@ -162,7 +162,7 @@ namespace CORE_NAME
 		//__device__ IBackup **BackupPtr();
 
 		// Functions used to obtain and release page references.
-		__device__ RC Acquire(Pid id, IPage **pageOut, bool noContent);
+		__device__ RC Acquire(Pid id, IPage **pageOut, bool noContent = false);
 		__device__ IPage *Lookup(Pid id);
 		__device__ static void Ref(IPage *pg);
 		__device__ static void Unref(IPage *pg);

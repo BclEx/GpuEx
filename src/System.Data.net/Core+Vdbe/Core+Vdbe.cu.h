@@ -1741,7 +1741,7 @@ namespace CORE_NAME {
 		struct GlobalStatics
 		{
 			bool UseCis;						// Use covering indices for full-scans
-			//sqlite3_pcache_methods2 pcache2;	// Low-level page-cache interface
+			IPCache **PCache;					// Low-level page-cache interface
 			void *Page;							// Page cache memory
 			int PageSize;						// Size of each page in pPage[]
 			int Pages;							// Number of pages in pPage[]

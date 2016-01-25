@@ -211,7 +211,7 @@ __device__ static RC tclvarBestIndex(IVTable *tab, IIndexInfo *idxInfo)
 
 // A virtual table module that provides read-only access to a Tcl global variable namespace.
 __constant__ static ITableModule _tclvarModule = {
-	0,							// iVersion
+	0,							// Version
 	tclvarConnect,
 	tclvarConnect,
 	tclvarBestIndex,

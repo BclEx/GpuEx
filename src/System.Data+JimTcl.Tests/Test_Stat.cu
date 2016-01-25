@@ -1,639 +1,531 @@
-/*
-** 2010 July 12
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-******************************************************************************
-**
-** This file contains an implementation of the "dbstat" virtual table.
-**
-** The dbstat virtual table is used to extract low-level formatting
-** information from an SQLite database in order to implement the
-** "sqlite3_analyzer" utility.  See the ../tool/spaceanal.tcl script
-** for an example implementation.
-*/
+// This file contains an implementation of the "dbstat" virtual table.
+//
+// The dbstat virtual table is used to extract low-level formatting information from an SQLite database in order to implement the
+// "sqlite3_analyzer" utility.  See the ../tool/spaceanal.tcl script for an example implementation.
+#include <Core+Vdbe\Core+Vdbe.cu.h>
 
-#ifndef SQLITE_AMALGAMATION
-# include "sqliteInt.h"
-#endif
+#ifndef OMIT_VIRTUALTABLE
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-
-/*
-** Page paths:
-** 
-**   The value of the 'path' column describes the path taken from the 
-**   root-node of the b-tree structure to each page. The value of the 
-**   root-node path is '/'.
-**
-**   The value of the path for the left-most child page of the root of
-**   a b-tree is '/000/'. (Btrees store content ordered from left to right
-**   so the pages to the left have smaller keys than the pages to the right.)
-**   The next to left-most child of the root page is
-**   '/001', and so on, each sibling page identified by a 3-digit hex 
-**   value. The children of the 451st left-most sibling have paths such
-**   as '/1c2/000/, '/1c2/001/' etc.
-**
-**   Overflow pages are specified by appending a '+' character and a 
-**   six-digit hexadecimal value to the path to the cell they are linked
-**   from. For example, the three overflow pages in a chain linked from 
-**   the left-most cell of the 450th child of the root page are identified
-**   by the paths:
-**
-**      '/1c2/000+000000'         // First page in overflow chain
-**      '/1c2/000+000001'         // Second page in overflow chain
-**      '/1c2/000+000002'         // Third page in overflow chain
-**
-**   If the paths are sorted using the BINARY collation sequence, then
-**   the overflow pages associated with a cell will appear earlier in the
-**   sort-order than its child page:
-**
-**      '/1c2/000/'               // Left-most child of 451st child of root
-*/
-#define VTAB_SCHEMA                                                         \
-  "CREATE TABLE xx( "                                                       \
-  "  name       STRING,           /* Name of table or index */"             \
-  "  path       INTEGER,          /* Path to page from root */"             \
-  "  pageno     INTEGER,          /* Page number */"                        \
-  "  pagetype   STRING,           /* 'internal', 'leaf' or 'overflow' */"   \
-  "  ncell      INTEGER,          /* Cells on page (0 for overflow) */"     \
-  "  payload    INTEGER,          /* Bytes of payload on this page */"      \
-  "  unused     INTEGER,          /* Bytes of unused space on this page */" \
-  "  mx_payload INTEGER,          /* Largest payload size of all cells */"  \
-  "  pgoffset   INTEGER,          /* Offset of page in file */"             \
-  "  pgsize     INTEGER           /* Size of the page */"                   \
-  ");"
-
+// Page paths:
+// 
+//   The value of the 'path' column describes the path taken from the root-node of the b-tree structure to each page. The value of the 
+//   root-node path is '/'.
+//
+//   The value of the path for the left-most child page of the root of a b-tree is '/000/'. (Btrees store content ordered from left to right
+//   so the pages to the left have smaller keys than the pages to the right.) The next to left-most child of the root page is
+//   '/001', and so on, each sibling page identified by a 3-digit hex value. The children of the 451st left-most sibling have paths such
+//   as '/1c2/000/, '/1c2/001/' etc.
+//
+//   Overflow pages are specified by appending a '+' character and a six-digit hexadecimal value to the path to the cell they are linked
+//   from. For example, the three overflow pages in a chain linked from the left-most cell of the 450th child of the root page are identified by the paths:
+//
+//      '/1c2/000+000000'         // First page in overflow chain
+//      '/1c2/000+000001'         // Second page in overflow chain
+//      '/1c2/000+000002'         // Third page in overflow chain
+//
+//   If the paths are sorted using the BINARY collation sequence, then the overflow pages associated with a cell will appear earlier in the sort-order than its child page:
+//
+//      '/1c2/000/'               // Left-most child of 451st child of root
+#define VTAB_SCHEMA \
+	"CREATE TABLE xx(" \
+	"name       STRING,           /* Name of table or index */" \
+	"path       INTEGER,          /* Path to page from root */" \
+	"pageno     INTEGER,          /* Page number */" \
+	"pagetype   STRING,           /* 'internal', 'leaf' or 'overflow' */" \
+	"ncell      INTEGER,          /* Cells on page (0 for overflow) */" \
+	"payload    INTEGER,          /* Bytes of payload on this page */" \
+	"unused     INTEGER,          /* Bytes of unused space on this page */" \
+	"mx_payload INTEGER,          /* Largest payload size of all cells */" \
+	"pgoffset   INTEGER,          /* Offset of page in file */" \
+	"pgsize     INTEGER           /* Size of the page */" \
+	");"
 
 typedef struct StatTable StatTable;
 typedef struct StatCursor StatCursor;
 typedef struct StatPage StatPage;
 typedef struct StatCell StatCell;
 
-struct StatCell {
-  int nLocal;                     /* Bytes of local payload */
-  u32 iChildPg;                   /* Child node (or 0 if this is a leaf) */
-  int nOvfl;                      /* Entries in aOvfl[] */
-  u32 *aOvfl;                     /* Array of overflow page numbers */
-  int nLastOvfl;                  /* Bytes of payload on final overflow page */
-  int iOvfl;                      /* Iterates through aOvfl[] */
+struct StatCell
+{
+	int Local;						// Bytes of local payload
+	uint32 ChildPg;					// Child node (or 0 if this is a leaf)
+	array_t<uint32> Ovfls;          // Array of overflow page numbers
+	int LastOvfl;					// Bytes of payload on final overflow page
+	int OvflId;                     // Iterates through aOvfl[]
 };
 
-struct StatPage {
-  u32 iPgno;
-  DbPage *pPg;
-  int iCell;
-
-  char *zPath;                    /* Path to this page */
-
-  /* Variables populated by statDecodePage(): */
-  u8 flags;                       /* Copy of flags byte */
-  int nCell;                      /* Number of cells on page */
-  int nUnused;                    /* Number of unused bytes on page */
-  StatCell *aCell;                /* Array of parsed cells */
-  u32 iRightChildPg;              /* Right-child page number (or 0) */
-  int nMxPayload;                 /* Largest payload of any cell on this page */
+struct StatPage
+{
+	uint32 Pgno;
+	IPage *Pg;
+	int CellId;
+	char *Path;                    // Path to this page
+	// Variables populated by statDecodePage():
+	uint8 Flags;                    // Copy of flags byte
+	int Unused;						// Number of unused bytes on page
+	array_t<StatCell>Cells;			// Array of parsed cells
+	uint32 RightChildPg;			// Right-child page number (or 0)
+	int MaxPayload;                 // Largest payload of any cell on this page
 };
 
-struct StatCursor {
-  sqlite3_vtab_cursor base;
-  sqlite3_stmt *pStmt;            /* Iterates through set of root pages */
-  int isEof;                      /* After pStmt has returned SQLITE_DONE */
+struct StatCursor
+{
+	IVTableCursor base;
+	Vdbe *Stmt;						// Iterates through set of root pages
+	bool IsEof;                     // After pStmt has returned SQLITE_DONE
 
-  StatPage aPage[32];
-  int iPage;                      /* Current entry in aPage[] */
+	StatPage Pages[32];
+	int PageId;                      // Current entry in aPage[]
 
-  /* Values to return. */
-  char *zName;                    /* Value of 'name' column */
-  char *zPath;                    /* Value of 'path' column */
-  u32 iPageno;                    /* Value of 'pageno' column */
-  char *zPagetype;                /* Value of 'pagetype' column */
-  int nCell;                      /* Value of 'ncell' column */
-  int nPayload;                   /* Value of 'payload' column */
-  int nUnused;                    /* Value of 'unused' column */
-  int nMxPayload;                 /* Value of 'mx_payload' column */
-  i64 iOffset;                    /* Value of 'pgOffset' column */
-  int szPage;                     /* Value of 'pgSize' column */
+	// Values to return
+	char *Name;                    // Value of 'name' column
+	char *Path;                    // Value of 'path' column
+	uint32 Pageno;					// Value of 'pageno' column
+	char *Pagetype;                // Value of 'pagetype' column
+	int Cells;                      // Value of 'ncell' column
+	int Payload;                   // Value of 'payload' column
+	int Unused;                    // Value of 'unused' column
+	int MaxPayload;                 // Value of 'mx_payload' column
+	int64 Offset;                  // Value of 'pgOffset' column
+	int SizePage;                   // Value of 'pgSize' column
 };
 
-struct StatTable {
-  sqlite3_vtab base;
-  sqlite3 *db;
+struct StatTable
+{
+	IVTable base;
+	Context *Ctx;
 };
 
 #ifndef get2byte
-# define get2byte(x)   ((x)[0]<<8 | (x)[1])
+#define get2byte(x) ((x)[0]<<8 | (x)[1])
 #endif
 
-/*
-** Connect to or create a statvfs virtual table.
-*/
-static int statConnect(
-  sqlite3 *db,
-  void *pAux,
-  int argc, const char *const*argv,
-  sqlite3_vtab **ppVtab,
-  char **pzErr
-){
-  StatTable *pTab;
-
-  pTab = (StatTable *)sqlite3_malloc(sizeof(StatTable));
-  memset(pTab, 0, sizeof(StatTable));
-  pTab->db = db;
-
-  sqlite3_declare_vtab(db, VTAB_SCHEMA);
-  *ppVtab = &pTab->base;
-  return SQLITE_OK;
+// Connect to or create a statvfs virtual table.
+__device__ static RC statConnect(Context *ctx, void *aux, int argc, const char *const args[], IVTable **vtab, char **err)
+{
+	StatTable *tab = (StatTable *)_alloc(sizeof(StatTable));
+	memset(tab, 0, sizeof(StatTable));
+	tab->Ctx = ctx;
+	VTable::DeclareVTable(ctx, VTAB_SCHEMA);
+	*vtab = &tab->base;
+	return RC_OK;
 }
 
-/*
-** Disconnect from or destroy a statvfs virtual table.
-*/
-static int statDisconnect(sqlite3_vtab *pVtab){
-  sqlite3_free(pVtab);
-  return SQLITE_OK;
+// Disconnect from or destroy a statvfs virtual table.
+__device__ static RC statDisconnect(IVTable *vtab)
+{
+	_free(vtab);
+	return RC_OK;
 }
 
-/*
-** There is no "best-index". This virtual table always does a linear
-** scan of the binary VFS log file.
-*/
-static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
-
-  /* Records are always returned in ascending order of (name, path). 
-  ** If this will satisfy the client, set the orderByConsumed flag so that 
-  ** SQLite does not do an external sort.
-  */
-  if( ( pIdxInfo->nOrderBy==1
-     && pIdxInfo->aOrderBy[0].iColumn==0
-     && pIdxInfo->aOrderBy[0].desc==0
-     ) ||
-      ( pIdxInfo->nOrderBy==2
-     && pIdxInfo->aOrderBy[0].iColumn==0
-     && pIdxInfo->aOrderBy[0].desc==0
-     && pIdxInfo->aOrderBy[1].iColumn==1
-     && pIdxInfo->aOrderBy[1].desc==0
-     )
-  ){
-    pIdxInfo->orderByConsumed = 1;
-  }
-
-  pIdxInfo->estimatedCost = 10.0;
-  return SQLITE_OK;
+// There is no "best-index". This virtual table always does a linear scan of the binary VFS log file.
+__device__ static RC statBestIndex(IVTable *tab, IIndexInfo *idxInfo)
+{
+	// Records are always returned in ascending order of (name, path). If this will satisfy the client, set the orderByConsumed flag so that SQLite does not do an external sort.
+	if ((idxInfo->OrderBys.length == 1 && idxInfo->OrderBys[0].Column == 0 && !idxInfo->OrderBys[0].Desc) ||
+		(idxInfo->OrderBys.length == 2 && idxInfo->OrderBys[0].Column == 0 && !idxInfo->OrderBys[0].Desc && idxInfo->OrderBys[1].Column == 1 && !idxInfo->OrderBys[1].Desc))
+		idxInfo->OrderByConsumed = true;
+	idxInfo->EstimatedCost = 10.0;
+	return RC_OK;
 }
 
-/*
-** Open a new statvfs cursor.
-*/
-static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
-  StatTable *pTab = (StatTable *)pVTab;
-  StatCursor *pCsr;
-  int rc;
-
-  pCsr = (StatCursor *)sqlite3_malloc(sizeof(StatCursor));
-  memset(pCsr, 0, sizeof(StatCursor));
-  pCsr->base.pVtab = pVTab;
-
-  rc = sqlite3_prepare_v2(pTab->db, 
-      "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
-      "  UNION ALL  "
-      "SELECT name, rootpage, type FROM sqlite_master WHERE rootpage!=0"
-      "  ORDER BY name", -1,
-      &pCsr->pStmt, 0
-  );
-  if( rc!=SQLITE_OK ){
-    sqlite3_free(pCsr);
-    return rc;
-  }
-
-  *ppCursor = (sqlite3_vtab_cursor *)pCsr;
-  return SQLITE_OK;
+// Open a new statvfs cursor.
+__device__ static RC statOpen(IVTable *vtab, IVTableCursor **cursor)
+{
+	StatTable *tab = (StatTable *)vtab;
+	StatCursor *cur = (StatCursor *)_alloc(sizeof(StatCursor));
+	memset(cur, 0, sizeof(StatCursor));
+	cur->base.IVTable = vtab;
+	RC rc = Prepare::Prepare_v2(tab->Ctx, 
+		"SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
+		"  UNION ALL  "
+		"SELECT name, rootpage, type FROM sqlite_master WHERE rootpage!=0"
+		"  ORDER BY name", -1,
+		&cur->Stmt, nullptr);
+	if (rc != RC_OK)
+	{
+		_free(cur);
+		return rc;
+	}
+	*cursor = (IVTableCursor *)cur;
+	return RC_OK;
 }
 
-static void statClearPage(StatPage *p){
-  int i;
-  for(i=0; i<p->nCell; i++){
-    sqlite3_free(p->aCell[i].aOvfl);
-  }
-  sqlite3PagerUnref(p->pPg);
-  sqlite3_free(p->aCell);
-  sqlite3_free(p->zPath);
-  memset(p, 0, sizeof(StatPage));
+__device__ static void statClearPage(StatPage *p)
+{
+	for (int i = 0; i < p->Cells.length; i++)
+		_free(p->Cells[i].Ovfls.data);
+	Pager::Unref(p->Pg);
+	_free(p->Cells.data);
+	_free(p->Path);
+	_memset(p, 0, sizeof(StatPage));
 }
 
-static void statResetCsr(StatCursor *pCsr){
-  int i;
-  sqlite3_reset(pCsr->pStmt);
-  for(i=0; i<ArraySize(pCsr->aPage); i++){
-    statClearPage(&pCsr->aPage[i]);
-  }
-  pCsr->iPage = 0;
-  sqlite3_free(pCsr->zPath);
-  pCsr->zPath = 0;
+__device__ static void statResetCsr(StatCursor *cur)
+{
+	cur->Stmt->Reset();
+	for (int i = 0; i < _lengthof(cur->Pages); i++)
+		statClearPage(&cur->Pages[i]);
+	cur->PageId = 0;
+	_free(cur->Path);
+	cur->Path = nullptr;
 }
 
-/*
-** Close a statvfs cursor.
-*/
-static int statClose(sqlite3_vtab_cursor *pCursor){
-  StatCursor *pCsr = (StatCursor *)pCursor;
-  statResetCsr(pCsr);
-  sqlite3_finalize(pCsr->pStmt);
-  sqlite3_free(pCsr);
-  return SQLITE_OK;
+// Close a statvfs cursor.
+__device__ static RC statClose(IVTableCursor *cursor)
+{
+	StatCursor *cur = (StatCursor *)cursor;
+	statResetCsr(cur);
+	Vdbe::Finalize(cur->Stmt);
+	_free(cur);
+	return RC_OK;
 }
 
-static void getLocalPayload(
-  int nUsable,                    /* Usable bytes per page */
-  u8 flags,                       /* Page flags */
-  int nTotal,                     /* Total record (payload) size */
-  int *pnLocal                    /* OUT: Bytes stored locally */
-){
-  int nLocal;
-  int nMinLocal;
-  int nMaxLocal;
- 
-  if( flags==0x0D ){              /* Table leaf node */
-    nMinLocal = (nUsable - 12) * 32 / 255 - 23;
-    nMaxLocal = nUsable - 35;
-  }else{                          /* Index interior and leaf nodes */
-    nMinLocal = (nUsable - 12) * 32 / 255 - 23;
-    nMaxLocal = (nUsable - 12) * 64 / 255 - 23;
-  }
-
-  nLocal = nMinLocal + (nTotal - nMinLocal) % (nUsable - 4);
-  if( nLocal>nMaxLocal ) nLocal = nMinLocal;
-  *pnLocal = nLocal;
+__device__ static void getLocalPayload(int usable, uint8 flags, int total, int *localOut)
+{
+	int local;
+	int minLocal;
+	int maxLocal;
+	if (flags == 0x0D)
+	{             
+		// Table leaf node
+		minLocal = (usable - 12) * 32 / 255 - 23;
+		maxLocal = usable - 35;
+	}
+	else
+	{                          
+		// Index interior and leaf nodes
+		minLocal = (usable - 12) * 32 / 255 - 23;
+		maxLocal = (usable - 12) * 64 / 255 - 23;
+	}
+	int nLocal = minLocal + (total - minLocal) % (usable - 4);
+	if (local > maxLocal) local = minLocal;
+	*localOut = local;
 }
 
-static int statDecodePage(Btree *pBt, StatPage *p){
-  int nUnused;
-  int iOff;
-  int nHdr;
-  int isLeaf;
-  int szPage;
+__device__ static RC statDecodePage(Btree *bt, StatPage *p)
+{
+	uint8 *data = (uint8 *)Pager::GetData(p->Pg);
+	uint8 *header = &data[p->Pgno == 1 ? 100 : 0];
+	p->Flags = header[0];
+	p->Cells.length = get2byte(&header[3]);
+	p->MaxPayload = 0;
+	int isLeaf = (p->Flags == 0x0A || p->Flags == 0x0D);
+	int headerLength = 12 - isLeaf*4 + (p->Pgno == 1)*100;
+	int unused = get2byte(&header[5]) - headerLength - 2*p->Cells.length;
+	unused += (int)header[7];
+	int offset = get2byte(&header[1]);
+	while (offset)
+	{
+		unused += get2byte(&data[offset+2]);
+		offset = get2byte(&data[offset]);
+	}
+	p->Unused = unused;
+	p->RightChildPg = (isLeaf ? 0 : _convert_get4(&header[8]));
 
-  u8 *aData = sqlite3PagerGetData(p->pPg);
-  u8 *aHdr = &aData[p->iPgno==1 ? 100 : 0];
+	int sizePage = bt->GetPageSize();
+	if (p->Cells.length)
+	{
+		int i; // Used to iterate through cells
+		int usable = sizePage - bt->GetReserve();
+		p->Cells.data = (StatCell *)_alloc((p->Cells.length+1) * sizeof(StatCell));
+		_memset(p->Cells.data, 0, (p->Cells.length+1) * sizeof(StatCell));
+		for (i = 0; i < p->Cells.length; i++)
+		{
+			StatCell *cell = &p->Cells[i];
+			offset = get2byte(&data[headerLength+i*2]);
+			if (!isLeaf)
+			{
+				cell->ChildPg = _convert_get4(&data[offset]);
+				offset += 4;
+			}
+			if ( p->Flags == 0x05) { } // A table interior node. nPayload==0.
+			else
+			{
+				uint32 payload;        // Bytes of payload total (local+overflow)
+				int local;             // Bytes of payload stored locally
+				offset += _convert_getvarint32(&data[offset], payload);
+				if (p->Flags == 0x0D)
+				{
+					uint64 dummy;
+					offset += _convert_getvarint(&data[offset], &dummy);
+				}
+				if (payload > (uint32)p->MaxPayload) p->MaxPayload = payload;
+				getLocalPayload(usable, p->Flags, payload, &local);
+				cell->Local = local;
+				_assert(local >= 0);
+				_assert(payload >= (uint32)local);
+				_assert(local <= (usable-35));
+				if (payload > (uint32)local)
+				{
+					int ovfl = ((payload - local) + usable-4 - 1) / (usable - 4);
+					cell->LastOvfl = (payload-local) - (ovfl-1) * (usable-4);
+					cell->Ovfls.length = ovfl;
+					cell->Ovfls.data = (uint32 *)_alloc(sizeof(uint32)*ovfl);
+					cell->Ovfls[0] = _convert_get4(&data[offset+local]);
+					for (int j = 1; j < ovfl; j++)
+					{
+						uint32 prev = cell->Ovfls[j-1];
+						IPage *pg = 0;
+						RC rc = bt->get_Pager()->Acquire(prev, &pg);
+						if (rc != RC_OK)
+						{
+							_assert(pg == nullptr);
+							return rc;
+						} 
+						cell->Ovfls[j] = _convert_get4((uint8 *)Pager::GetData(pg));
+						Pager::Unref(pg);
+					}
+				}
+			}
+		}
+	}
 
-  p->flags = aHdr[0];
-  p->nCell = get2byte(&aHdr[3]);
-  p->nMxPayload = 0;
-
-  isLeaf = (p->flags==0x0A || p->flags==0x0D);
-  nHdr = 12 - isLeaf*4 + (p->iPgno==1)*100;
-
-  nUnused = get2byte(&aHdr[5]) - nHdr - 2*p->nCell;
-  nUnused += (int)aHdr[7];
-  iOff = get2byte(&aHdr[1]);
-  while( iOff ){
-    nUnused += get2byte(&aData[iOff+2]);
-    iOff = get2byte(&aData[iOff]);
-  }
-  p->nUnused = nUnused;
-  p->iRightChildPg = isLeaf ? 0 : sqlite3Get4byte(&aHdr[8]);
-  szPage = sqlite3BtreeGetPageSize(pBt);
-
-  if( p->nCell ){
-    int i;                        /* Used to iterate through cells */
-    int nUsable = szPage - sqlite3BtreeGetReserve(pBt);
-
-    p->aCell = sqlite3_malloc((p->nCell+1) * sizeof(StatCell));
-    memset(p->aCell, 0, (p->nCell+1) * sizeof(StatCell));
-
-    for(i=0; i<p->nCell; i++){
-      StatCell *pCell = &p->aCell[i];
-
-      iOff = get2byte(&aData[nHdr+i*2]);
-      if( !isLeaf ){
-        pCell->iChildPg = sqlite3Get4byte(&aData[iOff]);
-        iOff += 4;
-      }
-      if( p->flags==0x05 ){
-        /* A table interior node. nPayload==0. */
-      }else{
-        u32 nPayload;             /* Bytes of payload total (local+overflow) */
-        int nLocal;               /* Bytes of payload stored locally */
-        iOff += getVarint32(&aData[iOff], nPayload);
-        if( p->flags==0x0D ){
-          u64 dummy;
-          iOff += sqlite3GetVarint(&aData[iOff], &dummy);
-        }
-        if( nPayload>(u32)p->nMxPayload ) p->nMxPayload = nPayload;
-        getLocalPayload(nUsable, p->flags, nPayload, &nLocal);
-        pCell->nLocal = nLocal;
-        assert( nLocal>=0 );
-        assert( nPayload>=(u32)nLocal );
-        assert( nLocal<=(nUsable-35) );
-        if( nPayload>(u32)nLocal ){
-          int j;
-          int nOvfl = ((nPayload - nLocal) + nUsable-4 - 1) / (nUsable - 4);
-          pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
-          pCell->nOvfl = nOvfl;
-          pCell->aOvfl = sqlite3_malloc(sizeof(u32)*nOvfl);
-          pCell->aOvfl[0] = sqlite3Get4byte(&aData[iOff+nLocal]);
-          for(j=1; j<nOvfl; j++){
-            int rc;
-            u32 iPrev = pCell->aOvfl[j-1];
-            DbPage *pPg = 0;
-            rc = sqlite3PagerGet(sqlite3BtreePager(pBt), iPrev, &pPg);
-            if( rc!=SQLITE_OK ){
-              assert( pPg==0 );
-              return rc;
-            } 
-            pCell->aOvfl[j] = sqlite3Get4byte(sqlite3PagerGetData(pPg));
-            sqlite3PagerUnref(pPg);
-          }
-        }
-      }
-    }
-  }
-
-  return SQLITE_OK;
+	return RC_OK;
 }
 
-/*
-** Populate the pCsr->iOffset and pCsr->szPage member variables. Based on
-** the current value of pCsr->iPageno.
-*/
-static void statSizeAndOffset(StatCursor *pCsr){
-  StatTable *pTab = (StatTable *)((sqlite3_vtab_cursor *)pCsr)->pVtab;
-  Btree *pBt = pTab->db->aDb[0].pBt;
-  Pager *pPager = sqlite3BtreePager(pBt);
-  sqlite3_file *fd;
-  sqlite3_int64 x[2];
+// Populate the cur->iOffset and cur->szPage member variables. Based on the current value of cur->iPageno.
+__device__ static void statSizeAndOffset(StatCursor *cur)
+{
+	StatTable *tab = (StatTable *)((IVTableCursor *)cur)->IVTable;
+	Btree *bt = tab->Ctx->DBs[0].Bt;
+	Pager *pager = bt->get_Pager();
 
-  /* The default page size and offset */
-  pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
-  pCsr->iOffset = (i64)pCsr->szPage * (pCsr->iPageno - 1);
+	// The default page size and offset
+	cur->SizePage = bt->GetPageSize();
+	cur->Offset = (int64)cur->SizePage * (cur->Pageno - 1);
 
-  /* If connected to a ZIPVFS backend, override the page size and
-  ** offset with actual values obtained from ZIPVFS.
-  */
-  fd = sqlite3PagerFile(pPager);
-  x[0] = pCsr->iPageno;
-  if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
-    pCsr->iOffset = x[0];
-    pCsr->szPage = (int)x[1];
-  }
+	// If connected to a ZIPVFS backend, override the page size and offset with actual values obtained from ZIPVFS.
+	VFile *fd = pager->get_File();
+	int64 x[2];
+	x[0] = cur->Pageno;
+	if (fd->FileControl((VFile::FCNTL)230440, &x) == RC_OK)
+	{
+		cur->Offset = x[0];
+		cur->SizePage = (int)x[1];
+	}
 }
 
-/*
-** Move a statvfs cursor to the next entry in the file.
-*/
-static int statNext(sqlite3_vtab_cursor *pCursor){
-  int rc;
-  int nPayload;
-  StatCursor *pCsr = (StatCursor *)pCursor;
-  StatTable *pTab = (StatTable *)pCursor->pVtab;
-  Btree *pBt = pTab->db->aDb[0].pBt;
-  Pager *pPager = sqlite3BtreePager(pBt);
+// Move a statvfs cursor to the next entry in the file.
+__device__ static RC statNext(IVTableCursor *cursor)
+{
+	StatCursor *cur = (StatCursor *)cursor;
+	StatTable *tab = (StatTable *)cursor->IVTable;
+	Btree *bt = tab->Ctx->DBs[0].Bt;
+	Pager *pager = bt->get_Pager();
+	_free(cur->Path);
+	cur->Path = nullptr;
+	RC rc;
+	if (!cur->Pages[0].Pg)
+	{
+		rc = cur->Stmt->Step();
+		if (rc == RC_ROW)
+		{
+			uint32 root = (uint32)Vdbe::Column_Int64(cur->Stmt, 1);
+			uint32 pages;
+			pager->Pages(&pages);
+			if (pages == 0)
+			{
+				cur->IsEof = true;
+				return cur->Stmt->Reset();
+			}
+			rc = pager->Acquire(root, &cur->Pages[0].Pg);
+			cur->Pages[0].Pgno = root;
+			cur->Pages[0].CellId = 0;
+			cur->Pages[0].Path = _mprintf("/");
+			cur->PageId = 0;
+		}
+		else
+		{
+			cur->IsEof = true;
+			return cur->Stmt->Reset();
+		}
+	}
+	else
+	{
+		// Page p itself has already been visited.
+		StatPage *p = &cur->Pages[cur->PageId];
+		while (p->CellId < p->Cells.length)
+		{
+			StatCell *cell = &p->Cells[p->CellId];
+			if (cell->OvflId < cell->Ovfls.length)
+			{
+				int usable = bt->GetPageSize()-bt->GetReserve();
+				cur->Name = (char *)Vdbe::Column_Text(cur->Stmt, 0);
+				cur->Pageno = cell->Ovfls[cell->OvflId];
+				cur->Pagetype = "overflow";
+				cur->Cells = 0;
+				cur->MaxPayload = 0;
+				cur->Path = _mprintf("%s%.3x+%.6x", p->Path, p->CellId, cell->OvflId);
+				if (cell->OvflId < cell->Ovfls.length-1)
+				{
+					cur->Unused = 0;
+					cur->Payload = usable - 4;
+				}
+				else
+				{
+					cur->Payload = cell->LastOvfl;
+					cur->Unused = usable - 4 - cur->Payload;
+				}
+				cell->OvflId++;
+				statSizeAndOffset(cur);
+				return RC_OK;
+			}
+			if (p->RightChildPg) break;
+			p->CellId++;
+		}
 
-  sqlite3_free(pCsr->zPath);
-  pCsr->zPath = 0;
+		while (!p->RightChildPg || p->CellId > p->Cells.length)
+		{
+			statClearPage(p);
+			if (cur->PageId == 0) return statNext(cursor);
+			cur->PageId--;
+			p = &cur->Pages[cur->PageId];
+		}
+		cur->PageId++;
+		_assert(p == &cur->Pages[cur->PageId-1]);
 
-  if( pCsr->aPage[0].pPg==0 ){
-    rc = sqlite3_step(pCsr->pStmt);
-    if( rc==SQLITE_ROW ){
-      int nPage;
-      u32 iRoot = (u32)sqlite3_column_int64(pCsr->pStmt, 1);
-      sqlite3PagerPagecount(pPager, &nPage);
-      if( nPage==0 ){
-        pCsr->isEof = 1;
-        return sqlite3_reset(pCsr->pStmt);
-      }
-      rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg);
-      pCsr->aPage[0].iPgno = iRoot;
-      pCsr->aPage[0].iCell = 0;
-      pCsr->aPage[0].zPath = sqlite3_mprintf("/");
-      pCsr->iPage = 0;
-    }else{
-      pCsr->isEof = 1;
-      return sqlite3_reset(pCsr->pStmt);
-    }
-  }else{
+		p[1].Pgno = (p->CellId == p->Cells.length ? p->RightChildPg : p->Cells[p->CellId].ChildPg);
+		rc = pager->Acquire(p[1].Pgno, &p[1].Pg);
+		p[1].CellId = 0;
+		p[1].Path = _mprintf("%s%.3x/", p->Path, p->CellId);
+		p->CellId++;
+	}
 
-    /* Page p itself has already been visited. */
-    StatPage *p = &pCsr->aPage[pCsr->iPage];
-
-    while( p->iCell<p->nCell ){
-      StatCell *pCell = &p->aCell[p->iCell];
-      if( pCell->iOvfl<pCell->nOvfl ){
-        int nUsable = sqlite3BtreeGetPageSize(pBt)-sqlite3BtreeGetReserve(pBt);
-        pCsr->zName = (char *)sqlite3_column_text(pCsr->pStmt, 0);
-        pCsr->iPageno = pCell->aOvfl[pCell->iOvfl];
-        pCsr->zPagetype = "overflow";
-        pCsr->nCell = 0;
-        pCsr->nMxPayload = 0;
-        pCsr->zPath = sqlite3_mprintf(
-            "%s%.3x+%.6x", p->zPath, p->iCell, pCell->iOvfl
-        );
-        if( pCell->iOvfl<pCell->nOvfl-1 ){
-          pCsr->nUnused = 0;
-          pCsr->nPayload = nUsable - 4;
-        }else{
-          pCsr->nPayload = pCell->nLastOvfl;
-          pCsr->nUnused = nUsable - 4 - pCsr->nPayload;
-        }
-        pCell->iOvfl++;
-        statSizeAndOffset(pCsr);
-        return SQLITE_OK;
-      }
-      if( p->iRightChildPg ) break;
-      p->iCell++;
-    }
-
-    while( !p->iRightChildPg || p->iCell>p->nCell ){
-      statClearPage(p);
-      if( pCsr->iPage==0 ) return statNext(pCursor);
-      pCsr->iPage--;
-      p = &pCsr->aPage[pCsr->iPage];
-    }
-    pCsr->iPage++;
-    assert( p==&pCsr->aPage[pCsr->iPage-1] );
-
-    if( p->iCell==p->nCell ){
-      p[1].iPgno = p->iRightChildPg;
-    }else{
-      p[1].iPgno = p->aCell[p->iCell].iChildPg;
-    }
-    rc = sqlite3PagerGet(pPager, p[1].iPgno, &p[1].pPg);
-    p[1].iCell = 0;
-    p[1].zPath = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
-    p->iCell++;
-  }
-
-
-  /* Populate the StatCursor fields with the values to be returned
-  ** by the xColumn() and xRowid() methods.
-  */
-  if( rc==SQLITE_OK ){
-    int i;
-    StatPage *p = &pCsr->aPage[pCsr->iPage];
-    pCsr->zName = (char *)sqlite3_column_text(pCsr->pStmt, 0);
-    pCsr->iPageno = p->iPgno;
-
-    statDecodePage(pBt, p);
-    statSizeAndOffset(pCsr);
-
-    switch( p->flags ){
-      case 0x05:             /* table internal */
-      case 0x02:             /* index internal */
-        pCsr->zPagetype = "internal";
-        break;
-      case 0x0D:             /* table leaf */
-      case 0x0A:             /* index leaf */
-        pCsr->zPagetype = "leaf";
-        break;
-      default:
-        pCsr->zPagetype = "corrupted";
-        break;
-    }
-    pCsr->nCell = p->nCell;
-    pCsr->nUnused = p->nUnused;
-    pCsr->nMxPayload = p->nMxPayload;
-    pCsr->zPath = sqlite3_mprintf("%s", p->zPath);
-    nPayload = 0;
-    for(i=0; i<p->nCell; i++){
-      nPayload += p->aCell[i].nLocal;
-    }
-    pCsr->nPayload = nPayload;
-  }
-
-  return rc;
+	// Populate the StatCursor fields with the values to be returned by the xColumn() and xRowid() methods.
+	if (rc == RC_OK)
+	{
+		StatPage *p = &cur->Pages[cur->PageId];
+		cur->Name = (char *)Vdbe::Column_Text(cur->Stmt, 0);
+		cur->Pageno = p->Pgno;
+		statDecodePage(bt, p);
+		statSizeAndOffset(cur);
+		switch (p->Flags)
+		{
+		case 0x05:             // table internal
+		case 0x02:             // index internal
+			cur->Pagetype = "internal";
+			break;
+		case 0x0D:             // table leaf
+		case 0x0A:             // index leaf
+			cur->Pagetype = "leaf";
+			break;
+		default:
+			cur->Pagetype = "corrupted";
+			break;
+		}
+		cur->Cells = p->Cells.length;
+		cur->Unused = p->Unused;
+		cur->MaxPayload = p->MaxPayload;
+		cur->Path = _mprintf("%s", p->Path);
+		int payload = 0;
+		for (int i = 0; i < p->Cells.length; i++)
+			payload += p->Cells[i].Local;
+		cur->Payload = payload;
+	}
+	return rc;
 }
 
-static int statEof(sqlite3_vtab_cursor *pCursor){
-  StatCursor *pCsr = (StatCursor *)pCursor;
-  return pCsr->isEof;
+__device__ static bool statEof(IVTableCursor *cursor)
+{
+	StatCursor *cur = (StatCursor *)cursor;
+	return cur->IsEof;
 }
 
-static int statFilter(
-  sqlite3_vtab_cursor *pCursor, 
-  int idxNum, const char *idxStr,
-  int argc, sqlite3_value **argv
-){
-  StatCursor *pCsr = (StatCursor *)pCursor;
-
-  statResetCsr(pCsr);
-  return statNext(pCursor);
+__device__ static RC statFilter(IVTableCursor *cursor, int idxNum, const char *idxStr, int argc, Mem **args)
+{
+	StatCursor *cur = (StatCursor *)cursor;
+	statResetCsr(cur);
+	return statNext(cursor);
 }
 
-static int statColumn(
-  sqlite3_vtab_cursor *pCursor, 
-  sqlite3_context *ctx, 
-  int i
-){
-  StatCursor *pCsr = (StatCursor *)pCursor;
-  switch( i ){
-    case 0:            /* name */
-      sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_STATIC);
-      break;
-    case 1:            /* path */
-      sqlite3_result_text(ctx, pCsr->zPath, -1, SQLITE_TRANSIENT);
-      break;
-    case 2:            /* pageno */
-      sqlite3_result_int64(ctx, pCsr->iPageno);
-      break;
-    case 3:            /* pagetype */
-      sqlite3_result_text(ctx, pCsr->zPagetype, -1, SQLITE_STATIC);
-      break;
-    case 4:            /* ncell */
-      sqlite3_result_int(ctx, pCsr->nCell);
-      break;
-    case 5:            /* payload */
-      sqlite3_result_int(ctx, pCsr->nPayload);
-      break;
-    case 6:            /* unused */
-      sqlite3_result_int(ctx, pCsr->nUnused);
-      break;
-    case 7:            /* mx_payload */
-      sqlite3_result_int(ctx, pCsr->nMxPayload);
-      break;
-    case 8:            /* pgoffset */
-      sqlite3_result_int64(ctx, pCsr->iOffset);
-      break;
-    case 9:            /* pgsize */
-      sqlite3_result_int(ctx, pCsr->szPage);
-      break;
-  }
-  return SQLITE_OK;
+__device__ static RC statColumn(IVTableCursor *cursor,  FuncContext *fctx, int i)
+{
+	StatCursor *cur = (StatCursor *)cursor;
+	switch (i)
+	{
+	case 0: Vdbe::Result_Text(fctx, cur->Name, -1, DESTRUCTOR_STATIC); break; // name
+	case 1: Vdbe::Result_Text(fctx, cur->Path, -1, DESTRUCTOR_TRANSIENT); break; // path
+	case 2: Vdbe::Result_Int64(fctx, cur->Pageno); break; // pageno
+	case 3: Vdbe::Result_Text(fctx, cur->Pagetype, -1, DESTRUCTOR_STATIC); break; // pagetype
+	case 4: Vdbe::Result_Int(fctx, cur->Cells); break; // ncell
+	case 5: Vdbe::Result_Int(fctx, cur->Payload); break; // payload
+	case 6: Vdbe::Result_Int(fctx, cur->Unused); break; // unused
+	case 7: Vdbe::Result_Int(fctx, cur->MaxPayload); break; // mx_payload
+	case 8: Vdbe::Result_Int64(fctx, cur->Offset); break; // pgoffset
+	case 9: Vdbe::Result_Int(fctx, cur->SizePage); break; // pgsize
+	}
+	return RC_OK;
 }
 
-static int statRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
-  StatCursor *pCsr = (StatCursor *)pCursor;
-  *pRowid = pCsr->iPageno;
-  return SQLITE_OK;
+__device__ static RC statRowid(IVTableCursor *cursor, int64 *rowid)
+{
+	StatCursor *cur = (StatCursor *)cursor;
+	*rowid = cur->Pageno;
+	return RC_OK;
 }
 
-int sqlite3_dbstat_register(sqlite3 *db){
-  static sqlite3_module dbstat_module = {
-    0,                            /* iVersion */
-    statConnect,                  /* xCreate */
-    statConnect,                  /* xConnect */
-    statBestIndex,                /* xBestIndex */
-    statDisconnect,               /* xDisconnect */
-    statDisconnect,               /* xDestroy */
-    statOpen,                     /* xOpen - open a cursor */
-    statClose,                    /* xClose - close a cursor */
-    statFilter,                   /* xFilter - configure scan constraints */
-    statNext,                     /* xNext - advance a cursor */
-    statEof,                      /* xEof - check for end of scan */
-    statColumn,                   /* xColumn - read data */
-    statRowid,                    /* xRowid - read data */
-    0,                            /* xUpdate */
-    0,                            /* xBegin */
-    0,                            /* xSync */
-    0,                            /* xCommit */
-    0,                            /* xRollback */
-    0,                            /* xFindMethod */
-    0,                            /* xRename */
-  };
-  sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
-  return SQLITE_OK;
+__constant__ static ITableModule _dbstat_module = {
+	0,							// Version
+	statConnect,				// Create
+	statConnect,				// Connect
+	statBestIndex,				// BestIndex
+	statDisconnect,				// Disconnect
+	statDisconnect,				// Destroy
+	statOpen,					// Open - open a cursor
+	statClose,					// Close - close a cursor
+	statFilter,					// Filter - configure scan constraints
+	statNext,					// Next - advance a cursor
+	statEof,					// Eof - check for end of scan
+	statColumn,					// Column - read data
+	statRowid,					// Rowid - read data
+	nullptr,                    // Update
+	nullptr,                    // Begin
+	nullptr,                    // Sync
+	nullptr,                    // Commit
+	nullptr,                    // Rollback
+	nullptr,                    // FindMethod
+	nullptr,                    // Rename
+};
+
+__device__ int sqlite3_dbstat_register(Context *ctx)
+{
+	VTable::CreateModule(ctx, "dbstat", &_dbstat_module, nullptr, nullptr);
+	return RC_OK;
 }
 
 #endif
 
-#if defined(SQLITE_TEST) || TCLSH==2
-#include <tcl.h>
+#if defined(_TEST) || TCLSH == 2
+#include <JimEx.h>
 
-static int test_dbstat(
-  void *clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-#ifdef SQLITE_OMIT_VIRTUALTABLE
-  Tcl_AppendResult(interp, "dbstat not available because of "
-                           "SQLITE_OMIT_VIRTUALTABLE", (void*)0);
-  return JIM_ERROR;
+static int test_dbstat(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+#ifdef OMIT_VIRTUALTABLE
+	Jim_AppendResult(interp, "dbstat not available because of SQLITE_OMIT_VIRTUALTABLE", nullptr);
+	return JIM_ERROR;
 #else
-  struct SqliteDb { sqlite3 *db; };
-  char *zDb;
-  Tcl_CmdInfo cmdInfo;
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return JIM_ERROR;
-  }
-
-  zDb = Tcl_GetString(objv[1]);
-  if( Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
-    sqlite3* db = ((struct SqliteDb*)cmdInfo.objClientData)->db;
-    sqlite3_dbstat_register(db);
-  }
-  return JIM_OK;
+	struct SqliteDb { Context *Ctx; };
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
+	}
+	const char *db = Jim_String(args[1]);
+	Jim_CmdInfo cmdInfo;
+	if (Jim_GetCommandInfo(interp, db, &cmdInfo))
+	{
+		Context *ctx = ((struct SqliteDb *)cmdInfo.objClientData)->Ctx;
+		sqlite3_dbstat_register(ctx);
+	}
+	return JIM_OK;
 #endif
 }
 
-int SqlitetestStat_Init(Tcl_Interp *interp){
-  Tcl_CreateObjCommand(interp, "register_dbstat_vtab", test_dbstat, 0, 0);
-  return JIM_OK;
+__device__ int SqlitetestStat_Init(Jim_Interp *interp)
+{
+	Jim_CreateCommand(interp, "register_dbstat_vtab", test_dbstat, nullptr, nullptr);
+	return JIM_OK;
 }
-#endif /* if defined(SQLITE_TEST) || TCLSH==2 */
+
+#endif

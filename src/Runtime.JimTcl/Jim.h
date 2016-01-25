@@ -638,6 +638,7 @@ extern "C" {
 	// integer object
 	JIM_EXPORT __device__ int Jim_GetWide(Jim_Interp *interp, Jim_Obj *objPtr, jim_wide *widePtr);
 	JIM_EXPORT __device__ int Jim_GetLong(Jim_Interp *interp, Jim_Obj *objPtr, long *longPtr);
+#define Jim_NewBooleanObj Jim_NewIntObj
 #define Jim_NewWideObj Jim_NewIntObj
 	JIM_EXPORT __device__ Jim_Obj *Jim_NewIntObj(Jim_Interp *interp, jim_wide wideValue);
 	__inline __device__ int Jim_GetInt(Jim_Interp *interp, Jim_Obj *objPtr, int *intPtr)
