@@ -2,9 +2,9 @@
 #define __RUNTIME_H__
 #include "RuntimeTypes.h"
 
-//#define OMIT_INLINECONVERT
-//#define OMIT_INLINEMATH
-//#define OMIT_INLINEFUNC
+#define OMIT_INLINECONVERT
+#define OMIT_INLINEMATH
+#define OMIT_INLINEFUNC
 
 //////////////////////
 // NATIVE
@@ -524,9 +524,10 @@ template <typename TLength, typename T, size_t size> struct array_t3 { TLength l
 #define _lengthof(symbol) (sizeof(symbol) / sizeof(symbol[0]))
 
 #ifndef OMIT_INLINEFUNC
+
 // strcpy
 #if 1
-template <typename T> __device__ __forceinline void _strcpy(T *__restrict__ dest, const T *__restrict__ src)
+__device__ __forceinline void _strcpy(char *__restrict__ dest, const char *__restrict__ src)
 {
 	register unsigned char *d = (unsigned char *)dest;
 	register unsigned char *s = (unsigned char *)src;
@@ -541,7 +542,7 @@ __device__ __forceinline void _strcpy(register char *__restrict__ dest, register
 #endif
 
 // strncpy
-template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, const T *__restrict__ src, size_t length)
+__device__ __forceinline void _strncpy(char *__restrict__ dest, const char *__restrict__ src, size_t length)
 {
 	register unsigned char *d = (unsigned char *)dest;
 	register unsigned char *s = (unsigned char *)src;
@@ -551,20 +552,10 @@ template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ des
 	for (; i < length; ++i, ++d, ++s)
 		*d = 0;
 }
-//template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
-//{
-//	register unsigned char *d = (unsigned char *)dest;
-//	register unsigned char *s = (unsigned char *)src;
-//	size_t i = 0;
-//	for (; i < length && *s; ++i, ++d, ++s)
-//		*d = *s;
-//	for (; i < length; ++i, ++d, ++s)
-//		*d = 0;
-//}
 
 //strcat
 #if 1
-template <typename T> __device__ __forceinline void _strcat(T *__restrict__ dest, const T *__restrict__ src)
+__device__ __forceinline void _strcat(char *__restrict__ dest, const char *__restrict__ src)
 {
 	register unsigned char *d = (unsigned char *)dest;
 	while (*d) d++;
@@ -583,17 +574,17 @@ __device__ char *_strcat(register char *__restrict__ dest, register const char *
 #endif
 
 // strchr
-template <typename T> __device__ __forceinline T *_strchr(const T *src, int character)
+__device__ __forceinline char *_strchr(const char *src, int ch)
 {
 	register unsigned char *s = (unsigned char *)src;
-	register unsigned char l = (unsigned char)__curtUpperToLower[character];
+	register unsigned char l = (unsigned char)__curtUpperToLower[ch];
 	while (*s && __curtUpperToLower[*s] != l) { s++; }
-	return (T *)(*s ? s : nullptr);
+	return (char *)(*s ? s : nullptr);
 }
 
 // strstr
 //http://articles.leetcode.com/2010/10/implement-strstr-to-find-substring-in.html
-template <typename T> __device__ __forceinline const T *_strstr(const T *__restrict__ src, const T *__restrict__ str)
+__device__ __forceinline const char *_strstr(const char *__restrict__ src, const char *__restrict__ str)
 {
 	if (!*str) return src;
 	char *p1 = (char *)src, *p2 = (char *)str;
@@ -618,7 +609,7 @@ template <typename T> __device__ __forceinline const T *_strstr(const T *__restr
 }
 
 // strcmp
-template <typename T> __device__ __forceinline int _strcmp(const T *__restrict__ left, const T *__restrict__ right)
+__device__ __forceinline int _strcmp(const char *__restrict__ left, const char *__restrict__ right)
 {
 	register unsigned char *a = (unsigned char *)left;
 	register unsigned char *b = (unsigned char *)right;
@@ -628,7 +619,7 @@ template <typename T> __device__ __forceinline int _strcmp(const T *__restrict__
 
 // strncmp
 #undef _fstrncmp
-template <typename T> __device__ __forceinline int _strncmp(const T *__restrict__ left, const T *__restrict__ right, int n)
+__device__ __forceinline int _strncmp(const char *__restrict__ left, const char *__restrict__ right, int n)
 {
 	register unsigned char *a = (unsigned char *)left;
 	register unsigned char *b = (unsigned char *)right;
@@ -644,16 +635,9 @@ template <typename T> __device__ __forceinline int _strncmp(const T *__restrict_
 #define _memcpy(dest, src, length) memcpy(dest, src, length)
 #endif
 #if 0
-template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest, const T *__restrict__ src, size_t length)
+__device__ __forceinline void _memcpy(char *__restrict__ dest, const char *__restrict__ src, size_t length)
 {
 	a, *b;
-	register unsigned char *a = (unsigned char *)dest;
-	register unsigned char *b = (unsigned char *)src;
-	for (size_t i = 0; i < length; ++i, ++a, ++b)
-		*a = *b;
-}
-template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
-{
 	register unsigned char *a = (unsigned char *)dest;
 	register unsigned char *b = (unsigned char *)src;
 	for (size_t i = 0; i < length; ++i, ++a, ++b)
@@ -668,7 +652,7 @@ template <typename T> __device__ __forceinline void _memcpy(T *__restrict__ dest
 #define _memset(dest, value, length) memset(dest, value, length)
 #endif
 #if 0
-template <typename T> __device__ __forceinline void _memset(T *dest, const char value, size_t length)
+__device__ __forceinline void _memset(char *dest, const char value, size_t length)
 {
 	register unsigned char *a = (unsigned char *)dest;
 	for (size_t i = 0; i < length; ++i, ++a)
@@ -677,36 +661,24 @@ template <typename T> __device__ __forceinline void _memset(T *dest, const char 
 #endif
 
 // memchr
-template <typename T> __device__ __forceinline const T *_memchr(const T *src, char character, size_t length)
+__device__ __forceinline const void *_memchr(const void *src, char ch, size_t length)
 {
 	if (length != 0) {
 		register const unsigned char *p = (const unsigned char *)src;
 		do {
-			if (*p++ == character)
-				return (const T *)(p - 1);
+			if (*p++ == ch)
+				return (const void *)(p - 1);
 		} while (--length != 0);
 	}
 	return nullptr;
 	//register unsigned char *a = (unsigned char *)src;
-	//register unsigned char b = (unsigned char)character;
+	//register unsigned char b = (unsigned char)ch;
 	//while (--length > 0 && *a && *a != b) { a++; }
 	//return (const T *)*a;
 }
 
-//__device__ void *_memchr(const void *s, register unsigned char c, register size_t n)
-//{
-//	if (n != 0) {
-//		register const unsigned char *p = (const unsigned char *)s;
-//		do {
-//			if (*p++ == c)
-//				return ((void *)(p - 1));
-//		} while (--n != 0);
-//	}
-//	return nullptr;
-//}
-
 // memcmp
-template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__restrict__ left, Y *__restrict__ right, size_t length)
+__device__ __forceinline int _memcmp(const void *__restrict__ left, const void *__restrict__ right, size_t length)
 {
 	if (!length)
 		return 0;
@@ -717,7 +689,7 @@ template <typename T, typename Y> __device__ __forceinline int _memcmp(T *__rest
 }
 
 // memmove
-template <typename T, typename Y> __device__ __forceinline void _memmove(T *__restrict__ left, Y *__restrict__ right, size_t length)
+__device__ __forceinline void _memmove(void *__restrict__ left, const void *__restrict__ right, size_t length)
 {
 	if (!length)
 		return;
@@ -758,7 +730,7 @@ __device__ __forceinline unsigned char _hextobyte(char h)
 }
 
 #ifndef OMIT_FLOATING_POINT
-__device__ inline bool _isnan(double x)
+__device__ __forceinline bool _isnan(double x)
 {
 #if !defined(HAVE_ISNAN)
 	// Systems that support the isnan() library function should probably make use of it by compiling with -DHAVE_ISNAN.  But we have
@@ -785,6 +757,7 @@ __device__ inline bool _isnan(double x)
 #endif
 }
 #endif
+
 #else
 
 // strcpy
@@ -792,23 +765,22 @@ __device__ void _strcpy(char *__restrict__ dest, const char *__restrict__ src);
 
 // strncpy
 __device__ void _strncpy(char *__restrict__ dest, const char *__restrict__ src, size_t length);
-//__device__ void _strncpy(char *__restrict__ dest, void *__restrict__ src, size_t length);
 
 // strcat
 __device__ void _strcat(char *__restrict__ dest, const char *__restrict__ src);
 
 // strchr
-__device__ char *_strchr(const char *src, int character);
+__device__ char *_strchr(const char *src, int ch);
 
 // strstr
-__device__ const void *_strstr(const void *__restrict__ src, const void *__restrict__ str);
+__device__ const char *_strstr(const char *__restrict__ src, const char *__restrict__ str);
 
 // strcmp
-__device__ int _strcmp(const void *__restrict__ left, const void *__restrict__ right);
+__device__ int _strcmp(const char *__restrict__ left, const char *__restrict__ right);
 
 // strncmp
 #undef _fstrncmp
-__device__ int _strncmp(const void *__restrict__ left, const void *__restrict__ right, int n);
+__device__ int _strncmp(const char *__restrict__ left, const char *__restrict__ right, int n);
 #define _fstrncmp(x, y) (__tolower(*(unsigned char *)(x))==__tolower(*(unsigned char *)(y))&&!_strcmp((x)+1,(y)+1))
 
 // memcpy
@@ -826,13 +798,13 @@ __device__ int _strncmp(const void *__restrict__ left, const void *__restrict__ 
 #endif
 
 // memchr
-__device__ const void *_memchr(const void *src, char character, size_t length);
+__device__ const void *_memchr(const void *src, char ch, size_t length);
 
 // memcmp
-__device__ int _memcmp(void *__restrict__ left, void *__restrict__ right, size_t length);
+__device__ int _memcmp(const void *__restrict__ left, const void *__restrict__ right, size_t length);
 
 // memmove
-__device__ void _memmove(void *__restrict__ left, void *__restrict__ right, size_t length);
+__device__ void _memmove(void *__restrict__ left, const void *__restrict__ right, size_t length);
 
 // strlen30
 __device__ int _strlen(const char *z);
@@ -842,9 +814,19 @@ __device__ int _strlen16(const void *z);
 __device__ unsigned char _hextobyte(char h);
 
 #ifndef OMIT_FLOATING_POINT
-__device__ inline bool _isnan(double x);
+__device__ bool _isnan(double x);
 #endif
 
+#endif
+
+#ifdef __cplusplus
+extern "C++" {
+	__device__ __forceinline char *_strchr(char *src, int ch) { return (char *)_strchr((const char *)src, ch); }
+	//__device__ __forceinline char *_strpbrk(char *src, const char *c) { return (char *)_strpbrk((const char*)src, c); }
+	//__device__ __forceinline char *_strrchr(char *src, int ch) { return (char *)_strrchr((const char *)src, ch); }
+	__device__ __forceinline char *_strstr(char *src, const char *str) { return (char *)_strstr((const char *)src, str); }
+	__device__ __forceinline void *_memchr(void *src, int ch, size_t length) { return (void *)_memchr((const void *)src, ch, length); }
+}
 #endif
 
 #pragma endregion

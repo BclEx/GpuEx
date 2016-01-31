@@ -865,7 +865,7 @@ __device__ static void *JimStringCopyHTDup(void *privdata, const void *key)
 
 __device__ static int JimStringCopyHTKeyCompare(void *privdata, const void *key1, const void *key2)
 {
-	return !_strcmp(key1, key2);
+	return !_strcmp((const char *)key1, (const char *)key2);
 }
 
 __device__ static void JimStringCopyHTKeyDestructor(void *privdata, void *key)

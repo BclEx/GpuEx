@@ -250,9 +250,11 @@ Global
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|Win32.ActiveCfg = Release.cpu|Win32
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
+		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cpu|x64.Build.0 = Release.cpu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cu|Win32.ActiveCfg = Release.cu|Win32
 		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cu|x64.ActiveCfg = Release.cu|x64
+		{3D992207-4EA5-4750-9401-AAD09DFDE7E5}.Release.cu|x64.Build.0 = Release.cu|x64
 		{06098F19-6185-43A5-AD77-B0E8C10AC885}.Debug.cpu|Any CPU.ActiveCfg = Debug.cpu|Any CPU
 		{06098F19-6185-43A5-AD77-B0E8C10AC885}.Debug.cpu|Any CPU.Build.0 = Debug.cpu|Any CPU
 		{06098F19-6185-43A5-AD77-B0E8C10AC885}.Debug.cpu|Win32.ActiveCfg = Debug.cpu|Any CPU
@@ -286,6 +288,7 @@ Global
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cu|Win32.ActiveCfg = Release.cu|Win32
 		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cu|x64.ActiveCfg = Release.cu|x64
+		{9E735B14-3DDD-4703-A408-1FD099B4CA92}.Release.cu|x64.Build.0 = Release.cu|x64
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|Any CPU.ActiveCfg = Debug.cpu|x64
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|Win32.ActiveCfg = Debug.cpu|Win32
 		{4CBB97BD-16C4-4698-BC63-16F2499254B3}.Debug.cpu|Win32.Build.0 = Debug.cpu|Win32
@@ -318,9 +321,11 @@ Global
 		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cpu|Win32.ActiveCfg = Release.cpu|Win32
 		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
+		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cpu|x64.Build.0 = Release.cpu|x64
 		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
 		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cu|Win32.ActiveCfg = Release.cu|Win32
 		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cu|x64.ActiveCfg = Release.cu|x64
+		{821AFA21-3738-4DFC-985B-0F5C080E15E5}.Release.cu|x64.Build.0 = Release.cu|x64
 		{2A992207-4EA5-4750-9401-AAD09DFDE7E6}.Debug.cpu|Any CPU.ActiveCfg = Debug.cpu|x64
 		{2A992207-4EA5-4750-9401-AAD09DFDE7E6}.Debug.cpu|Win32.ActiveCfg = Debug.cpu|Win32
 		{2A992207-4EA5-4750-9401-AAD09DFDE7E6}.Debug.cpu|x64.ActiveCfg = Debug.cpu|x64
@@ -358,9 +363,11 @@ Global
 		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cpu|Win32.ActiveCfg = Release.cpu|Win32
 		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
+		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cpu|x64.Build.0 = Release.cpu|x64
 		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
 		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cu|Win32.ActiveCfg = Release.cu|Win32
 		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cu|x64.ActiveCfg = Release.cu|x64
+		{602F49D0-3A63-459E-AD6D-81CF59C44A3A}.Release.cu|x64.Build.0 = Release.cu|x64
 		{E12FCAFC-B881-41D2-BA5B-72A5AF25E655}.Debug.cpu|Any CPU.ActiveCfg = Debug.cpu|x64
 		{E12FCAFC-B881-41D2-BA5B-72A5AF25E655}.Debug.cpu|Win32.ActiveCfg = Debug.cpu|Win32
 		{E12FCAFC-B881-41D2-BA5B-72A5AF25E655}.Debug.cpu|Win32.Build.0 = Debug.cpu|Win32
@@ -405,6 +412,7 @@ Global
 		{A384B764-632E-4026-9269-BE64BC1D14C3}.Release.cpu|Any CPU.ActiveCfg = Release.cpu|x64
 		{A384B764-632E-4026-9269-BE64BC1D14C3}.Release.cpu|Win32.ActiveCfg = Release.cpu|x64
 		{A384B764-632E-4026-9269-BE64BC1D14C3}.Release.cpu|x64.ActiveCfg = Release.cpu|x64
+		{A384B764-632E-4026-9269-BE64BC1D14C3}.Release.cpu|x64.Build.0 = Release.cpu|x64
 		{A384B764-632E-4026-9269-BE64BC1D14C3}.Release.cu|Any CPU.ActiveCfg = Release.cu|x64
 		{A384B764-632E-4026-9269-BE64BC1D14C3}.Release.cu|Win32.ActiveCfg = Release.cu|x64
 		{A384B764-632E-4026-9269-BE64BC1D14C3}.Release.cu|x64.ActiveCfg = Release.cu|x64
