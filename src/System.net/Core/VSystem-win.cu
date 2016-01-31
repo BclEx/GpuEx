@@ -8,9 +8,6 @@ namespace CORE_NAME
 
 #pragma region Preamble
 
-#if OS_WIN // This file is used for Windows only
-#define POWERSAFE_OVERWRITE 1
-
 #if defined(_TEST) || defined(_DEBUG)
 	bool OsTrace = false;
 #define OSTRACE(X, ...) if (OsTrace) { _dprintf("OS: "X, __VA_ARGS__); }
@@ -39,6 +36,15 @@ namespace CORE_NAME
 #define SimulateIOError(A)
 #define SimulateDiskfullError(A)
 #endif
+
+#ifdef _TESTX
+	__device__ static int _saved_cnt;
+	__device__ void DisableSimulatedIOErrors(int *pending, int *hit) { if (!pending) pending = &_saved_cnt; *pending = g_io_error_pending; g_io_error_pending = -1; if (hit) { *hit = g_io_error_hit; g_io_error_hit = 0; } }
+	__device__ void EnableSimulatedIOErrors(int *pending, int *hit) { if (!pending) pending = &_saved_cnt; g_io_error_pending = *pending; if (hit) g_io_error_hit = *hit; }
+#endif
+
+#if OS_WIN // This file is used for Windows only
+#define POWERSAFE_OVERWRITE 1
 
 	// When testing, keep a count of the number of open files.
 #ifdef _TEST
@@ -1951,7 +1957,7 @@ namespace CORE_NAME
 		else if ((*arg) == 0)
 			file->CtrlFlags = (WinVFile::WINFILE)(file->CtrlFlags & ~mask);
 		else
-			file->CtrlFlags |= mask;
+			file->CtrlFlags |= (WinVFile::WINFILE)mask;
 	}
 
 	static RC getTempname(int bufLength, char *buf);

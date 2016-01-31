@@ -1744,26 +1744,6 @@ end_playback:
 		return MaxPid;
 	}
 
-#ifdef _TEST
-	extern __device__ int g_io_error_pending;
-	extern __device__ int g_io_error_hit;
-	__device__ static int saved_cnt;
-
-	__device__ void disable_simulated_io_errors()
-	{
-		saved_cnt = g_io_error_pending;
-		g_io_error_pending = -1;
-	}
-
-	__device__ void enable_simulated_io_errors()
-	{
-		g_io_error_pending = saved_cnt;
-	}
-#else
-#define disable_simulated_io_errors()
-#define enable_simulated_io_errors()
-#endif
-
 	__device__ RC Pager::ReadFileheader(int n, unsigned char *dest)
 	{
 		_memset(dest, 0, n);
@@ -1847,7 +1827,7 @@ end_playback:
 	__device__ RC Pager::Close()
 	{
 		_assert(AssertPagerState(this));
-		disable_simulated_io_errors();
+		DisableSimulatedIOErrors();
 		_benignalloc_begin();
 		ErrorCode = RC_OK;
 		ExclusiveMode = (IPager::LOCKINGMODE)0;
@@ -1872,7 +1852,7 @@ end_playback:
 			PagerUnlockAndRollback(this);
 		}
 		_benignalloc_end();
-		enable_simulated_io_errors();
+		EnableSimulatedIOErrors();
 		PAGERTRACE("CLOSE %d\n", PAGERID(this));
 		SysEx_IOTRACE("CLOSE %p\n", this);
 		JournalFile->Close();
@@ -2254,9 +2234,9 @@ end_playback:
 		// Allocate memory for the Pager structure, PCache object, the three file descriptors, the database file name and the journal file name.
 		int pcacheSizeOf = PCache::SizeOf();	// Bytes to allocate for PCache
 		uint8 *ptr = (uint8 *)_allocZero(
-			_ROUND8(sizeof(Pager)) +		// Pager structure
-			_ROUND8(pcacheSizeOf) +        // PCache object
-			_ROUND8(vfs->SizeOsFile) +     // The main db file
+			_ROUND8(sizeof(Pager)) +			// Pager structure
+			_ROUND8(pcacheSizeOf) +				// PCache object
+			_ROUND8(vfs->SizeOsFile) +			// The main db file
 			journalFileSize * 2 +				// The two journal files
 			pathnameLength + 1 + uriLength +    // zFilename
 			pathnameLength + 8 + 2              // zJournal

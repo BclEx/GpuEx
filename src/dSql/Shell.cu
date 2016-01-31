@@ -3445,7 +3445,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, InterruptHandler);
 #endif
 	H_DIRTY(&_data);
-	//_data.DbFilename = "\\T_\\t.db";
+	_data.DbFilename = "\\T_\\t.db";
 
 	// Do an initial pass through the command-line argument to locate the name of the database file, the name of the initialization file,
 	// the size of the alternative malloc heap, and the first command to execute.

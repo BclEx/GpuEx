@@ -64,6 +64,7 @@
     <ClCompile Include="Runtime+BenignAlloc.cu" />
     <ClCompile Include="Runtime+Bitvec.cu" />
     <ClCompile Include="Runtime+Convert.cu" />
+    <ClCompile Include="Runtime+Func.cu" />
     <ClCompile Include="Runtime+Hash.cu" />
     <ClCompile Include="Runtime+Math.cu" />
     <ClCompile Include="Runtime+Mem0.cu" />
@@ -91,6 +92,7 @@
     <None Include="Runtime+BenignAlloc.cu" />
     <None Include="Runtime+Bitvec.cu" />
     <None Include="Runtime+Convert.cu" />
+    <None Include="Runtime+Func.cu" />
     <None Include="Runtime+Hash.cu" />
     <None Include="Runtime+Math.cu" />
     <None Include="Runtime+Mem0.cu" />

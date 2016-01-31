@@ -1712,19 +1712,19 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
         static int _io_error_hit;
         static int saved_cnt;
 
-        internal static void disable_simulated_io_errors()
+        internal static void DisableSimulatedIOErrors()
         {
             saved_cnt = _io_error_pending;
             _io_error_pending = -1;
         }
 
-        internal static void enable_simulated_io_errors()
+        internal static void EnableSimulatedIOErrors()
         {
             _io_error_pending = saved_cnt;
         }
 #else
-        internal static void disable_simulated_io_errors() { }
-        internal static void enable_simulated_io_errors() { }
+        internal static void DisableSimulatedIOErrors() { }
+        internal static void EnableSimulatedIOErrors() { }
 #endif
 
         public RC ReadFileHeader(int n, byte[] dest)
@@ -1811,7 +1811,7 @@ Size:          dbsize={11} dbOrigSize={12} dbFileSize={13}"
         public RC Close()
         {
             Debug.Assert(assert_pager_state(this));
-            disable_simulated_io_errors();
+            DisableSimulatedIOErrors();
             C._benignalloc_begin();
             ErrorCode = RC.OK;
             ExclusiveMode = false;

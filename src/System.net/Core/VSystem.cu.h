@@ -22,6 +22,14 @@ namespace CORE_NAME
 #define TEMP_FILE_PREFIX "etilqs_"
 #endif
 
+#ifdef _TESTX
+	__device__ void DisableSimulatedIOErrors(int *pending = nullptr, int *hit = nullptr);
+	__device__ void EnableSimulatedIOErrors(int *pending = nullptr, int *hit = nullptr);
+#else
+#define DisableSimulatedIOErrors(pending, hit)
+#define EnableSimulatedIOErrors(pending, hit)
+#endif
+
 	typedef void (*syscall_ptr)();
 
 	class VFile;

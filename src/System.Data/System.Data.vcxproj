@@ -42,6 +42,114 @@
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
     <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>
   </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{AADAB731-E71B-406B-B023-6A3FD7957591}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>System</RootNamespace>
+    <ProjectName>System.Data</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>_LIB;_TEST;ENABLE_IOTRACE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)src\Runtime.JimTcl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;System.$(LC)$(LD).lib;Runtime.JimTcl.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
+      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
+      <Keep>true</Keep>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLink>false</PerformDeviceLink>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)'=='Debug.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MinSpace</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ExceptionHandling>false</ExceptionHandling>
+      <PreprocessorDefinitions>NDEBUG;_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)src\Runtime.JimTcl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
+      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;System.$(LC)$(LD).lib;Runtime.JimTcl.$(LC)$(LD).lib;cudart.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
+      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
+      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
+      <Keep>true</Keep>
+    </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLink>false</PerformDeviceLink>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command Condition="'$(Configuration)'=='Release.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\System.Data.net\Opcodes.h" />
     <ClInclude Include="..\System.Data.net\KeywordHash.h" />
@@ -63,7 +171,7 @@
   <ItemGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Release.cpu'">
     <None Include="System.Data.cu" />
     <None Include="System.Data+Vdbe.cu" />
-    <ClCompile Include="Program.cu" />
+    <None Include="Program.cu" />
     <ClCompile Include="..\System.Data.net\CompileTime.cu" />
     <ClCompile Include="..\System.Data.net\Opcodes.cu" />
     <ClCompile Include="..\System.Data.net\Core+Btree\BContext.cu" />
@@ -118,7 +226,7 @@
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="System.Data.cu" />
     <CudaCompile Include="System.Data+Vdbe.cu" />
-    <CudaCompile Include="Program.cu" />
+    <None Include="Program.cu" />
     <None Include="..\System.Data.net\CompileTime.cu" />
     <None Include="..\System.Data.net\Opcodes.cu" />
     <None Include="..\System.Data.net\Core+Btree\BContext.cu" />
@@ -178,115 +286,6 @@
     </None>
     <None Include="_content\system.data.sample.cu" />
   </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>{AADAB731-E71B-406B-B023-6A3FD7957591}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>System</RootNamespace>
-    <ProjectName>System.Data</ProjectName>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
-    <LinkIncremental>true</LinkIncremental>
-    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
-    <LinkIncremental>false</LinkIncremental>
-    <TargetName>$(ProjectName).$(LC)$(LD)</TargetName>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>_LIB;_TEST;ENABLE_IOTRACE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.Tclite;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;Runtime.Tclite.$(LC)$(LD).lib;System.$(LC)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-    </Link>
-    <CudaCompile>
-      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
-      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
-      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
-      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
-      <Keep>true</Keep>
-      <GPUDebugInfo>true</GPUDebugInfo>
-    </CudaCompile>
-    <CudaLink>
-      <PerformDeviceLink>false</PerformDeviceLink>
-    </CudaLink>
-    <PostBuildEvent>
-      <Command Condition="'$(Configuration)'=='Debug.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MinSpace</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <ExceptionHandling>false</ExceptionHandling>
-      <PreprocessorDefinitions>NDEBUG;_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.Tclite;$(SolutionDir)src\System.net;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(LC)$(LD).lib;Runtime.Tclite.$(LC)$(LD).lib;System.$(LC)$(LD).lib;cudart.lib;freeglut.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
-    </Link>
-    <CudaCompile>
-      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
-      <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
-      <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
-      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
-      <Keep>true</Keep>
-    </CudaCompile>
-    <CudaLink>
-      <PerformDeviceLink>false</PerformDeviceLink>
-    </CudaLink>
-    <PostBuildEvent>
-      <Command Condition="'$(Configuration)'=='Release.cu'">"$(CudaToolkitBinDir)\nvcc.exe" -arch=sm_$(LC) -lib "$(IntDir)System.Data.cu.obj" "$(IntDir)System.Data+Vdbe.cu.obj" -o "$(OutDir)System.Data.$(LC)$(LD).lib"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.targets" />

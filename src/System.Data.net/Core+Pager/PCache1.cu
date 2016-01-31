@@ -363,8 +363,8 @@ namespace CORE_NAME
 
 #pragma region Interface
 
-	__device__ const PCache1 _pcache;
-	__device__ IPCache *GetPCache1() { return (IPCache *)&_pcache; }
+	__device__ static char __pcache1[sizeof(PCache1)];
+	__device__ IPCache *GetPCache1() { new (__pcache1) PCache1(); return (IPCache *)&__pcache1; }
 
 	__device__ RC PCache1::Init()
 	{

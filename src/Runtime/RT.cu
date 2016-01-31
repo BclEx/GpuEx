@@ -4,6 +4,7 @@
 #include "Runtime+BenignAlloc.cu"
 #include "Runtime+Bitvec.cu"
 #include "Runtime+Convert.cu"
+#include "Runtime+Func.cu"
 #include "Runtime+Hash.cu"
 #include "Runtime+Math.cu"
 #include "Runtime+Mem0.cu"

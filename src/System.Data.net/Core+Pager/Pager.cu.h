@@ -231,12 +231,4 @@ namespace CORE_NAME
 		__device__ int *get_Stats();
 #endif
 	};
-
-#ifdef _TEST
-	__device__ void disable_simulated_io_errors();
-	__device__ void enable_simulated_io_errors();
-#else
-#define disable_simulated_io_errors()
-#define enable_simulated_io_errors()
-#endif
 }

@@ -1578,7 +1578,7 @@ namespace Core
                 // All files and directories have already been synced, so the following calls to sqlite3BtreeCommitPhaseTwo() are only closing files and
                 // deleting or truncating journals. If something goes wrong while this is happening we don't really care. The integrity of the
                 // transaction is already guaranteed, but some stray 'cold' journals may be lying around. Returning an error code won't help matters.
-                Pager.disable_simulated_io_errors();
+                Pager.DisableSimulatedIOErrors();
                 C._benignalloc_begin();
                 for (i = 0; i < ctx.DBs.length; i++)
                 {
@@ -1587,7 +1587,7 @@ namespace Core
                         bt.CommitPhaseTwo(false);
                 }
                 C._benignalloc_end();
-                Pager.enable_simulated_io_errors();
+                Pager.EnableSimulatedIOErrors();
 
                 VTable.Commit(ctx);
             }

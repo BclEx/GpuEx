@@ -103,6 +103,8 @@
       <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
+      <Keep>true</Keep>
       <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -138,6 +140,8 @@
       <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
       <CodeGeneration>compute_$(LC),sm_$(LC)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(LC)'!='11'">true</GenerateRelocatableDeviceCode>
+      <AdditionalOptions>-Xcudafe "--diag_suppress=branch_past_initialization" %(AdditionalOptions)</AdditionalOptions>
+      <Keep>true</Keep>
     </CudaCompile>
     <CudaLink>
       <PerformDeviceLink>false</PerformDeviceLink>

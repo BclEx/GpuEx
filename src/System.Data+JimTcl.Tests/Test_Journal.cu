@@ -70,20 +70,6 @@ __device__ static struct JtGlobal _g = { nullptr, nullptr };
 __device__ static void _enterJtMutex() { _mutex_enter(_mutex_alloc(MUTEX_STATIC_PRNG)); }
 __device__ static void _leaveJtMutex() { _mutex_leave(_mutex_alloc(MUTEX_STATIC_PRNG)); }
 
-namespace CORE_NAME { extern __device__ int g_io_error_pending; extern __device__ int g_io_error_hit; }
-__device__ static void stop_ioerr_simulation(int *save, int *save2)
-{
-	*save = g_io_error_pending;
-	*save2 = g_io_error_hit;
-	g_io_error_pending = -1;
-	g_io_error_hit = 0;
-}
-__device__ static void start_ioerr_simulation(int save, int save2)
-{
-	g_io_error_pending = save;
-	g_io_error_hit = save2;
-}
-
 // Parameter z points to a buffer of 4 bytes in size containing a unsigned 32-bit integer stored in big-endian format. Decode the integer and return its value.
 __device__ static uint32 DecodeUint32(const unsigned char *z) { return (z[0]<<24) + (z[1]<<16) + (z[2]<<8) + z[3]; }
 // Calculate a checksum from the buffer of length n bytes pointed to by parameter z.
@@ -175,7 +161,7 @@ public:
 		else if (main->Pages > 0)
 		{
 			int save, save2;
-			stop_ioerr_simulation(&save, &save2);
+			DisableSimulatedIOErrors(&save, &save2);
 			// Read the database free-list. Add the page-number for each free-list leaf to the jt_file.pWritable bitvec.
 			rc = p->Read(data, main->Pagesize, 0);
 			if (rc == RC_OK)
@@ -210,7 +196,7 @@ public:
 					if (ii+1 == main->Pages && rc == RC_IOERR_SHORT_READ) rc = RC_OK;
 				}
 			}
-			start_ioerr_simulation(save, save2);
+			EnableSimulatedIOErrors(&save, &save2);
 		}
 		_free(data);
 		return rc;
@@ -223,7 +209,7 @@ public:
 		if (!page)
 			return RC_IOERR_NOMEM;
 		int save, save2;
-		stop_ioerr_simulation(&save, &save2);
+		DisableSimulatedIOErrors(&save, &save2);
 
 		RC rc = RC_OK;
 		int64 offset = 0;
@@ -276,7 +262,7 @@ public:
 			offset = ((offset + (sectorLength-1)) / sectorLength) * sectorLength;
 		}
 finish_rjf:
-		start_ioerr_simulation(save, save2);
+		EnableSimulatedIOErrors(&save, &save2);
 		_free(page);
 		if (rc == RC_IOERR_SHORT_READ)
 			rc = RC_OK;

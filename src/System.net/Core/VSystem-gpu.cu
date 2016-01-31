@@ -38,6 +38,12 @@ namespace Core
 #define SimulateDiskfullError(A)
 #endif
 
+#ifdef _TEST
+	__device__ static int _saved_cnt;
+	__device__ void DisableSimulatedIOErrors(int *pending, int *hit) { if (!pending) pending = &_saved_cnt; *pending = g_io_error_pending; g_io_error_pending = -1; if (hit) { *hit = g_io_error_hit; g_io_error_hit = 0; } }
+	__device__ void EnableSimulatedIOErrors(int *pending, int *hit) { if (!pending) pending = &_saved_cnt; g_io_error_pending = *pending; if (hit) g_io_error_hit = *hit; }
+#endif
+
 	// When testing, keep a count of the number of open files.
 #ifdef _TEST
 	__device__ int g_open_file_count = 0;

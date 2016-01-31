@@ -2,6 +2,10 @@
 #define __RUNTIME_H__
 #include "RuntimeTypes.h"
 
+//#define OMIT_INLINECONVERT
+//#define OMIT_INLINEMATH
+//#define OMIT_INLINEFUNC
+
 //////////////////////
 // NATIVE
 #pragma region NATIVE
@@ -244,22 +248,29 @@ __device__ __forceinline int _atoi(const char *z) { int out = 0; if (z) _atoi(z,
 #define _itoa(i, b) _itoa64((int64)i, b)
 extern "C" __device__ char *_itoa64(int64 i, char *b);
 #pragma endregion
-
-extern "C" __device__ inline uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }
-extern "C" __device__ inline uint16 _convert_get2(const uint8 *p) { return (p[0]<<8) | p[1]; }
-extern "C" __device__ inline void _convert_put2(unsigned char *p, uint32 v)
+#ifndef OMIT_INLINECONVERT
+__device__ __forceinline uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }
+__device__ __forceinline uint16 _convert_get2(const uint8 *p) { return (p[0]<<8) | p[1]; }
+__device__ __forceinline void _convert_put2(unsigned char *p, uint32 v)
 {
 	p[0] = (uint8)(v>>8);
 	p[1] = (uint8)v;
 }
-extern "C" __device__ inline uint32 _convert_get4(const uint8 *p) { return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3]; }
-extern "C" __device__ inline void _convert_put4(unsigned char *p, uint32 v)
+__device__ __forceinline uint32 _convert_get4(const uint8 *p) { return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3]; }
+__device__ __forceinline void _convert_put4(unsigned char *p, uint32 v)
 {
 	p[0] = (uint8)(v>>24);
 	p[1] = (uint8)(v>>16);
 	p[2] = (uint8)(v>>8);
 	p[3] = (uint8)v;
 }
+#else
+extern "C" __device__ uint16 _convert_get2nz(const uint8 *p);
+extern "C" __device__ uint16 _convert_get2(const uint8 *p);
+extern "C" __device__ void _convert_put2(unsigned char *p, uint32 v);
+extern "C" __device__ uint32 _convert_get4(const uint8 *p);
+extern "C" __device__ void _convert_put4(unsigned char *p, uint32 v);
+#endif
 
 #pragma region From: Pragma_c
 extern "C" __device__ uint8 __atolevel(const char *z, int omitFull, uint8 dflt);
@@ -306,13 +317,16 @@ struct Hash
 extern "C" __device__ bool _math_add(int64 *aRef, int64 b);
 extern "C" __device__ bool _math_sub(int64 *aRef, int64 b);
 extern "C" __device__ bool _math_mul(int64 *aRef, int64 b);
-//__device__ int _math_abs(int x);
-extern "C" __device__ inline int _math_abs(int x)
+#ifndef OMIT_INLINEMATH
+__device__ __forceinline int _math_abs(int x)
 {
 	if (x >= 0) return x;
 	if (x == (int)0x8000000) return 0x7fffffff;
 	return -x;
 }
+#else
+extern "C" __device__ int _math_abs(int x);
+#endif
 
 #pragma endregion
 
@@ -509,9 +523,10 @@ template <typename TLength, typename T> struct array_t2 { TLength length; T *dat
 template <typename TLength, typename T, size_t size> struct array_t3 { TLength length; T data[size]; __forceinline array_t3() { length = 0; } __device__ __forceinline void operator=(T *a) { data = a; } __device__ __forceinline operator T *() { return data; } };
 #define _lengthof(symbol) (sizeof(symbol) / sizeof(symbol[0]))
 
+#ifndef OMIT_INLINEFUNC
 // strcpy
 #if 1
-template <typename T> __device__ __forceinline void _strcpy(const T *__restrict__ dest, const T *__restrict__ src)
+template <typename T> __device__ __forceinline void _strcpy(T *__restrict__ dest, const T *__restrict__ src)
 {
 	register unsigned char *d = (unsigned char *)dest;
 	register unsigned char *s = (unsigned char *)src;
@@ -536,16 +551,16 @@ template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ des
 	for (; i < length; ++i, ++d, ++s)
 		*d = 0;
 }
-template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
-{
-	register unsigned char *d = (unsigned char *)dest;
-	register unsigned char *s = (unsigned char *)src;
-	size_t i = 0;
-	for (; i < length && *s; ++i, ++d, ++s)
-		*d = *s;
-	for (; i < length; ++i, ++d, ++s)
-		*d = 0;
-}
+//template <typename T> __device__ __forceinline void _strncpy(T *__restrict__ dest, T *__restrict__ src, size_t length)
+//{
+//	register unsigned char *d = (unsigned char *)dest;
+//	register unsigned char *s = (unsigned char *)src;
+//	size_t i = 0;
+//	for (; i < length && *s; ++i, ++d, ++s)
+//		*d = *s;
+//	for (; i < length; ++i, ++d, ++s)
+//		*d = 0;
+//}
 
 //strcat
 #if 1
@@ -568,12 +583,12 @@ __device__ char *_strcat(register char *__restrict__ dest, register const char *
 #endif
 
 // strchr
-template <typename T> __device__ __forceinline const T *_strchr(const T *src, char character)
+template <typename T> __device__ __forceinline T *_strchr(const T *src, int character)
 {
 	register unsigned char *s = (unsigned char *)src;
 	register unsigned char l = (unsigned char)__curtUpperToLower[character];
 	while (*s && __curtUpperToLower[*s] != l) { s++; }
-	return (const T *)(*s ? s : nullptr);
+	return (T *)(*s ? s : nullptr);
 }
 
 // strstr
@@ -769,6 +784,67 @@ __device__ inline bool _isnan(double x)
 	return isnan(x);
 #endif
 }
+#endif
+#else
+
+// strcpy
+__device__ void _strcpy(char *__restrict__ dest, const char *__restrict__ src);
+
+// strncpy
+__device__ void _strncpy(char *__restrict__ dest, const char *__restrict__ src, size_t length);
+//__device__ void _strncpy(char *__restrict__ dest, void *__restrict__ src, size_t length);
+
+// strcat
+__device__ void _strcat(char *__restrict__ dest, const char *__restrict__ src);
+
+// strchr
+__device__ char *_strchr(const char *src, int character);
+
+// strstr
+__device__ const void *_strstr(const void *__restrict__ src, const void *__restrict__ str);
+
+// strcmp
+__device__ int _strcmp(const void *__restrict__ left, const void *__restrict__ right);
+
+// strncmp
+#undef _fstrncmp
+__device__ int _strncmp(const void *__restrict__ left, const void *__restrict__ right, int n);
+#define _fstrncmp(x, y) (__tolower(*(unsigned char *)(x))==__tolower(*(unsigned char *)(y))&&!_strcmp((x)+1,(y)+1))
+
+// memcpy
+#if __CUDACC__
+#define _memcpy(dest, src, length) if (length) memcpy(dest, src, length)
+#else
+#define _memcpy(dest, src, length) memcpy(dest, src, length)
+#endif
+
+// memset
+#if __CUDACC__
+#define _memset(dest, value, length) if (length) memset(dest, value, length)
+#else
+#define _memset(dest, value, length) memset(dest, value, length)
+#endif
+
+// memchr
+__device__ const void *_memchr(const void *src, char character, size_t length);
+
+// memcmp
+__device__ int _memcmp(void *__restrict__ left, void *__restrict__ right, size_t length);
+
+// memmove
+__device__ void _memmove(void *__restrict__ left, void *__restrict__ right, size_t length);
+
+// strlen30
+__device__ int _strlen(const char *z);
+__device__ int _strlen16(const void *z);
+
+// hextobyte
+__device__ unsigned char _hextobyte(char h);
+
+#ifndef OMIT_FLOATING_POINT
+__device__ inline bool _isnan(double x);
+#endif
+
 #endif
 
 #pragma endregion

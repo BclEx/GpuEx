@@ -540,6 +540,24 @@ __device__ char *_itoa64(int64 i, char *b)
 
 #pragma endregion
 
+#ifdef OMIT_INLINECONVERT
+__device__ uint16 _convert_get2nz(const uint8 *p) { return ((( (int)((p[0]<<8) | p[1]) -1)&0xffff)+1); }
+__device__ uint16 _convert_get2(const uint8 *p) { return (p[0]<<8) | p[1]; }
+__device__ void _convert_put2(unsigned char *p, uint32 v)
+{
+	p[0] = (uint8)(v>>8);
+	p[1] = (uint8)v;
+}
+__device__ uint32 _convert_get4(const uint8 *p) { return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3]; }
+__device__ void _convert_put4(unsigned char *p, uint32 v)
+{
+	p[0] = (uint8)(v>>24);
+	p[1] = (uint8)(v>>16);
+	p[2] = (uint8)(v>>8);
+	p[3] = (uint8)v;
+}
+#endif
+
 #pragma region From: Pragma_c
 
 // 123456789 123456789

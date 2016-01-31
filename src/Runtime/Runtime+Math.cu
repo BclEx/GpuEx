@@ -63,9 +63,11 @@ __device__ bool _math_mul(int64 *aRef, int64 b)
 	return false;
 }
 
-//__device__ int _math_abs(int x)
-//{
-//	if (x >= 0) return x;
-//	if (x == (int)0x80000000) return 0x7fffffff;
-//	return -x;
-//}
+#ifdef OMIT_INLINEMATH
+__device__ int _math_abs(int x)
+{
+	if (x >= 0) return x;
+	if (x == (int)0x8000000) return 0x7fffffff;
+	return -x;
+}
+#endif
