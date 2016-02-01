@@ -170,17 +170,17 @@ __device__ void _memmove(void *__restrict__ left, const void *__restrict__ right
 }
 
 // strlen30
-__device__ int _strlen(const char *z)
+__host__ __device__ int _strlen(const char *z)
 {
+	if (!z) return 0;
 	register const char *z2 = z;
-	if (z == nullptr) return 0;
 	while (*z2) { z2++; }
 	return 0x3fffffff & (int)(z2 - z);
 }
 __device__ int _strlen16(const void *z)
 {
+	if (!z) return 0;
 	register const char *z2 = (const char *)z;
-	if (z == nullptr) return 0;
 	int n;
 	for (n = 0; z2[n] || z2[n+1]; n += 2) { }
 	return n;
@@ -194,7 +194,7 @@ __device__ unsigned char _hextobyte(char h)
 }
 
 #ifndef OMIT_FLOATING_POINT
-__device__ bool _isnan(double x)
+__host__ __device__ bool _isnan(double x)
 {
 #if !defined(HAVE_ISNAN)
 	// Systems that support the isnan() library function should probably make use of it by compiling with -DHAVE_ISNAN.  But we have

@@ -2,9 +2,10 @@
 #define __RUNTIME_H__
 #include "RuntimeTypes.h"
 
-#define OMIT_INLINECONVERT
-#define OMIT_INLINEMATH
-#define OMIT_INLINEFUNC
+//#define OMIT_INLINECONVERT
+//#define OMIT_INLINEMATH
+//#define OMIT_INLINEFUNC
+//#define OMIT_INLINEMEM
 
 //////////////////////
 // NATIVE
@@ -135,6 +136,16 @@ __device__ extern unsigned char __one;
 #pragma endregion
 
 //////////////////////
+// GANGING
+#pragma region GANGING
+
+#if defined(GANGING) && (!defined(__CUDACC__) || defined(SENTINEL))
+#undef GANGING
+#endif
+
+#pragma endregion
+
+//////////////////////
 // WSD
 #pragma region WSD
 
@@ -164,10 +175,7 @@ void *__wsdfind(void *k, int l);
 #pragma region UTF
 
 #define _strskiputf8(z) { if ((*(z++)) >= 0xc0) while ((*z & 0xc0) == 0x80) { z++; } }
-//template <typename T> __device__ inline void _strskiputf8(const T *z)
-//{
-//	if (*(z++) >= 0xc0) while ((*z & 0xc0) == 0x80) { z++; }
-//}
+//template <typename T> __device__ inline void _strskiputf8(const T *z) { if (*(z++) >= 0xc0) while ((*z & 0xc0) == 0x80) { z++; } }
 extern "C" __device__ unsigned int _utf8read(const unsigned char **z);
 extern "C" __device__ int _utf8charlength(const char *z, int bytes);
 #if _DEBUG
@@ -308,6 +316,10 @@ struct Hash
 	__device__ void Clear();
 };
 
+#ifdef GANGING
+// NOT GANG-SAFE
+#endif
+
 #pragma endregion
 
 //////////////////////
@@ -403,6 +415,10 @@ __device__ void _mutex_leave(MutexEx p);
 #define MUTEX_LOGIC(X) X
 #endif
 
+#ifdef GANGING
+// NOT GANG-SAFE
+#endif
+
 RUNTIME_NAMEEND
 #pragma endregion
 
@@ -492,6 +508,10 @@ __device__ extern _WSD TagBase::RuntimeStatics g_RuntimeStatics;
 
 #ifndef OMIT_BLOB_LITERAL
 __device__ void *_taghextoblob(TagBase *tag, const char *z, size_t size);
+#endif
+
+#ifdef GANGING
+// NOT GANG-SAFE
 #endif
 
 RUNTIME_NAMEEND
@@ -708,15 +728,15 @@ __device__ __forceinline void _memmove(void *__restrict__ left, const void *__re
 // strlen30
 __device__ __forceinline int _strlen(const char *z)
 {
+	if (!z) return 0;
 	register const char *z2 = z;
-	if (z == nullptr) return 0;
 	while (*z2) { z2++; }
 	return 0x3fffffff & (int)(z2 - z);
 }
 __device__ __forceinline int _strlen16(const void *z)
 {
+	if (!z) return 0;
 	register const char *z2 = (const char *)z;
-	if (z == nullptr) return 0;
 	int n;
 	for (n = 0; z2[n] || z2[n+1]; n += 2) { }
 	return n;
@@ -807,26 +827,26 @@ __device__ int _memcmp(const void *__restrict__ left, const void *__restrict__ r
 __device__ void _memmove(void *__restrict__ left, const void *__restrict__ right, size_t length);
 
 // strlen30
-__device__ int _strlen(const char *z);
+__host__ __device__ int _strlen(const char *z);
 __device__ int _strlen16(const void *z);
 
 // hextobyte
 __device__ unsigned char _hextobyte(char h);
 
 #ifndef OMIT_FLOATING_POINT
-__device__ bool _isnan(double x);
+__host__ __device__ bool _isnan(double x);
 #endif
 
 #endif
 
+#if __CUDACC__
 #ifdef __cplusplus
 extern "C++" {
 	__device__ __forceinline char *_strchr(char *src, int ch) { return (char *)_strchr((const char *)src, ch); }
-	//__device__ __forceinline char *_strpbrk(char *src, const char *c) { return (char *)_strpbrk((const char*)src, c); }
-	//__device__ __forceinline char *_strrchr(char *src, int ch) { return (char *)_strrchr((const char *)src, ch); }
 	__device__ __forceinline char *_strstr(char *src, const char *str) { return (char *)_strstr((const char *)src, str); }
 	__device__ __forceinline void *_memchr(void *src, int ch, size_t length) { return (void *)_memchr((const void *)src, ch, length); }
 }
+#endif
 #endif
 
 #pragma endregion
@@ -900,89 +920,143 @@ __device__ void __allocsystem_shutdown(void *p);
 //__device__ void __alloc_setmemoryalarm(int (*callback)(void*,long long,int), void *arg, long long threshold);
 //__device__ long long __alloc_softheaplimit64(long long n);
 //__device__ void __alloc_softheaplimit(int n);
-__device__ int _alloc_init();
+__device__ int _alloc_initG();
 __device__ bool _alloc_heapnearlyfull();
-__device__ void _alloc_shutdown();
+__device__ void _alloc_shutdownG();
 __device__ long long __alloc_memoryused();
 __device__ long long __alloc_memoryhighwater(bool resetFlag);
-__device__ void *_alloc(size_t size);
-__device__ void *_scratchalloc(size_t size);
-__device__ void _scratchfree(void *p);
+__device__ void *_allocG(size_t size);
+__device__ void *_scratchallocG(size_t size);
+__device__ void _scratchfreeG(void *p);
 __device__ size_t _allocsize(void *p);
 __device__ size_t _tagallocsize(TagBase *tag, void *p);
-__device__ void _free(void *p);
-__device__ void _tagfree(TagBase *tag, void *p);
-__device__ void *_realloc(void *old, size_t newSize);
-__device__ void *_allocZero(size_t size);
-__device__ void *_tagallocZero(TagBase *tag, size_t size);
-__device__ void *_tagalloc(TagBase *tag, size_t size);
-__device__ void *_tagrealloc(TagBase *tag, void *old, size_t size);
-//__device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize);
-__device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
+__device__ void _freeG(void *p);
+__device__ void _tagfreeG(TagBase *tag, void *p);
+__device__ void *_reallocG(void *old, size_t newSize);
+__device__ void *_allocZeroG(size_t size);
+__device__ void *_tagallocZeroG(TagBase *tag, size_t size);
+__device__ void *_tagallocG(TagBase *tag, size_t size);
+__device__ void *_tagreallocG(TagBase *tag, void *old, size_t size);
+__device__ __forceinline void *_tagrealloc_or_freeG(TagBase *tag, void *old, size_t newSize)
 {
-	void *p = _tagrealloc(tag, old, newSize);
-	if (!p) _tagfree(tag, old);
+	void *p = _tagreallocG(tag, old, newSize);
+	if (!p) _tagfreeG(tag, old);
 	return p;
 }
 
-//__device__ char *__strdup(const char *z);
-__device__ __forceinline char *__strdup(const char *z)
+#ifndef OMIT_INLINEMEM
+__device__ __forceinline char *__strdupG(const char *z)
 {
-	if (z == nullptr) return nullptr;
+	if (!z) return nullptr;
 	size_t n = _strlen(z) + 1;
 	_assert((n & 0x7fffffff) == n);
-	char *newZ = (char *)_alloc((int)n);
+	char *newZ = (char *)_allocG((int)n);
 	if (newZ) memcpy(newZ, (char *)z, n);
 	return newZ;
 }
-//__device__ char *_strndup(const char *z, int n);
-__device__ __forceinline char *_strndup(const char *z, int n)
+
+__device__ __forceinline char *_strndupG(const char *z, int n)
 {
-	if (z == nullptr) return nullptr;
+	if (!z) return nullptr;
 	_assert((n & 0x7fffffff) == n);
-	char *newZ = (char *)_alloc(n + 1);
+	char *newZ = (char *)_allocG(n + 1);
 	if (newZ) { memcpy(newZ, (char *)z, n); newZ[n] = 0; }
 	return newZ;
 }
 
-//__device__ char *_tagstrdup(TagBase *tag, const char *z);
-__device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z)
+__device__ __forceinline char *_tagstrdupG(TagBase *tag, const char *z)
 {
-	if (z == nullptr) return nullptr;
+	if (!z) return nullptr;
 	size_t n = _strlen(z) + 1;
 	_assert((n & 0x7fffffff) == n);
-	char *newZ = (char *)_tagalloc(tag, (int)n);
+	char *newZ = (char *)_tagallocG(tag, (int)n);
 	if (newZ) memcpy(newZ, (char *)z, n);
 	return newZ;
 }
-//__device__ char *_tagstrndup(TagBase *tag, const char *z, int n);
-__device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n)
+
+__device__ __forceinline char *_tagstrndupG(TagBase *tag, const char *z, int n)
 {
-	if (z == nullptr) return nullptr;
+	if (!z) return nullptr;
 	_assert((n & 0x7fffffff) == n);
-	char *newZ = (char *)_tagalloc(tag, n + 1);
+	char *newZ = (char *)_tagallocG(tag, n + 1);
 	if (newZ) { memcpy(newZ, (char *)z, n); newZ[n] = 0; }
 	return newZ;
 }
+#else
+__device__ char *__strdupG(const char *z);
+__device__ char *_strndupG(const char *z, int n);
+__device__ char *_tagstrdupG(TagBase *tag, const char *z);
+__device__ char *_tagstrndupG(TagBase *tag, const char *z, int n);
+#endif
 
 // On systems with ample stack space and that support alloca(), make use of alloca() to obtain space for large automatic objects.  By default,
 // obtain space from malloc().
 //
 // The alloca() routine never returns NULL.  This will cause code paths that deal with sqlite3StackAlloc() failures to be unreachable.
 #ifdef USE_ALLOCA
-#define _stackalloc(D,N) alloca(N)
-#define _stackallocZero(D,N) _memset(alloca(N), 0, N)
-#define _stackfree(D,P)       
+#define _stackallocG(D,N) alloca(N)
+#define _stackallocZeroG(D,N) _memset(alloca(N), 0, N)
+#define _stackfreeG(D,P)       
 #else
-#define _stackalloc(D,N) _tagalloc(D,N)
-#define _stackallocZero(D,N) _tagallocZero(D,N)
-#define _stackfree(D,P) _tagfree(D,P)
+#define _stackallocG(D,N) _tagallocG(D,N)
+#define _stackallocZeroG(D,N) _tagallocZeroG(D,N)
+#define _stackfreeG(D,P) _tagfreeG(D,P)
 #endif
 
 typedef void (*Destructor_t)(void *);
 #define DESTRUCTOR_STATIC ((Destructor_t)0)
 #define DESTRUCTOR_TRANSIENT ((Destructor_t)-1)
 #define DESTRUCTOR_DYNAMIC ((Destructor_t)_allocsize)
+
+#ifdef GANGING
+__device__ __forceinline int _alloc_init() { __shared__ int v; if (!threadIdx.x) v = _alloc_initG(); __syncthreads(); return v; }
+__device__ __forceinline void _alloc_shutdown() { if (!threadIdx.x) _alloc_shutdownG(); __syncthreads(); }
+//
+__device__ __forceinline void *_alloc(size_t size) { __shared__ void *v; if (!threadIdx.x) v = _allocG(size); __syncthreads(); return v; }
+__device__ __forceinline void *_scratchalloc(size_t size) { __shared__ void *v; if (!threadIdx.x) v = _scratchallocG(size); __syncthreads(); return v; }
+__device__ __forceinline void _scratchfree(void *p) { if (!threadIdx.x) _scratchfreeG(p); __syncthreads(); }
+__device__ __forceinline void _free(void *p) { if (!threadIdx.x) _freeG(p); __syncthreads(); }
+__device__ __forceinline void _tagfree(TagBase *tag, void *p) { if (!threadIdx.x) _tagfreeG(tag, p); __syncthreads(); }
+__device__ __forceinline void *_realloc(void *old, size_t newSize) { __shared__ void *v; if (!threadIdx.x) v = _reallocG(old, newSize); __syncthreads(); return v; }
+__device__ __forceinline void *_allocZero(size_t size) { __shared__ void *v; if (!threadIdx.x) v = _allocZeroG(size); __syncthreads(); return v; }
+__device__ __forceinline void *_tagallocZero(TagBase *tag, size_t size) { __shared__ void *v; if (!threadIdx.x) v = _tagallocZeroG(tag, size); __syncthreads(); return v; }
+__device__ __forceinline void *_tagalloc(TagBase *tag, size_t size) { __shared__ void *v; if (!threadIdx.x) v = _tagallocG(tag, size); __syncthreads(); return v; }
+__device__ __forceinline void *_tagrealloc(TagBase *tag, void *old, size_t size) { __shared__ void *v; if (!threadIdx.x) v = _tagreallocG(tag, old, size); __syncthreads(); return v; }
+__device__ __forceinline void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize) { __shared__ void *v; if (!threadIdx.x) v = _tagrealloc_or_freeG(tag, old, newSize); __syncthreads(); return v; }
+//
+__device__ __forceinline char *__strdup(const char *z) { __shared__ char *v; if (!threadIdx.x) v = __strdupG(z); __syncthreads(); return v; }
+__device__ __forceinline char *_strndup(const char *z, int n) { __shared__ char *v; if (!threadIdx.x) v = _strndupG(z, n); __syncthreads(); return v; }
+__device__ __forceinline char *_tagstrdup(TagBase *tag, const char *z) { __shared__ char *v; if (!threadIdx.x) v = _tagstrdupG(tag, z); __syncthreads(); return v; }
+__device__ __forceinline char *_tagstrndup(TagBase *tag, const char *z, int n) { __shared__ char *v; if (!threadIdx.x) v = _tagstrndup(tag, z, n); __syncthreads(); return v; }
+//
+__device__ __forceinline void *_stackalloc(TagBase *tag, size_t size) { __shared__ void *v; if (!threadIdx.x) v = _stackallocG(tag, size); __syncthreads(); return v; }
+__device__ __forceinline void *_stackallocZero(TagBase *tag, size_t size) { __shared__ void *v; if (!threadIdx.x) v = _stackallocZeroG(tag, size); __syncthreads(); return v; }
+__device__ __forceinline void _stackfree(TagBase *tag, void *p) { if (!threadIdx.x) _stackfreeG(tag, p); __syncthreads(); }
+#else
+#define _alloc_init _alloc_initG
+#define _alloc_shutdown _alloc_shutdownG
+//
+#define _alloc _allocG
+#define _scratchalloc _scratchallocG
+#define _scratchfree _scratchfreeG
+#define _free _freeG
+#define _tagfree _tagfreeG
+#define _realloc _reallocG
+#define _allocZero _allocZeroG
+#define _tagallocZero _tagallocZeroG
+#define _tagalloc _tagallocG
+#define _tagrealloc _tagreallocG
+#define _tagrealloc_or_free _tagrealloc_or_freeG
+//
+#define __strdup __strdupG
+#define _strndup _strndupG
+#define _tagstrdup _tagstrdupG
+#define _tagstrndup _tagstrndupG
+//
+#define _stackalloc _stackallocG
+#define _stackallocZero _stackallocZeroG
+#define _stackfree _stackfreeG
+#endif
 
 RUNTIME_NAMEEND
 #ifdef RUNTIME_NAME
@@ -1024,7 +1098,7 @@ public:
 	__device__ bool Get(uint32 index);
 	__device__ bool Set(uint32 index);
 	__device__ void Clear(uint32 index, void *buffer);
-	__device__ static inline void Destroy(Bitvec *p)
+	__device__ __forceinline static void Destroy(Bitvec *p)
 	{
 		if (!p)
 			return;
@@ -1127,7 +1201,7 @@ namespace Messages
 {
 	struct Stdio_fprintf
 	{
-		__device__ inline static char *Prepare(Stdio_fprintf *t, char *data, char *dataEnd)
+		__device__ __forceinline static char *Prepare(Stdio_fprintf *t, char *data, char *dataEnd)
 		{
 			int formatLength = (t->Format ? _strlen(t->Format) + 1 : 0);
 			char *format = (char *)(data += _ROUND8(sizeof(*t)));
@@ -1146,7 +1220,7 @@ namespace Messages
 
 	struct Stdio_fopen
 	{
-		__device__ inline static char *Prepare(Stdio_fopen *t, char *data, char *dataEnd)
+		__device__ __forceinline static char *Prepare(Stdio_fopen *t, char *data, char *dataEnd)
 		{
 			int filenameLength = (t->Filename ? _strlen(t->Filename) + 1 : 0);
 			int modeLength = (t->Mode ? _strlen(t->Mode) + 1 : 0);
@@ -1196,7 +1270,7 @@ namespace Messages
 
 	struct Stdio_fgets
 	{
-		__device__ inline static char *Prepare(Stdio_fgets *t, char *data, char *dataEnd)
+		__device__ __forceinline static char *Prepare(Stdio_fgets *t, char *data, char *dataEnd)
 		{
 			t->Str = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += 1024);
@@ -1222,7 +1296,7 @@ namespace Messages
 
 	struct Stdio_fputs
 	{
-		__device__ inline static char *Prepare(Stdio_fputs *t, char *data, char *dataEnd)
+		__device__ __forceinline static char *Prepare(Stdio_fputs *t, char *data, char *dataEnd)
 		{
 			int strLength = (t->Str ? _strlen(t->Str) + 1 : 0);
 			char *str = (char *)(data += _ROUND8(sizeof(*t)));
@@ -1241,7 +1315,7 @@ namespace Messages
 
 	struct Stdio_fread
 	{
-		__device__ inline static char *Prepare(Stdio_fread *t, char *data, char *dataEnd)
+		__device__ __forceinline static char *Prepare(Stdio_fread *t, char *data, char *dataEnd)
 		{
 			t->Ptr = (char *)(data += _ROUND8(sizeof(*t)));
 			char *end = (char *)(data += 1024);
@@ -1258,7 +1332,7 @@ namespace Messages
 
 	struct Stdio_fwrite
 	{
-		__device__ inline static char *Prepare(Stdio_fwrite *t, char *data, char *dataEnd)
+		__device__ __forceinline static char *Prepare(Stdio_fwrite *t, char *data, char *dataEnd)
 		{
 			size_t size = t->Size * t->Num;
 			char *ptr = (char *)(data += _ROUND8(sizeof(*t)));
@@ -1299,7 +1373,7 @@ public:
 	__device__ void AppendSpace(int length);
 	__device__ void AppendFormat_(bool useExtended, const char *fmt, _va_list &args);
 	__device__ void Append(const char *z, int length);
-	__device__ inline void AppendElement(const char *z) { Append(", ", 2); Append(z, _strlen(z)); }
+	__device__ __forceinline void AppendElement(const char *z) { Append(", ", 2); Append(z, _strlen(z)); }
 	__device__ char *ToString();
 	__device__ void Reset();
 	__device__ static void Init(TextBuilder *b, char *text = nullptr, int capacity = -1, int maxAlloc = -1);
@@ -1317,13 +1391,7 @@ public:
 	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); AppendFormat_(true, fmt, args); _va_end(args); }
 	template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline void AppendFormat(const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); AppendFormat_(true, fmt, args); _va_end(args); }
 #else
-	__device__ inline void AppendFormat(const char *fmt, ...)
-	{
-		_va_list args;
-		_va_start(args, fmt);
-		AppendFormat_(true, fmt, args);
-		_va_end(args);
-	}
+	__device__ __forceinline void AppendFormat(const char *fmt, ...) { _va_list args; _va_start(args, fmt); AppendFormat_(true, fmt, args); _va_end(args); }
 #endif
 };
 
@@ -1353,14 +1421,7 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE> __device__ __forceinline static int __snprintf(const char *buf, size_t bufLen, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE) { va_listE<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA, argB, argC, argD, argE); int n = __vsnprintf(buf, bufLen, fmt, &args); _va_end(args); return n; }
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE, typename TF> __device__ __forceinline static int __snprintf(const char *buf, size_t bufLen, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE, TF argF) { va_listF<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE,TF> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA, argB, argC, argD, argE, argF); int n = __vsnprintf(buf, bufLen, fmt, &args); _va_end(args); return n; }
 #else
-extern "C" __device__ inline static int __snprintf(const char *buf, size_t bufLen, const char *fmt, ...)
-{
-	_va_list args;
-	_va_start(args, fmt);
-	int n = __vsnprintf(buf, bufLen, fmt, &args);
-	_va_end(args);
-	return n;
-}
+extern "C" __device__ __forceinline int __snprintf(const char *buf, size_t bufLen, const char *fmt, ...) { _va_list args; _va_start(args, fmt); int n = __vsnprintf(buf, bufLen, fmt, &args); _va_end(args); return n; }
 #endif
 #define _sprintf(buf, fmt, ...) __snprintf(buf, -1, fmt, __VA_ARGS__)
 
@@ -1528,43 +1589,10 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9> __device__ __forceinline static void _mtagassignf(char **src, TagBase *tag, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9) { va_list9<T1,T2,T3,T4,T5,T6,T7,T8,T9> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); char *z = _vmtagprintf(tag, fmt, &args); _va_end(args); _tagfree(tag, *src); *src = z; }
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA> __device__ __forceinline static void _mtagassignf(char **src, TagBase *tag, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA) { va_listA<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA); char *z = _vmtagprintf(tag, fmt, &args); _va_end(args); _tagfree(tag, *src); *src = z; }
 #else
-extern "C" __device__ inline static char *_mprintf(const char *fmt, ...)
-{
-	//if (!RuntimeInitialize()) return nullptr;
-	_va_list args;
-	_va_start(args, fmt);
-	char *z = _vmprintf(fmt, &args);
-	_va_end(args);
-	return z;
-}
-//
-extern "C" __device__ inline static char *_mtagprintf(TagBase *tag, const char *fmt, ...)
-{
-	_va_list args;
-	_va_start(args, fmt);
-	char *z = _vmtagprintf(tag, fmt, &args);
-	_va_end(args);
-	return z;
-}
-//
-extern "C" __device__ inline static char *_mtagappendf(TagBase *tag, char *src, const char *fmt, ...)
-{
-	_va_list args;
-	_va_start(args, fmt);
-	char *z = _vmtagprintf(tag, fmt, &args);
-	_va_end(args);
-	_tagfree(tag, src);
-	return z;
-}
-extern "C" __device__ inline static void _mtagassignf(char **src, TagBase *tag, const char *fmt, ...)
-{
-	_va_list args;
-	_va_start(args, fmt);
-	char *z = _vmtagprintf(tag, fmt, &args);
-	_va_end(args);
-	_tagfree(tag, *src);
-	*src = z;
-}
+extern "C" __device__ __forceinline char *_mprintf(const char *fmt, ...) { _va_list args; _va_start(args, fmt); char *z = _vmprintf(fmt, &args); _va_end(args); return z; }
+extern "C" __device__ __forceinline char *_mtagprintf(TagBase *tag, const char *fmt, ...) { _va_list args; _va_start(args, fmt); char *z = _vmtagprintf(tag, fmt, &args); _va_end(args); return z; }
+extern "C" __device__ __forceinline char *_mtagappendf(TagBase *tag, char *src, const char *fmt, ...) { _va_list args; _va_start(args, fmt); char *z = _vmtagprintf(tag, fmt, &args); _va_end(args); _tagfree(tag, src); return z; }
+extern "C" __device__ __forceinline void _mtagassignf(char **src, TagBase *tag, const char *fmt, ...) { _va_list args; _va_start(args, fmt); char *z = _vmtagprintf(tag, fmt, &args); _va_end(args); _tagfree(tag, *src); *src = z; }
 #endif
 
 #pragma endregion
@@ -1593,14 +1621,7 @@ template <typename T1, typename T2, typename T3, typename T4, typename T5, typen
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE> __device__ __forceinline static char *__mnprintf(const char *buf, size_t bufLen, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE) { va_listE<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA, argB, argC, argD, argE); char *z = __vmnprintf(buf, bufLen, fmt, &args); _va_end(args); return z; }
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename T8, typename T9, typename TA, typename TB, typename TC, typename TD, typename TE, typename TF> __device__ __forceinline static char *__mnprintf(const char *buf, size_t bufLen, const char *fmt, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, TA argA, TB argB, TC argC, TD argD, TE argE, TF argF) { va_listF<T1,T2,T3,T4,T5,T6,T7,T8,T9,TA,TB,TC,TD,TE,TF> args; _va_start(args, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, argA, argB, argC, argD, argE, argF); char *z = __vmnprintf(buf, bufLen, fmt, &args); _va_end(args); return z; }
 #else
-extern "C" __device__ inline static char *__mnprintf(const char *buf, size_t bufLen, const char *fmt, ...)
-{
-	_va_list args;
-	_va_start(args, fmt);
-	char *z = __vmnprintf(buf, bufLen, fmt, &args);
-	_va_end(args);
-	return z;
-}
+extern "C" __device__ __forceinline char *__mnprintf(const char *buf, size_t bufLen, const char *fmt, ...) { _va_list args; _va_start(args, fmt); char *z = __vmnprintf(buf, bufLen, fmt, &args); _va_end(args); return z; }
 #endif
 #define _mmprintf(buf, fmt, ...) __mnprintf(buf, sizeof(buf), fmt, __VA_ARGS__)
 

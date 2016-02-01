@@ -5,6 +5,7 @@
 #undef __device__
 #define __device__
 #endif
+#define SENTINEL
 #define RUNTIME_NAME RuntimeS
 #include "RuntimeHost.h"
 #include "Runtime.h"
@@ -136,10 +137,51 @@ static int *_hostMap = nullptr;
 #endif
 static int *_deviceMap[SENTINEL_DEVICEMAPS];
 
+// https://msdn.microsoft.com/en-us/library/windows/hardware/ff569918(v=vs.85).aspx
+// http://www.dreamincode.net/forums/topic/171917-how-to-setread-registry-key-in-c/
+DWORD _savedTdrDelay = -2;
+void TdrInitialize()
+{
+	HKEY key;
+	if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Control\\GraphicsDrivers", 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
+		return;
+	DWORD dwBufSize = sizeof(DWORD);
+	if (RegQueryValueExW(key, L"TdrDelay", 0, 0, (LPBYTE)&_savedTdrDelay, &dwBufSize) != ERROR_SUCCESS)
+		_savedTdrDelay = -1;
+	else
+		printf("Key value is: %d\n", _savedTdrDelay);
+	DWORD newTdrDelay = 10;
+	if (RegSetValueExW(key, L"TdrDelay", 0, REG_DWORD, (const BYTE *)&newTdrDelay, sizeof(newTdrDelay)) != ERROR_SUCCESS)
+		_savedTdrDelay = -1;
+	RegCloseKey(key);
+}
+
+void TdrShutdown()
+{
+	HKEY key;
+	if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Control\\GraphicsDrivers", 0, KEY_ALL_ACCESS, &key) != ERROR_SUCCESS)
+		return;
+	if (_savedTdrDelay < 0)
+	{
+		if (RegDeleteValueW(key, L"TdrDelay") != ERROR_SUCCESS)
+			_savedTdrDelay = -1;
+	}
+	else
+	{
+		if (RegSetValueExW(key, L"TdrDelay", 0, REG_DWORD, (const BYTE *)&_savedTdrDelay, sizeof(_savedTdrDelay)) != ERROR_SUCCESS)
+			_savedTdrDelay = -1;
+	}
+	RegCloseKey(key);
+}
+
+
 void RuntimeSentinel::ServerInitialize(RuntimeSentinelExecutor *executor, char *mapHostName)
 {
-	//https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
-	//https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
+	// initialize TDR
+	//TdrInitialize();
+
+	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
+	// https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
 	// create host map
 #if HAS_HOSTSENTINEL
 	_hostMapHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT, mapHostName);
@@ -206,6 +248,9 @@ initialize_error:
 
 void RuntimeSentinel::ServerShutdown()
 {
+	// shutdown TDR
+	//TdrShutdown();
+
 	// close host map
 #if HAS_HOSTSENTINEL
 	if (_threadHostHandle) { CloseHandle(_threadHostHandle); _threadHostHandle = NULL; }

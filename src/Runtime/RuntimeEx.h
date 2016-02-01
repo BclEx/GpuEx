@@ -99,7 +99,7 @@ __device__ double _strtod(const char *str, char **endptr);
 
 // strrchr
 #if __CUDACC__
-__device__ char *_strrchr(char *str, int ch);
+__device__ char *_strrchr(const char *str, int ch);
 #else
 #define _strrchr(str, ch) strrchr(str, ch)
 #endif
@@ -153,6 +153,15 @@ __device__ void _qsort(void *base, size_t num, size_t size, int (*compar)(const 
 __device__ div_t _div(int num, int denom);
 #else
 #define _div(num, denom) div(num, denom)
+#endif
+
+#if __CUDACC__
+#ifdef __cplusplus
+extern "C++" {
+	__device__ __forceinline char *_strpbrk(char *src, const char *c) { return (char *)_strpbrk((const char*)src, c); }
+	__device__ __forceinline char *_strrchr(char *src, int ch) { return (char *)_strrchr((const char *)src, ch); }
+}
+#endif
 #endif
 
 #pragma endregion

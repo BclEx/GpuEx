@@ -464,7 +464,7 @@ __device__ double _strtod(const char *str, char **endptr)
 
 // strrchr
 #if __CUDACC__
-__device__ char *_strrchr(char *str, int ch)
+__device__ char *_strrchr(const char *str, int ch)
 {
 	char *save;
 	char c;

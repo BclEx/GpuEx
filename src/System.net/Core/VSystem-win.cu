@@ -9,7 +9,7 @@ namespace CORE_NAME
 #pragma region Preamble
 
 #if defined(_TEST) || defined(_DEBUG)
-	bool OsTrace = false;
+	bool OsTrace = true;
 #define OSTRACE(X, ...) if (OsTrace) { _dprintf("OS: "X, __VA_ARGS__); }
 #else
 #define OSTRACE(X, ...)
@@ -2633,19 +2633,13 @@ shmpage_out:
 		void *converted = ConvertUtf8Filename(utf8Name); // Filename in OS encoding
 		if (!converted)
 			return RC_IOERR_NOMEM;
-
 		if (winIsDir(converted))
 		{
 			_free(converted);
 			return RC_CANTOPEN_ISDIR;
 		}
 
-		DWORD dwDesiredAccess;
-		if (isReadWrite)
-			dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
-		else
-			dwDesiredAccess = GENERIC_READ;
-
+		DWORD dwDesiredAccess = (isReadWrite ? GENERIC_READ | GENERIC_WRITE : GENERIC_READ);
 		// SQLITE_OPEN_EXCLUSIVE is used to make sure that a new file is created. SQLite doesn't use it to indicate "exclusive access" as it is usually understood.
 		DWORD dwCreationDisposition;
 		if (isExclusive) // Creates a new file, only if it does not already exist. If the file exists, it fails.
@@ -2654,9 +2648,7 @@ shmpage_out:
 			dwCreationDisposition = OPEN_ALWAYS;
 		else // Opens a file, only if it exists.
 			dwCreationDisposition = OPEN_EXISTING;
-
 		DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
-
 		DWORD dwFlagsAndAttributes = 0;
 #if OS_WINCE
 		int isTemp = 0;
@@ -2676,7 +2668,6 @@ shmpage_out:
 #if OS_WINCE
 		dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
 #endif
-
 		HANDLE h;
 		DWORD lastErrno;
 		int cnt = 0;

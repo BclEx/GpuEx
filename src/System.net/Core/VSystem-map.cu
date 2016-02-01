@@ -5,6 +5,16 @@
 namespace CORE_NAME
 {
 
+#pragma region Preamble
+
+#if defined(_TEST) || defined(_DEBUG)
+	__device__ bool MapTrace = true;
+#define MAPTRACE(X, ...) if (MapTrace) { _dprintf("MAP: "X, __VA_ARGS__); }
+#else
+#define MAPTRACE(X, ...)
+#endif
+#pragma endregion
+
 #pragma region MapVFile
 
 	class MapVFile : public VFile
@@ -105,31 +115,38 @@ namespace CORE_NAME
 	{
 		Messages::File_Close msg(F);
 		Opened = false;
+		MAPTRACE("CLOSE %d %s\n", F, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Read(void *buffer, int amount, int64 offset)
 	{
+		MAPTRACE("READ %d - ", F);
 		Messages::File_Read msg(F, amount, offset);
-		_memcpy(buffer, msg.Buffer, amount);
+		memcpy(buffer, msg.Buffer, amount);
+		MAPTRACE("%s\n", !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Write(const void *buffer, int amount, int64 offset)
 	{
+		MAPTRACE("WRITE %d - ", F);
 		Messages::File_Write msg(F, buffer, amount, offset);
+		MAPTRACE("%s\n", !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Truncate(int64 size)
 	{
 		Messages::File_Truncate msg(F, size);
+		MAPTRACE("TRUC %d %s\n", F, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Sync(SYNC flags)
 	{
 		Messages::File_Sync msg(F, flags);
+		MAPTRACE("SYNC %d %s\n", F, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
@@ -137,12 +154,14 @@ namespace CORE_NAME
 	{
 		Messages::File_get_FileSize msg(F);
 		size = msg.Size;
+		MAPTRACE("FILESIZE %d %s\n", F, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Lock(LOCK lock)
 	{
 		Messages::File_Lock msg(F, lock);
+		MAPTRACE("LOCK %d %s\n", F, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
@@ -150,12 +169,14 @@ namespace CORE_NAME
 	{
 		Messages::File_CheckReservedLock msg(F);
 		lock = msg.Lock;
+		MAPTRACE("CHECKRESLK %d %s\n", F, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVFile::Unlock(LOCK lock)
 	{
 		Messages::File_Unlock msg(F, lock);
+		MAPTRACE("UNLOCK %d %s\n", F, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
@@ -231,12 +252,14 @@ namespace CORE_NAME
 		file->Opened = true;
 		file->Vfs = this;
 		file->F = msg.F;
+		MAPTRACE("OPEN %s %s\n", name, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVSystem::Delete(const char *filename, bool syncDir)
 	{
 		Messages::System_Delete msg(filename, syncDir);
+		MAPTRACE("DELETE %s %s\n", filename, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
@@ -244,13 +267,15 @@ namespace CORE_NAME
 	{
 		Messages::System_Access msg(filename, flags);
 		*resOut = msg.ResOut;
+		MAPTRACE("ACCESS %s %s\n", filename, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
 	__device__ RC MapVSystem::FullPathname(const char *relative, int fullLength, char *full)
 	{
 		Messages::System_FullPathname msg(relative, fullLength);
-		_memcpy(full, msg.Full, _strlen(msg.Full));
+		memcpy(full, msg.Full, _strlen(msg.Full));
+		MAPTRACE("FULLPATHNAME %s %s\n", msg.Full, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 
@@ -282,23 +307,23 @@ namespace CORE_NAME
 	__device__ int MapVSystem::Randomness(int bufLength, char *buf)
 	{
 		int n = 0;
-//#if _TEST
-//		n = bufLength;
-//		_memset(buf, 0, bufLength);
-//#else
-//		if (sizeof(DWORD) <= bufLength - n)
-//		{
-//			DWORD cnt = clock();
-//			memcpy(&buf[n], &cnt, sizeof(cnt));
-//			n += sizeof(cnt);
-//		}
-//		if (sizeof(DWORD) <= bufLength - n)
-//		{
-//			DWORD cnt = clock();
-//			memcpy(&buf[n], &cnt, sizeof(cnt));
-//			n += sizeof(cnt);
-//		}
-//#endif
+		//#if _TEST
+		//		n = bufLength;
+		//		_memset(buf, 0, bufLength);
+		//#else
+		//		if (sizeof(DWORD) <= bufLength - n)
+		//		{
+		//			DWORD cnt = clock();
+		//			memcpy(&buf[n], &cnt, sizeof(cnt));
+		//			n += sizeof(cnt);
+		//		}
+		//		if (sizeof(DWORD) <= bufLength - n)
+		//		{
+		//			DWORD cnt = clock();
+		//			memcpy(&buf[n], &cnt, sizeof(cnt));
+		//			n += sizeof(cnt);
+		//		}
+		//#endif
 		return n;
 	}
 
@@ -344,6 +369,7 @@ namespace CORE_NAME
 	{
 		Messages::System_GetLastError msg(bufLength);
 		buf = _mprintf("%", msg.Buf);
+		MAPTRACE("GETLASTERROR %s %s\n", buf, !msg.RC ? "ok" : "failed");
 		return msg.RC;
 	}
 

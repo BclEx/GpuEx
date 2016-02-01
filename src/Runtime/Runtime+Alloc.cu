@@ -81,11 +81,11 @@ __device__ void __alloc_softheaplimit(int size)
 }
 
 // Initialize the memory allocation subsystem.
-__device__ int _alloc_init()
+__device__ int _alloc_initG()
 {
 	//if (sqlite3GlobalConfig.m.xMalloc==0)
 	//	sqlite3MemSetDefault();
-	_memset(&mem0, 0, sizeof(mem0));
+	memset(&mem0, 0, sizeof(mem0));
 	if (TagBase_RuntimeStatics.RuntimeMutex)
 		mem0.Mutex = _mutex_alloc(MUTEX_STATIC_MEM);
 	if (TagBase_RuntimeStatics.Scratch && TagBase_RuntimeStatics.ScratchSize >= 100 && TagBase_RuntimeStatics.Scratchs > 0)
@@ -98,7 +98,7 @@ __device__ int _alloc_init()
 		mem0.ScratchFreeLength = n;
 		for (int i = 0; i < n-1; i++)
 		{
-			slot->Next = (ScratchFreeslot*)(size + (char *)slot);
+			slot->Next = (ScratchFreeslot *)(size + (char *)slot);
 			slot = slot->Next;
 		}
 		slot->Next = nullptr;
@@ -127,7 +127,7 @@ __device__ bool _alloc_heapnearlyfull()
 }
 
 // Deinitialize the memory allocation subsystem.
-__device__ void _alloc_shutdown()
+__device__ void _alloc_shutdownG()
 {
 	__allocsystem_shutdown(nullptr);
 	_memset(&mem0, 0, sizeof(mem0));
@@ -200,7 +200,7 @@ __device__ static size_t AllocWithAlarm(size_t size, void **pp)
 }
 
 // Allocate memory.  This routine is like sqlite3_malloc() except that it assumes the memory subsystem has already been initialized.
-__device__ void *_alloc(size_t size)
+__device__ void *_allocG(size_t size)
 {
 	// A memory allocation of a number of bytes which is near the maximum signed integer value might cause an integer overflow inside of the
 	// xMalloc().  Hence we limit the maximum size to 0x7fffff00, giving 255 bytes of overhead.  SQLite itself will never use anything near
@@ -229,7 +229,7 @@ __device__ static int g_scratchAllocOut = 0;
 // Allocate memory that is to be used and released right away. This routine is similar to alloca() in that it is not intended
 // for situations where the memory might be held long-term.  This routine is intended to get memory to old large transient data
 // structures that would not normally fit on the stack of an embedded processor.
-__device__ void *_scratchalloc(size_t size)
+__device__ void *_scratchallocG(size_t size)
 {
 	_assert(size > 0);
 	_mutex_enter(mem0.Mutex);
@@ -269,7 +269,7 @@ __device__ void *_scratchalloc(size_t size)
 	return p;
 }
 
-__device__ void _scratchfree(void *p)
+__device__ void _scratchfreeG(void *p)
 {
 	if (p)
 	{
@@ -340,7 +340,7 @@ __device__ size_t _tagallocsize(TagBase *tag, void *p)
 }
 
 // Free memory previously obtained from sqlite3Malloc().
-__device__ void _free(void *p)
+__device__ void _freeG(void *p)
 {
 	if (!p) return; // IMP: R-49053-54554
 	_assert(_memdbg_nottype(p, MEMTYPE_DB));
@@ -358,7 +358,7 @@ __device__ void _free(void *p)
 }
 
 // Free memory that might be associated with a particular database connection.
-__device__ void _tagfree(TagBase *tag, void *p)
+__device__ void _tagfreeG(TagBase *tag, void *p)
 {
 	_assert(!tag || _mutex_held(tag->Mutex));
 	if (tag)
@@ -372,7 +372,7 @@ __device__ void _tagfree(TagBase *tag, void *p)
 		{
 			TagBase::LookasideSlot *b = (TagBase::LookasideSlot *)p;
 #if _DEBUG
-			_memset(p, (char)0xaa, tag->Lookaside.Size); // Trash all content in the buffer being freed
+			memset(p, (char)0xaa, tag->Lookaside.Size); // Trash all content in the buffer being freed
 #endif
 			b->Next = tag->Lookaside.Free;
 			tag->Lookaside.Free = b;
@@ -384,14 +384,14 @@ __device__ void _tagfree(TagBase *tag, void *p)
 	_assert(_memdbg_hastype(p, (MEMTYPE)(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)));
 	_assert(tag || _memdbg_nottype(p, MEMTYPE_LOOKASIDE));
 	_memdbg_settype(p, MEMTYPE_HEAP);
-	_free(p);
+	_freeG(p);
 }
 
 // Change the size of an existing memory allocation
-__device__ void *_realloc(void *old, size_t newSize)
+__device__ void *_reallocG(void *old, size_t newSize)
 {
-	if (!old) return _alloc(newSize); /* IMP: R-28354-25769 */
-	if (newSize <= 0) { _free(old); return nullptr; } // IMP: R-31593-10574
+	if (!old) return _allocG(newSize); /* IMP: R-28354-25769 */
+	if (newSize <= 0) { _freeG(old); return nullptr; } // IMP: R-31593-10574
 	if (newSize >= 0x7fffff00) return nullptr; // The 0x7ffff00 limit term is explained in comments on sqlite3Malloc()
 	size_t oldSize = _allocsize(old);
 	// IMPLEMENTATION-OF: R-46199-30249 SQLite guarantees that the second argument to xRealloc is always a value returned by a prior call to xRoundup.
@@ -428,18 +428,18 @@ __device__ void *_realloc(void *old, size_t newSize)
 }
 
 // Allocate and zero memory.
-__device__ void *_allocZero(size_t size)
+__device__ void *_allocZeroG(size_t size)
 {
-	void *p = _alloc(size);
-	if (p) _memset(p, 0, size);
+	void *p = _allocG(size);
+	if (p) memset(p, 0, size);
 	return p;
 }
 
 // Allocate and zero memory.  If the allocation fails, make the mallocFailed flag in the connection pointer.
-__device__ void *_tagallocZero(TagBase *tag, size_t size)
+__device__ void *_tagallocZeroG(TagBase *tag, size_t size)
 {
-	void *p = _tagalloc(tag, size);
-	if (p) _memset(p, 0, size);
+	void *p = _tagallocG(tag, size);
+	if (p) memset(p, 0, size);
 	return p;
 }
 
@@ -454,7 +454,7 @@ __device__ void *_tagallocZero(TagBase *tag, size_t size)
 //         if( b ) a[10] = 9;
 //
 // In other words, if a subsequent malloc (ex: "b") worked, it is assumed that all prior mallocs (ex: "a") worked too.
-__device__ void *_tagalloc(TagBase *tag, size_t size)
+__device__ void *_tagallocG(TagBase *tag, size_t size)
 {
 	_assert(!tag || _mutex_held(tag->Mutex));
 	_assert(!tag || tag->BytesFreed == 0);
@@ -483,7 +483,7 @@ __device__ void *_tagalloc(TagBase *tag, size_t size)
 #else
 	if (tag && tag->MallocFailed) return nullptr;
 #endif
-	void *p = _alloc(size);
+	void *p = _allocG(size);
 	if (!p && tag)
 		tag->MallocFailed = true;
 	_memdbg_settype(p, (MEMTYPE)(MEMTYPE_DB|(tag && tag->Lookaside.Enabled ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP)));
@@ -491,22 +491,22 @@ __device__ void *_tagalloc(TagBase *tag, size_t size)
 }
 
 // Resize the block of memory pointed to by old to size bytes. If the resize fails, set the mallocFailed flag in the connection object.
-__device__ void *_tagrealloc(TagBase *tag, void *old, size_t size)
+__device__ void *_tagreallocG(TagBase *tag, void *old, size_t size)
 {
 	void *p = nullptr;
 	_assert(tag != nullptr);
 	_assert(_mutex_held(tag->Mutex));
 	if (!tag->MallocFailed)
 	{
-		if (!old) return _tagalloc(tag, size);
+		if (!old) return _tagallocG(tag, size);
 		if (IsLookaside(tag, old))
 		{
 			if (size <= tag->Lookaside.Size) return old;
-			p = _tagalloc(tag, size);
+			p = _tagallocG(tag, size);
 			if (p)
 			{
-				_memcpy(p, old, tag->Lookaside.Size);
-				_tagfree(tag, old);
+				memcpy(p, old, tag->Lookaside.Size);
+				_tagfreeG(tag, old);
 			}
 		}
 		else
@@ -514,7 +514,7 @@ __device__ void *_tagrealloc(TagBase *tag, void *old, size_t size)
 			_assert(_memdbg_hastype(old, MEMTYPE_DB));
 			_assert(_memdbg_hastype(old, (MEMTYPE)(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)));
 			_memdbg_settype(old, MEMTYPE_HEAP);
-			p = _realloc(old, size);
+			p = _reallocG(old, size);
 			if (!p)
 			{
 				_memdbg_settype(old, (MEMTYPE)(MEMTYPE_DB|MEMTYPE_HEAP));
@@ -526,34 +526,52 @@ __device__ void *_tagrealloc(TagBase *tag, void *old, size_t size)
 	return p;
 }
 
+#ifdef OMIT_INLINEMEM
 #if 0
 // Attempt to reallocate p.  If the reallocation fails, then free p and set the mallocFailed flag in the database connection.
-__device__ void *_tagrealloc_or_free(TagBase *tag, void *old, size_t newSize)
+__device__ void *_tagrealloc_or_freeG(TagBase *tag, void *old, size_t newSize)
 {
-	void *p = _tagrealloc(tag, old, newSize);
-	if (!p) _tagfree(tag, old);
+	void *p = _tagreallocG(tag, old, newSize);
+	if (!p) _tagfreeG(tag, old);
 	return p;
 }
+#endif
 
-// Make a copy of a string in memory obtained from sqliteMalloc(). These functions call sqlite3MallocRaw() directly instead of sqliteMalloc(). This
-// is because when memory debugging is turned on, these two functions are called via macros that record the current file and line number in the
-// ThreadData structure.
-__device__ char *_tagstrdup(TagBase *tag, const char *z)
+__device__ char *__strdupG(const char *z)
 {
-	if (z == nullptr) return nullptr;
+	if (!z) return nullptr;
 	size_t n = _strlen(z) + 1;
 	_assert((n & 0x7fffffff) == n);
-	char *newZ = (char *)_tagalloc(tag, (int)n);
-	if (newZ) _memcpy(newZ, (char *)z, n);
+	char *newZ = (char *)_allocG((int)n);
+	if (newZ) memcpy(newZ, (char *)z, n);
 	return newZ;
 }
 
-__device__ char *_tagstrndup(TagBase *tag, const char *z, int n)
+__device__ char *_strndupG(const char *z, int n)
 {
-	if (z == nullptr) return nullptr;
+	if (!z) return nullptr;
 	_assert((n & 0x7fffffff) == n);
-	char *newZ = (char *)_tagalloc(tag, n + 1);
-	if (newZ) { _memcpy(newZ, z, n); newZ[n] = 0; }
+	char *newZ = (char *)_allocG(n + 1);
+	if (newZ) { memcpy(newZ, (char *)z, n); newZ[n] = 0; }
+	return newZ;
+}
+
+__device__ char *_tagstrdupG(TagBase *tag, const char *z)
+{
+	if (!z) return nullptr;
+	size_t n = _strlen(z) + 1;
+	_assert((n & 0x7fffffff) == n);
+	char *newZ = (char *)_tagallocG(tag, (int)n);
+	if (newZ) memcpy(newZ, (char *)z, n);
+	return newZ;
+}
+
+__device__ char *_tagstrndupG(TagBase *tag, const char *z, int n)
+{
+	if (!z) return nullptr;
+	_assert((n & 0x7fffffff) == n);
+	char *newZ = (char *)_tagallocG(tag, n + 1);
+	if (newZ) { memcpy(newZ, (char *)z, n); newZ[n] = 0; }
 	return newZ;
 }
 #endif

@@ -62,7 +62,7 @@ namespace CORE_NAME
 		double y;
 		_assert(sizeof(x) == 8);
 		_assert(sizeof(x) == sizeof(y));
-		_memcpy(&y, &x, 8);
+		memcpy(&y, &x, 8);
 		_assert(_isnan(y));
 #endif
 
