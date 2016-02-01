@@ -198,7 +198,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="..\Runtime.JimTcl\_content\TclContext.cu" />
-    <CudaCompile Include="TclContext+Test.cu" />
+    <CudaCompile Include="Program.cu" />
     <CudaCompile Include="Test_Autoext.cu" />
     <CudaCompile Include="Test_Backup.cu" />
     <CudaCompile Include="Test_Btree.cu" />
@@ -245,7 +245,6 @@
     <CudaCompile Include="Test9.cu" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="tclsqlite.c" />
     <None Include="test\all.test" />
     <None Include="test\full.test" />
     <None Include="test\permutations.test" />

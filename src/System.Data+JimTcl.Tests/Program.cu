@@ -424,25 +424,25 @@ __device__ static void init_all(Jim_Interp *interp)
 	Sqlitetest_func_Init(interp);
 	Sqlitetest_hexio_Init(interp);
 	//	Sqlitetest_init_Init(interp);
-	//	Sqlitetest_malloc_Init(interp);
+	Sqlitetest_malloc_Init(interp);
 	//	Sqlitetest_mutex_Init(interp);
 	Sqlitetestschema_Init(interp);
-	//	Sqlitetesttclvar_Init(interp);
+	Sqlitetesttclvar_Init(interp);
 	//	Sqlitetestfs_Init(interp);
-	//	SqlitetestThread_Init(interp);
+	SqlitetestThread_Init(interp);
 	//	SqlitetestOnefile_Init(interp);
 	//	SqlitetestOsinst_Init(interp);
-	//	Sqlitetestbackup_Init(interp);
-	//	Sqlitetestintarray_Init(interp);
-	//	Sqlitetestvfs_Init(interp);
+	Sqlitetestbackup_Init(interp);
+	Sqlitetestintarray_Init(interp);
+	Sqlitetestvfs_Init(interp);
 	//	Sqlitetestrtree_Init(interp);
 	//	Sqlitequota_Init(interp);
 	//	Sqlitemultiplex_Init(interp);
 	//	SqliteSuperlock_Init(interp);
-	//	SqlitetestSyscall_Init(interp);
-	//	Sqlitetestfuzzer_Init(interp);
+	SqlitetestSyscall_Init(interp);
+	Sqlitetestfuzzer_Init(interp);
 	Sqlitetestwholenumber_Init(interp);
-	//	Sqlitetestregexp_Init(interp);
+	Sqlitetestregexp_Init(interp);
 	//#if defined(ENABLE_FTS3) || defined(ENABLE_FTS4)
 	//	Sqlitetestfts3_Init(interp);
 	//#endif
@@ -459,6 +459,8 @@ __device__ static void init_all(Jim_Interp *interp)
 #if 1
 __device__ static char *tclsh_main_loop()
 {
+	return "cd test; source veryquick.test;";
+
 	return
 		"set line {}\n"
 		"while {![eof stdin]} {\n"
@@ -507,8 +509,11 @@ __device__ static void JimPrintErrorMessage(Jim_Interp *interp) {
 	printf("%s\n", Jim_String(Jim_GetResult(interp)));
 }
 
+char *_Args[] = { "exe", "veryquick.test" };
 int main(int argc, char **argv)
 {
+	argc = _lengthof(_Args);
+	argv = _Args;
 #if __CUDACC__
 	cudaDeviceHeap deviceHeap = CudaInit();
 #endif
@@ -527,6 +532,7 @@ int main(int argc, char **argv)
 	init_all(interp);
 	if (argc >= 2)
 	{
+		Jim_Eval(interp, "cd test");
 		char b[32];
 		__snprintf(b, sizeof(b), "%d", argc-2);
 		Jim_SetVariableStrWithStr(interp, "argc", b);
@@ -535,15 +541,14 @@ int main(int argc, char **argv)
 		for (int i = 3; i < argc; i++)
 			Jim_ListAppendElement(interp, argvObj, Jim_NewStringObj(interp, argv[i], -1));
 		Jim_SetVariableStr(interp, "argv", argvObj);
-#if 0
 		if (Jim_EvalFile(interp, argv[1]) != JIM_OK)
 		{
-			const char *info = Jim_String(Jim_GetGlobalVariableStr(interp, "errorInfo", JIM_ERRMSG));
-			if (!info) info = Jim_String(Jim_GetResult(interp));
-			fprintf(stderr, "%s: %s\n", *argv, info);
+			JimPrintErrorMessage(interp);
+			//const char *info = Jim_String(Jim_GetGlobalVariableStr(interp, "errorInfo", JIM_ERRMSG));
+			//if (!info) info = Jim_String(Jim_GetResult(interp));
+			//fprintf(stderr, "%s: %s\n", *argv, info);
 			return 1;
 		}
-#endif
 	}
 #if 1
 	if (argc <= 1)
