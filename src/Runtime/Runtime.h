@@ -2,10 +2,10 @@
 #define __RUNTIME_H__
 #include "RuntimeTypes.h"
 
-//#define OMIT_INLINECONVERT
-//#define OMIT_INLINEMATH
-//#define OMIT_INLINEFUNC
-//#define OMIT_INLINEMEM
+#define OMIT_INLINECONVERT
+#define OMIT_INLINEMATH
+#define OMIT_INLINEFUNC
+#define OMIT_INLINEMEM
 
 //////////////////////
 // NATIVE

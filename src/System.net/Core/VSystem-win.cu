@@ -9,7 +9,7 @@ namespace CORE_NAME
 #pragma region Preamble
 
 #if defined(_TEST) || defined(_DEBUG)
-	bool OsTrace = true;
+	bool OsTrace = false;
 #define OSTRACE(X, ...) if (OsTrace) { _dprintf("OS: "X, __VA_ARGS__); }
 #else
 #define OSTRACE(X, ...)

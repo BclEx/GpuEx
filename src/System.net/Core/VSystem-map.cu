@@ -8,7 +8,7 @@ namespace CORE_NAME
 #pragma region Preamble
 
 #if defined(_TEST) || defined(_DEBUG)
-	__device__ bool MapTrace = true;
+	__device__ bool MapTrace = false;
 #define MAPTRACE(X, ...) if (MapTrace) { _dprintf("MAP: "X, __VA_ARGS__); }
 #else
 #define MAPTRACE(X, ...)
