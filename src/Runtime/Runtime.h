@@ -393,10 +393,10 @@ typedef void *MutexEx;
 #define _mutex_init() 0
 #define _mutex_shutdown()
 #define _mutex_alloc(X) ((MutexEx)1)
-#define _mutex_enter(X)
-#define MutexEx_TryEnter(X) 0
-#define _mutex_leave(X)
 #define _mutex_free(X)
+#define _mutex_enter(X)
+#define _mutex_tryenter(X) 0
+#define _mutex_leave(X)
 #define MUTEX_LOGIC(X)
 #else
 struct _mutex_obj;
@@ -414,6 +414,19 @@ __device__ bool _mutex_tryenter(MutexEx p);
 __device__ void _mutex_leave(MutexEx p);
 #define MUTEX_LOGIC(X) X
 #endif
+
+struct _mutex_methods
+{
+	int (*Init)();
+	void (*Shutdown)();
+	MutexEx (*Alloc)(MUTEX);
+	void (*Free)(MutexEx);
+	void (*Enter)(MutexEx);
+	bool (*TryEnter)(MutexEx);
+	void (*Leave)(MutexEx);
+	bool (*Held)(MutexEx);
+	bool (*NotHeld)(MutexEx);
+};
 
 #ifdef GANGING
 // NOT GANG-SAFE
@@ -453,6 +466,7 @@ extern "C" __device__ bool _status(STATUS op, int *current, int *highwater, bool
 RUNTIME_NAMEBEGIN
 
 class TextBuilder;
+struct _mem_methods;
 class TagBase
 {
 public:
@@ -464,6 +478,8 @@ public:
 		//
 		bool Memstat;						// True to enable memory status
 		bool RuntimeMutex;					// True to enable core mutexing
+		_mem_methods *Mem;					// Low-level mutex interface
+		_mutex_methods *Mutex;				// Low-level mutex interface
 		size_t LookasideSize;				// Default lookaside buffer size
 		int Lookasides;						// Default lookaside buffer count
 		void *Scratch;						// Scratch memory

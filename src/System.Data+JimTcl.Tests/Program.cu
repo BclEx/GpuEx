@@ -425,7 +425,7 @@ __device__ static void init_all(Jim_Interp *interp)
 	Sqlitetest_hexio_Init(interp);
 	//	Sqlitetest_init_Init(interp);
 	Sqlitetest_malloc_Init(interp);
-	//	Sqlitetest_mutex_Init(interp);
+	Sqlitetest_mutex_Init(interp);
 	Sqlitetestschema_Init(interp);
 	Sqlitetesttclvar_Init(interp);
 	//	Sqlitetestfs_Init(interp);

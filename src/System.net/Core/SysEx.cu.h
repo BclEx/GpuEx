@@ -27,7 +27,7 @@ namespace CORE_NAME
 			bool OpenUri;						// True to interpret filenames as URIs
 			//Main::UseCis						// Use covering indices for full-scans
 			int MaxStrlen;						// Maximum string length
-			//mutex_methods mutex;				// Low-level mutex interface
+			//TAG::Mutex;						// Low-level mutex interface
 			//Main::pcache2						// Low-level page-cache interface
 			//array_t<void> Heap;				// Heap storage space
 			//int MinReq, MaxReq;				// Min and max heap requests sizes

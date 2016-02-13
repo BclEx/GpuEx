@@ -153,9 +153,7 @@
     <ClCompile Include="Test_Multiplex.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Test_Mutex.cu">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Test_Mutex.cu" />
     <ClCompile Include="Test_OneFile.cu">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>

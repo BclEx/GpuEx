@@ -1,439 +1,320 @@
-/*
-** 2008 June 18
-**
-** The author disclaims copyright to this source code.  In place of
-** a legal notice, here is a blessing:
-**
-**    May you do good and not evil.
-**    May you find forgiveness for yourself and forgive others.
-**    May you share freely, never taking more than you give.
-**
-*************************************************************************
-** This file contains test logic for the sqlite3_mutex interfaces.
-*/
+// This file contains test logic for the sqlite3_mutex interfaces.
+#include <Core+Vdbe\Core+Vdbe.cu.h>
+#include <JimEx.h>
 
-#include "tcl.h"
-#include "sqlite3.h"
-#include "sqliteInt.h"
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-
-/* defined in test1.c */
+// defined in test1.c
+void *sqlite3TestTextToPtr(const char *);
 const char *sqlite3TestErrorName(int);
 
-/* A countable mutex */
-struct sqlite3_mutex {
-  sqlite3_mutex *pReal;
-  int eType;
+// A countable mutex
+struct _mutex_obj
+{
+	MutexEx Real;
+	MUTEX Type;
 };
 
-/* State variables */
-static struct test_mutex_globals {
-  int isInstalled;              /* True if installed */
-  int disableInit;              /* True to cause sqlite3_initalize() to fail */
-  int disableTry;               /* True to force sqlite3_mutex_try() to fail */
-  int isInit;                   /* True if initialized */
-  sqlite3_mutex_methods m;      /* Interface to "real" mutex system */
-  int aCounter[8];              /* Number of grabs of each type of mutex */
-  sqlite3_mutex aStatic[6];     /* The six static mutexes */
-} g = {0};
+// State variables
+__device__ static struct test_mutex_globals
+{
+	bool IsInstalled;           // True if installed
+	bool DisableInit;           // True to cause sqlite3_initalize() to fail
+	bool DisableTry;            // True to force sqlite3_mutex_try() to fail
+	bool IsInit;                // True if initialized
+	_mutex_methods m;			// Interface to "real" mutex system
+	int Counters[8];            // Number of grabs of each type of mutex
+	_mutex_obj Statics[6];		// The six static mutexes
+} g_ = {0};
 
-/* Return true if the countable mutex is currently held */
-static int counterMutexHeld(sqlite3_mutex *p){
-  return g.m.xMutexHeld(p->pReal);
+// Return true if the countable mutex is currently held
+__device__ static bool counterMutexHeld(_mutex_obj *p) { return g_.m.Held(p->Real); }
+
+// Return true if the countable mutex is not currently held 
+__device__ static bool counterMutexNotHeld(_mutex_obj *p) { return g_.m.NotHeld(p->Real); }
+
+// Initialize the countable mutex interface
+// Or, if g.disableInit is non-zero, then do not initialize but instead return the value of g.disableInit as the result code.  This can be used
+// to simulate an initialization failure.
+__device__ static int counterMutexInit()
+{ 
+	int rc;
+	if (g_.DisableInit) return g_.DisableInit;
+	rc = g_.m.Init();
+	g_.IsInit = true;
+	return rc;
 }
 
-/* Return true if the countable mutex is not currently held */
-static int counterMutexNotheld(sqlite3_mutex *p){
-  return g.m.xMutexNotheld(p->pReal);
+// Uninitialize the mutex subsystem
+__device__ static void counterMutexShutdown()
+{ 
+	g_.IsInit = false;
+	g_.m.Shutdown();
 }
 
-/* Initialize the countable mutex interface
-** Or, if g.disableInit is non-zero, then do not initialize but instead
-** return the value of g.disableInit as the result code.  This can be used
-** to simulate an initialization failure.
-*/
-static int counterMutexInit(void){ 
-  int rc;
-  if( g.disableInit ) return g.disableInit;
-  rc = g.m.xMutexInit();
-  g.isInit = 1;
-  return rc;
+// Allocate a countable mutex
+__device__ static MutexEx counterMutexAlloc(MUTEX type)
+{
+	_assert(g_.IsInit);
+	_assert(type < 8 && type >= 0);
+	MutexEx real = g_.m.Alloc(type);
+	if (!real) return nullptr;
+	_mutex_obj *r = (type == MUTEX_FAST || type == MUTEX_RECURSIVE ? (_mutex_obj *)_alloc(sizeof(_mutex_obj)) : &g_.Statics[(int)type-2]);
+	r->Type = type;
+	r->Real = real;
+	return r;
 }
 
-/*
-** Uninitialize the mutex subsystem
-*/
-static int counterMutexEnd(void){ 
-  g.isInit = 0;
-  return g.m.xMutexEnd();
+// Free a countable mutex
+__device__ static void counterMutexFree(_mutex_obj *p)
+{
+	_assert(g_.IsInit);
+	g_.m.Free(p->Real);
+	if (p->Type == MUTEX_FAST || p->Type == MUTEX_RECURSIVE)
+		_free(p);
 }
 
-/*
-** Allocate a countable mutex
-*/
-static sqlite3_mutex *counterMutexAlloc(int eType){
-  sqlite3_mutex *pReal;
-  sqlite3_mutex *pRet = 0;
-
-  assert( g.isInit );
-  assert(eType<8 && eType>=0);
-
-  pReal = g.m.xMutexAlloc(eType);
-  if( !pReal ) return 0;
-
-  if( eType==SQLITE_MUTEX_FAST || eType==SQLITE_MUTEX_RECURSIVE ){
-    pRet = (sqlite3_mutex *)malloc(sizeof(sqlite3_mutex));
-  }else{
-    pRet = &g.aStatic[eType-2];
-  }
-
-  pRet->eType = eType;
-  pRet->pReal = pReal;
-  return pRet;
+// Enter a countable mutex.  Block until entry is safe.
+__device__ static void counterMutexEnter(_mutex_obj *p)
+{
+	_assert(g_.IsInit);
+	g_.Counters[(int)p->Type]++;
+	g_.m.Enter(p->Real);
 }
 
-/*
-** Free a countable mutex
-*/
-static void counterMutexFree(sqlite3_mutex *p){
-  assert( g.isInit );
-  g.m.xMutexFree(p->pReal);
-  if( p->eType==SQLITE_MUTEX_FAST || p->eType==SQLITE_MUTEX_RECURSIVE ){
-    free(p);
-  }
+// Try to enter a mutex.  Return true on success.
+__device__ static bool counterMutexTryEnter(_mutex_obj *p)
+{
+	_assert(g_.IsInit);
+	g_.Counters[(int)p->Type]++;
+	if (g_.DisableTry) return RC_BUSY;
+	return g_.m.TryEnter(p->Real);
 }
 
-/*
-** Enter a countable mutex.  Block until entry is safe.
-*/
-static void counterMutexEnter(sqlite3_mutex *p){
-  assert( g.isInit );
-  g.aCounter[p->eType]++;
-  g.m.xMutexEnter(p->pReal);
+// Leave a mutex
+__device__ static void counterMutexLeave(_mutex_obj *p)
+{
+	_assert(g_.IsInit);
+	g_.m.Leave(p->Real);
 }
 
-/*
-** Try to enter a mutex.  Return true on success.
-*/
-static int counterMutexTry(sqlite3_mutex *p){
-  assert( g.isInit );
-  g.aCounter[p->eType]++;
-  if( g.disableTry ) return SQLITE_BUSY;
-  return g.m.xMutexTry(p->pReal);
+// sqlite3_shutdown
+__device__ static int test_shutdown(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 1)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "");
+		return JIM_ERROR;
+	}
+	RC rc = Main::Shutdown();
+	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
+	return JIM_OK;
 }
 
-/* Leave a mutex
-*/
-static void counterMutexLeave(sqlite3_mutex *p){
-  assert( g.isInit );
-  g.m.xMutexLeave(p->pReal);
+// sqlite3_initialize
+__device__ static int test_initialize(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 1)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "");
+		return JIM_ERROR;
+	}
+	RC rc = Main::Initialize();
+	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
+	return JIM_OK;
 }
 
-/*
-** sqlite3_shutdown
-*/
-static int test_shutdown(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int rc;
+// install_mutex_counters BOOLEAN
+_mutex_methods _counter_methods = {
+	counterMutexInit,
+	counterMutexShutdown,
+	(MutexEx (*)(MUTEX))counterMutexAlloc,
+	(void (*)(MutexEx))counterMutexFree,
+	(void (*)(MutexEx))counterMutexEnter,
+	(bool (*)(MutexEx))counterMutexTryEnter,
+	(void (*)(MutexEx))counterMutexLeave,
+	(bool (*)(MutexEx))counterMutexHeld,
+	(bool (*)(MutexEx))counterMutexNotHeld
+};
 
-  if( objc!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "");
-    return JIM_ERROR;
-  }
-
-  rc = sqlite3_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
-  return JIM_OK;
+__device__ static int test_install_mutex_counters(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "BOOLEAN");
+		return JIM_ERROR;
+	}
+	bool isInstall;
+	if (Jim_GetBoolean(interp, args[1], &isInstall) != JIM_OK)
+		return JIM_ERROR;
+	if (isInstall == g_.IsInstalled)
+	{
+		Jim_AppendResult(interp, "mutex counters are ", nullptr);
+		Jim_AppendResult(interp, isInstall ? "already installed" : "not installed", nullptr);
+		return JIM_ERROR;
+	}
+	RC rc = RC_OK;
+	if (isInstall)
+	{
+		_assert(!g_.m.Alloc);
+		rc = SysEx::Config(SysEx::CONFIG_GETMUTEX, &g_.m);
+		if (rc == RC_OK)
+			SysEx::Config(SysEx::CONFIG_MUTEX, &_counter_methods);
+		g_.DisableTry = false;
+	}
+	else
+	{
+		_assert(g_.m.Alloc);
+		rc = SysEx::Config(SysEx::CONFIG_MUTEX, &g_.m);
+		memset(&g_.m, 0, sizeof(_mutex_methods));
+	}
+	if (rc == RC_OK)
+		g_.IsInstalled = isInstall;
+	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
+	return JIM_OK;
 }
 
-/*
-** sqlite3_initialize
-*/
-static int test_initialize(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int rc;
-
-  if( objc!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "");
-    return JIM_ERROR;
-  }
-
-  rc = sqlite3_initialize();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
-  return JIM_OK;
+// read_mutex_counters
+__device__ static int test_read_mutex_counters(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	char *names[8] = {
+		"fast",        "recursive",   "static_master", "static_mem", 
+		"static_open", "static_prng", "static_lru",    "static_pmem"
+	};
+	if (argc != 1)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "");
+		return JIM_ERROR;
+	}
+	Jim_Obj *r = Jim_NewListObj(interp, nullptr, 0);
+	Jim_IncrRefCount(r);
+	for (int ii = 0; ii < 8; ii++)
+	{
+		Jim_ListAppendElement(interp, r, Jim_NewStringObj(interp, names[ii], -1));
+		Jim_ListAppendElement(interp, r, Jim_NewIntObj(interp, g_.Counters[ii]));
+	}
+	Jim_SetResult(interp, r);
+	Jim_DecrRefCount(interp, r);
+	return JIM_OK;
 }
 
-/*
-** install_mutex_counters BOOLEAN
-*/
-static int test_install_mutex_counters(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int rc = SQLITE_OK;
-  int isInstall;
-
-  sqlite3_mutex_methods counter_methods = {
-    counterMutexInit,
-    counterMutexEnd,
-    counterMutexAlloc,
-    counterMutexFree,
-    counterMutexEnter,
-    counterMutexTry,
-    counterMutexLeave,
-    counterMutexHeld,
-    counterMutexNotheld
-  };
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
-    return JIM_ERROR;
-  }
-  if( JIM_OK!=Tcl_GetBooleanFromObj(interp, objv[1], &isInstall) ){
-    return JIM_ERROR;
-  }
-
-  assert(isInstall==0 || isInstall==1);
-  assert(g.isInstalled==0 || g.isInstalled==1);
-  if( isInstall==g.isInstalled ){
-    Tcl_AppendResult(interp, "mutex counters are ", 0);
-    Tcl_AppendResult(interp, isInstall?"already installed":"not installed", 0);
-    return JIM_ERROR;
-  }
-
-  if( isInstall ){
-    assert( g.m.xMutexAlloc==0 );
-    rc = sqlite3_config(SQLITE_CONFIG_GETMUTEX, &g.m);
-    if( rc==SQLITE_OK ){
-      sqlite3_config(SQLITE_CONFIG_MUTEX, &counter_methods);
-    }
-    g.disableTry = 0;
-  }else{
-    assert( g.m.xMutexAlloc );
-    rc = sqlite3_config(SQLITE_CONFIG_MUTEX, &g.m);
-    memset(&g.m, 0, sizeof(sqlite3_mutex_methods));
-  }
-
-  if( rc==SQLITE_OK ){
-    g.isInstalled = isInstall;
-  }
-
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
-  return JIM_OK;
+// clear_mutex_counters
+__device__ static int test_clear_mutex_counters(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 1)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "");
+		return JIM_ERROR;
+	}
+	for (int ii = 0; ii < 8; ii++)
+		g_.Counters[ii] = 0;
+	return JIM_OK;
 }
 
-/*
-** read_mutex_counters
-*/
-static int test_read_mutex_counters(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  Tcl_Obj *pRet;
-  int ii;
-  char *aName[8] = {
-    "fast",        "recursive",   "static_master", "static_mem", 
-    "static_open", "static_prng", "static_lru",    "static_pmem"
-  };
-
-  if( objc!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "");
-    return JIM_ERROR;
-  }
-
-  pRet = Tcl_NewObj();
-  Tcl_IncrRefCount(pRet);
-  for(ii=0; ii<8; ii++){
-    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(aName[ii], -1));
-    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(g.aCounter[ii]));
-  }
-  Tcl_SetObjResult(interp, pRet);
-  Tcl_DecrRefCount(pRet);
-
-  return JIM_OK;
-}
-
-/*
-** clear_mutex_counters
-*/
-static int test_clear_mutex_counters(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int ii;
-
-  if( objc!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "");
-    return JIM_ERROR;
-  }
-
-  for(ii=0; ii<8; ii++){
-    g.aCounter[ii] = 0;
-  }
-  return JIM_OK;
-}
-
-/*
-** Create and free a mutex.  Return the mutex pointer.  The pointer
-** will be invalid since the mutex has already been freed.  The
-** return pointer just checks to see if the mutex really was allocated.
-*/
-static int test_alloc_mutex(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-#if SQLITE_THREADSAFE
-  sqlite3_mutex *p = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-  char zBuf[100];
-  sqlite3_mutex_free(p);
-  sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", p);
-  Tcl_AppendResult(interp, zBuf, (char*)0);
+// Create and free a mutex.  Return the mutex pointer.  The pointer will be invalid since the mutex has already been freed.  The
+// return pointer just checks to see if the mutex really was allocated.
+__device__ static int test_alloc_mutex(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+#if THREADSAFE
+	MutexEx p = _mutex_alloc(MUTEX_FAST);
+	char buf[100];
+	_mutex_free(p);
+	__snprintf(buf, sizeof(buf), "%p", p);
+	Jim_AppendResult(interp, buf, nullptr);
 #endif
-  return JIM_OK;
+	return JIM_OK;
 }
 
-/*
-** sqlite3_config OPTION
-**
-** OPTION can be either one of the keywords:
-**
-**            SQLITE_CONFIG_SINGLETHREAD
-**            SQLITE_CONFIG_MULTITHREAD
-**            SQLITE_CONFIG_SERIALIZED
-**
-** Or OPTION can be an raw integer.
-*/
-static int test_config(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  struct ConfigOption {
-    const char *zName;
-    int iValue;
-  } aOpt[] = {
-    {"singlethread", SQLITE_CONFIG_SINGLETHREAD},
-    {"multithread",  SQLITE_CONFIG_MULTITHREAD},
-    {"serialized",   SQLITE_CONFIG_SERIALIZED},
-    {0, 0}
-  };
-  int s = sizeof(struct ConfigOption);
-  int i;
-  int rc;
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "");
-    return JIM_ERROR;
-  }
-
-  if( Tcl_GetIndexFromObjStruct(interp, objv[1], aOpt, s, "flag", 0, &i) ){
-    if( Tcl_GetIntFromObj(interp, objv[1], &i) ){
-      return JIM_ERROR;
-    }
-  }else{
-    i = aOpt[i].iValue;
-  }
-
-  rc = sqlite3_config(i);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), JIM_VOLATILE);
-  return JIM_OK;
+// sqlite3_config OPTION
+//
+// OPTION can be either one of the keywords:
+//            SQLITE_CONFIG_SINGLETHREAD
+//            SQLITE_CONFIG_MULTITHREAD
+//            SQLITE_CONFIG_SERIALIZED
+// Or OPTION can be an raw integer.
+__device__ static int test_config(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	struct ConfigOption {
+		const char *Name;
+		int Value;
+	} opts[] = {
+		{"singlethread", SysEx::CONFIG_SINGLETHREAD},
+		{"multithread",  SysEx::CONFIG_MULTITHREAD},
+		{"serialized",   SysEx::CONFIG_SERIALIZED},
+		{nullptr, (SysEx::CONFIG)0}
+	};
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "");
+		return JIM_ERROR;
+	}
+	int i;
+	if (Jim_GetEnumFromStruct(interp, args[1], (const void **)opts, sizeof(struct ConfigOption), &i, "flag", 0))
+	{
+		if (Jim_GetInt(interp, args[1], &i))
+			return JIM_ERROR;
+	}
+	else
+		i = opts[i].Value;
+	RC rc = SysEx::Config((SysEx::CONFIG)i);
+	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
+	return JIM_OK;
 }
 
-static sqlite3 *GetDbPointer(Tcl_Interp *pInterp, Tcl_Obj *pObj){
-  sqlite3 *db;
-  Tcl_CmdInfo info;
-  char *zCmd = Tcl_GetString(pObj);
-  if( Tcl_GetCommandInfo(pInterp, zCmd, &info) ){
-    db = *((sqlite3 **)info.objClientData);
-  }else{
-    db = (sqlite3*)sqlite3TestTextToPtr(zCmd);
-  }
-  assert( db );
-  return db;
+__device__ static Context *GetDbPointer(Jim_Interp *interp, Jim_Obj *obj)
+{
+	const char *cmd = Jim_String(obj);
+	Jim_CmdInfo info;
+	Context *ctx = (Jim_GetCommandInfo(interp, cmd, &info) ? *((Context **)info.objClientData) : (Context *)sqlite3TestTextToPtr(cmd));
+	_assert(ctx);
+	return ctx;
 }
 
-static int test_enter_db_mutex(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return JIM_ERROR;
-  }
-  db = GetDbPointer(interp, objv[1]);
-  if( !db ){
-    return JIM_ERROR;
-  }
-  sqlite3_mutex_enter(sqlite3_db_mutex(db));
-  return JIM_OK;
+__device__ static int test_enter_db_mutex(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
+	}
+	Context *ctx = GetDbPointer(interp, args[1]);
+	if (!ctx)
+		return JIM_ERROR;
+	_mutex_enter(sqlite3_db_mutex(ctx));
+	return JIM_OK;
 }
 
-static int test_leave_db_mutex(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return JIM_ERROR;
-  }
-  db = GetDbPointer(interp, objv[1]);
-  if( !db ){
-    return JIM_ERROR;
-  }
-  sqlite3_mutex_leave(sqlite3_db_mutex(db));
-  return JIM_OK;
+__device__ static int test_leave_db_mutex(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc != 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "DB");
+		return JIM_ERROR;
+	}
+	Context *ctx = GetDbPointer(interp, args[1]);
+	if (!ctx)
+		return JIM_ERROR;
+	_mutex_leave(sqlite3_db_mutex(ctx));
+	return JIM_OK;
 }
 
-int Sqlitetest_mutex_Init(Tcl_Interp *interp){
-  static struct {
-    char *zName;
-    Tcl_ObjCmdProc *xProc;
-  } aCmd[] = {
-    { "sqlite3_shutdown",        (Tcl_ObjCmdProc*)test_shutdown },
-    { "sqlite3_initialize",      (Tcl_ObjCmdProc*)test_initialize },
-    { "sqlite3_config",          (Tcl_ObjCmdProc*)test_config },
-
-    { "enter_db_mutex",          (Tcl_ObjCmdProc*)test_enter_db_mutex },
-    { "leave_db_mutex",          (Tcl_ObjCmdProc*)test_leave_db_mutex },
-
-    { "alloc_dealloc_mutex",     (Tcl_ObjCmdProc*)test_alloc_mutex },
-    { "install_mutex_counters",  (Tcl_ObjCmdProc*)test_install_mutex_counters },
-    { "read_mutex_counters",     (Tcl_ObjCmdProc*)test_read_mutex_counters },
-    { "clear_mutex_counters",    (Tcl_ObjCmdProc*)test_clear_mutex_counters },
-  };
-  int i;
-  for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
-  }
-
-  Tcl_LinkVar(interp, "disable_mutex_init", 
-              (char*)&g.disableInit, JIM_LINK_INT);
-  Tcl_LinkVar(interp, "disable_mutex_try", 
-              (char*)&g.disableTry, JIM_LINK_INT);
-  return SQLITE_OK;
+__constant__ static struct {
+	char *Name;
+	Jim_CmdProc *Proc;
+} _cmds[] = {
+	{ "sqlite3_shutdown",        test_shutdown },
+	{ "sqlite3_initialize",      test_initialize },
+	{ "sqlite3_config",          test_config },
+	{ "enter_db_mutex",          test_enter_db_mutex },
+	{ "leave_db_mutex",          test_leave_db_mutex },
+	{ "alloc_dealloc_mutex",     test_alloc_mutex },
+	{ "install_mutex_counters",  test_install_mutex_counters },
+	{ "read_mutex_counters",     test_read_mutex_counters },
+	{ "clear_mutex_counters",    test_clear_mutex_counters }
+};
+__device__ int Sqlitetest_mutex_Init(Jim_Interp *interp)
+{
+	for (int i = 0; i < _lengthof(_cmds); i++)
+		Jim_CreateCommand(interp, _cmds[i].Name, _cmds[i].Proc, nullptr, nullptr);
+	Jim_LinkVar(interp, "disable_mutex_init", (char *)&g_.DisableInit, JIM_LINK_INT);
+	Jim_LinkVar(interp, "disable_mutex_try", (char *)&g_.DisableTry, JIM_LINK_INT);
+	return JIM_OK;
 }
