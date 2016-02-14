@@ -61,7 +61,7 @@ namespace CORE_NAME
 					if (rc == RC_NOMEM)
 						ctx->MallocFailed = true;
 					else if (rc != RC_INTERRUPT && (rc&0xFF) != RC_LOCKED)
-						CorruptSchema(data, argv[0], Main::ErrMsg(ctx));
+						CorruptSchema(data, argv[0], DataEx::ErrMsg(ctx));
 				}
 			}
 			Vdbe::Finalize(stmt);
@@ -161,7 +161,7 @@ namespace CORE_NAME
 			rc = dbAsObj->Bt->BeginTrans(0);
 			if (rc != RC_OK)
 			{
-				_mtagassignf(errMsg, ctx, "%s", Main::ErrStr(rc));
+				_mtagassignf(errMsg, ctx, "%s", DataEx::ErrStr(rc));
 				goto initone_error_out;
 			}
 			openedTransaction = true;
@@ -249,7 +249,7 @@ namespace CORE_NAME
 				ARC (*auth)(void*,int,const char*,const char*,const char*,const char*) = ctx->Auth;
 				ctx->Auth = nullptr;
 #endif
-				rc = Main::Exec(ctx, sql, InitCallback, &initData, 0);
+				rc = DataEx::Exec(ctx, sql, InitCallback, &initData, 0);
 #ifndef OMIT_AUTHORIZATION
 				ctx->Auth = auth;
 			}
@@ -441,7 +441,7 @@ error_out:
 				if (rc)
 				{
 					const char *dbName = ctx->DBs[i].Name;
-					Main::Error(ctx, rc, "database schema is locked: %s", dbName);
+					DataEx::Error(ctx, rc, "database schema is locked: %s", dbName);
 					ASSERTCOVERAGE(ctx->Flags & Context::FLAG_ReadUncommitted);
 					goto end_prepare;
 				}
@@ -459,8 +459,8 @@ error_out:
 			ASSERTCOVERAGE(bytes == maxLen+1);
 			if (bytes > maxLen)
 			{
-				Main::Error(ctx, RC_TOOBIG, "statement too long");
-				rc = Main::ApiExit(ctx, RC_TOOBIG);
+				DataEx::Error(ctx, RC_TOOBIG, "statement too long");
+				rc = DataEx::ApiExit(ctx, RC_TOOBIG);
 				goto end_prepare;
 			}
 			char *sqlCopy = _tagstrndup(ctx, sql, bytes);
@@ -523,11 +523,11 @@ error_out:
 
 		if (errMsg)
 		{
-			Main::Error(ctx, rc, "%s", errMsg);
+			DataEx::Error(ctx, rc, "%s", errMsg);
 			_tagfree(ctx, errMsg);
 		}
 		else
-			Main::Error(ctx, rc, nullptr);
+			DataEx::Error(ctx, rc, nullptr);
 
 		// Delete any TriggerPrg structures allocated while parsing this statement.
 		while (parse->TriggerPrg)
@@ -539,7 +539,7 @@ error_out:
 
 end_prepare:
 		_stackfree(ctx, parse);
-		rc = Main::ApiExit(ctx, rc);
+		rc = DataEx::ApiExit(ctx, rc);
 		_assert((rc&ctx->ErrMask) == rc);
 		return rc;
 	}
@@ -548,7 +548,7 @@ end_prepare:
 	{
 		_assert(stmtOut != 0);
 		*stmtOut = nullptr;
-		if (!Main::SafetyCheckOk(ctx))
+		if (!DataEx::SafetyCheckOk(ctx))
 			return SysEx_MISUSE_BKPT;
 		_mutex_enter(ctx->Mutex);
 		Btree::EnterAll(ctx);
@@ -609,7 +609,7 @@ end_prepare:
 		// tricky bit is figuring out the pointer to return in *pzTail.
 		_assert(stmtOut);
 		*stmtOut = nullptr;
-		if (!Main::SafetyCheckOk(ctx))
+		if (!DataEx::SafetyCheckOk(ctx))
 			return SysEx_MISUSE_BKPT;
 		_mutex_enter(ctx->Mutex);
 		RC rc = RC_OK;
@@ -625,7 +625,7 @@ end_prepare:
 			*tailOut = (uint8 *)sql + _utf16bytelength(sql, charsParsed);
 		}
 		_tagfree(ctx, sql8); 
-		rc = Main::ApiExit(ctx, rc);
+		rc = DataEx::ApiExit(ctx, rc);
 		_mutex_leave(ctx->Mutex);
 		return rc;
 	}

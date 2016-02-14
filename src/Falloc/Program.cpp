@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 	//	return 0;
 	//cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId());
 
-	//Visual::Main();
+	//Visual::DataEx();
 	//Visual::Dispose();
 	//cudaErrorCheck(cudaDeviceHeapSynchronize(deviceHeap));
 #endif

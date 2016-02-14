@@ -140,6 +140,7 @@ extern "C" {
 
 #define JIM_NONE 0              // no flags set
 #define JIM_ERRMSG 1            // set an error message in the interpreter
+#define JIM_GLOBAL 10            // set an error message in the interpreter
 #define JIM_ENUM_ABBREV 2       // Jim_GetEnum() - Allow unambiguous abbreviation
 #define JIM_UNSHARED 4          // Jim_GetVariable() - return unshared object
 #define JIM_MUSTEXIST 8         // Jim_SetDictKeysVector() - fail if non-existent
@@ -444,7 +445,7 @@ extern "C" {
 #define Jim_InterpIncrProcEpoch(i) (i)->procEpoch++
 #define Jim_SetResultString(i,s,l) Jim_SetResult(i, Jim_NewStringObj(i,s,l))
 #define Jim_SetResultInt(i,intval) Jim_SetResult(i, Jim_NewIntObj(i,intval))
-#define Jim_SetResultWide(i,intval) Jim_SetResultInt(i,intval)
+#define Jim_SetResultWide(i,intval) Jim_SetResultInt(i, intval)
 #define Jim_SetResultByteArray(i,s,l) Jim_SetResult(i, Jim_NewStringObj(i,(char *)s,l))
 #define Jim_SetResultBool(i,b) Jim_SetResultInt(i, b)
 	// Note: Using trueObj and falseObj here makes some things slower...
@@ -453,12 +454,7 @@ extern "C" {
 #define Jim_CmdPrivData(i) ((i)->cmdPrivData)
 
 	// Note that 'o' is expanded only one time inside this macro, so it's safe to use side effects.
-#define Jim_SetResult(i,o) do { \
-	Jim_Obj *_resultObjPtr_ = (o); \
-	Jim_IncrRefCount(_resultObjPtr_); \
-	Jim_DecrRefCount(i,(i)->result); \
-	(i)->result = _resultObjPtr_; \
-	} while (0)
+#define Jim_SetResult(i,o) do { Jim_Obj *_resultObjPtr_ = (o); Jim_IncrRefCount(_resultObjPtr_); Jim_DecrRefCount(i, (i)->result); (i)->result = _resultObjPtr_; } while (0)
 
 	// Use this for filehandles, etc. which need a unique id
 #define Jim_GetId(i) (++(i)->id)
@@ -582,16 +578,13 @@ extern "C" {
 	JIM_EXPORT __device__ int Jim_DeleteCommand(Jim_Interp *interp, const char *cmdName);
 	JIM_EXPORT __device__ int Jim_RenameCommand(Jim_Interp *interp, const char *oldName, const char *newName);
 	JIM_EXPORT __device__ Jim_Cmd *Jim_GetCommand(Jim_Interp *interp, Jim_Obj *objPtr, int flags);
-	JIM_EXPORT __device__ int Jim_SetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr);
-	JIM_EXPORT __device__ int Jim_SetVariableStr(Jim_Interp *interp, const char *name, Jim_Obj *objPtr);
-	JIM_EXPORT __device__ int Jim_SetGlobalVariableStr(Jim_Interp *interp, const char *name, Jim_Obj *objPtr);
-	JIM_EXPORT __device__ int Jim_SetVariableStrWithStr(Jim_Interp *interp, const char *name, const char *val);
+	JIM_EXPORT __device__ int Jim_SetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr, int flags = 0);
+	JIM_EXPORT __device__ int Jim_SetVariableStr(Jim_Interp *interp, const char *name, Jim_Obj *objPtr, int flags = 0);
+	JIM_EXPORT __device__ int Jim_SetVariableStrWithStr(Jim_Interp *interp, const char *name, const char *val, int flags = 0);
 	JIM_EXPORT __device__ int Jim_SetVariableLink(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *targetNameObjPtr, Jim_CallFrame *targetCallFrame);
 	JIM_EXPORT __device__ Jim_Obj *Jim_MakeGlobalNamespaceName(Jim_Interp *interp, Jim_Obj *nameObjPtr);
 	JIM_EXPORT __device__ Jim_Obj *Jim_GetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int flags);
-	JIM_EXPORT __device__ Jim_Obj *Jim_GetGlobalVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int flags);
 	JIM_EXPORT __device__ Jim_Obj *Jim_GetVariableStr(Jim_Interp *interp, const char *name, int flags);
-	JIM_EXPORT __device__ Jim_Obj *Jim_GetGlobalVariableStr(Jim_Interp *interp, const char *name, int flags);
 	JIM_EXPORT __device__ int Jim_UnsetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int flags);
 
 	// call frame
@@ -693,10 +686,46 @@ extern "C" {
 	JIM_EXPORT void Jim_HistoryAdd(const char *line);
 	JIM_EXPORT void Jim_HistoryShow();
 
+	// commandinfo commmand *added*
+	typedef struct Jim_CmdInfo {
+		Jim_CmdProc *objProc;
+		ClientData objClientData;
+		void *deleteProc;
+	} Jim_CmdInfo;
+	JIM_EXPORT __device__ int Jim_GetCommandInfoStr(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo);
+	JIM_EXPORT __device__ int Jim_GetCommandInfo(Jim_Interp *interp, Jim_Obj *objPtr, Jim_CmdInfo *cmdInfo);
+	JIM_EXPORT __device__ int Jim_SetCommandInfoStr(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo);
+	JIM_EXPORT __device__ int Jim_SetCommandInfo(Jim_Interp *interp, Jim_Obj *objPtr, Jim_CmdInfo *cmdInfo);
+
+	// variable command *added*
+	JIM_EXPORT __device__ Jim_Obj *Jim_GetVar2(Jim_Interp *interp, const char *name, const char *key, int flags);
+	__device__ __forceinline Jim_Obj *Jim_ObjGetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, int flags) { Jim_Obj *obj; Jim_DictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, &obj, flags); return obj; }
+	JIM_EXPORT __device__ int Jim_SetVar2(Jim_Interp *interp, const char *name, const char *key, const char *val, int flags);
+	__device__ __forceinline int Jim_ObjSetVar2(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *keyObjPtr, Jim_Obj *valObjPtr) { return Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0); }
+
+	// result append *added*
+#define Jim_AppendResult(i, ...) do { \
+	Jim_Obj *_resultObjPtr_ = (i)->result; \
+	if (_resultObjPtr_ == (i)->emptyObj) { _resultObjPtr_ = Jim_NewStringObj(i, nullptr, 0); Jim_IncrRefCount(_resultObjPtr_); Jim_DecrRefCount(i, (i)->result); (i)->result = _resultObjPtr_; } \
+	Jim_AppendStrings(i, _resultObjPtr_, __VA_ARGS__); \
+	} while (0)
+#define Jim_AppendElement(i, s) do { \
+	Jim_Obj *_resultObjPtr_ = (i)->result; \
+	if (_resultObjPtr_ == (i)->emptyObj) { _resultObjPtr_ = Jim_NewListObj(i, nullptr, 0); Jim_IncrRefCount(_resultObjPtr_); Jim_DecrRefCount(i, (i)->result); (i)->result = _resultObjPtr_; } \
+	Jim_ListAppendElement(i, Jim_GetResult(i), Jim_NewStringObj(i, s, -1)); \
+	} while (0)
+	//#define Jim_AppendElement(i, s) Jim_ListAppendElement(i, Jim_GetResult(i), Jim_NewStringObj(i, s, -1))
+#define Jim_LinkVar
+#define JIM_LINK_STRING 0
+#define JIM_LINK_READ_ONLY 0
+#define JIM_LINK_INT 0
+
+
 	// Misc
 	JIM_EXPORT __device__ int Jim_InitStaticExtensions(Jim_Interp *interp);
 	JIM_EXPORT __device__ int Jim_StringToWide(const char *str, jim_wide *widePtr, int base);
 	JIM_EXPORT __device__ int Jim_IsBigEndian();
+
 
 	// Returns 1 if a signal has been received while in a catch -signal {} clause.
 #define Jim_CheckSignal(i) ((i)->signal_level && (i)->sigmask)

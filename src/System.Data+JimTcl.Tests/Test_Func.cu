@@ -119,7 +119,7 @@ __device__ static void test_agg_errmsg16_final(FuncContext *fctx)
 	Context *ctx = Vdbe::Context_Ctx(fctx);
 	Vdbe::Aggregate_Context(fctx, 2048);
 	_benignalloc_begin();
-	const void *z = Main::ErrMsg16(ctx);
+	const void *z = DataEx::ErrMsg16(ctx);
 	_benignalloc_end();
 	Vdbe::Result_Text16(fctx, z, -1, DESTRUCTOR_TRANSIENT);
 #endif
@@ -229,7 +229,7 @@ __device__ static void test_eval(FuncContext *fctx, int argc, Mem **args)
 	if (rc)
 	{
 		_assert(!stmt);
-		char *err = _mprintf("sqlite3_prepare_v2() error: %s", Main::ErrMsg(ctx));
+		char *err = _mprintf("sqlite3_prepare_v2() error: %s", DataEx::ErrMsg(ctx));
 		Vdbe::Result_Text(fctx, err, -1, _free);
 		Vdbe::Result_ErrorCode(fctx, rc);
 	}
@@ -371,8 +371,8 @@ __constant__ static const struct {
 __device__ static int registerTestFunctions(Context *ctx)
 {
 	for (int i = 0; i < _lengthof(_funcs); i++)
-		Main::CreateFunction(ctx, _funcs[i].Name, _funcs[i].Args, _funcs[i].TextRep, nullptr, _funcs[i].Func, nullptr, nullptr);
-	Main::CreateFunction(ctx, "test_agg_errmsg16", 0, TEXTENCODE_ANY, nullptr, nullptr, test_agg_errmsg16_step, test_agg_errmsg16_final);
+		DataEx::CreateFunction(ctx, _funcs[i].Name, _funcs[i].Args, _funcs[i].TextRep, nullptr, _funcs[i].Func, nullptr, nullptr);
+	DataEx::CreateFunction(ctx, "test_agg_errmsg16", 0, TEXTENCODE_ANY, nullptr, nullptr, test_agg_errmsg16_step, test_agg_errmsg16_final);
 	return RC_OK;
 }
 
@@ -383,9 +383,9 @@ __device__ static int registerTestFunctions(Context *ctx)
 __device__ static int autoinstall_test_funcs(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
 	extern int Md5_Register(Context *);
-	RC rc = Main::AutoExtension((void(*)())registerTestFunctions);
+	RC rc = DataEx::AutoExtension((void(*)())registerTestFunctions);
 	if (rc == RC_OK)
-		rc = Main::AutoExtension((void(*)())Md5_Register);
+		rc = DataEx::AutoExtension((void(*)())Md5_Register);
 	Jim_SetResultInt(interp, rc);
 	return JIM_OK;
 }
@@ -403,28 +403,28 @@ __device__ static int abuse_create_function(ClientData clientData, Jim_Interp *i
 	Context *ctx;
 	if (GetDbPointer(interp, (char *)Jim_String(args[1]), &ctx)) return JIM_ERROR;
 
-	RC rc = Main::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, tStep, tFinal);
+	RC rc = DataEx::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, tStep, tFinal);
 	if (rc != RC_MISUSE) goto abuse_err;
 
-	rc = Main::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, tStep, nullptr);
+	rc = DataEx::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, tStep, nullptr);
 	if (rc != RC_MISUSE) goto abuse_err;
 
-	rc = Main::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, nullptr, tFinal);
+	rc = DataEx::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, tStep, nullptr, tFinal);
 	if (rc != RC_MISUSE) goto abuse_err;
 
-	rc = Main::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, nullptr, nullptr, tFinal);
+	rc = DataEx::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, nullptr, nullptr, tFinal);
 	if (rc != RC_MISUSE) goto abuse_err;
 
-	rc = Main::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, nullptr, tStep, nullptr);
+	rc = DataEx::CreateFunction(ctx, "tx", 1, TEXTENCODE_UTF8, nullptr, nullptr, tStep, nullptr);
 	if (rc != RC_MISUSE) goto abuse_err;
 
-	rc = Main::CreateFunction(ctx, "tx", -2, TEXTENCODE_UTF8, nullptr, tStep, nullptr, nullptr);
+	rc = DataEx::CreateFunction(ctx, "tx", -2, TEXTENCODE_UTF8, nullptr, tStep, nullptr, nullptr);
 	if (rc != RC_MISUSE) goto abuse_err;
 
-	rc = Main::CreateFunction(ctx, "tx", 128, TEXTENCODE_UTF8, nullptr, tStep, nullptr, nullptr);
+	rc = DataEx::CreateFunction(ctx, "tx", 128, TEXTENCODE_UTF8, nullptr, tStep, nullptr, nullptr);
 	if (rc != RC_MISUSE) goto abuse_err;
 
-	rc = Main::CreateFunction(ctx, "funcxx"
+	rc = DataEx::CreateFunction(ctx, "funcxx"
 		"_123456789_123456789_123456789_123456789_123456789"
 		"_123456789_123456789_123456789_123456789_123456789"
 		"_123456789_123456789_123456789_123456789_123456789"
@@ -435,9 +435,9 @@ __device__ static int abuse_create_function(ClientData clientData, Jim_Interp *i
 
 	// This last function registration should actually work.  Generate a no-op function (that always returns NULL) and which has the
 	// maximum-length function name and the maximum number of parameters.
-	Main::Limit(ctx, LIMIT_FUNCTION_ARG, 10000);
-	int maxArg = Main::Limit(ctx, LIMIT_FUNCTION_ARG, -1);
-	rc = Main::CreateFunction(ctx, "nullx"
+	DataEx::Limit(ctx, LIMIT_FUNCTION_ARG, 10000);
+	int maxArg = DataEx::Limit(ctx, LIMIT_FUNCTION_ARG, -1);
+	rc = DataEx::CreateFunction(ctx, "nullx"
 		"_123456789_123456789_123456789_123456789_123456789"
 		"_123456789_123456789_123456789_123456789_123456789"
 		"_123456789_123456789_123456789_123456789_123456789"
@@ -465,8 +465,8 @@ __device__ int Sqlitetest_func_Init(Jim_Interp *interp)
 	extern int Md5_Register(Context*);
 	for (int i = 0; i < _lengthof(_objCmds); i++)
 		Jim_CreateCommand(interp, _objCmds[i].Name, _objCmds[i].Proc, nullptr, nullptr);
-	Main::Initialize();
-	Main::AutoExtension((void(*)())registerTestFunctions);
-	Main::AutoExtension((void(*)())Md5_Register);
+	DataEx::Initialize();
+	DataEx::AutoExtension((void(*)())registerTestFunctions);
+	DataEx::AutoExtension((void(*)())Md5_Register);
 	return JIM_OK;
 }

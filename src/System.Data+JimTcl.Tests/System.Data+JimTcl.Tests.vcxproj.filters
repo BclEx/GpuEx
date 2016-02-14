@@ -16,6 +16,12 @@
     <None Include="test\tester.tcl">
       <Filter>test</Filter>
     </None>
+    <None Include="test\thread_common.tcl">
+      <Filter>test</Filter>
+    </None>
+    <None Include="test\malloc_common.tcl">
+      <Filter>test</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Test.cu.h" />
@@ -28,7 +34,6 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\Runtime.JimTcl\_content\TclContext.cu" />
-    <CudaCompile Include="TclContext+Test.cu" />
     <CudaCompile Include="Test_Autoext.cu" />
     <CudaCompile Include="Test_Backup.cu" />
     <CudaCompile Include="Test_Btree.cu" />
@@ -73,5 +78,6 @@
     <CudaCompile Include="Test7.cu" />
     <CudaCompile Include="Test8.cu" />
     <CudaCompile Include="Test9.cu" />
+    <CudaCompile Include="Program.cu" />
   </ItemGroup>
 </Project>

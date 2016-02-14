@@ -2,7 +2,7 @@
 #include "Core+Vdbe.cu.h"
 namespace CORE_NAME
 {
-	__device__ RC Main::Exec(Context *ctx, const char *sql, bool (*callback)(void *, int, char **, char **), void *arg, char **errmsg)
+	__device__ RC DataEx::Exec(Context *ctx, const char *sql, bool (*callback)(void *, int, char **, char **), void *arg, char **errmsg)
 	{
 		RC rc = RC_OK; // Return code
 		if (!SafetyCheckOk(ctx)) return SysEx_MISUSE_BKPT;

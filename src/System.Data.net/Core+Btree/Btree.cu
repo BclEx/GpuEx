@@ -6025,7 +6025,7 @@ cleardatabasepage_out:
 		check.ErrMsg.AllocType = 2;
 
 		// Check the integrity of the freelist
-		CheckList(&check, true, (Pid)_convert_get4(&bt->Page1->Data[32]), (int)_convert_get4(&bt->Page1->Data[36]), "Main freelist: ");
+		CheckList(&check, true, (Pid)_convert_get4(&bt->Page1->Data[32]), (int)_convert_get4(&bt->Page1->Data[36]), "DataEx freelist: ");
 
 		// Check all the tables.
 		for (i = 0; (int)i < rootsLength && check.MaxErrors; i++)

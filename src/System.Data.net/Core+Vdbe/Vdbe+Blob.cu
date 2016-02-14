@@ -61,7 +61,7 @@ namespace CORE_NAME {
 				rc = RC_ERROR;
 			}
 			else
-				err = _mtagprintf(p->Ctx, "%s", Main::ErrMsg(p->Ctx));
+				err = _mtagprintf(p->Ctx, "%s", DataEx::ErrMsg(p->Ctx));
 		}
 
 		_assert(rc != RC_OK || err == nullptr);
@@ -253,10 +253,10 @@ blob_open_out:
 			if (blob && blob->Stmt) blob->Stmt->Finalize2();
 			_tagfree(ctx, blob);
 		}
-		Main::Error(ctx, rc, (err ? "%s" : nullptr), err);
+		DataEx::Error(ctx, rc, (err ? "%s" : nullptr), err);
 		_tagfree(ctx, err);
 		_stackfree(ctx, parse);
-		rc = Main::ApiExit(ctx, rc);
+		rc = DataEx::ApiExit(ctx, rc);
 		_mutex_leave(ctx->Mutex);
 		return rc;
 	}
@@ -288,7 +288,7 @@ blob_open_out:
 		if (n < 0 || offset < 0 || (offset + n) > (uint32)p->Bytes)
 		{
 			rc = RC_ERROR; // Request is out of range. Return a transient error.
-			Main::Error(ctx, RC_ERROR, 0);
+			DataEx::Error(ctx, RC_ERROR, 0);
 		}
 		else if (!v)
 			rc = RC_ABORT; // If there is no statement handle, then the blob-handle has already been invalidated. Return SQLITE_ABORT in this case.
@@ -309,7 +309,7 @@ blob_open_out:
 				v->RC_ = rc;
 			}
 		}
-		rc = Main::ApiExit(ctx, rc);
+		rc = DataEx::ApiExit(ctx, rc);
 		_mutex_leave(ctx->Mutex);
 		return rc;
 	}
@@ -346,13 +346,13 @@ blob_open_out:
 			rc = BlobSeekToRow(p, row, &err);
 			if (rc != RC_OK)
 			{
-				Main::Error(ctx, rc, (err ? "%s" : nullptr), err);
+				DataEx::Error(ctx, rc, (err ? "%s" : nullptr), err);
 				_tagfree(ctx, err);
 			}
 			_assert(rc != RC_SCHEMA);
 		}
 
-		rc = Main::ApiExit(ctx, rc);
+		rc = DataEx::ApiExit(ctx, rc);
 		_assert(rc == RC_OK || !p->Stmt);
 		_mutex_leave(ctx->Mutex);
 		return rc;

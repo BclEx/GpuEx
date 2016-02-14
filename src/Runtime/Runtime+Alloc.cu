@@ -3,12 +3,10 @@
 #include <stdarg.h>
 RUNTIME_NAMEBEGIN
 
-	__device__ _mem_methods __allocsystem;	// Low-level mem interface
-
-// Attempt to release up to n bytes of non-essential memory currently held by SQLite. An example of non-essential memory is memory used to
-// cache database pages that are not currently in use.
-// SoftHeapLimitEnforcer::This routine runs when the memory allocator sees that the total memory allocation is about to exceed the soft heap limit.
-__device__ static int __alloc_releasememory(void *arg, int64 used, int allocSize)
+	// Attempt to release up to n bytes of non-essential memory currently held by SQLite. An example of non-essential memory is memory used to
+	// cache database pages that are not currently in use.
+	// SoftHeapLimitEnforcer::This routine runs when the memory allocator sees that the total memory allocation is about to exceed the soft heap limit.
+	__device__ static int __alloc_releasememory(void *arg, int64 used, int allocSize)
 {
 #ifdef ENABLE_MEMORY_MANAGEMENT
 	return sqlite3PcacheReleaseMemory(allocSize);
@@ -85,8 +83,11 @@ __device__ void __alloc_softheaplimit(int size)
 // Initialize the memory allocation subsystem.
 __device__ int _alloc_initG()
 {
-	//if (sqlite3GlobalConfig.m.xMalloc==0)
-	//	sqlite3MemSetDefault();
+	if (!__allocsystem.Alloc)
+	{
+		//printf("__allocsystem_setdefault\n");
+		__allocsystem_setdefault();
+	}
 	memset(&mem0, 0, sizeof(mem0));
 	if (TagBase_RuntimeStatics.RuntimeMutex)
 		mem0.Mutex = _mutex_alloc(MUTEX_STATIC_MEM);

@@ -29,7 +29,7 @@ namespace CORE_NAME
 		}
 	}
 
-	__device__ void Main::Error_(Context *ctx, RC errCode, const char *fmt, _va_list &args)
+	__device__ void DataEx::Error_(Context *ctx, RC errCode, const char *fmt, _va_list &args)
 	{
 		if (ctx && (ctx->Err || (ctx->Err = Vdbe::ValueNew(ctx)) != nullptr))
 		{
@@ -49,7 +49,7 @@ namespace CORE_NAME
 		SysEx_LOG(RC_MISUSE, "API call with %s database connection pointer", type);
 	}
 
-	__device__ bool Main::SafetyCheckOk(Context *ctx)
+	__device__ bool DataEx::SafetyCheckOk(Context *ctx)
 	{
 		if (!ctx)
 		{
@@ -69,7 +69,7 @@ namespace CORE_NAME
 		return true;
 	}
 
-	__device__ bool Main::SafetyCheckSickOrOk(Context *ctx)
+	__device__ bool DataEx::SafetyCheckSickOrOk(Context *ctx)
 	{
 		MAGIC magic = ctx->Magic;
 		if (magic != MAGIC_SICK && magic != MAGIC_OPEN && magic != MAGIC_BUSY)
@@ -128,7 +128,7 @@ namespace CORE_NAME
 #endif
 
 	// The following singleton contains the global configuration for the SQLite library.
-	__device__ _WSD Main::GlobalStatics g_globalStatics =
+	__device__ _WSD DataEx::GlobalStatics g_globalStatics =
 	{
 		ALLOW_COVERING_INDEX_SCAN,		// UseCis
 		//{0,0,0,0,0,0,0,0,0,0,0,0,0},	// pcache2
@@ -142,7 +142,7 @@ namespace CORE_NAME
 
 	__device__ _WSD FuncDefHash g_globalFunctions;
 
-	__device__ RC Main::Initialize()
+	__device__ RC DataEx::Initialize()
 	{
 		TagBase_RuntimeStatics.AppendFormat[0] = TextBuilder_AppendFormat_T;
 		TagBase_RuntimeStatics.AppendFormat[1] = TextBuilder_AppendFormat_S;
@@ -178,7 +178,7 @@ namespace CORE_NAME
 		return rc;
 	}
 
-	__device__ RC Main::Shutdown()
+	__device__ RC DataEx::Shutdown()
 	{
 		if (!SysEx_GlobalStatics.IsInit) return RC_OK;
 
@@ -205,7 +205,7 @@ namespace CORE_NAME
 		return RC_OK;
 	}
 
-	__device__ RC Main::Config_(CONFIG op, _va_list &args)
+	__device__ RC DataEx::Config_(CONFIG op, _va_list &args)
 	{
 		if (op < CONFIG_PAGECACHE) return SysEx::Config_((SysEx::CONFIG)op, args);
 		RC rc = RC_OK;
@@ -243,10 +243,10 @@ namespace CORE_NAME
 		int OP;      // The opcode
 		Context::FLAG Mask; // Mask of the bit in sqlite3.flags to set/clear
 	} _flagOps[] = {
-		{ Main::CTXCONFIG_ENABLE_FKEY,    Context::FLAG_ForeignKeys   },
-		{ Main::CTXCONFIG_ENABLE_TRIGGER, Context::FLAG_EnableTrigger },
+		{ DataEx::CTXCONFIG_ENABLE_FKEY,    Context::FLAG_ForeignKeys   },
+		{ DataEx::CTXCONFIG_ENABLE_TRIGGER, Context::FLAG_EnableTrigger },
 	};
-	__device__ RC Main::CtxConfig_(Context *ctx, CTXCONFIG op, _va_list &args)
+	__device__ RC DataEx::CtxConfig_(Context *ctx, CTXCONFIG op, _va_list &args)
 	{
 		RC rc;
 		switch (op)
@@ -285,9 +285,9 @@ namespace CORE_NAME
 
 #pragma endregion
 
-	//__device__ MutexEx *Main::CtxMutex(Context *ctx) { return ctx->Mutex; }
+	//__device__ MutexEx *DataEx::CtxMutex(Context *ctx) { return ctx->Mutex; }
 
-	__device__ RC Main::CtxReleaseMemory(Context *ctx)
+	__device__ RC DataEx::CtxReleaseMemory(Context *ctx)
 	{
 		_mutex_enter(ctx->Mutex);
 		Btree::EnterAll(ctx);
@@ -331,11 +331,11 @@ namespace CORE_NAME
 		return r;
 	}
 
-	//__device__ int64 Main::CtxLastInsertRowid(Context *ctx) { return ctx->LastRowid; }
-	//__device__ int Main::CtxChanges(Context *ctx) { return ctx->Changes; }
-	//__device__ int Main::CtxTotalChanges(Context *ctx) { return ctx->TotalChanges; }
+	//__device__ int64 DataEx::CtxLastInsertRowid(Context *ctx) { return ctx->LastRowid; }
+	//__device__ int DataEx::CtxChanges(Context *ctx) { return ctx->Changes; }
+	//__device__ int DataEx::CtxTotalChanges(Context *ctx) { return ctx->TotalChanges; }
 
-	__device__ void Main::CloseSavepoints(Context *ctx)
+	__device__ void DataEx::CloseSavepoints(Context *ctx)
 	{
 		while (ctx->Savepoints)
 		{
@@ -394,9 +394,9 @@ namespace CORE_NAME
 
 #pragma region Close/Rollback
 
-	__device__ RC Main::Close(Context *ctx) { return Close(ctx, false); }
-	__device__ RC Main::Close_v2(Context *ctx) { return Close(ctx, true); }
-	__device__ RC Main::Close(Context *ctx, bool forceZombie)
+	__device__ RC DataEx::Close(Context *ctx) { return Close(ctx, false); }
+	__device__ RC DataEx::Close_v2(Context *ctx) { return Close(ctx, true); }
+	__device__ RC DataEx::Close(Context *ctx, bool forceZombie)
 	{
 		if (!ctx)
 			return RC_OK;
@@ -431,7 +431,7 @@ namespace CORE_NAME
 		return RC_OK;
 	}
 
-	__device__ void Main::LeaveMutexAndCloseZombie(Context *ctx)
+	__device__ void DataEx::LeaveMutexAndCloseZombie(Context *ctx)
 	{
 		// If there are outstanding sqlite3_stmt or sqlite3_backup objects or if the connection has not yet been closed by sqlite3_close_v2(),
 		// then just leave the mutex and return.
@@ -530,7 +530,7 @@ namespace CORE_NAME
 		_free(ctx);
 	}
 
-	__device__ void Main::RollbackAll(Context *ctx, RC tripCode)
+	__device__ void DataEx::RollbackAll(Context *ctx, RC tripCode)
 	{
 		_assert(_mutex_held(ctx->Mutex));
 		_benignalloc_begin();
@@ -595,7 +595,7 @@ namespace CORE_NAME
 		/* RC_RANGE       */ "bind or column index out of range",
 		/* RC_NOTADB      */ "file is encrypted or is not a database",
 	};
-	__device__ const char *Main::ErrStr(RC rc)
+	__device__ const char *DataEx::ErrStr(RC rc)
 	{
 		const char *err = "unknown error";
 		switch (rc)
@@ -619,7 +619,7 @@ namespace CORE_NAME
 	__constant__ static const uint8 _totals[] = { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228 };
 #define NDELAY _lengthof(_delays)
 #endif
-	__device__ int Main::DefaultBusyCallback(void *ptr, int count)
+	__device__ int DataEx::DefaultBusyCallback(void *ptr, int count)
 	{
 		Context *ctx = (Context *)ptr;
 		int timeout = ctx->BusyTimeout;
@@ -652,7 +652,7 @@ namespace CORE_NAME
 	}
 
 	// Moved to BContext
-	//__device__ int Main::InvokeBusyHandler(Context::BusyHandlerType *p)
+	//__device__ int DataEx::InvokeBusyHandler(Context::BusyHandlerType *p)
 	//{
 	//	if (_NEVER(p == nullptr) || p->Func == nullptr || p->Busys < 0) return 0;
 	//	int rc = p->Func(p->Arg, p->Busys);
@@ -663,7 +663,7 @@ namespace CORE_NAME
 	//	return rc; 
 	//}
 
-	__device__ RC Main::BusyHandler(Context *ctx, int (*busy)(void *, int), void *arg)
+	__device__ RC DataEx::BusyHandler(Context *ctx, int (*busy)(void *, int), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		ctx->BusyHandler.Func = busy;
@@ -675,7 +675,7 @@ namespace CORE_NAME
 	}
 
 #ifndef OMIT_PROGRESS_CALLBACK
-	__device__ void Main::ProgressHandler(Context *ctx,  int ops, int (*progress)(void *), void *arg)
+	__device__ void DataEx::ProgressHandler(Context *ctx,  int ops, int (*progress)(void *), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		if (ops > 0)
@@ -694,7 +694,7 @@ namespace CORE_NAME
 	}
 #endif
 
-	__device__ RC Main::BusyTimeout(Context *ctx, int ms)
+	__device__ RC DataEx::BusyTimeout(Context *ctx, int ms)
 	{
 		if (ms > 0)
 		{
@@ -706,7 +706,7 @@ namespace CORE_NAME
 		return RC_OK;
 	}
 
-	__device__ void Main::Interrupt(Context *ctx)
+	__device__ void DataEx::Interrupt(Context *ctx)
 	{
 		ctx->u1.IsInterrupted = true;
 	}
@@ -715,7 +715,7 @@ namespace CORE_NAME
 
 #pragma region Function
 
-	__device__ RC Main::CreateFunc(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *userData, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*), FuncDestructor *destructor)
+	__device__ RC DataEx::CreateFunc(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *userData, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*), FuncDestructor *destructor)
 	{
 		_assert(_mutex_held(ctx->Mutex));
 		int funcNameLength;
@@ -781,8 +781,8 @@ namespace CORE_NAME
 		return RC_OK;
 	}
 
-	__device__ RC Main::CreateFunction(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*)) { return CreateFunction_v2(ctx, funcName, args, encode, p, func, step, final_, nullptr); }
-	__device__ RC Main::CreateFunction_v2(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*), void (*destroy)(void*))
+	__device__ RC DataEx::CreateFunction(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*)) { return CreateFunction_v2(ctx, funcName, args, encode, p, func, step, final_, nullptr); }
+	__device__ RC DataEx::CreateFunction_v2(Context *ctx, const char *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*), void (*destroy)(void*))
 	{
 		RC rc = RC_ERROR;
 		FuncDestructor *arg = nullptr;
@@ -812,7 +812,7 @@ _out:
 	}
 
 #ifndef OMIT_UTF16
-	__device__ RC Main::CreateFunction16(Context *ctx, const void *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*))
+	__device__ RC DataEx::CreateFunction16(Context *ctx, const void *funcName, int args, TEXTENCODE encode, void *p, void (*func)(FuncContext*,int,Mem**), void (*step)(FuncContext*,int,Mem**), void (*final_)(FuncContext*))
 	{
 		_mutex_enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
@@ -825,7 +825,7 @@ _out:
 	}
 #endif
 
-	__device__ RC Main::OverloadFunction(Context *ctx, const char *funcName, int args)
+	__device__ RC DataEx::OverloadFunction(Context *ctx, const char *funcName, int args)
 	{
 		int funcNameLength = _strlen(funcName);
 		RC rc;
@@ -842,7 +842,7 @@ _out:
 #pragma region Callback
 
 #ifndef OMIT_TRACE
-	__device__ void *Main::Trace(Context *ctx, void (*trace)(void*,const char*), void *arg)
+	__device__ void *DataEx::Trace(Context *ctx, void (*trace)(void*,const char*), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		void *oldArg = ctx->TraceArg;
@@ -852,7 +852,7 @@ _out:
 		return oldArg;
 	}
 
-	__device__ void *Main::Profile(Context *ctx, void (*profile)(void*,const char*,uint64), void *arg)
+	__device__ void *DataEx::Profile(Context *ctx, void (*profile)(void*,const char*,uint64), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		void *oldArg = ctx->ProfileArg;
@@ -863,7 +863,7 @@ _out:
 	}
 #endif
 
-	__device__ void *Main::CommitHook(Context *ctx, RC (*callback)(void*), void *arg)
+	__device__ void *DataEx::CommitHook(Context *ctx, RC (*callback)(void*), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		void *oldArg = ctx->CommitArg;
@@ -873,7 +873,7 @@ _out:
 		return oldArg;
 	}
 
-	__device__ void *Main::UpdateHook(Context *ctx, void (*callback)(void*,TK,char const*,char const*,int64), void *arg)
+	__device__ void *DataEx::UpdateHook(Context *ctx, void (*callback)(void*,TK,char const*,char const*,int64), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		void *oldArg = ctx->UpdateArg;
@@ -883,7 +883,7 @@ _out:
 		return oldArg;
 	}
 
-	__device__ void *Main::RollbackHook(Context *ctx, void (*callback)(void*), void *arg)
+	__device__ void *DataEx::RollbackHook(Context *ctx, void (*callback)(void*), void *arg)
 	{
 		_mutex_enter(ctx->Mutex);
 		void *oldArg = ctx->RollbackArg;
@@ -894,7 +894,7 @@ _out:
 	}
 
 #ifndef OMIT_WAL
-	__device__ RC Main::WalDefaultHook(void *clientData, Context *ctx, const char *dbName, int frames)
+	__device__ RC DataEx::WalDefaultHook(void *clientData, Context *ctx, const char *dbName, int frames)
 	{
 		if (frames >= PTR_TO_INT(clientData))
 		{
@@ -906,7 +906,7 @@ _out:
 	}
 #endif
 
-	__device__ RC Main::WalAutocheckpoint(Context *ctx, int frames)
+	__device__ RC DataEx::WalAutocheckpoint(Context *ctx, int frames)
 	{
 #ifdef OMIT_WAL
 		return RC_OK;
@@ -919,7 +919,7 @@ _out:
 #endif
 	}
 
-	__device__ void *Main::WalHook(Context *ctx, int (*callback)(void*,Context*,const char*,int), void *arg)
+	__device__ void *DataEx::WalHook(Context *ctx, int (*callback)(void*,Context*,const char*,int), void *arg)
 	{
 #ifdef OMIT_WAL
 		return nullptr;
@@ -937,8 +937,8 @@ _out:
 
 #pragma region Checkpoint
 
-	__device__ RC Main::WalCheckpoint(Context *ctx, const char *dbName) { return WalCheckpoint_v2(ctx, dbName, IPager::CHECKPOINT_PASSIVE, nullptr, nullptr); }
-	__device__ RC Main::WalCheckpoint_v2(Context *ctx, const char *dbName, IPager::CHECKPOINT mode, int *logsOut, int *ckptsOut)
+	__device__ RC DataEx::WalCheckpoint(Context *ctx, const char *dbName) { return WalCheckpoint_v2(ctx, dbName, IPager::CHECKPOINT_PASSIVE, nullptr, nullptr); }
+	__device__ RC DataEx::WalCheckpoint_v2(Context *ctx, const char *dbName, IPager::CHECKPOINT mode, int *logsOut, int *ckptsOut)
 	{
 #ifdef OMIT_WAL
 		return RC_OK;
@@ -976,7 +976,7 @@ _out:
 	}
 
 #ifndef OMIT_WAL
-	__device__ RC Main::Checkpoint(Context *ctx, int db, IPager::CHECKPOINT mode, int *logsOut, int *ckptsOut)
+	__device__ RC DataEx::Checkpoint(Context *ctx, int db, IPager::CHECKPOINT mode, int *logsOut, int *ckptsOut)
 	{
 		_assert(_mutex_held(ctx->Mutex));
 		_assert(!logsOut || *logsOut == -1);
@@ -1005,7 +1005,7 @@ _out:
 #pragma endregion
 
 	// Moved to BContext
-	//	__device__ bool Main::TempInMemory(Context *ctx)
+	//	__device__ bool DataEx::TempInMemory(Context *ctx)
 	//	{
 	//#if TEMP_STORE == 1
 	//		return (ctx->TempStore == 2);
@@ -1021,7 +1021,7 @@ _out:
 
 #pragma region Error Message
 
-	__device__ const char *Main::ErrMsg(Context *ctx)
+	__device__ const char *DataEx::ErrMsg(Context *ctx)
 	{
 		const char *z;
 		if (!ctx)
@@ -1057,7 +1057,7 @@ _out:
 		's', 'e', 'q', 'u', 'e', 'n', 'c', 'e', 0
 	};
 
-	__device__ const void *Main::ErrMsg16(Context *ctx)
+	__device__ const void *DataEx::ErrMsg16(Context *ctx)
 	{
 		if (!ctx)
 			return (void *)_outOfMem;
@@ -1084,7 +1084,7 @@ _out:
 	}
 #endif
 
-	__device__ RC Main::ErrCode(Context *ctx)
+	__device__ RC DataEx::ErrCode(Context *ctx)
 	{
 		if (ctx && !SafetyCheckSickOrOk(ctx))
 			return SysEx_MISUSE_BKPT;
@@ -1093,7 +1093,7 @@ _out:
 		return (RC)(ctx->ErrCode & ctx->ErrMask);
 	}
 
-	__device__ RC Main::ExtendedErrCode(Context *ctx)
+	__device__ RC DataEx::ExtendedErrCode(Context *ctx)
 	{
 		if (ctx && !SafetyCheckSickOrOk(ctx))
 			return SysEx_MISUSE_BKPT;
@@ -1102,7 +1102,7 @@ _out:
 		return (RC)ctx->ErrCode;
 	}
 
-	//__device__ const char *Main::Errstr(int rc) { return ErrStr(rc); }
+	//__device__ const char *DataEx::Errstr(int rc) { return ErrStr(rc); }
 
 #pragma endregion
 
@@ -1128,7 +1128,7 @@ _out:
 		{
 			if (ctx->ActiveVdbeCnt)
 			{
-				Main::Error(ctx, RC_BUSY, "unable to delete/modify collation sequence due to active statements");
+				DataEx::Error(ctx, RC_BUSY, "unable to delete/modify collation sequence due to active statements");
 				return RC_BUSY;
 			}
 			Vdbe::ExpirePreparedStatements(ctx);
@@ -1158,7 +1158,7 @@ _out:
 		coll->User = ctx2;
 		coll->Del = del;
 		coll->Encode = (TEXTENCODE)(encode2 | (encode & TEXTENCODE_UTF16_ALIGNED));
-		Main::Error(ctx, RC_OK, nullptr);
+		DataEx::Error(ctx, RC_OK, nullptr);
 		return RC_OK;
 	}
 
@@ -1211,7 +1211,7 @@ _out:
 		MAX_TRIGGER_DEPTH,
 	};
 
-	__device__ int Main::Limit(Context *ctx, LIMIT limit, int newLimit)
+	__device__ int DataEx::Limit(Context *ctx, LIMIT limit, int newLimit)
 	{
 		// EVIDENCE-OF: R-30189-54097 For each limit category SQLITE_LIMIT_NAME there is a hard upper bound set at compile-time by a C preprocessor
 		// macro called SQLITE_MAX_NAME. (The "_LIMIT_" in the name is changed to "_MAX_".)
@@ -1360,7 +1360,7 @@ _out:
 		if (rc != RC_OK)
 		{
 			if (rc == RC_NOMEM) ctx->MallocFailed = true;
-			Main::Error(ctx, rc, (errMsg ? "%s" : nullptr), errMsg);
+			DataEx::Error(ctx, rc, (errMsg ? "%s" : nullptr), errMsg);
 			_free(errMsg);
 			goto opendb_out;
 		}
@@ -1371,7 +1371,7 @@ _out:
 		{
 			if (rc == RC_IOERR_NOMEM)
 				rc = RC_NOMEM;
-			Main::Error(ctx, rc, nullptr);
+			DataEx::Error(ctx, rc, nullptr);
 			goto opendb_out;
 		}
 		ctx->DBs[0].Schema = Callback::SchemaGet(ctx, ctx->DBs[0].Bt);
@@ -1388,15 +1388,15 @@ _out:
 			goto opendb_out;
 
 		// Register all built-in functions, but do not attempt to read the database schema yet. This is delayed until the first time the database is accessed.
-		Main::Error(ctx, RC_OK, nullptr);
+		DataEx::Error(ctx, RC_OK, nullptr);
 		Func::RegisterBuiltinFunctions(ctx);
 
 		// Load automatic extensions - extensions that have been registered using the sqlite3_automatic_extension() API.
-		rc = Main::ErrCode(ctx);
+		rc = DataEx::ErrCode(ctx);
 		if (rc == RC_OK)
 		{
-			Main::AutoLoadExtensions(ctx);
-			rc = Main::ErrCode(ctx);
+			DataEx::AutoLoadExtensions(ctx);
+			rc = DataEx::ErrCode(ctx);
 			if (rc != RC_OK)
 				goto opendb_out;
 		}
@@ -1428,7 +1428,7 @@ _out:
 			rc = sqlite3RtreeInit(ctx);
 #endif
 
-		Main::Error(ctx, rc, nullptr);
+		DataEx::Error(ctx, rc, nullptr);
 
 		// -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
 		// mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
@@ -1441,7 +1441,7 @@ _out:
 		// Enable the lookaside-malloc subsystem
 		ctx->SetupLookaside(nullptr, (int)TagBase_RuntimeStatics.LookasideSize, TagBase_RuntimeStatics.Lookasides);
 
-		Main::WalAutocheckpoint(ctx, DEFAULT_WAL_AUTOCHECKPOINT);
+		DataEx::WalAutocheckpoint(ctx, DEFAULT_WAL_AUTOCHECKPOINT);
 
 opendb_out:
 		_free(open);
@@ -1450,11 +1450,11 @@ opendb_out:
 			_assert(ctx->Mutex || !isThreadsafe || !TagBase_RuntimeStatics.FullMutex);
 			_mutex_leave(ctx->Mutex);
 		}
-		rc = Main::ErrCode(ctx);
+		rc = DataEx::ErrCode(ctx);
 		_assert(ctx || rc == RC_NOMEM);
 		if (rc == RC_NOMEM)
 		{
-			Main::Close(ctx);
+			DataEx::Close(ctx);
 			ctx = nullptr;
 		}
 		else if (rc != RC_OK)
@@ -1464,14 +1464,14 @@ opendb_out:
 		if (SysEx_GlobalStatics.Sqllog)
 			SysEx_GlobalStatics.Sqllog(SysEx_GlobalStatics.SqllogArg, ctx, fileName, 0); // Opening a ctx handle. Fourth parameter is passed 0.
 #endif
-		return Main::ApiExit(nullptr, rc);
+		return DataEx::ApiExit(nullptr, rc);
 	}
 
-	__device__ RC Main::Open(const char *fileName, Context **ctxOut) { return OpenDatabase(fileName, ctxOut, (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE), nullptr); }
-	__device__ RC Main::Open_v2(const char *fileName, Context **ctxOut, VSystem::OPEN flags, const char *vfsName) { return OpenDatabase(fileName, ctxOut, flags, vfsName); }
+	__device__ RC DataEx::Open(const char *fileName, Context **ctxOut) { return OpenDatabase(fileName, ctxOut, (VSystem::OPEN)(VSystem::OPEN_READWRITE|VSystem::OPEN_CREATE), nullptr); }
+	__device__ RC DataEx::Open_v2(const char *fileName, Context **ctxOut, VSystem::OPEN flags, const char *vfsName) { return OpenDatabase(fileName, ctxOut, flags, vfsName); }
 
 #ifndef OMIT_UTF16
-	__device__ RC Main::Open16(const void *fileName,  Context **ctxOut)
+	__device__ RC DataEx::Open16(const void *fileName,  Context **ctxOut)
 	{
 		_assert(fileName);
 		_assert(ctxOut);
@@ -1502,7 +1502,7 @@ opendb_out:
 
 #pragma region Create Collation
 
-	__device__ RC Main::CreateCollation(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*))
+	__device__ RC DataEx::CreateCollation(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*))
 	{
 		_mutex_enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
@@ -1512,7 +1512,7 @@ opendb_out:
 		return rc;
 	}
 
-	__device__ RC Main::CreateCollation_v2(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*), void (*del)(void*))
+	__device__ RC DataEx::CreateCollation_v2(Context *ctx, const char *name, TEXTENCODE encode, void *ctx2, int (*compare)(void*,int,const void*,int,const void*), void (*del)(void*))
 	{
 		_mutex_enter(ctx->Mutex);
 		_assert(!ctx->MallocFailed);
@@ -1523,7 +1523,7 @@ opendb_out:
 	}
 
 #ifndef OMIT_UTF16
-	__device__ RC Main::CreateCollation16(Context *ctx, const void *name, TEXTENCODE encode,  void *ctx2, int (*compare)(void*,int,const void*,int,const void*))
+	__device__ RC DataEx::CreateCollation16(Context *ctx, const void *name, TEXTENCODE encode,  void *ctx2, int (*compare)(void*,int,const void*,int,const void*))
 	{
 		RC rc = RC_OK;
 		_mutex_enter(ctx->Mutex);
@@ -1540,7 +1540,7 @@ opendb_out:
 	}
 #endif
 
-	__device__ RC Main::CollationNeeded(Context *ctx, void *collNeededArg, void (*collNeeded)(void*,Context*,TEXTENCODE,const char*))
+	__device__ RC DataEx::CollationNeeded(Context *ctx, void *collNeededArg, void (*collNeeded)(void*,Context*,TEXTENCODE,const char*))
 	{
 		_mutex_enter(ctx->Mutex);
 		ctx->CollNeeded = collNeeded;
@@ -1551,7 +1551,7 @@ opendb_out:
 	}
 
 #ifndef OMIT_UTF16
-	__device__ RC Main::CollationNeeded16(Context *ctx, void *collNeededArg, void (*collNeeded16)(void*,Context*,TEXTENCODE,const void*))
+	__device__ RC DataEx::CollationNeeded16(Context *ctx, void *collNeededArg, void (*collNeeded16)(void*,Context*,TEXTENCODE,const void*))
 	{
 		_mutex_enter(ctx->Mutex);
 		ctx->CollNeeded = nullptr;
@@ -1566,20 +1566,20 @@ opendb_out:
 
 	// THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE
 
-	//__device__ int Main::GetAutocommit(Context *ctx) { return ctx->AutoCommit; }
-	//__device__ RC Main::CorruptError(int lineno)
+	//__device__ int DataEx::GetAutocommit(Context *ctx) { return ctx->AutoCommit; }
+	//__device__ RC DataEx::CorruptError(int lineno)
 	//{
 	//	ASSERTCOVERAGE(SysEx_GlobalStatics.Log != nullptr);
 	//	SysEx_LOG(RC_CORRUPT, "database corruption at line %d of [%.10s]", lineno, 20+sqlite3_sourceid());
 	//	return RC_CORRUPT;
 	//}
-	//__device__ RC Main::MisuseError(int lineno)
+	//__device__ RC DataEx::MisuseError(int lineno)
 	//{
 	//	ASSERTCOVERAGE(SysEx_GlobalStatics.Log != nullptr);
 	//	SysEx_LOG(RC_MISUSE, "misuse at line %d of [%.10s]", lineno, 20+sqlite3_sourceid());
 	//	return RC_MISUSE;
 	//}
-	//__device__ RC Main::CantopenError(int lineno)
+	//__device__ RC DataEx::CantopenError(int lineno)
 	//{
 	//	ASSERTCOVERAGE(SysEx_GlobalStatics.Log != nullptr);
 	//	SysEx_LOG(RC_CANTOPEN, "cannot open file at line %d of [%.10s]", lineno, 20+sqlite3_sourceid());
@@ -1588,7 +1588,7 @@ opendb_out:
 
 #pragma region Column Metadata
 #ifdef ENABLE_COLUMN_METADATA
-	__device__ RC Main::TableColumnMetadata(Context *ctx, const char *dbName, const char *tableName, const char *columnName, char const **dataTypeOut, char const **collSeqNameOut, bool *notNullOut, bool *primaryKeyOut, bool *autoincOut)
+	__device__ RC DataEx::TableColumnMetadata(Context *ctx, const char *dbName, const char *tableName, const char *columnName, char const **dataTypeOut, char const **collSeqNameOut, bool *notNullOut, bool *primaryKeyOut, bool *autoincOut)
 	{
 		// Ensure the database schema has been loaded
 		_mutex_enter(ctx->Mutex);
@@ -1681,7 +1681,7 @@ error_out:
 #endif
 #pragma endregion
 
-	__device__ int Main::Sleep(int ms)
+	__device__ int DataEx::Sleep(int ms)
 	{
 		VSystem *vfs = VSystem::FindVfs(nullptr);
 		if (!vfs) return 0;
@@ -1689,7 +1689,7 @@ error_out:
 		return (vfs->Sleep(1000*ms)/1000);
 	}
 
-	__device__ RC Main::ExtendedResultCodes(Context *ctx, bool onoff)
+	__device__ RC DataEx::ExtendedResultCodes(Context *ctx, bool onoff)
 	{
 		_mutex_enter(ctx->Mutex);
 		ctx->ErrMask = (onoff ? 0xffffffff : 0xff);
@@ -1697,7 +1697,7 @@ error_out:
 		return RC_OK;
 	}
 
-	__device__ RC Main::FileControl(Context *ctx, const char *dbName, VFile::FCNTL op, void *arg)
+	__device__ RC DataEx::FileControl(Context *ctx, const char *dbName, VFile::FCNTL op, void *arg)
 	{
 		RC rc = RC_ERROR;
 		_mutex_enter(ctx->Mutex);
@@ -1730,7 +1730,7 @@ error_out:
 	extern __device__ void Random_PrngRestoreState();
 	extern __device__ void Random_PrngResetState();
 	extern __device__ int Bitvec_BuiltinTest(int size, int *ops);
-	__device__ RC Main::TestControl_(TESTCTRL op, _va_list &args)
+	__device__ RC DataEx::TestControl_(TESTCTRL op, _va_list &args)
 	{
 		int rc = 0;
 #ifndef OMIT_BUILTIN_TEST
@@ -1887,7 +1887,7 @@ error_out:
 #endif
 #pragma endregion
 
-	__device__ Btree *Main::DbNameToBtree(Context *ctx, const char *dbName)
+	__device__ Btree *DataEx::DbNameToBtree(Context *ctx, const char *dbName)
 	{
 		for (int i = 0; i < ctx->DBs.length; i++)
 			if (ctx->DBs[i].Bt && (!dbName || !_strcmp(dbName, ctx->DBs[i].Name)))
@@ -1895,13 +1895,13 @@ error_out:
 		return nullptr;
 	}
 
-	__device__ const char *Main::CtxFilename(Context *ctx, const char *dbName)
+	__device__ const char *DataEx::CtxFilename(Context *ctx, const char *dbName)
 	{
 		Btree *bt = DbNameToBtree(ctx, dbName);
 		return (bt ? bt->get_Filename() : nullptr);
 	}
 
-	__device__ int Main::CtxReadonly(Context *ctx, const char *dbName)
+	__device__ int DataEx::CtxReadonly(Context *ctx, const char *dbName)
 	{
 		Btree *bt = DbNameToBtree(ctx, dbName);
 		return (bt ? bt->get_Pager()->get_Readonly() : -1);

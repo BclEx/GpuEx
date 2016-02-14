@@ -36,7 +36,7 @@ namespace Core
                 Parse parse = new Parse();
                 if (parse == null)
                 {
-                    Main.Error(errorCtx, RC.NOMEM, "out of memory");
+                    DataEx.Error(errorCtx, RC.NOMEM, "out of memory");
                     rc = RC.NOMEM;
                 }
                 else
@@ -44,7 +44,7 @@ namespace Core
                     parse.Ctx = ctx;
                     if (parse.OpenTempDatabase() != 0)
                     {
-                        Main.Error(errorCtx, parse.RC, "%s", parse.ErrMsg);
+                        DataEx.Error(errorCtx, parse.RC, "%s", parse.ErrMsg);
                         rc = RC.ERROR;
                     }
                     C._tagfree(errorCtx, ref parse.ErrMsg);
@@ -55,7 +55,7 @@ namespace Core
 
             if (i < 0)
             {
-                Main.Error(errorCtx, RC.ERROR, "unknown database %s", dbName);
+                DataEx.Error(errorCtx, RC.ERROR, "unknown database %s", dbName);
                 return null;
             }
             return ctx.DBs[i].Bt;
@@ -79,7 +79,7 @@ namespace Core
             Backup p;
             if (srcCtx == destCtx)
             {
-                Main.Error(destCtx, RC.ERROR, "source and destination must be distinct");
+                DataEx.Error(destCtx, RC.ERROR, "source and destination must be distinct");
                 p = null;
             }
             else
@@ -88,7 +88,7 @@ namespace Core
                 // call to sqlite3_backup_init() and is destroyed by a call to sqlite3_backup_finish().
                 p = new Backup();
                 if (p == null)
-                    Main.Error(destCtx, RC.NOMEM, null);
+                    DataEx.Error(destCtx, RC.NOMEM, null);
             }
 
             // If the allocation succeeded, populate the new object.
@@ -285,7 +285,7 @@ namespace Core
                     if (rc == RC.OK)
                     {
                         if (DestCtx != null)
-                            Main.ResetAllSchemasOfConnection(DestCtx);
+                            DataEx.ResetAllSchemasOfConnection(DestCtx);
                         if (destMode == IPager.JOURNALMODE.WAL)
                             rc = Dest.SetVersion(2);
                     }
@@ -431,16 +431,16 @@ namespace Core
 
             // Set the error code of the destination database handle.
             RC rc = (p.RC_ == RC.DONE ? RC.OK : p.RC_);
-            Main.Error(p.DestCtx, rc, null);
+            DataEx.Error(p.DestCtx, rc, null);
 
             // Exit the mutexes and free the backup context structure.
             if (p.DestCtx != null)
-                Main.LeaveMutexAndCloseZombie(p.DestCtx.Mutex);
+                DataEx.LeaveMutexAndCloseZombie(p.DestCtx.Mutex);
             p.Src.Leave();
             //// EVIDENCE-OF: R-64852-21591 The sqlite3_backup object is created by a call to sqlite3_backup_init() and is destroyed by a call to sqlite3_backup_finish().
             //if (p.DestCtx != null)
             //    C._free(ref p);
-            Main.LeaveMutexAndCloseZombie(mutex);
+            DataEx.LeaveMutexAndCloseZombie(mutex);
             return rc;
         }
 

@@ -365,20 +365,20 @@ namespace CORE_NAME { namespace Command
 	{
 		Context *ctx = Vdbe::Context_Ctx(fctx);
 		// IMP: R-51513-12026 The last_insert_rowid() SQL function is a wrapper around the sqlite3_last_insert_rowid() C/C++ interface function.
-		Vdbe::Result_Int64(fctx, Main::CtxLastInsertRowid(ctx));
+		Vdbe::Result_Int64(fctx, DataEx::CtxLastInsertRowid(ctx));
 	}
 
 	__device__ static void Changes(FuncContext *fctx, int notUsed1, Mem **notUsed2)
 	{
 		Context *ctx = Vdbe::Context_Ctx(fctx);
-		Vdbe::Result_Int(fctx, Main::CtxChanges(ctx));
+		Vdbe::Result_Int(fctx, DataEx::CtxChanges(ctx));
 	}
 
 	__device__ static void TotalChanges(FuncContext *fctx, int notUsed1, Mem **notUsed2)
 	{
 		Context *ctx = Vdbe::Context_Ctx(fctx);
 		// IMP: R-52756-41993 This function is a wrapper around the sqlite3_total_changes() C/C++ interface.
-		Vdbe::Result_Int(fctx, Main::CtxTotalChanges(ctx));
+		Vdbe::Result_Int(fctx, DataEx::CtxTotalChanges(ctx));
 	}
 
 	struct CompareInfo
@@ -958,7 +958,7 @@ namespace CORE_NAME { namespace Command
 		Context *ctx = Vdbe::Context_Ctx(fctx);
 		char *errMsg = nullptr;
 		const char *proc = (argc == 2 ? (const char *)Vdbe::Value_Text(argv[1]) : nullptr);
-		if (file && Main::LoadExtension(ctx, file, proc, &errMsg))
+		if (file && DataEx::LoadExtension(ctx, file, proc, &errMsg))
 		{
 			Vdbe::Result_Error(fctx, errMsg, -1);
 			_free(errMsg);
@@ -1130,7 +1130,7 @@ namespace CORE_NAME { namespace Command
 
 	__device__ void Func::RegisterBuiltinFunctions(Context *ctx)
 	{
-		RC rc = Main::OverloadFunction(ctx, "MATCH", 2);
+		RC rc = DataEx::OverloadFunction(ctx, "MATCH", 2);
 		_assert(rc == RC_NOMEM || rc == RC_OK);
 		if (rc == RC_NOMEM)
 			ctx->MallocFailed = true;
@@ -1146,9 +1146,9 @@ namespace CORE_NAME { namespace Command
 	__device__ void Func::RegisterLikeFunctions(Context *ctx, bool caseSensitive)
 	{
 		CompareInfo *info = (caseSensitive ? (CompareInfo *)&_likeInfoAlt : (CompareInfo *)&_likeInfoNorm);
-		Main::CreateFunc(ctx, "like", 2, TEXTENCODE_UTF8, info, LikeFunc, 0, 0, 0);
-		Main::CreateFunc(ctx, "like", 3, TEXTENCODE_UTF8, info, LikeFunc, 0, 0, 0);
-		Main::CreateFunc(ctx, "glob", 2, TEXTENCODE_UTF8, (CompareInfo *)&_globInfo, LikeFunc, 0, 0, 0);
+		DataEx::CreateFunc(ctx, "like", 2, TEXTENCODE_UTF8, info, LikeFunc, 0, 0, 0);
+		DataEx::CreateFunc(ctx, "like", 3, TEXTENCODE_UTF8, info, LikeFunc, 0, 0, 0);
+		DataEx::CreateFunc(ctx, "glob", 2, TEXTENCODE_UTF8, (CompareInfo *)&_globInfo, LikeFunc, 0, 0, 0);
 		SetLikeOptFlag(ctx, "glob", (FUNC)(FUNC_LIKE|FUNC_CASE));
 		SetLikeOptFlag(ctx, "like", (FUNC)(caseSensitive ? FUNC_LIKE|FUNC_CASE : FUNC_LIKE));
 	}

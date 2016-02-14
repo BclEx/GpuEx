@@ -16,7 +16,7 @@ namespace CORE_NAME
 			Parse *parse = (Parse *)_stackallocZero(errorCtx, sizeof(*parse));
 			if (!parse)
 			{
-				Main::Error(errorCtx, RC_NOMEM, "out of memory");
+				DataEx::Error(errorCtx, RC_NOMEM, "out of memory");
 				rc = RC_NOMEM;
 			}
 			else
@@ -24,7 +24,7 @@ namespace CORE_NAME
 				parse->Ctx = ctx;
 				if (parse->OpenTempDatabase())
 				{
-					Main::Error(errorCtx, parse->RC, "%s", parse->ErrMsg);
+					DataEx::Error(errorCtx, parse->RC, "%s", parse->ErrMsg);
 					rc = RC_ERROR;
 				}
 				_tagfree(errorCtx, parse->ErrMsg);
@@ -36,7 +36,7 @@ namespace CORE_NAME
 
 		if (i < 0)
 		{
-			Main::Error(errorCtx, RC_ERROR, "unknown database %s", dbName);
+			DataEx::Error(errorCtx, RC_ERROR, "unknown database %s", dbName);
 			return nullptr;
 		}
 		return ctx->DBs[i].Bt;
@@ -61,7 +61,7 @@ namespace CORE_NAME
 		Backup *p;
 		if (srcCtx == destCtx)
 		{
-			Main::Error(destCtx, RC_ERROR, "source and destination must be distinct");
+			DataEx::Error(destCtx, RC_ERROR, "source and destination must be distinct");
 			p = nullptr;
 		}
 		else
@@ -70,7 +70,7 @@ namespace CORE_NAME
 			// call to sqlite3_backup_init() and is destroyed by a call to sqlite3_backup_finish().
 			p = (Backup *)_allocZero(sizeof(Backup));
 			if (!p)
-				Main::Error(destCtx, RC_NOMEM, nullptr);
+				DataEx::Error(destCtx, RC_NOMEM, nullptr);
 		}
 
 		// If the allocation succeeded, populate the new object.
@@ -405,16 +405,16 @@ namespace CORE_NAME
 
 		// Set the error code of the destination database handle.
 		RC rc = (p->RC_ == RC_DONE ? RC_OK : p->RC_);
-		Main::Error(p->DestCtx, rc, nullptr);
+		DataEx::Error(p->DestCtx, rc, nullptr);
 
 		// Exit the mutexes and free the backup context structure.
 		if (p->DestCtx)
-			Main::LeaveMutexAndCloseZombie(p->DestCtx);
+			DataEx::LeaveMutexAndCloseZombie(p->DestCtx);
 		p->Src->Leave();
 		// EVIDENCE-OF: R-64852-21591 The sqlite3_backup object is created by a call to sqlite3_backup_init() and is destroyed by a call to sqlite3_backup_finish().
 		if (p->DestCtx)
 			_free(p);
-		Main::LeaveMutexAndCloseZombie(srcCtx);
+		DataEx::LeaveMutexAndCloseZombie(srcCtx);
 		return rc;
 	}
 

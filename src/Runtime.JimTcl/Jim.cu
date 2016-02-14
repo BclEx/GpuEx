@@ -411,6 +411,8 @@ __device__ static long jim_strtol(const char *str, char **endptr)
 // Converts a number as per strtoull(..., 0) except leading zeros do *not* imply octal. Instead, decimal is assumed unless the number begins with 0x, 0o or 0b
 __device__ static jim_wide jim_strtoull(const char *str, char **endptr)
 {
+	if (!_strcmp(str, "true")) { *endptr = (char *)(str+4); return 1; }
+	if (!_strcmp(str, "false")) { *endptr = (char *)(str+5); return 0; }
 #ifdef HAVE_LONG_LONG
 	int sign;
 	int base;
@@ -427,7 +429,7 @@ __device__ static jim_wide jim_strtoull(const char *str, char **endptr)
 #endif
 }
 
-__device__ int Jim_StringToWide(const char *str, jim_wide * widePtr, int base)
+__device__ int Jim_StringToWide(const char *str, jim_wide *widePtr, int base)
 {
 	char *endptr;
 	*widePtr = (base ? _strtoull(str, &endptr, base) : jim_strtoull(str, &endptr));
@@ -2194,6 +2196,7 @@ __device__ void Jim_AppendObj(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *appe
 
 __device__ void Jim_AppendStrings_(Jim_Interp *interp, Jim_Obj *objPtr, _va_list &args)
 {
+	JimPanic(Jim_IsShared(objPtr), "Jim_AppendString_ called with shared object");
 	SetStringFromAny(interp, objPtr);
 	while (1) {
 		const char *s = _va_arg(args, const char *);
@@ -3681,14 +3684,22 @@ __device__ static Jim_Var *JimCreateVariable(Jim_Interp *interp, Jim_Obj *nameOb
 
 // For now that's dummy. Variables lookup should be optimized in many ways, with caching of lookups, and possibly with a table of pre-allocated vars in every CallFrame for local vars.
 // All the caching should also have an 'epoch' mechanism similar to the one used by Tcl for procedures lookup caching.
-__device__ int Jim_SetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr)
+__device__ int Jim_SetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr, int flags)
 {
+	Jim_CallFrame *savedFramePtr;
+	int global = (flags & JIM_GLOBAL);
+	if (global) { savedFramePtr = interp->framePtr; interp->framePtr = interp->topFramePtr; }
+	flags &= ~JIM_GLOBAL;
+
 	switch (SetVariableFromAny(interp, nameObjPtr)) {
 	case JIM_DICT_SUGAR:
+		if (global) interp->framePtr = savedFramePtr;
 		return JimDictSugarSet(interp, nameObjPtr, valObjPtr);
 	case JIM_ERROR:
-		if (JimValidName(interp, "variable", nameObjPtr) != JIM_OK)
+		if (JimValidName(interp, "variable", nameObjPtr) != JIM_OK) {
+			if (global) interp->framePtr = savedFramePtr;
 			return JIM_ERROR;
+		}
 		JimCreateVariable(interp, nameObjPtr, valObjPtr);
 		break;
 	case JIM_OK:
@@ -3702,40 +3713,36 @@ __device__ int Jim_SetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj 
 		else {
 			Jim_CallFrame *savedCallFrame = interp->framePtr;
 			interp->framePtr = var->linkFramePtr;
-			int err = Jim_SetVariable(interp, var->objPtr, valObjPtr);
+			int err = Jim_SetVariable(interp, var->objPtr, valObjPtr, 0);
 			interp->framePtr = savedCallFrame;
 			if (err != JIM_OK)
+			{
+				if (global) interp->framePtr = savedFramePtr;
 				return err;
+			}
 		}
 	}
+
+	if (global) interp->framePtr = savedFramePtr;
 	return JIM_OK;
 }
 
-__device__ int Jim_SetVariableStr(Jim_Interp *interp, const char *name, Jim_Obj *objPtr)
+__device__ int Jim_SetVariableStr(Jim_Interp *interp, const char *name, Jim_Obj *objPtr, int flags)
 {
 	Jim_Obj *nameObjPtr = Jim_NewStringObj(interp, name, -1);
 	Jim_IncrRefCount(nameObjPtr);
-	int result = Jim_SetVariable(interp, nameObjPtr, objPtr);
+	int result = Jim_SetVariable(interp, nameObjPtr, objPtr, flags);
 	Jim_DecrRefCount(interp, nameObjPtr);
 	return result;
 }
 
-__device__ int Jim_SetGlobalVariableStr(Jim_Interp *interp, const char *name, Jim_Obj *objPtr)
-{
-	Jim_CallFrame *savedFramePtr = interp->framePtr;
-	interp->framePtr = interp->topFramePtr;
-	int result = Jim_SetVariableStr(interp, name, objPtr);
-	interp->framePtr = savedFramePtr;
-	return result;
-}
-
-__device__ int Jim_SetVariableStrWithStr(Jim_Interp *interp, const char *name, const char *val)
+__device__ int Jim_SetVariableStrWithStr(Jim_Interp *interp, const char *name, const char *val, int flags)
 {
 	Jim_Obj *nameObjPtr = Jim_NewStringObj(interp, name, -1);
 	Jim_Obj *valObjPtr = Jim_NewStringObj(interp, val, -1);
 	Jim_IncrRefCount(nameObjPtr);
 	Jim_IncrRefCount(valObjPtr);
-	int result = Jim_SetVariable(interp, nameObjPtr, valObjPtr);
+	int result = Jim_SetVariable(interp, nameObjPtr, valObjPtr, flags);
 	Jim_DecrRefCount(interp, nameObjPtr);
 	Jim_DecrRefCount(interp, valObjPtr);
 	return result;
@@ -3819,11 +3826,18 @@ __device__ int Jim_SetVariableLink(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_
 // This allows the array element to be updated (e.g. append, lappend) without affecting other references to the dictionary.
 __device__ Jim_Obj *Jim_GetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int flags)
 {
+	Jim_CallFrame *savedFramePtr;
+	int global = (flags & JIM_GLOBAL);
+	if (global) { savedFramePtr = interp->framePtr; interp->framePtr = interp->topFramePtr; }
+	flags &= ~JIM_GLOBAL;
+
 	switch (SetVariableFromAny(interp, nameObjPtr)) {
 	case JIM_OK: {
 		Jim_Var *varPtr = nameObjPtr->internalRep.varValue.varPtr;
-		if (varPtr->linkFramePtr == NULL)
+		if (varPtr->linkFramePtr == NULL) {
+			if (global) interp->framePtr = savedFramePtr;
 			return varPtr->objPtr;
+		}
 		else {
 			Jim_Obj *objPtr;
 			// The variable is a link? Resolve it.
@@ -3831,26 +3845,22 @@ __device__ Jim_Obj *Jim_GetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int
 			interp->framePtr = varPtr->linkFramePtr;
 			objPtr = Jim_GetVariable(interp, varPtr->objPtr, flags);
 			interp->framePtr = savedCallFrame;
-			if (objPtr)
+			if (objPtr) {
+				if (global) interp->framePtr = savedFramePtr;
 				return objPtr;
+			}
 			// Error, so fall through to the error message
 		}
 		break; }
 	case JIM_DICT_SUGAR: // [dict] syntax sugar
+		if (global) interp->framePtr = savedFramePtr;
 		return JimDictSugarGet(interp, nameObjPtr, flags);
 	}
 	if (flags & JIM_ERRMSG)
 		Jim_SetResultFormatted(interp, "can't read \"%#s\": no such variable", nameObjPtr);
-	return NULL;
-}
 
-__device__ Jim_Obj *Jim_GetGlobalVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int flags)
-{
-	Jim_CallFrame *savedFramePtr = interp->framePtr;
-	interp->framePtr = interp->topFramePtr;
-	Jim_Obj *objPtr = Jim_GetVariable(interp, nameObjPtr, flags);
-	interp->framePtr = savedFramePtr;
-	return objPtr;
+	if (global) interp->framePtr = savedFramePtr;
+	return NULL;
 }
 
 __device__ Jim_Obj *Jim_GetVariableStr(Jim_Interp *interp, const char *name, int flags)
@@ -3862,21 +3872,19 @@ __device__ Jim_Obj *Jim_GetVariableStr(Jim_Interp *interp, const char *name, int
 	return varObjPtr;
 }
 
-__device__ Jim_Obj *Jim_GetGlobalVariableStr(Jim_Interp *interp, const char *name, int flags)
-{
-	Jim_CallFrame *savedFramePtr = interp->framePtr;
-	interp->framePtr = interp->topFramePtr;
-	Jim_Obj *objPtr = Jim_GetVariableStr(interp, name, flags);
-	interp->framePtr = savedFramePtr;
-	return objPtr;
-}
-
 // Unset a variable. Note: On success unset invalidates all the variable objects created in the current call frame incrementing. */
 __device__ int Jim_UnsetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int flags)
 {
+	Jim_CallFrame *savedFramePtr;
+	int global = (flags & JIM_GLOBAL);
+	if (global) { savedFramePtr = interp->framePtr; interp->framePtr = interp->topFramePtr; }
+	flags &= ~JIM_GLOBAL;
+
 	int retval = SetVariableFromAny(interp, nameObjPtr);
-	if (retval == JIM_DICT_SUGAR) // [dict] syntax sugar.
+	if (retval == JIM_DICT_SUGAR) { // [dict] syntax sugar.
+		if (global) interp->framePtr = savedFramePtr;
 		return JimDictSugarSet(interp, nameObjPtr, NULL);
+	}
 	else if (retval == JIM_OK) {
 		Jim_Var *varPtr = nameObjPtr->internalRep.varValue.varPtr;
 		// If it's a link call UnsetVariable recursively
@@ -3903,6 +3911,8 @@ __device__ int Jim_UnsetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int fl
 	}
 	if (retval != JIM_OK && (flags & JIM_ERRMSG))
 		Jim_SetResultFormatted(interp, "can't unset \"%#s\": no such variable", nameObjPtr);
+
+	if (global) interp->framePtr = savedFramePtr;
 	return retval;
 }
 
@@ -6912,7 +6922,7 @@ __device__ static int JimParseExprOperator(struct JimParserCtx *pc)
 __constant__ static Jim_ExprOperator _dummy_op;
 __device__ static const struct Jim_ExprOperator *JimExprOperatorInfoByOpcode(int opcode)
 {
-	return (opcode < JIM_TT_EXPR_OP ? &_dummy_op :  &Jim_ExprOperators[opcode - JIM_TT_EXPR_OP]);
+	return (opcode < JIM_TT_EXPR_OP ? &_dummy_op : &Jim_ExprOperators[opcode - JIM_TT_EXPR_OP]);
 }
 
 __constant__ static const char * const _tt_names[JIM_TT_EXPR_OP] =
@@ -7028,7 +7038,7 @@ __device__ static int ExprCheckCorrectness(ExprByteCode *expr)
 //   2) If it is false pushes 0 and skips <offset> instructions to reach the opcode just after &R
 // "&R" checks if 'a' is true:
 //      if it is true pushes 1, otherwise pushes 0.
-__device__ static int ExprAddLazyOperator(Jim_Interp *interp, ExprByteCode * expr, ParseToken *t)
+__device__ static int ExprAddLazyOperator(Jim_Interp *interp, ExprByteCode *expr, ParseToken *t)
 {
 	// Search for the end of the first operator
 	int leftindex = expr->len - 1;
@@ -7386,6 +7396,7 @@ invalidexpr:
 	}
 	// Now create the expression bytecode from the tokenlist
 	expr = ExprCreateByteCode(interp, &tokenlist, fileNameObj);
+
 	// No longer need the token list
 	ScriptTokenListFree(&tokenlist);
 	if (!expr)
@@ -10054,7 +10065,7 @@ __device__ static int Jim_LsetCoreCommand(ClientData dummy, Jim_Interp *interp, 
 	}
 	else if (argc == 3) {
 		// With no indexes, simply implements [set]
-		if (Jim_SetVariable(interp, argv[1], argv[2]) != JIM_OK)
+		if (Jim_SetVariable(interp, argv[1], argv[2], 0) != JIM_OK)
 			return JIM_ERROR;
 		Jim_SetResult(interp, argv[2]);
 		return JIM_OK;
@@ -10459,7 +10470,7 @@ __device__ static int Jim_ReturnCoreCommand(ClientData dummy, Jim_Interp *interp
 		JimSetStackTrace(interp, stackTraceObj);
 	// If an error code list is supplied, set the global $errorCode
 	if (errorCodeObj && returnCode == JIM_ERROR)
-		Jim_SetGlobalVariableStr(interp, "errorCode", errorCodeObj);
+		Jim_SetVariableStr(interp, "errorCode", errorCodeObj, JIM_GLOBAL);
 	interp->returnCode = returnCode;
 	interp->returnLevel = level;
 	if (i == argc - 1)
@@ -11038,7 +11049,7 @@ __device__ static int Jim_CatchCoreCommand(ClientData dummy, Jim_Interp *interp,
 	jim_wide ignore_mask = (1 << JIM_EXIT) | (1 << JIM_EVAL) | (1 << JIM_SIGNAL);
 	const int max_ignore_code = sizeof(ignore_mask) * 8;
 	// Reset the error code before catch. Note that this is not strictly correct.
-	Jim_SetGlobalVariableStr(interp, "errorCode", Jim_NewStringObj(interp, "NONE", -1));
+	Jim_SetVariableStr(interp, "errorCode", Jim_NewStringObj(interp, "NONE", -1), JIM_GLOBAL);
 	int i;
 	for (i = 1; i < argc - 1; i++) {
 		const char *arg = Jim_String(argv[i]);
@@ -11109,7 +11120,7 @@ wrongargs:
 			if (exitCode == JIM_ERROR) {
 				Jim_ListAppendElement(interp, optListObj, Jim_NewStringObj(interp, "-errorinfo", -1));
 				Jim_ListAppendElement(interp, optListObj, interp->stackTrace);
-				Jim_Obj *errorCode = Jim_GetGlobalVariableStr(interp, "errorCode", JIM_NONE);
+				Jim_Obj *errorCode = Jim_GetVariableStr(interp, "errorCode", JIM_GLOBAL);
 				if (errorCode) {
 					Jim_ListAppendElement(interp, optListObj, Jim_NewStringObj(interp, "-errorcode", -1));
 					Jim_ListAppendElement(interp, optListObj, errorCode);
@@ -12399,6 +12410,108 @@ __device__ void Jim_SetResultFormatted_(Jim_Interp *interp, const char *format, 
 	char *buf = (char *)Jim_Alloc(len + 1);
 	len = __snprintf(buf, len + 1, format, params[0], params[1], params[2], params[3], params[4]);
 	Jim_SetResult(interp, Jim_NewStringObjNoAlloc(interp, buf, len));
+}
+
+#pragma endregion
+
+// -----------------------------------------------------------------------------
+// CommandInfo Command *Added*
+// -----------------------------------------------------------------------------
+#pragma region CommandInfo Command *Added*
+
+__device__ int Jim_GetCommandInfoStr(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo)
+{
+	Jim_Obj *nameObjPtr = Jim_NewStringObj(interp, name, -1);
+	Jim_IncrRefCount(nameObjPtr);
+	int ret = Jim_GetCommandInfo(interp, nameObjPtr, cmdInfo);
+	Jim_DecrRefCount(interp, nameObjPtr);
+	return ret;
+}
+
+__device__ int Jim_GetCommandInfo(Jim_Interp *interp, Jim_Obj *objPtr, Jim_CmdInfo *cmdInfo)
+{
+	Jim_Cmd *cmdPtr;
+	if ((cmdPtr = Jim_GetCommand(interp, objPtr, JIM_ERRMSG)) == NULL)
+		return 0;
+	if (cmdPtr->isproc) {
+		Jim_SetResultFormatted(interp, "command \"%#s\" is a procedure", objPtr);
+		return 0;
+	}
+	cmdInfo->objProc = cmdPtr->u.native.cmdProc;
+	cmdInfo->objClientData = cmdPtr->u.native.privData;
+	cmdInfo->deleteProc = cmdPtr->u.native.delProc;
+	return 1;
+}
+
+__device__ int Jim_SetCommandInfoStr(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo)
+{
+	Jim_Obj *nameObjPtr = Jim_NewStringObj(interp, name, -1);
+	Jim_IncrRefCount(nameObjPtr);
+	int ret = Jim_SetCommandInfo(interp, nameObjPtr, cmdInfo);
+	Jim_DecrRefCount(interp, nameObjPtr);
+	return ret;
+}
+
+__device__ int Jim_SetCommandInfo(Jim_Interp *interp, Jim_Obj *objPtr, Jim_CmdInfo *cmdInfo)
+{
+	Jim_Cmd *cmdPtr;
+	if ((cmdPtr = Jim_GetCommand(interp, objPtr, JIM_ERRMSG)) == NULL)
+		return 0;
+	if (cmdPtr->isproc) {
+		Jim_SetResultFormatted(interp, "command \"%#s\" is a procedure", objPtr);
+		return 0;
+	}
+	cmdPtr->u.native.cmdProc = cmdInfo->objProc;
+	cmdPtr->u.native.privData = cmdInfo->objClientData;
+	cmdPtr->u.native.delProc = (Jim_DelCmdProc *)cmdInfo->deleteProc;
+	return 1;
+}
+
+#pragma endregion
+
+// -----------------------------------------------------------------------------
+// Variable Command *Added*
+// -----------------------------------------------------------------------------
+#pragma region Variable Command *Added*
+
+__device__ Jim_Obj *Jim_GetVar2(Jim_Interp *interp, const char *name, const char *key, int flags)
+{
+	Jim_CallFrame *savedFramePtr;
+	int global = (flags & JIM_GLOBAL);
+	if (global) { savedFramePtr = interp->framePtr; interp->framePtr = interp->topFramePtr; }
+
+	Jim_Obj *nameObjPtr = Jim_NewStringObj(interp, key, -1);
+	Jim_Obj *keyObjPtr = Jim_NewStringObj(interp, key, -1);
+	Jim_IncrRefCount(nameObjPtr);
+	Jim_IncrRefCount(keyObjPtr);
+	Jim_Obj *obj;
+	Jim_DictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, &obj, flags);
+	Jim_DecrRefCount(interp, keyObjPtr);
+	Jim_DecrRefCount(interp, nameObjPtr);
+
+	if (global) interp->framePtr = savedFramePtr;
+	return obj;
+}
+
+__device__ int Jim_SetVar2(Jim_Interp *interp, const char *name, const char *key, const char *val, int flags)
+{
+	Jim_CallFrame *savedFramePtr;
+	int global = (flags & JIM_GLOBAL);
+	if (global) { savedFramePtr = interp->framePtr; interp->framePtr = interp->topFramePtr; }
+
+	Jim_Obj *nameObjPtr = Jim_NewStringObj(interp, name, -1);
+	Jim_Obj *keyObjPtr = Jim_NewStringObj(interp, key, -1);
+	Jim_Obj *valObjPtr = Jim_NewStringObj(interp, val, -1);
+	Jim_IncrRefCount(nameObjPtr);
+	Jim_IncrRefCount(keyObjPtr);
+	Jim_IncrRefCount(valObjPtr);
+	int ret = Jim_SetDictKeysVector(interp, nameObjPtr, &keyObjPtr, 1, valObjPtr, 0);
+	Jim_DecrRefCount(interp, valObjPtr);
+	Jim_DecrRefCount(interp, keyObjPtr);
+	Jim_DecrRefCount(interp, nameObjPtr);
+
+	if (global) interp->framePtr = savedFramePtr;
+	return ret;
 }
 
 #pragma endregion

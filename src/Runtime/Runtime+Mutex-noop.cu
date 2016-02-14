@@ -16,7 +16,7 @@ __device__ void MutexEnter(_mutex_obj *p) { }
 __device__ bool MutexTryEnter(_mutex_obj *p) { return true; }
 __device__ void MutexLeave(_mutex_obj *p) { }
 
-static const _mutex_methods _defaultMethods = {
+__constant__ static const _mutex_methods _noopDefaultMethods = {
 	(int (*)())MutexInit,
 	(void (*)())MutexShutdown,
 	(MutexEx (*)(MUTEX))MutexAlloc,
@@ -29,7 +29,7 @@ static const _mutex_methods _defaultMethods = {
 };
 __device__ void __mutexsystem_setdefault()
 {
-	__mutexsystem = _defaultMethods;
+	__mutexsystem = _noopDefaultMethods;
 }
 
 #else
@@ -105,7 +105,7 @@ __device__ void MutexLeave(_mutex_obj *p)
 }
 #endif
 
-__constant__ static const _mutex_methods _defaultMethods = {
+__constant__ static const _mutex_methods _noopDefaultMethods = {
 	(int (*)())MutexInit,
 	(void (*)())MutexShutdown,
 	(MutexEx (*)(MUTEX))MutexAlloc,
@@ -119,7 +119,7 @@ __constant__ static const _mutex_methods _defaultMethods = {
 
 __device__ void __mutexsystem_setdefault()
 {
-	__mutexsystem = _defaultMethods;
+	__mutexsystem = _noopDefaultMethods;
 }
 
 #pragma endregion

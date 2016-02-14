@@ -153,20 +153,49 @@ __device__ int _memcmp(const void *__restrict__ left, const void *__restrict__ r
 }
 
 // memmove
-__device__ void _memmove(void *__restrict__ left, const void *__restrict__ right, size_t length)
+#define	wsize sizeof(word)
+#define	wmask (wsize - 1)
+#define	TLOOP(s) do { s; } while (--t)
+__device__ void _memmove(void *__restrict__ dst0, const void *__restrict__ src0, size_t length)
 {
-	if (!length)
-		return;
-	register unsigned char *a = (unsigned char *)left;
-	register unsigned char *b = (unsigned char *)right;
-	if (a == b) return; // No need to do that thing.
-	if (a < b && b < a + length) // Check for destructive overlap.
+	if (!length || dst0 == src0) return; // nothing to do
+	register char *dst = (char *)dst0;
+	register const char *src = (const char *)src0;
+	register size_t t;
+	// Copy forward.
+	if ((unsigned long)dst < (unsigned long)src)
 	{
-		a += length; b += length; // Destructive overlap ...
-		while (length-- > 0) { *--a= *--b; } // have to copy backwards.
-		return;
+		t = (int)src; // only need low bits
+		if ((t | (int)dst) & wmask)
+		{
+			// Try to align operands.  This cannot be done unless the low bits match.
+			t = ((t ^ (int)dst) & wmask || length < wsize ? length : wsize - (t & wmask));
+			length -= t;
+			TLOOP(*dst++ = *src++);
+		}
+		// Copy whole words, then mop up any trailing bytes.
+		t = length / wsize;
+		if (t) TLOOP(*(word *)dst = *(word *)src; src += wsize; dst += wsize);
+		t = length & wmask;
+		if (t) TLOOP(*dst++ = *src++);
 	}
-	while (length-- > 0) { *a++ = *b++; } // Do an ascending copy.
+	// Copy backwards.  Otherwise essentially the same. Alignment works as before, except that it takes (t&wmask) bytes to align, not wsize-(t&wmask).
+	else
+	{
+		src += length;
+		dst += length;
+		t = (int)src;
+		if ((t | (int)dst) & wmask)
+		{
+			t = ((t ^ (int)dst) & wmask || length <= wsize ? length : t & wmask);
+			length -= t;
+			TLOOP(*--dst = *--src);
+		}
+		t = length / wsize;
+		if (t) TLOOP(src -= wsize; dst -= wsize; *(word *)dst = *(word *)src);
+		t = length & wmask;
+		if (t) TLOOP(*--dst = *--src);
+	}
 }
 
 // strlen30

@@ -756,7 +756,7 @@ namespace CORE_NAME { namespace Command
 			rc = RC_NOMEM;
 		else
 		{
-			rc = Main::Exec(ctx, sql, AnalysisLoader, &sInfo, 0);
+			rc = DataEx::Exec(ctx, sql, AnalysisLoader, &sInfo, 0);
 			_tagfree(ctx, sql);
 		}
 

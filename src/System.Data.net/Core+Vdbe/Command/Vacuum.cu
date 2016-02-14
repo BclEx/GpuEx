@@ -9,7 +9,7 @@ namespace CORE_NAME { namespace Command
 	{
 		RC rc = stmt->Finalize2();
 		if (rc)
-			_mtagassignf(errMsg, ctx, Main::ErrMsg(ctx));
+			_mtagassignf(errMsg, ctx, DataEx::ErrMsg(ctx));
 		return rc;
 	}
 
@@ -19,8 +19,8 @@ namespace CORE_NAME { namespace Command
 		Vdbe *stmt;
 		if (Prepare::Prepare_(ctx, sql, -1, &stmt, nullptr) != RC_OK)
 		{
-			_mtagassignf(errMsg, ctx, Main::ErrMsg(ctx));
-			return Main::ErrCode(ctx);
+			_mtagassignf(errMsg, ctx, DataEx::ErrMsg(ctx));
+			return DataEx::ErrCode(ctx);
 		}
 		ASSERTONLY(int rc =) stmt->Step();
 		_assert(rc != RC_ROW || (ctx->Flags & Context::FLAG_CountRows));

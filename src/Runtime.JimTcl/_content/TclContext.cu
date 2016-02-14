@@ -42,7 +42,7 @@ __device__ static int IncrblobClose(ClientData instanceData, Jim_Interp *interp)
 
 	if (rc != RC_OK)
 	{
-		Jim_SetResult(interp, (char *)Main::ErrMsg(ctx), JIM_VOLATILE);
+		Jim_SetResult(interp, (char *)DataEx::ErrMsg(ctx), JIM_VOLATILE);
 		return JIM_ERROR;
 	}
 	return JIM_OK;
@@ -141,7 +141,7 @@ __device__ static int CreateIncrblobChannel(Jim_Interp *interp, TclContext *pDb,
 	RC rc = Vdbe::Blob_Open(ctx, dbName, tableName, columnName, row, !isReadonly, &blob);
 	if (rc != RC_OK)
 	{
-		Jim_SetResult(interp, (char *)Main::ErrMsg(ctx), JIM_VOLATILE);
+		Jim_SetResult(interp, (char *)DataEx::ErrMsg(ctx), JIM_VOLATILE);
 		return JIM_ERROR;
 	}
 
@@ -247,7 +247,7 @@ __device__ static void DbDeleteCmd(ClientData data, Jim_Interp *interp)
 	TclContext *tctx = (TclContext *)data;
 	FlushStmtCache(tctx);
 	CloseIncrblobChannels(tctx);
-	Main::Close(tctx->Ctx);
+	DataEx::Close(tctx->Ctx);
 	while (tctx->Funcs)
 	{
 		SqlFunc *func = tctx->Funcs;
@@ -685,7 +685,7 @@ __device__ static int DbTransPostCmd(ClientData data[], Jim_Interp *interp, int 
 	const char *end = _trans_ends[(rc == JIM_ERROR) * 2 + (tctx->Transactions == 0)];
 
 	tctx->DisableAuth++;
-	if (Main::Exec(ctx, end, nullptr, nullptr, nullptr))
+	if (DataEx::Exec(ctx, end, nullptr, nullptr, nullptr))
 	{
 		// This is a tricky scenario to handle. The most likely cause of an error is that the exec() above was an attempt to commit the 
 		// top-level transaction that returned SQLITE_BUSY. Or, less likely, that an IO-error has occurred. In either case, throw a Jim exception
@@ -695,10 +695,10 @@ __device__ static int DbTransPostCmd(ClientData data[], Jim_Interp *interp, int 
 		// this method's logic. Not clear how this would be best handled.
 		if (rc != JIM_ERROR)
 		{
-			Jim_AppendString(interp, Jim_GetResult(interp), Main::ErrMsg(ctx), -1);
+			Jim_AppendString(interp, Jim_GetResult(interp), DataEx::ErrMsg(ctx), -1);
 			rc = JIM_ERROR;
 		}
-		Main::Exec(ctx, "ROLLBACK", nullptr, nullptr, nullptr);
+		DataEx::Exec(ctx, "ROLLBACK", nullptr, nullptr, nullptr);
 	}
 	tctx->DisableAuth--;
 	return rc;
@@ -755,15 +755,15 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 	{
 		if (DbPrepare(tctx, sql, &stmt, out) != RC_OK)
 		{
-			Jim_SetResult(interp, dbTextToObj(interp, Main::ErrMsg(ctx)));
+			Jim_SetResult(interp, dbTextToObj(interp, DataEx::ErrMsg(ctx)));
 			return RC_ERROR;
 		}
 		if (!stmt)
 		{
-			if (Main::ErrCode(ctx) != RC_OK)
+			if (DataEx::ErrCode(ctx) != RC_OK)
 			{
 				// A compile-time error in the statement.
-				Jim_SetResult(interp, dbTextToObj(interp, Main::ErrMsg(ctx)));
+				Jim_SetResult(interp, dbTextToObj(interp, DataEx::ErrMsg(ctx)));
 				return RC_ERROR;
 			}
 			// The statement was a no-op.  Continue to the next statement in the SQL string.
@@ -1043,7 +1043,7 @@ __device__ static RC DbEvalStep(DbEvalContext *p)
 					continue;
 				}
 #endif
-				Jim_SetResult(interp, dbTextToObj(interp, (char *)Main::ErrMsg(tctx->Ctx)));
+				Jim_SetResult(interp, dbTextToObj(interp, (char *)DataEx::ErrMsg(tctx->Ctx)));
 				return RC_ERROR;
 			}
 			else
@@ -1281,18 +1281,18 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		}
 
 		Context *destCtx;
-		rc = Main::Open(destFile, &destCtx);
+		rc = DataEx::Open(destFile, &destCtx);
 		if (rc != RC_OK)
 		{
-			Jim_SetResultFormatted(interp, "cannot open target database: %s", Main::ErrMsg(destCtx));
-			Main::Close(destCtx);
+			Jim_SetResultFormatted(interp, "cannot open target database: %s", DataEx::ErrMsg(destCtx));
+			DataEx::Close(destCtx);
 			return JIM_ERROR;
 		}
 		Backup *backup = Backup::Init(destCtx, "main", p->Ctx, srcDb);
 		if (!backup)
 		{
-			Jim_SetResultFormatted(interp, "backup failed: %s", Main::ErrMsg(destCtx));
-			Main::Close(destCtx);
+			Jim_SetResultFormatted(interp, "backup failed: %s", DataEx::ErrMsg(destCtx));
+			DataEx::Close(destCtx);
 			return JIM_ERROR;
 		}
 		while ((rc = backup->Step(100)) == RC_OK) { }
@@ -1301,10 +1301,10 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			rc = JIM_OK;
 		else
 		{
-			Jim_SetResultFormatted(interp, "backup failed: %s", Main::ErrMsg(destCtx));
+			Jim_SetResultFormatted(interp, "backup failed: %s", DataEx::ErrMsg(destCtx));
 			rc = JIM_ERROR;
 		}
-		Main::Close(destCtx);
+		DataEx::Close(destCtx);
 		return rc; }
 
 	case DB_BUSY: {
@@ -1337,10 +1337,10 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			if (p->Busy)
 			{
 				p->Interp = interp;
-				Main::BusyHandler(p->Ctx, DbBusyHandler, p);
+				DataEx::BusyHandler(p->Ctx, DbBusyHandler, p);
 			}
 			else
-				Main::BusyHandler(p->Ctx, nullptr, nullptr);
+				DataEx::BusyHandler(p->Ctx, nullptr, nullptr);
 		}
 		return rc; }
 
@@ -1410,7 +1410,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			Jim_WrongNumArgs(interp, 2, args, "");
 			return JIM_ERROR;
 		}
-		Jim_SetResultInt(interp, Main::CtxChanges(p->Ctx));
+		Jim_SetResultInt(interp, DataEx::CtxChanges(p->Ctx));
 		return rc; }
 
 	case DB_CLOSE: {
@@ -1439,9 +1439,9 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		collate->Script = (char *)&collate[1];
 		p->Collates = collate;
 		_memcpy(collate->Script, script, scriptLength+1);
-		if (Main::CreateCollation(p->Ctx, name, TEXTENCODE_UTF8, collate, TclSqlCollate))
+		if (DataEx::CreateCollation(p->Ctx, name, TEXTENCODE_UTF8, collate, TclSqlCollate))
 		{
-			Jim_SetResultString(interp, (char *)Main::ErrMsg(p->Ctx), -1);
+			Jim_SetResultString(interp, (char *)DataEx::ErrMsg(p->Ctx), -1);
 			return JIM_ERROR;
 		}
 		return rc; }
@@ -1459,7 +1459,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			Jim_DecrRefCount(interp, p->CollateNeeded);
 		p->CollateNeeded = Jim_DuplicateObj(interp, args[2]);
 		Jim_IncrRefCount(p->CollateNeeded);
-		Main::CollationNeeded(p->Ctx, p, TclCollateNeeded);
+		DataEx::CollationNeeded(p->Ctx, p, TclCollateNeeded);
 		return rc; }
 
 	case DB_COMMIT_HOOK: {
@@ -1492,10 +1492,10 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			if (p->Commit)
 			{
 				p->Interp = interp;
-				Main::CommitHook(p->Ctx, DbCommitHandler, p);
+				DataEx::CommitHook(p->Ctx, DbCommitHandler, p);
 			}
 			else
-				Main::CommitHook(p->Ctx, nullptr, nullptr);
+				DataEx::CommitHook(p->Ctx, nullptr, nullptr);
 		}
 		return rc; }
 
@@ -1563,7 +1563,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		int cols;// Number of columns in the table
 		if (rc)
 		{
-			Jim_SetResultFormatted(interp, "Error: %s", Main::ErrMsg(p->Ctx));
+			Jim_SetResultFormatted(interp, "Error: %s", DataEx::ErrMsg(p->Ctx));
 			cols = 0;
 		}
 		else
@@ -1590,7 +1590,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		_free(sql);
 		if (rc)
 		{
-			Jim_SetResultFormatted(interp, "Error: %s", Main::ErrMsg(p->Ctx));
+			Jim_SetResultFormatted(interp, "Error: %s", DataEx::ErrMsg(p->Ctx));
 			Vdbe::Finalize(stmt);
 			return JIM_ERROR;
 		}
@@ -1608,7 +1608,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			_fclose(in);
 			return JIM_ERROR;
 		}
-		Main::Exec(p->Ctx, "BEGIN", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "BEGIN", 0, 0, 0);
 		char *commit = "COMMIT"; // How to commit changes
 		char *line; // A single line of input from the file
 		int lineno = 0; // Line number of input file
@@ -1658,7 +1658,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			free(line);
 			if (rc != RC_OK)
 			{
-				Jim_SetResultFormatted(interp, "Error: %s", Main::ErrMsg(p->Ctx));
+				Jim_SetResultFormatted(interp, "Error: %s", DataEx::ErrMsg(p->Ctx));
 				commit = "ROLLBACK";
 				break;
 			}
@@ -1666,7 +1666,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		free(colNames);
 		_fclose(in);
 		Vdbe::Finalize(stmt);
-		Main::Exec(p->Ctx, commit, 0, 0, 0);
+		DataEx::Exec(p->Ctx, commit, 0, 0, 0);
 
 		if (commit[0] == 'C')
 		{
@@ -1696,7 +1696,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		bool onoff;
 		if (Jim_GetBoolean(interp, args[2], &onoff))
 			return JIM_ERROR;
-		Main::EnableLoadExtension(p->Ctx, onoff);
+		DataEx::EnableLoadExtension(p->Ctx, onoff);
 #else
 		Jim_SetResultString(interp, "extension loading is turned off at compile-time", -1);
 		return JIM_ERROR;
@@ -1707,7 +1707,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		//    $db errorcode
 		//
 		// Return the numeric error code that was returned by the most recent call to sqlite3_exec().
-		Jim_SetResultInt(interp, Main::ErrCode(p->Ctx));
+		Jim_SetResultInt(interp, DataEx::ErrCode(p->Ctx));
 		return rc; }
 
 	case DB_EXISTS: 
@@ -1827,11 +1827,11 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		func->Script = script;
 		Jim_IncrRefCount(script);
 		func->UseEvalObjv = SafeToUseEvalObjv(interp, script);
-		rc = Main::CreateFunction(p->Ctx, name, args4, TEXTENCODE_UTF8, func, TclSqlFunc, 0, 0);
+		rc = DataEx::CreateFunction(p->Ctx, name, args4, TEXTENCODE_UTF8, func, TclSqlFunc, 0, 0);
 		if (rc != RC_OK)
 		{
 			rc = JIM_ERROR;
-			Jim_SetResultString(interp, (char *)Main::ErrMsg(p->Ctx), -1);
+			Jim_SetResultString(interp, (char *)DataEx::ErrMsg(p->Ctx), -1);
 		}
 		return rc; }
 
@@ -1864,7 +1864,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		//     $db interrupt
 		//
 		// Interrupt the execution of the inner-most SQL interpreter.  This causes the SQL statement to return an error of SQLITE_INTERRUPT.
-		Main::Interrupt(p->Ctx);
+		DataEx::Interrupt(p->Ctx);
 		return rc; }
 
 	case DB_NULLVALUE: {
@@ -1904,7 +1904,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			Jim_WrongNumArgs(interp, 2, args, "");
 			return JIM_ERROR;
 		}
-		int64 rowid = Main::CtxLastInsertRowid(p->Ctx);
+		int64 rowid = DataEx::CtxLastInsertRowid(p->Ctx);
 		Jim_SetResultInt(interp, rowid);
 		return rc; }
 
@@ -1939,10 +1939,10 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			if (p->Progress)
 			{
 				p->Interp = interp;
-				Main::ProgressHandler(p->Ctx, N, DbProgressHandler, p);
+				DataEx::ProgressHandler(p->Ctx, N, DbProgressHandler, p);
 			}
 			else
-				Main::ProgressHandler(p->Ctx, 0, nullptr, nullptr);
+				DataEx::ProgressHandler(p->Ctx, 0, nullptr, nullptr);
 #endif
 		}
 		else
@@ -1984,10 +1984,10 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			if (p->Profile)
 			{
 				p->Interp = interp;
-				Main::Profile(p->Ctx, DbProfileHandler, p);
+				DataEx::Profile(p->Ctx, DbProfileHandler, p);
 			}
 			else
-				Main::Profile(p->Ctx, nullptr, nullptr);
+				DataEx::Profile(p->Ctx, nullptr, nullptr);
 #endif
 		}
 		return rc; }
@@ -2007,7 +2007,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		rc2 = sqlite3_rekey(p->Ctx, pKey, nKey);
 		if (rc2)
 		{
-			Jim_SetResultString(interp, Main::ErrStr(rc2), -1);
+			Jim_SetResultString(interp, DataEx::ErrStr(rc2), -1);
 			rc = JIM_ERROR;
 		}
 #endif
@@ -2034,18 +2034,18 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			return JIM_ERROR;
 		}
 		Context *src;
-		rc = Main::Open_v2(srcFile, &src, VSystem::OPEN::OPEN_READONLY, 0);
+		rc = DataEx::Open_v2(srcFile, &src, VSystem::OPEN::OPEN_READONLY, 0);
 		if (rc != RC_OK)
 		{
-			Jim_SetResultFormatted(interp, "cannot open source database: %s", Main::ErrMsg(src));
-			Main::Close(src);
+			Jim_SetResultFormatted(interp, "cannot open source database: %s", DataEx::ErrMsg(src));
+			DataEx::Close(src);
 			return JIM_ERROR;
 		}
 		Backup *backup = Backup::Init(p->Ctx, destDb, src, "main");
 		if (!backup)
 		{
-			Jim_SetResultFormatted(interp, "restore failed: %s", Main::ErrMsg(p->Ctx));
-			Main::Close(src);
+			Jim_SetResultFormatted(interp, "restore failed: %s", DataEx::ErrMsg(p->Ctx));
+			DataEx::Close(src);
 			return JIM_ERROR;
 		}
 		int timeout = 0;
@@ -2054,7 +2054,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			if (rc == RC_BUSY)
 			{
 				if (timeout++ >= 3) break;
-				Main::Sleep(100);
+				DataEx::Sleep(100);
 			}
 		}
 		Backup::Finish(backup);
@@ -2067,10 +2067,10 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		}
 		else
 		{
-			Jim_SetResultFormatted(interp, "restore failed: %s", Main::ErrMsg(p->Ctx));
+			Jim_SetResultFormatted(interp, "restore failed: %s", DataEx::ErrMsg(p->Ctx));
 			rc = JIM_ERROR;
 		}
-		Main::Close(src);
+		DataEx::Close(src);
 		return rc; }
 
 	case DB_STATUS: {
@@ -2106,7 +2106,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 		}
 		int ms;
 		if (Jim_GetInt(interp, args[2], &ms)) return JIM_ERROR;
-		Main::BusyTimeout(p->Ctx, ms);
+		DataEx::BusyTimeout(p->Ctx, ms);
 		return rc; }
 
 	case DB_TOTAL_CHANGES: {
@@ -2118,7 +2118,7 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			Jim_WrongNumArgs(interp, 2, args, "");
 			return JIM_ERROR;
 		}
-		Jim_SetResultInt(interp, Main::CtxTotalChanges(p->Ctx));
+		Jim_SetResultInt(interp, DataEx::CtxTotalChanges(p->Ctx));
 		return rc; }
 
 	case DB_TRACE: {
@@ -2153,10 +2153,10 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 			if (p->Trace)
 			{
 				p->Interp = interp;
-				Main::Trace(p->Ctx, DbTraceHandler, p);
+				DataEx::Trace(p->Ctx, DbTraceHandler, p);
 			}
 			else
-				Main::Trace(p->Ctx, nullptr, nullptr);
+				DataEx::Trace(p->Ctx, nullptr, nullptr);
 #endif
 		}
 		return rc; }
@@ -2192,11 +2192,11 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 
 		// Run the SQLite BEGIN command to open a transaction or savepoint.
 		p->DisableAuth++;
-		rc = Main::Exec(p->Ctx, begin, 0, 0, 0);
+		rc = DataEx::Exec(p->Ctx, begin, 0, 0, 0);
 		p->DisableAuth--;
 		if (rc != RC_OK)
 		{
-			Jim_SetResultString(interp, Main::ErrMsg(p->Ctx), -1);
+			Jim_SetResultString(interp, DataEx::ErrMsg(p->Ctx), -1);
 			return JIM_ERROR;
 		}
 		p->Transactions++;
@@ -2234,9 +2234,9 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 				Jim_IncrRefCount(p->UnlockNotify);
 			}
 
-			if (Main::UnlockNotify(p->Ctx, notify, notifyArg))
+			if (DataEx::UnlockNotify(p->Ctx, notify, notifyArg))
 			{
-				Jim_SetResultString(interp, Main::ErrMsg(p->Ctx), -1);
+				Jim_SetResultString(interp, DataEx::ErrMsg(p->Ctx), -1);
 				rc = JIM_ERROR;
 			}
 		}
@@ -2278,9 +2278,9 @@ __device__ static int DbObjCmd(ClientData clientData, Jim_Interp *interp, int ar
 				Jim_IncrRefCount(*hook);
 			}
 		}
-		Main::UpdateHook(p->Ctx, (p->UpdateHook?DbUpdateHandler:nullptr), p);
-		Main::RollbackHook(p->Ctx, (p->RollbackHook?DbRollbackHandler:nullptr), p);
-		Main::WalHook(p->Ctx, (p->WalHook?DbWalHandler:nullptr), p);
+		DataEx::UpdateHook(p->Ctx, (p->UpdateHook?DbUpdateHandler:nullptr), p);
+		DataEx::RollbackHook(p->Ctx, (p->RollbackHook?DbRollbackHandler:nullptr), p);
+		DataEx::WalHook(p->Ctx, (p->WalHook?DbWalHandler:nullptr), p);
 		return rc; }
 	case DB_VERSION: {
 		//    $db version
@@ -2427,21 +2427,21 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, Jim_Obj *co
 		Jim_SetResultString(interp, "malloc failed", -1);
 		return JIM_ERROR;
 	}
-	_memset(p, 0, sizeof(*p));
-	char *fileName = (char *)args[2];
+	memset(p, 0, sizeof(*p));
+	const char *fileName = Jim_String(args[2]);
 	//fileName = Jim_TranslateFileName(interp, fileName, &translatedFilename);
-	RC rc = Main::Open_v2(fileName, &p->Ctx, flags, vfsName);
+	RC rc = DataEx::Open_v2(fileName, &p->Ctx, flags, vfsName);
 	if (p->Ctx)
 	{
-		if (Main::ErrCode(p->Ctx) != RC_OK)
+		if (DataEx::ErrCode(p->Ctx) != RC_OK)
 		{
-			errMsg = _mprintf("%s", Main::ErrMsg(p->Ctx));
-			Main::Close(p->Ctx);
+			errMsg = _mprintf("%s", DataEx::ErrMsg(p->Ctx));
+			DataEx::Close(p->Ctx);
 			p->Ctx = nullptr;
 		}
 	}
 	else
-		errMsg = _mprintf("%s", Main::ErrStr(rc));
+		errMsg = _mprintf("%s", DataEx::ErrStr(rc));
 #ifdef HAS_CODEC
 	if (p->Ctx)
 		sqlite3_key(p->Ctx, key, keyLength);
@@ -2456,7 +2456,7 @@ __device__ static int DbMain(void *cd, Jim_Interp *interp, int argc, Jim_Obj *co
 	p->MaxStmt = NUM_PREPARED_STMTS;
 	p->Interp = interp;
 	arg = Jim_String(args[1]);
-	Jim_CreateCommand(interp, (char *)arg, (Jim_CmdProc *)DbObjCmd, (ClientData)p, DbDeleteCmd);
+	Jim_CreateCommand(interp, arg, (Jim_CmdProc *)DbObjCmd, (ClientData)p, DbDeleteCmd);
 	return JIM_OK;
 }
 #pragma endregion

@@ -415,21 +415,6 @@ __device__ void _mutex_leave(MutexEx p);
 #define MUTEX_LOGIC(X) X
 #endif
 
-// MutexSystem
-struct _mutex_methods
-{
-	int (*Init)();
-	void (*Shutdown)();
-	MutexEx (*Alloc)(MUTEX);
-	void (*Free)(MutexEx);
-	void (*Enter)(MutexEx);
-	bool (*TryEnter)(MutexEx);
-	void (*Leave)(MutexEx);
-	bool (*Held)(MutexEx);
-	bool (*NotHeld)(MutexEx);
-};
-__device__ extern _mutex_methods __mutexsystem; // Low-level mutex interface
-
 #ifdef GANGING
 // NOT GANG-SAFE
 #endif
@@ -467,6 +452,37 @@ extern "C" __device__ bool _status(STATUS op, int *current, int *highwater, bool
 #pragma region TAGBASE
 RUNTIME_NAMEBEGIN
 
+	// AllocSystem
+struct _mem_methods
+{
+	void *(*Alloc)(size_t);        // Memory allocation function
+	void (*Free)(void*);			// Free a prior allocation
+	void *(*Realloc)(void*,size_t); // Resize an allocation
+	size_t (*Size)(void*);          // Return the size of an allocation
+	size_t (*Roundup)(size_t);      // Round up request size to allocation size
+	int (*Init)(void*);				// Initialize the memory allocator
+	void (*Shutdown)(void*);		// Deinitialize the memory allocator
+	void *AppData;					// Argument to xInit() and xShutdown()
+};
+
+__device__ void __allocsystem_setdefault();		// Default mem interface
+#define __allocsystem g_RuntimeStatics.AllocSystem
+
+// MutexSystem
+struct _mutex_methods
+{
+	int (*Init)();
+	void (*Shutdown)();
+	MutexEx (*Alloc)(MUTEX);
+	void (*Free)(MutexEx);
+	void (*Enter)(MutexEx);
+	bool (*TryEnter)(MutexEx);
+	void (*Leave)(MutexEx);
+	bool (*Held)(MutexEx);
+	bool (*NotHeld)(MutexEx);
+};
+#define __mutexsystem g_RuntimeStatics.MutexSystem
+
 class TextBuilder;
 class TagBase
 {
@@ -479,15 +495,17 @@ public:
 		//
 		bool Memstat;						// True to enable memory status
 		bool RuntimeMutex;					// True to enable core mutexing
+		_mem_methods AllocSystem;			// Low-level mem interface
+		_mutex_methods MutexSystem;			// Low-level mutex interface
 		size_t LookasideSize;				// Default lookaside buffer size
 		int Lookasides;						// Default lookaside buffer count
 		void *Scratch;						// Scratch memory
 		size_t ScratchSize;					// Size of each scratch buffer
 		int Scratchs;						// Number of scratch buffers
-		//Main::void *Page;					// Page cache memory
-		//Main::int PageSize;				// Size of each page in pPage[]
-		//Main::int Pages;					// Number of pages in pPage[]
-		//Main::int MaxParserStack;			// maximum depth of the parser stack
+		//DataEx::void *Page;					// Page cache memory
+		//DataEx::int PageSize;				// Size of each page in pPage[]
+		//DataEx::int Pages;					// Number of pages in pPage[]
+		//DataEx::int MaxParserStack;			// maximum depth of the parser stack
 	};
 
 	struct LookasideSlot
@@ -901,22 +919,6 @@ __device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return
 #define _memdbg_hastype(X,Y) true
 #define _memdbg_nottype(X,Y) true
 #endif
-
-// AllocSystem
-struct _mem_methods
-{
-	void *(*Alloc)(size_t);        // Memory allocation function
-	void (*Free)(void*);			// Free a prior allocation
-	void *(*Realloc)(void*,size_t); // Resize an allocation
-	size_t (*Size)(void*);          // Return the size of an allocation
-	size_t (*Roundup)(size_t);      // Round up request size to allocation size
-	int (*Init)(void*);				// Initialize the memory allocator
-	void (*Shutdown)(void*);		// Deinitialize the memory allocator
-	void *AppData;					// Argument to xInit() and xShutdown()
-};
-
-__device__ void __allocsystem_setdefault();		// Default mem interface
-__device__ extern _mem_methods __allocsystem;	// Low-level mem interface
 
 // BenignMallocHooks
 #ifndef OMIT_BUILTIN_TEST

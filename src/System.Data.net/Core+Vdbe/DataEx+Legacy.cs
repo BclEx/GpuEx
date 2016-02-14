@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Core
 {
-    public partial class Main
+    public partial class DataEx
     {
         //C# Alias
         //static public int exec(Context db, string zSql, int NoCallback, int NoArgs, int NoErrors) { string Errors = ""; return sqlite3_exec(db, zSql, null, null, ref Errors); }

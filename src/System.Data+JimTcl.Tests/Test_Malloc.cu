@@ -104,7 +104,7 @@ __device__ static RC faultsimInstall(bool install)
 		_assert(_memfault.m.Alloc);
 		if (rc == RC_OK)
 			rc = SysEx::Config(SysEx::CONFIG_MALLOC, &_m);
-		Main::TestControl(Main::TESTCTRL_BENIGN_MALLOC_HOOKS, faultsimBeginBenign, faultsimEndBenign);
+		DataEx::TestControl(DataEx::TESTCTRL_BENIGN_MALLOC_HOOKS, faultsimBeginBenign, faultsimEndBenign);
 	}
 	else
 	{
@@ -116,7 +116,7 @@ __device__ static RC faultsimInstall(bool install)
 		SysEx::Config(SysEx::CONFIG_GETMALLOC, &m);
 		_assert(!_memcmp(&m, &_memfault.m, sizeof(m)));
 		rc = SysEx::Config(SysEx::CONFIG_MALLOC, &_memfault.m);
-		Main::TestControl(Main::TESTCTRL_BENIGN_MALLOC_HOOKS, nullptr, nullptr);
+		DataEx::TestControl(DataEx::TESTCTRL_BENIGN_MALLOC_HOOKS, nullptr, nullptr);
 	}
 	if (rc == RC_OK)
 		_memfault.IsInstalled = true;
@@ -661,12 +661,12 @@ __device__ static int test_config_pagecache(ClientData clientData, Jim_Interp *i
 	if (size < 0)
 	{
 		_pagecache_buf = nullptr;
-		rc = Main::Config(Main::CONFIG_PAGECACHE, nullptr, 0, 0);
+		rc = DataEx::Config(DataEx::CONFIG_PAGECACHE, nullptr, 0, 0);
 	}
 	else
 	{
 		_pagecache_buf = (char *)malloc(size*n);
-		rc = Main::Config(Main::CONFIG_PAGECACHE, _pagecache_buf, size, n);
+		rc = DataEx::Config(DataEx::CONFIG_PAGECACHE, _pagecache_buf, size, n);
 	}
 	Jim_Obj *r = Jim_NewListObj(interp, nullptr, 0);
 	Jim_ListAppendElement(nullptr, r, Jim_NewIntObj(interp, rc));
@@ -759,8 +759,8 @@ __device__ static int test_db_config_lookaside(ClientData clientData, Jim_Interp
 	if (Jim_GetInt(interp, args[3], &size)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[4], &count)) return JIM_ERROR;
 	RC rc;
-	if (bufid == 0) rc = Main::CtxConfig(ctx, Main::CTXCONFIG_LOOKASIDE, nullptr, size, count);
-	else if (bufid >= 1 && bufid <= 2 && size*count <= sizeof(_lookaside_buf[0]) ) rc = Main::CtxConfig(ctx, Main::CTXCONFIG_LOOKASIDE, _lookaside_buf[bufid], size, count);
+	if (bufid == 0) rc = DataEx::CtxConfig(ctx, DataEx::CTXCONFIG_LOOKASIDE, nullptr, size, count);
+	else if (bufid >= 1 && bufid <= 2 && size*count <= sizeof(_lookaside_buf[0]) ) rc = DataEx::CtxConfig(ctx, DataEx::CTXCONFIG_LOOKASIDE, _lookaside_buf[bufid], size, count);
 	else
 	{
 		Jim_AppendResult(interp, "illegal arguments - see documentation", nullptr);
@@ -815,13 +815,13 @@ __device__ static int test_config_error(ClientData clientData, Jim_Interp *inter
 	if (argc == 2)
 	{
 		if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-		if (Main::CtxConfig(ctx, (Main::CTXCONFIG)99999) != RC_ERROR)
+		if (DataEx::CtxConfig(ctx, (DataEx::CTXCONFIG)99999) != RC_ERROR)
 		{
 			Jim_AppendResult(interp, "sqlite3_db_config(db, 99999) does not return SQLITE_ERROR", nullptr);
 			return JIM_ERROR;
 		}
 	}
-	else if (Main::Config((Main::CONFIG)99999) != RC_ERROR)
+	else if (DataEx::Config((DataEx::CONFIG)99999) != RC_ERROR)
 	{
 		Jim_AppendResult(interp, "sqlite3_config(99999) does not return SQLITE_ERROR", nullptr);
 		return JIM_ERROR;
@@ -856,7 +856,7 @@ __device__ static int test_config_cis(ClientData clientData, Jim_Interp *interp,
 	}
 	bool useCis;
 	if (Jim_GetBoolean(interp, args[1], &useCis)) return JIM_ERROR;
-	RC rc = Main::Config(Main::CONFIG_COVERING_INDEX_SCAN, useCis);
+	RC rc = DataEx::Config(DataEx::CONFIG_COVERING_INDEX_SCAN, useCis);
 	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
 	return JIM_OK;
 }

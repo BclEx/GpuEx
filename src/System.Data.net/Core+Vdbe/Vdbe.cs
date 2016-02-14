@@ -283,7 +283,7 @@ namespace Core
 
         #endregion
 
-        #region Main
+        #region DataEx
 
         public RC Exec()
         {
@@ -361,7 +361,7 @@ namespace Core
                 {
                     g_interrupt_count--;
                     if (g_interrupt_count == 0)
-                        Main.Interrupt(ctx);
+                        DataEx.Interrupt(ctx);
                 }
 #endif
 
@@ -2291,7 +2291,7 @@ namespace Core
                                 if (rollbackId != 0)
                                 {
                                     Debug.Assert(desiredAutoCommit != 0);
-                                    Main.RollbackAll(ctx, RC.ABORT_ROLLBACK);
+                                    DataEx.RollbackAll(ctx, RC.ABORT_ROLLBACK);
                                     ctx.AutoCommit = 1;
                                 }
                                 else if ((rc = CheckFk(true)) != RC.OK)
@@ -2308,7 +2308,7 @@ namespace Core
                                     }
                                 }
                                 Debug.Assert(ctx.Statements == 0);
-                                Main.CloseSavepoints(ctx);
+                                DataEx.CloseSavepoints(ctx);
                                 rc = (RC_ == RC.OK ? RC.DONE : RC.ERROR);
                                 goto vdbe_return;
                             }
@@ -5015,7 +5015,7 @@ PrintOp(Console.Out, origPc, ops[origPc]);
             Debug.Assert(ErrMsg != null);
             if (ctx.MallocFailed) rc = RC.NOMEM;
             if (rc != RC.IOERR_NOMEM)
-                C._mtagassignf(ref ErrMsg, ctx, "%s", Main.ErrStr(rc));
+                C._mtagassignf(ref ErrMsg, ctx, "%s", DataEx.ErrStr(rc));
             goto vdbe_error_halt;
 
         // Jump to here if the sqlite3_interrupt() API sets the interrupt flag.
@@ -5023,7 +5023,7 @@ PrintOp(Console.Out, origPc, ops[origPc]);
             Debug.Assert(ctx.u1.IsInterrupted);
             rc = RC.INTERRUPT;
             RC_ = rc;
-            C._mtagassignf(ref ErrMsg, ctx, Main.ErrStr(rc));
+            C._mtagassignf(ref ErrMsg, ctx, DataEx.ErrStr(rc));
             goto vdbe_error_halt;
         }
 

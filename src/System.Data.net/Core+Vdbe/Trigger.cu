@@ -691,7 +691,7 @@ drop_trigger_cleanup:
 
 	__device__ void Trigger::CodeRowTriggerDirect(Parse *parse, Core::Table *table, int reg, OE orconf, int ignoreJump)
 	{
-		Vdbe *v = parse->GetVdbe(); // Main VM
+		Vdbe *v = parse->GetVdbe(); // DataEx VM
 		TriggerPrg *prg = GetRowTrigger(parse, this, table, orconf);
 		_assert(prg || parse->Errs || parse->Ctx->MallocFailed);
 

@@ -25,16 +25,16 @@ namespace CORE_NAME
 			//TAG::CoreMutex					// True to enable core mutexing
 			//TAG::FullMutex					// True to enable full mutexing
 			bool OpenUri;						// True to interpret filenames as URIs
-			//Main::UseCis						// Use covering indices for full-scans
+			//DataEx::UseCis						// Use covering indices for full-scans
 			int MaxStrlen;						// Maximum string length
 			//TAG::Mutex;						// Low-level mutex interface
-			//Main::pcache2						// Low-level page-cache interface
+			//DataEx::pcache2						// Low-level page-cache interface
 			//array_t<void> Heap;				// Heap storage space
 			//int MinReq, MaxReq;				// Min and max heap requests sizes
-			//Main::Page						// Page cache memory
-			//Main::PageSize					// Size of each page in pPage[]
-			//Main::Pages						// Number of pages in pPage[]
-			//Main::MaxParserStack				// maximum depth of the parser stack
+			//DataEx::Page						// Page cache memory
+			//DataEx::PageSize					// Size of each page in pPage[]
+			//DataEx::Pages						// Number of pages in pPage[]
+			//DataEx::MaxParserStack				// maximum depth of the parser stack
 			bool SharedCacheEnabled;			// true if shared-cache mode enabled
 			// The above might be initialized to non-zero.  The following need to always initially be zero, however.
 			bool IsInit;						// True after initialization has finished

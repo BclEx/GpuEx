@@ -345,7 +345,7 @@ namespace Core.Command
             fcntls[2] = right;
             fcntls[3] = null;
             ctx.BusyHandler.Busys = 0;
-            RC rc = Main.FileControl(ctx, dbName, VFile.FCNTL.PRAGMA, ref fcntls); // return value form SQLITE_FCNTL_PRAGMA
+            RC rc = DataEx.FileControl(ctx, dbName, VFile.FCNTL.PRAGMA, ref fcntls); // return value form SQLITE_FCNTL_PRAGMA
             if (rc == RC.OK)
             {
                 if (fcntls[0] != null)
@@ -671,11 +671,11 @@ namespace Core.Command
             {
                 if (right == null)
                 {
-                    if (Main.g_temp_directory != null)
+                    if (DataEx.g_temp_directory != null)
                     {
                         v.SetNumCols(1);
                         v.SetColName(0, COLNAME_NAME, "temp_store_directory", C.DESTRUCTOR_STATIC);
-                        v.AddOp4(OP.String8, 0, 1, 0, Main.g_temp_directory, 0);
+                        v.AddOp4(OP.String8, 0, 1, 0, DataEx.g_temp_directory, 0);
                         v.AddOp2(OP.ResultRow, 1, 1);
                     }
                 }
@@ -694,8 +694,8 @@ namespace Core.Command
                     }
                     if (TEMP_STORE == 0 || (TEMP_STORE == 1 && ctx.TempStore <= 1) || (TEMP_STORE == 2 && ctx.TempStore == 1))
                         InvalidateTempStorage(parse);
-                    C._free(ref Main.g_temp_directory);
-                    Main.g_temp_directory = (right.Length > 0 ? right : null);
+                    C._free(ref DataEx.g_temp_directory);
+                    DataEx.g_temp_directory = (right.Length > 0 ? right : null);
 #endif
                 }
             }
@@ -716,7 +716,7 @@ namespace Core.Command
                     {
                         v.SetNumCols(1);
                         v.SetColName(0, COLNAME_NAME, "data_store_directory", C.DESTRUCTOR_STATIC);
-                        v.AddOp4(OP.String8, 0, 1, 0, Main.g_data_directory, 0);
+                        v.AddOp4(OP.String8, 0, 1, 0, DataEx.g_data_directory, 0);
                         v.AddOp2(OP.ResultRow, 1, 1);
                     }
                 }
@@ -734,7 +734,7 @@ namespace Core.Command
                         }
                     }
                     C._free(ref sqlite3_data_directory);
-                    Main.g_data_directory = (right.Length > 0 ? right : null);
+                    DataEx.g_data_directory = (right.Length > 0 ? right : null);
 #endif
                 }
             }

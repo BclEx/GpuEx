@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
 	// run
 	__main(_deviceHeap);
-	//Visual::Main();
+	//Visual::DataEx();
 	//Visual::Dispose();
 
 	cudaDeviceHeapDestroy(_deviceHeap);

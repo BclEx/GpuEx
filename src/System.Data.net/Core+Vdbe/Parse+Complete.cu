@@ -159,7 +159,7 @@ namespace CORE_NAME
 	{
 		::RC rc = RC_NOMEM;
 #ifndef OMIT_AUTOINIT
-		rc = Main::Initialize();
+		rc = DataEx::Initialize();
 		if (rc) return (rc != 0);
 #endif
 		Mem *val = Vdbe::ValueNew(0);
@@ -167,7 +167,7 @@ namespace CORE_NAME
 		char const *sql8 = (const char *)Vdbe::ValueText(val, TEXTENCODE_UTF8);
 		rc = (sql8 ? (::RC)Parse::Complete(sql8) : RC_NOMEM);
 		Vdbe::ValueFree(val);
-		return (Main::ApiExit(nullptr, rc) != 0);
+		return (DataEx::ApiExit(nullptr, rc) != 0);
 	}
 #endif
 

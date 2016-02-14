@@ -31,8 +31,8 @@ __device__ RC Vdbe::Finalize(Vdbe *p)
 	if (VdbeSafety(p)) return SysEx_MISUSE_BKPT;
 	_mutex_enter(ctx->Mutex);
 	RC rc = p->Finalize2();
-	rc = Main::ApiExit(ctx, rc);
-	Main::LeaveMutexAndCloseZombie(ctx);
+	rc = DataEx::ApiExit(ctx, rc);
+	DataEx::LeaveMutexAndCloseZombie(ctx);
 	return rc;
 }
 
@@ -47,7 +47,7 @@ __device__ RC Vdbe::Reset(Vdbe *p)
 	RC rc = p->Reset();
 	p->Rewind();
 	_assert((rc & p->Ctx->ErrMask) == rc);
-	rc = Main::ApiExit(p->Ctx, rc);
+	rc = DataEx::ApiExit(p->Ctx, rc);
 	_mutex_leave(mutex);
 	return rc;
 }
@@ -187,7 +187,7 @@ __device__ void Vdbe::Result_ErrorCode(FuncContext *fctx, RC errCode)
 {
 	fctx->IsError = errCode;
 	if (fctx->S.Flags & MEM_Null)
-		Vdbe::MemSetStr(&fctx->S, Main::ErrStr(errCode), -1, TEXTENCODE_UTF8, DESTRUCTOR_STATIC);
+		Vdbe::MemSetStr(&fctx->S, DataEx::ErrStr(errCode), -1, TEXTENCODE_UTF8, DESTRUCTOR_STATIC);
 }
 __device__ void Vdbe::Result_ErrorOverflow(FuncContext *fctx)
 {
@@ -308,7 +308,7 @@ __device__ RC Vdbe::Step2()
 	}
 
 	ctx->ErrCode = rc;
-	if (Main::ApiExit(Ctx, RC_) == RC_NOMEM)
+	if (DataEx::ApiExit(Ctx, RC_) == RC_NOMEM)
 		RC_ = RC_NOMEM;
 
 end_of_step:
@@ -353,7 +353,7 @@ __device__ RC Vdbe::Step()
 		if (!ctx->MallocFailed) { ErrMsg = _tagstrdup(ctx, err); RC_ = rc2; }
 		else { ErrMsg = nullptr; RC_ = rc = RC_NOMEM; }
 	}
-	rc = Main::ApiExit(ctx, rc);
+	rc = DataEx::ApiExit(ctx, rc);
 	_mutex_leave(ctx->Mutex);
 	return rc;
 }
@@ -489,7 +489,7 @@ __device__ static Mem *ColumnMem(Vdbe *p, int i)
 		if (p && _ALWAYS(p->Ctx))
 		{
 			_mutex_enter(p->Ctx->Mutex);
-			Main::Error(p->Ctx, RC_RANGE, 0);
+			DataEx::Error(p->Ctx, RC_RANGE, 0);
 		}
 		r = (Mem *)&_nullMem;
 	}
@@ -502,7 +502,7 @@ __device__ static void ColumnMallocFailure(Vdbe *p)
 	// RC_NOMEM. The next call to _step() (if any) will return RC_ERROR and _finalize() will return NOMEM.
 	if (p)
 	{
-		p->RC_ = Main::ApiExit(p->Ctx, p->RC_);
+		p->RC_ = DataEx::ApiExit(p->Ctx, p->RC_);
 		_mutex_leave(p->Ctx->Mutex);
 	}
 }
@@ -597,14 +597,14 @@ __device__ static RC VdbeUnbind(Vdbe *p, int i)
 	_mutex_enter(p->Ctx->Mutex);
 	if (p->Magic != VDBE_MAGIC_RUN || p->PC >= 0)
 	{
-		Main::Error(p->Ctx, RC_MISUSE, 0);
+		DataEx::Error(p->Ctx, RC_MISUSE, 0);
 		_mutex_leave(p->Ctx->Mutex);
 		SysEx_LOG(RC_MISUSE, "bind on a busy prepared statement: [%s]", p->Sql);
 		return SysEx_MISUSE_BKPT;
 	}
 	if (i < 1 || i > p->Vars.length)
 	{
-		Main::Error(p->Ctx, RC_RANGE, 0);
+		DataEx::Error(p->Ctx, RC_RANGE, 0);
 		_mutex_leave(p->Ctx->Mutex);
 		return RC_RANGE;
 	}
@@ -612,7 +612,7 @@ __device__ static RC VdbeUnbind(Vdbe *p, int i)
 	var = &p->Vars[i];
 	Vdbe::MemRelease(var);
 	var->Flags = MEM_Null;
-	Main::Error(p->Ctx, RC_OK, 0);
+	DataEx::Error(p->Ctx, RC_OK, 0);
 
 	// If the bit corresponding to this variable in Vdbe.expmask is set, then binding a new value to this variable invalidates the current query plan.
 	//
@@ -635,8 +635,8 @@ __device__ static RC BindText(Vdbe *p, int i, const void *z, int n, void (*del)(
 			rc = Vdbe::MemSetStr(var, (const char *)z, n, encoding, del);
 			if (rc == RC_OK && encoding != 0)
 				rc = Vdbe::ChangeEncoding(var, CTXENCODE(p->Ctx));
-			Main::Error(p->Ctx, rc, 0);
-			Main::ApiExit(p->Ctx, rc);
+			DataEx::Error(p->Ctx, rc, 0);
+			DataEx::ApiExit(p->Ctx, rc);
 		}
 		_mutex_leave(p->Ctx->Mutex);
 	}

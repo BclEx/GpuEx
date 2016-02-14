@@ -177,7 +177,7 @@ __device__ RC sqlite3_intarray_create(Context *ctx, const char *name, sqlite3_in
 	if (rc == RC_OK)
 	{
 		char *sql = _mprintf("CREATE VIRTUAL TABLE temp.%Q USING %Q", name, name);
-		rc = Main::Exec(ctx, sql, nullptr, nullptr, nullptr);
+		rc = DataEx::Exec(ctx, sql, nullptr, nullptr, nullptr);
 		_free(sql);
 	}
 #endif

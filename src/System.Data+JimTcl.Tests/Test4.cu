@@ -38,12 +38,12 @@ static void *thread_main(void *pArg)
 {
 	Thread *p = (Thread*)pArg;
 	if (p->Ctx)
-		Main::Close(p->Ctx);
-	Main::Open(p->Filename, &p->Ctx);
-	if (Main:Errcode(p->Ctx)!= RC_OK)
+		DataEx::Close(p->Ctx);
+	DataEx::Open(p->Filename, &p->Ctx);
+	if (DataEx:Errcode(p->Ctx)!= RC_OK)
 	{
-		p->zErr = strdup(Main::Errmsg(p->Ctx));
-		Main::Close(p->Ctx);
+		p->zErr = strdup(DataEx::Errmsg(p->Ctx));
+		DataEx::Close(p->Ctx);
 		p->Ctx = nullptr;
 	}
 	p->Stmt = nullptr;
@@ -67,7 +67,7 @@ static void *thread_main(void *pArg)
 	}
 	if (p->Ctx)
 	{
-		Main::Close(p->Ctx);
+		DataEx::Close(p->Ctx);
 		p->Ctx = nullptr;
 	}
 	if (p->Err && p->Err != p->StaticErr)

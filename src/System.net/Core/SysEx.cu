@@ -17,23 +17,23 @@ namespace CORE_NAME
 		// TAG::CoreMutex
 		// TAG::FullMutex
 		CORE_USE_URI,				// OpenUri
-		// Main::UseCis
+		// DataEx::UseCis
 		0x7ffffffe,					// MaxStrlen
 		//{0,0,0,0,0,0,0,0,0},		// mutex
 		// pcache2
 		//array_t(void *)nullptr, 0)// Heap
 		//0, 0,						// MinHeap, MaxHeap
-		// Main::Page
-		// Main::PageSize
-		// Main::Pages
-		// Main::MaxParserStack
+		// DataEx::Page
+		// DataEx::PageSize
+		// DataEx::Pages
+		// DataEx::MaxParserStack
 		false,						// SharedCacheEnabled
 		// All the rest should always be initialized to zero
 		false,						// IsInit
 		false,						// InProgress
 		false,						// IsMutexInit
 		false,						// IsMallocInit
-		// Main::IsPCacheInit
+		// DataEx::IsPCacheInit
 		false,						// InitMutex
 		0,							// InitMutexRefs
 		nullptr,					// Log

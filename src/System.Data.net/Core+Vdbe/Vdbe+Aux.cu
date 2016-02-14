@@ -792,7 +792,7 @@ __device__ RC Vdbe::List()
 	{
 		RC_ = RC_INTERRUPT;
 		rc = RC_ERROR;
-		_mtagassignf(&ErrMsg, ctx, "%s", Main::ErrStr(RC_));
+		_mtagassignf(&ErrMsg, ctx, "%s", DataEx::ErrStr(RC_));
 	}
 	else
 	{
@@ -1540,8 +1540,8 @@ __device__ RC Vdbe::Halt()
 				else
 				{
 					// We are forced to roll back the active transaction. Before doing so, abort any other statements this handle currently has active.
-					Main::RollbackAll(ctx, RC_ABORT_ROLLBACK);
-					Main::CloseSavepoints(ctx);
+					DataEx::RollbackAll(ctx, RC_ABORT_ROLLBACK);
+					DataEx::CloseSavepoints(ctx);
 					ctx->AutoCommit = 1;
 				}
 			}
@@ -1580,7 +1580,7 @@ __device__ RC Vdbe::Halt()
 				else if (rc != RC_OK)
 				{
 					RC_ = rc;
-					Main::RollbackAll(ctx, RC_OK);
+					DataEx::RollbackAll(ctx, RC_OK);
 				}
 				else
 				{
@@ -1589,7 +1589,7 @@ __device__ RC Vdbe::Halt()
 				}
 			}
 			else
-				Main::RollbackAll(ctx, RC_OK);
+				DataEx::RollbackAll(ctx, RC_OK);
 			ctx->Statements = 0;
 		}
 		else if (statementOp == 0)
@@ -1600,8 +1600,8 @@ __device__ RC Vdbe::Halt()
 				statementOp = IPager::SAVEPOINT_ROLLBACK;
 			else
 			{
-				Main::RollbackAll(ctx, RC_ABORT_ROLLBACK);
-				Main::CloseSavepoints(ctx);
+				DataEx::RollbackAll(ctx, RC_ABORT_ROLLBACK);
+				DataEx::CloseSavepoints(ctx);
 				ctx->AutoCommit = 1;
 			}
 		}
@@ -1620,8 +1620,8 @@ __device__ RC Vdbe::Halt()
 					_tagfree(ctx, ErrMsg);
 					ErrMsg = nullptr;
 				}
-				Main::RollbackAll(ctx, RC_ABORT_ROLLBACK);
-				Main::CloseSavepoints(ctx);
+				DataEx::RollbackAll(ctx, RC_ABORT_ROLLBACK);
+				DataEx::CloseSavepoints(ctx);
 				ctx->AutoCommit = 1;
 			}
 		}
@@ -1678,7 +1678,7 @@ __device__ RC Vdbe::TransferError()
 		ctx->ErrCode = rc;
 	}
 	else
-		Main::Error(ctx, rc, nullptr);
+		DataEx::Error(ctx, rc, nullptr);
 	return rc;
 }
 
@@ -1721,7 +1721,7 @@ __device__ RC Vdbe::Reset()
 	{
 		// The expired flag was set on the VDBE before the first call to sqlite3_step(). For consistency (since sqlite3_step() was
 		// called), set the database error in this case as well.
-		Main::Error(ctx, RC_, nullptr);
+		DataEx::Error(ctx, RC_, nullptr);
 		Vdbe::ValueSetStr(ctx->Err, -1, ErrMsg, TEXTENCODE_UTF8, DESTRUCTOR_TRANSIENT);
 		_tagfree(ctx, ErrMsg);
 		ErrMsg = nullptr;

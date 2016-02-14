@@ -14,6 +14,8 @@ RUNTIME_NAMEBEGIN
 	//
 	RUNTIME_DEFAULT_MEMSTATUS,	// Memstat
 	true,						// RuntimeMutex
+	{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },				// AllocSystem
+	{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },	// MutexSystem
 	128,						// LookasideSize
 	500,						// Lookasides
 	(void *)nullptr,			// Scratch

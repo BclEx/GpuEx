@@ -342,7 +342,7 @@ namespace CORE_NAME { namespace Command
 		fcntls[2] = right;
 		fcntls[3] = nullptr;
 		ctx->BusyHandler.Busys = 0;
-		RC rc = Main::FileControl(ctx, dbName, VFile::FCNTL_PRAGMA, (void *)fcntls); // return value form SQLITE_FCNTL_PRAGMA
+		RC rc = DataEx::FileControl(ctx, dbName, VFile::FCNTL_PRAGMA, (void *)fcntls); // return value form SQLITE_FCNTL_PRAGMA
 		if (rc == RC_OK)
 		{
 			if (fcntls[0])
@@ -1419,7 +1419,7 @@ namespace CORE_NAME { namespace Command
 		//
 		// This pragma attempts to free as much memory as possible from the current database connection.
 		else if (!_strcmp(left, "shrink_memory"))
-			Main::CtxReleaseMemory(ctx);
+			DataEx::CtxReleaseMemory(ctx);
 
 		//   PRAGMA busy_timeout
 		//   PRAGMA busy_timeout = N
@@ -1429,7 +1429,7 @@ namespace CORE_NAME { namespace Command
 		else if (!_strcmp(left, "busy_timeout"))
 		{
 			if (right)
-				Main::BusyTimeout(ctx, _atoi(right));
+				DataEx::BusyTimeout(ctx, _atoi(right));
 			ReturnSingleInt(parse, "timeout",  ctx->BusyTimeout);
 		}
 
@@ -1449,7 +1449,7 @@ namespace CORE_NAME { namespace Command
 				int j;
 				const char *state = "unknown";
 				if (!bt || !bt->get_Pager()) state = "closed";
-				else if (Main::FileControl(ctx, i ? ctx->DBs[i].Name : 0, VFile::FCNTL_LOCKSTATE, &j) == RC_OK) state = _lockNames[j];
+				else if (DataEx::FileControl(ctx, i ? ctx->DBs[i].Name : 0, VFile::FCNTL_LOCKSTATE, &j) == RC_OK) state = _lockNames[j];
 				v->AddOp4(OP_String8, 0, 2, 0, state, Vdbe::P4T_STATIC);
 				v->AddOp2(OP_ResultRow, 1, 2);
 			}

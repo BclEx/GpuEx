@@ -88,7 +88,7 @@ namespace Core
             if (r.Results == null)
                 return (db.ErrCode = RC.NOMEM);
             r.Results[0] = null;
-            RC rc = Main.Exec(db, sql, GetTableCallback, r, ref errMsg);
+            RC rc = DataEx.Exec(db, sql, GetTableCallback, r, ref errMsg);
             //Debug.Assert(sizeof(r.Results[0])>= sizeof(r.ResultsLength));
             //r.Results = INT_TO_PTR(r.ResultsLength);
             if (((int)rc & 0xff) == (int)RC.ABORT)

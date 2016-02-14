@@ -14,22 +14,22 @@ __device__ static int c_collation_test(ClientData clientData, Jim_Interp *interp
 
 	// Open a database.
 	Context *ctx;
-	RC rc = Main::Open(":memory:", &ctx);
+	RC rc = DataEx::Open(":memory:", &ctx);
 	if (rc != RC_OK)
 	{
 		errFunction = "sqlite3_open";
 		goto error_out;
 	}
 
-	rc = Main::CreateCollation(ctx, "collate", (TEXTENCODE)456, nullptr, nullptr);
+	rc = DataEx::CreateCollation(ctx, "collate", (TEXTENCODE)456, nullptr, nullptr);
 	if (rc != RC_MISUSE)
 	{
-		Main::Close(ctx);
+		DataEx::Close(ctx);
 		errFunction = "sqlite3_create_collation";
 		goto error_out;
 	}
 
-	Main::Close(ctx);
+	DataEx::Close(ctx);
 	return JIM_OK;
 
 error_out:
@@ -82,15 +82,15 @@ __device__ static int c_misuse_test(ClientData clientData, Jim_Interp *interp, i
 
 	// Open a database. Then close it again. We need to do this so that we have a "closed database handle" to pass to various API functions.
 	Context *ctx = nullptr;
-	RC rc = Main::Open(":memory:", &ctx);
+	RC rc = DataEx::Open(":memory:", &ctx);
 	if (rc != RC_OK)
 	{
 		errFunction = "sqlite3_open";
 		goto error_out;
 	}
-	Main::Close(ctx);
+	DataEx::Close(ctx);
 
-	rc = Main::ErrCode(ctx);
+	rc = DataEx::ErrCode(ctx);
 	if (rc != RC_MISUSE)
 	{
 		errFunction = "sqlite3_errcode";

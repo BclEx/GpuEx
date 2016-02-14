@@ -253,7 +253,7 @@ __device__ static RC fuzzerLoadRules(Context *ctx, fuzzer_vtab *p, const char *d
 	{
 		Vdbe *stmt = nullptr;
 		rc = Prepare::Prepare_v2(ctx, sql, -1, &stmt, nullptr);
-		if (rc != RC_OK) { *err = _mprintf("%s: %s", p->ClassName, Main::ErrMsg(ctx)); }
+		if (rc != RC_OK) { *err = _mprintf("%s: %s", p->ClassName, DataEx::ErrMsg(ctx)); }
 		else if (Vdbe::Column_Count(stmt) != 4) { *err = _mprintf("%s: %s has %d columns, expected 4", p->ClassName, dataName, Vdbe::Column_Count(stmt)); rc = RC_ERROR; }
 		else
 		{

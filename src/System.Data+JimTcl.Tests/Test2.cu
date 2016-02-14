@@ -433,7 +433,7 @@ __device__ static int testPendingByte(ClientData notUsed, Jim_Interp *interp, in
 	}
 	int byte;
 	if (Jim_GetInt(interp, args[1], &byte)) return JIM_ERROR;
-	RC rc = Main::TestControl(Main::TESTCTRL_PENDING_BYTE, byte);
+	RC rc = DataEx::TestControl(DataEx::TESTCTRL_PENDING_BYTE, byte);
 	Jim_SetResultInt(interp, rc);
 	return JIM_OK;
 }  
@@ -460,7 +460,7 @@ __device__ static int testBitvecBuiltinTest(ClientData notUsed, Jim_Interp *inte
 		while (_isdigit(*z)) { z++; }
 	}
 	prog[progLength] = 0;
-	RC rc = Main::TestControl(Main::TESTCTRL_BITVEC_TEST, sz, prog);
+	RC rc = DataEx::TestControl(DataEx::TESTCTRL_BITVEC_TEST, sz, prog);
 	Jim_SetResultInt(interp, rc);
 	return JIM_OK;
 }  

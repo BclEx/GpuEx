@@ -172,7 +172,7 @@ void MutexLeave(MutexEx p)
 #endif
 }
 
-static const _mutex_methods _defaultMethods = {
+static const _mutex_methods _winDefaultMethods = {
 	MutexInit,
 	MutexShutdown,
 	MutexAlloc,
@@ -190,7 +190,7 @@ static const _mutex_methods _defaultMethods = {
 };
 void __mutexsystem_setdefault()
 {
-	__mutexsystem = _defaultMethods;
+	__mutexsystem = _winDefaultMethods;
 }
 
 #pragma endregion

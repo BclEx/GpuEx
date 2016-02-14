@@ -96,7 +96,7 @@ malloc_failed:
 			return RC_NOMEM;
 		}
 		r.Results[0] = nullptr;
-		RC rc = Main::Exec(ctx, sql, GetTableCallback, (char **)&r, errMsg);
+		RC rc = DataEx::Exec(ctx, sql, GetTableCallback, (char **)&r, errMsg);
 		_assert(sizeof(r.Results[0]) >= sizeof(r.Results.length));
 		r.Results[0] = (char *)INT_TO_PTR(r.Results.length);
 		if ((rc & 0xff) == RC_ABORT)

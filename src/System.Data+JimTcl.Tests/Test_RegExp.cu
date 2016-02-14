@@ -643,7 +643,7 @@ __device__ static void re_sql_func(FuncContext *fctx, int argc, Mem **args)
 // to cause this extension to be automatically loaded into each new database connection.
 __device__ int sqlite3_add_regexp_func(Context *ctx)
 {
-	return Main::CreateFunction(ctx, "regexp", 2, TEXTENCODE_UTF8, nullptr, re_sql_func, nullptr, nullptr);
+	return DataEx::CreateFunction(ctx, "regexp", 2, TEXTENCODE_UTF8, nullptr, re_sql_func, nullptr, nullptr);
 }
 
 #pragma region Test Code

@@ -1885,7 +1885,7 @@ end_playback:
 
 #pragma endregion
 
-#pragma region Main
+#pragma region DataEx
 
 	__constant__ static const uint8 _zerobyte = 0;
 	__device__ static RC SyncJournal(Pager *pager, bool newHeader)

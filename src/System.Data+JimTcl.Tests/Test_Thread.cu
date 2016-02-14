@@ -192,7 +192,7 @@ __device__ static int sqlthread_open(ClientData clientData, Jim_Interp *interp, 
 	__device__ extern void Md5_Register(Context *);
 	const char *filename = Jim_String(args[2]);
 	Context *ctx;
-	Main::Open(filename, &ctx);
+	DataEx::Open(filename, &ctx);
 #ifdef HAS_CODEC
 	if (ctx && argc >= 4)
 	{
@@ -201,8 +201,8 @@ __device__ static int sqlthread_open(ClientData clientData, Jim_Interp *interp, 
 		int rc = sqlite3_key(ctx, key, keyLength);
 		if (rc != RC_OK)
 		{
-			char *errMsg = sqlite3_mprintf("error %d: %s", rc, Main::Errmsg(ctx));
-			Main::Close(ctx);
+			char *errMsg = sqlite3_mprintf("error %d: %s", rc, DataEx::Errmsg(ctx));
+			DataEx::Close(ctx);
 			Jim_AppendResult(interp, errMsg, nullptr);
 			_free(errMsg);
 			return JIM_ERROR;
@@ -210,7 +210,7 @@ __device__ static int sqlthread_open(ClientData clientData, Jim_Interp *interp, 
 	}
 #endif
 	Md5_Register(ctx);
-	Main::BusyHandler(ctx, xBusy, nullptr);
+	DataEx::BusyHandler(ctx, xBusy, nullptr);
 	char buf[100];
 	if (sqlite3TestMakePointerStr(interp, buf, ctx)) return JIM_ERROR;
 	Jim_AppendResult(interp, buf, nullptr);
@@ -320,7 +320,7 @@ __device__ static int wait_for_unlock_notify(Context *ctx)
 	pthread_mutex_init(&un.mutex, 0);
 	pthread_cond_init(&un.cond, 0);
 	// Register for an unlock-notify callback.
-	RC rc = Main::UnlockNotify(ctx, unlock_notify_cb, (void *)&un);
+	RC rc = DataEx::UnlockNotify(ctx, unlock_notify_cb, (void *)&un);
 	_assert(rc == RC_LOCKED || rc == RC_OK);
 	// The call to sqlite3_unlock_notify() always returns either SQLITE_LOCKED or SQLITE_OK. 
 	//
@@ -423,7 +423,7 @@ __device__ static int blocking_prepare_v2_proc(ClientData clientData, Jim_Interp
 	{
 		_assert(!stmt);
 		_sprintf(buf, "%s ", (char *)sqlite3TestErrorName(rc));
-		Jim_AppendResult(interp, buf, Main::ErrMsg(ctx), nullptr);
+		Jim_AppendResult(interp, buf, DataEx::ErrMsg(ctx), nullptr);
 		return JIM_ERROR;
 	}
 	if (stmt)

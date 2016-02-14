@@ -327,8 +327,8 @@ __device__ static void md5finalize(FuncContext *fctx)
 
 __device__ int Md5_Register(Context *ctx)
 {
-	int rc = Main::CreateFunction(ctx, "md5sum", -1, TEXTENCODE_UTF8, nullptr, nullptr, md5step, md5finalize);
-	Main::OverloadFunction(ctx, "md5sum", -1); // To exercise this API
+	int rc = DataEx::CreateFunction(ctx, "md5sum", -1, TEXTENCODE_UTF8, nullptr, nullptr, md5step, md5finalize);
+	DataEx::OverloadFunction(ctx, "md5sum", -1); // To exercise this API
 	return rc;
 }
 #endif
@@ -408,7 +408,7 @@ __device__ static void init_all(Jim_Interp *interp)
 	//	extern int Zipvfs_Init(Jim_Interp*);
 	//	Zipvfs_Init(interp);
 	//#endif
-	//Sqliteconfig_Init(interp);
+	Sqliteconfig_Init(interp);
 	Sqlitetest1_Init(interp);
 	Sqlitetest2_Init(interp);
 	Sqlitetest3_Init(interp);
@@ -428,7 +428,7 @@ __device__ static void init_all(Jim_Interp *interp)
 	Sqlitetest_mutex_Init(interp);
 	Sqlitetestschema_Init(interp);
 	Sqlitetesttclvar_Init(interp);
-	//	Sqlitetestfs_Init(interp);
+	Sqlitetestfs_Init(interp);
 	SqlitetestThread_Init(interp);
 	//	SqlitetestOnefile_Init(interp);
 	//	SqlitetestOsinst_Init(interp);
@@ -459,29 +459,32 @@ __device__ static void init_all(Jim_Interp *interp)
 #if 1
 __device__ static char *tclsh_main_loop()
 {
+	//return "puts here\n"
+	//	"if {1!=1 && 2!=2} {\n"
+	//	"}\n"
+	//	"puts done\n";
 	return "cd test; source veryquick.test;";
-
-	return
-		"set line {}\n"
-		"while {![eof stdin]} {\n"
-		"if {$line!=\"\"} {\n"
-		"puts -nonewline \"> \"\n"
-		"} else {\n"
-		"puts -nonewline \"% \"\n"
-		"}\n"
-		"flush stdout\n"
-		"append line [gets stdin]\n"
-		"if {[info complete $line]} {\n"
-		"if {[catch {uplevel #0 $line} result]} {\n"
-		"puts stderr \"Error: $result\"\n"
-		"} elseif {$result!=\"\"} {\n"
-		"puts $result\n"
-		"}\n"
-		"set line {}\n"
-		"} else {\n"
-		"append line \\n\n"
-		"}\n"
-		"}\n";
+	//return
+	//	"set line {}\n"
+	//	"while {![eof stdin]} {\n"
+	//	"if {$line!=\"\"} {\n"
+	//	"puts -nonewline \"> \"\n"
+	//	"} else {\n"
+	//	"puts -nonewline \"% \"\n"
+	//	"}\n"
+	//	"flush stdout\n"
+	//	"append line [gets stdin]\n"
+	//	"if {[info complete $line]} {\n"
+	//	"if {[catch {uplevel #0 $line} result]} {\n"
+	//	"puts stderr \"Error: $result\"\n"
+	//	"} elseif {$result!=\"\"} {\n"
+	//	"puts $result\n"
+	//	"}\n"
+	//	"set line {}\n"
+	//	"} else {\n"
+	//	"append line \\n\n"
+	//	"}\n"
+	//	"}\n";
 }
 #else
 __device__ static char *tclsh_main_loop();
@@ -519,7 +522,8 @@ int main(int argc, char **argv)
 #endif
 
 	// Call sqlite3_shutdown() once before doing anything else. This is to test that sqlite3_shutdown() can be safely called by a process before sqlite3_initialize() is.
-	Main::Shutdown();
+	DataEx::Shutdown();
+	_alloc_init();
 
 	//Jim_FindExecutable(argv[0]);
 	Jim_Interp *interp = Jim_CreateInterp();

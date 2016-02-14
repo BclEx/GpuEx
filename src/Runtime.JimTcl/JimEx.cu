@@ -12,12 +12,4 @@ __device__ int Jim_UtfToLower(const char *objPtr)
 	return 0;
 }
 
-__device__ int Jim_GetCommandInfo(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo)
-{
-	return 0;
-}
 
-__device__ int Jim_SetCommandInfo(Jim_Interp *interp, const char *name, Jim_CmdInfo *cmdInfo)
-{
-	return 0;
-}

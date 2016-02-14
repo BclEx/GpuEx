@@ -1478,7 +1478,7 @@ findTerm_success:
 		if (rc != RC_OK)
 		{
 			if (rc == RC_NOMEM) parse->Ctx->MallocFailed = true;
-			else if (!vtable->ErrMsg) parse->ErrorMsg("%s", Main::ErrStr(rc));
+			else if (!vtable->ErrMsg) parse->ErrorMsg("%s", DataEx::ErrStr(rc));
 			else parse->ErrorMsg("%s", vtable->ErrMsg);
 		}
 		_free(vtable->ErrMsg);

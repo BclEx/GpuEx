@@ -72,7 +72,7 @@
 				delete _render; _render = 0;
 			}
 		}
-		static void Main();
+		static void DataEx();
 		inline static void InitState()
 		{
 			// mouse controls

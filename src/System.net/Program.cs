@@ -6,7 +6,7 @@ namespace GpuData
 {
     class MainClass
     {
-        public static void Main(string[] args)
+        public static void DataEx(string[] args)
         {
             MutexEx masterMutex;
             RC rc = SysEx.PreInitialize(out masterMutex);

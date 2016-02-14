@@ -770,7 +770,7 @@ namespace Core
                     rc = SysEx.MISUSE_BKPT();
                     break;
             }
-            if (rc != RC.OK) Main.Error(ctx, rc, null);
+            if (rc != RC.OK) DataEx.Error(ctx, rc, null);
             MutexEx.Leave(ctx.Mutex);
             return rc;
         }

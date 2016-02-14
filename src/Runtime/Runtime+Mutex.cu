@@ -2,8 +2,6 @@
 #ifndef MUTEX_OMIT
 RUNTIME_NAMEBEGIN
 
-	__device__ _mutex_methods __mutexsystem;
-
 #if _DEBUG
 // For debugging purposes, record when the mutex subsystem is initialized and uninitialized so that we can assert() if there is an attempt to
 // allocate a mutex while the system is uninitialized.

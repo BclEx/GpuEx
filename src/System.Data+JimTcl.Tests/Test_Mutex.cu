@@ -104,7 +104,7 @@ __device__ static int test_shutdown(ClientData clientData, Jim_Interp *interp, i
 		Jim_WrongNumArgs(interp, 1, args, "");
 		return JIM_ERROR;
 	}
-	RC rc = Main::Shutdown();
+	RC rc = DataEx::Shutdown();
 	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
 	return JIM_OK;
 }
@@ -117,7 +117,7 @@ __device__ static int test_initialize(ClientData clientData, Jim_Interp *interp,
 		Jim_WrongNumArgs(interp, 1, args, "");
 		return JIM_ERROR;
 	}
-	RC rc = Main::Initialize();
+	RC rc = DataEx::Initialize();
 	Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
 	return JIM_OK;
 }
@@ -263,7 +263,7 @@ __device__ static Context *GetDbPointer(Jim_Interp *interp, Jim_Obj *obj)
 {
 	const char *cmd = Jim_String(obj);
 	Jim_CmdInfo info;
-	Context *ctx = (Jim_GetCommandInfo(interp, cmd, &info) ? *((Context **)info.objClientData) : (Context *)sqlite3TestTextToPtr(cmd));
+	Context *ctx = (Jim_GetCommandInfo(interp, obj, &info) ? *((Context **)info.objClientData) : (Context *)sqlite3TestTextToPtr(cmd));
 	_assert(ctx);
 	return ctx;
 }

@@ -511,9 +511,8 @@ static int test_dbstat(ClientData clientData, Jim_Interp *interp, int argc, Jim_
 		Jim_WrongNumArgs(interp, 1, args, "DB");
 		return JIM_ERROR;
 	}
-	const char *db = Jim_String(args[1]);
 	Jim_CmdInfo cmdInfo;
-	if (Jim_GetCommandInfo(interp, db, &cmdInfo))
+	if (Jim_GetCommandInfo(interp, args[1], &cmdInfo))
 	{
 		Context *ctx = ((struct SqliteDb *)cmdInfo.objClientData)->Ctx;
 		sqlite3_dbstat_register(ctx);

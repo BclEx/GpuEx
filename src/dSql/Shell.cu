@@ -918,7 +918,7 @@ __device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *sql, 
 	RC rc = Prepare::Prepare_(p->Ctx, sql, -1, &select, 0);
 	if (rc != RC_OK || !select)
 	{
-		_fprintf(p->Out, "/**** ERROR: (%d) %s *****/\n", rc, Main::ErrMsg(p->Ctx));
+		_fprintf(p->Out, "/**** ERROR: (%d) %s *****/\n", rc, DataEx::ErrMsg(p->Ctx));
 		p->Errs++;
 		return rc;
 	}
@@ -944,7 +944,7 @@ __device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *sql, 
 	rc = Vdbe::Finalize(select);
 	if (rc != RC_OK)
 	{
-		_fprintf(p->Out, "/**** ERROR: (%d) %s *****/\n", rc, Main::ErrMsg(p->Ctx));
+		_fprintf(p->Out, "/**** ERROR: (%d) %s *****/\n", rc, DataEx::ErrMsg(p->Ctx));
 		p->Errs++;
 	}
 	return rc;
@@ -952,10 +952,10 @@ __device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *sql, 
 
 __device__ static char *SaveErrMsg(Context *ctx)
 {
-	int errMsgLength = 1+_strlen(Main::ErrMsg(ctx));
+	int errMsgLength = 1+_strlen(DataEx::ErrMsg(ctx));
 	char *errMsg = (char *)_alloc(errMsgLength);
 	if (errMsg)
-		_memcpy(errMsg, Main::ErrMsg(ctx), errMsgLength);
+		_memcpy(errMsg, DataEx::ErrMsg(ctx), errMsgLength);
 	return errMsg;
 }
 
@@ -1092,7 +1092,7 @@ __device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(
 			if (arg && arg->Mode == MODE_Explain)
 			{
 				const char *explain = nullptr;
-				//Main::TestControl(Main::TESTCTRL_EXPLAIN_STMT, stmt, &explain);
+				//DataEx::TestControl(DataEx::TESTCTRL_EXPLAIN_STMT, stmt, &explain);
 				if (explain && explain[0])
 					_fprintf(arg->Out, "%s", explain);
 			}
@@ -1261,7 +1261,7 @@ __device__ static bool DumpCallback(void *arg, int colLength, char **colValues, 
 __device__ static int RunSchemaDumpQuery(struct CallbackData *p, const char *query)
 {
 	char *err = nullptr;
-	RC rc = Main::Exec(p->Ctx, query, DumpCallback, p, &err);
+	RC rc = DataEx::Exec(p->Ctx, query, DumpCallback, p, &err);
 	if (rc == RC_CORRUPT)
 	{
 		int length = _strlen(query);
@@ -1275,7 +1275,7 @@ __device__ static int RunSchemaDumpQuery(struct CallbackData *p, const char *que
 		char *q2 = (char *)malloc(length+100);
 		if (!q2) return rc;
 		__snprintf(q2, length+100, "%s ORDER BY rowid DESC", query);
-		rc = Main::Exec(p->Ctx, q2, DumpCallback, p, &err);
+		rc = DataEx::Exec(p->Ctx, q2, DumpCallback, p, &err);
 		if (rc)
 			_fprintf(p->Out, "/****** ERROR: %s ******/\n", err);
 		else
@@ -1352,14 +1352,14 @@ __global__ static void OpenCtx(struct CallbackData *p)
 {
 	if (!p->Ctx)
 	{
-		Main::Initialize();
-		Main::Open(p->DbFilename, &p->Ctx);
+		DataEx::Initialize();
+		DataEx::Open(p->DbFilename, &p->Ctx);
 		_ctx = p->Ctx;
-		if (_ctx && Main::ErrCode(_ctx) == RC_OK)
-			Main::CreateFunction(_ctx, "shellstatic", 0, TEXTENCODE_UTF8, 0, ShellStaticFunc, 0, 0);
-		if (!_ctx || Main::ErrCode(_ctx) != RC_OK)
+		if (_ctx && DataEx::ErrCode(_ctx) == RC_OK)
+			DataEx::CreateFunction(_ctx, "shellstatic", 0, TEXTENCODE_UTF8, 0, ShellStaticFunc, 0, 0);
+		if (!_ctx || DataEx::ErrCode(_ctx) != RC_OK)
 		{
-			_fprintf(stderr, "Error: unable to open database \"%s\": %s\n", p->DbFilename, Main::ErrMsg(_ctx));
+			_fprintf(stderr, "Error: unable to open database \"%s\": %s\n", p->DbFilename, DataEx::ErrMsg(_ctx));
 #if __CUDACC__
 			d_return = -1; return;
 #else
@@ -1367,7 +1367,7 @@ __global__ static void OpenCtx(struct CallbackData *p)
 #endif
 		}
 #ifndef OMIT_LOAD_EXTENSION
-		//Main::enable_load_extension(p->db, 1);
+		//DataEx::enable_load_extension(p->db, 1);
 #endif
 #ifdef ENABLE_REGEXP
 		{
@@ -1502,7 +1502,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		data.ColWidth[2] = 58;
 		data.Cnt = 0;
 		char *errMsg = nullptr;
-		Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
+		DataEx::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
 		if (errMsg)
 		{
 			_fprintf(stderr, "Error: %s\n", errMsg);
@@ -1519,7 +1519,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		_fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
 		_fprintf(p->Out, "BEGIN TRANSACTION;\n");
 		p->WritableSchema = 0;
-		Main::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
 		p->Errs = 0;
 		if (argsLength == 1)
 		{
@@ -1555,8 +1555,8 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 			_fprintf(p->Out, "PRAGMA writable_schema=OFF;\n");
 			p->WritableSchema = 0;
 		}
-		Main::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
-		Main::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
 		_fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
 	}
 #pragma endregion
@@ -1571,7 +1571,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		data.ShowHeader = 0;
 		data.Mode = MODE_List;
 		if (argsLength == 1)
-			rc = Main::Exec(p->Ctx,
+			rc = DataEx::Exec(p->Ctx,
 			"SELECT name FROM sqlite_master "
 			"WHERE type='index' AND name NOT LIKE 'sqlite_%' "
 			"UNION ALL "
@@ -1582,7 +1582,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		else
 		{
 			_shellStatic = args[1];
-			rc = Main::Exec(p->Ctx,
+			rc = DataEx::Exec(p->Ctx,
 				"SELECT name FROM sqlite_master "
 				"WHERE type='index' AND tbl_name LIKE shellstatic() "
 				"UNION ALL "
@@ -1653,7 +1653,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 			else
 			{
 				_shellStatic = args[1];
-				rc = Main::Exec(p->Ctx,
+				rc = DataEx::Exec(p->Ctx,
 					"SELECT sql FROM "
 					"  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
 					"     FROM sqlite_master UNION ALL"
@@ -1668,7 +1668,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		}
 		else
 		{
-			rc = Main::Exec(p->Ctx,
+			rc = DataEx::Exec(p->Ctx,
 				"SELECT sql FROM "
 				"  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
 				"     FROM sqlite_master UNION ALL"
@@ -1773,73 +1773,73 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 #if _TEST
 	else if (c == 't' && n >= 8 && !_strncmp(args[0], "testctrl", n) && argsLength >= 2)
 	{
-		Main::TESTCTRL testctrl = (Main::TESTCTRL)tag;
+		DataEx::TESTCTRL testctrl = (DataEx::TESTCTRL)tag;
 		switch (testctrl)
 		{
-		case Main::TESTCTRL_OPTIMIZATIONS:
-		case Main::TESTCTRL_RESERVE:
-			// Main::TestControl(int, db, int)
+		case DataEx::TESTCTRL_OPTIMIZATIONS:
+		case DataEx::TESTCTRL_RESERVE:
+			// DataEx::TestControl(int, db, int)
 			if (argsLength == 3)
 			{
 				int opt = (int)_atoi(args[2]);
-				rc = Main::TestControl(testctrl, p->Ctx, opt);
+				rc = DataEx::TestControl(testctrl, p->Ctx, opt);
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				_fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
 			break;
-		case Main::TESTCTRL_PRNG_SAVE:
-		case Main::TESTCTRL_PRNG_RESTORE:
-		case Main::TESTCTRL_PRNG_RESET:
-			// Main::TestControl(int)
+		case DataEx::TESTCTRL_PRNG_SAVE:
+		case DataEx::TESTCTRL_PRNG_RESTORE:
+		case DataEx::TESTCTRL_PRNG_RESET:
+			// DataEx::TestControl(int)
 			if (argsLength == 2)
 			{
-				rc = Main::TestControl(testctrl);
+				rc = DataEx::TestControl(testctrl);
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				_fprintf(stderr, "Error: testctrl %s takes no options\n", args[1]);
 			break;
-		case Main::TESTCTRL_PENDING_BYTE:
-			// Main::TestControl(int, uint)
+		case DataEx::TESTCTRL_PENDING_BYTE:
+			// DataEx::TestControl(int, uint)
 			if (argsLength == 3)
 			{
 				unsigned int opt = (unsigned int)_atoi(args[2]);
-				rc = Main::TestControl(testctrl, opt);
+				rc = DataEx::TestControl(testctrl, opt);
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				_fprintf(stderr, "Error: testctrl %s takes a single unsigned int option\n", args[1]);
 			break;
-		case Main::TESTCTRL_ASSERT:
-		case Main::TESTCTRL_ALWAYS:
-			// Main::TestControl(int, int)
+		case DataEx::TESTCTRL_ASSERT:
+		case DataEx::TESTCTRL_ALWAYS:
+			// DataEx::TestControl(int, int)
 			if (argsLength == 3)
 			{
 				int opt = _atoi(args[2]);        
-				rc = Main::TestControl(testctrl, opt);
+				rc = DataEx::TestControl(testctrl, opt);
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				_fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
 			break;
 #ifdef N_KEYWORD
-		case Main::TESTCTRL_ISKEYWORD:
-			// Main::TestControl(int, char *)
+		case DataEx::TESTCTRL_ISKEYWORD:
+			// DataEx::TestControl(int, char *)
 			if (argsLength == 3)
 			{
 				const char *opt = args[2];
-				rc = Main::TestControl(testctrl, opt);
+				rc = DataEx::TestControl(testctrl, opt);
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				_fprintf(stderr, "Error: testctrl %s takes a single char * option\n", args[1]);
 			break;
 #endif
-		case Main::TESTCTRL_BITVEC_TEST:         
-		case Main::TESTCTRL_FAULT_INSTALL:       
-		case Main::TESTCTRL_BENIGN_MALLOC_HOOKS: 
-		case Main::TESTCTRL_SCRATCHMALLOC:       
+		case DataEx::TESTCTRL_BITVEC_TEST:         
+		case DataEx::TESTCTRL_FAULT_INSTALL:       
+		case DataEx::TESTCTRL_BENIGN_MALLOC_HOOKS: 
+		case DataEx::TESTCTRL_SCRATCHMALLOC:       
 		default:
 			_fprintf(stderr, "Error: CLI support for testctrl %s not implemented\n", args[1]);
 			break;
@@ -1850,7 +1850,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 #pragma region .timeout
 	else if (c == 't' && n > 4 && !_strncmp(args[0], "timeout", n) && argsLength == 2)
 	{
-		Main::BusyTimeout(p->Ctx, _atoi(args[1]));
+		DataEx::BusyTimeout(p->Ctx, _atoi(args[1]));
 	}
 #pragma endregion
 #pragma region .trace
@@ -1858,9 +1858,9 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 	{
 #if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
 		if (!p->TraceOut)
-			Main::Trace(p->Ctx, nullptr, nullptr);
+			DataEx::Trace(p->Ctx, nullptr, nullptr);
 		else
-			Main::Trace(p->Ctx, SqlTraceCallback, p->TraceOut);
+			DataEx::Trace(p->Ctx, SqlTraceCallback, p->TraceOut);
 #endif
 	}
 #pragma endregion
@@ -1871,7 +1871,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		char *vfsName = 0;
 		if (p->Ctx)
 		{
-			Main::FileControl(p->Ctx, dbName, VFile::FCNTL_VFSNAME, &vfsName);
+			DataEx::FileControl(p->Ctx, dbName, VFile::FCNTL_VFSNAME, &vfsName);
 			if (vfsName)
 			{
 				printf("%s\n", vfsName);
@@ -1963,11 +1963,11 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			return 1;
 		}
 		if (!dbName) dbName = "main";
-		rc = Main::Open(destFile, &dest);
+		rc = DataEx::Open(destFile, &dest);
 		if (rc != RC_OK)
 		{
 			fprintf(stderr, "Error: cannot open \"%s\"\n", destFile);
-			Main::Close(dest);
+			DataEx::Close(dest);
 			return 1;
 		}
 #ifdef HAS_CODEC
@@ -1977,8 +1977,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		backup = Backup::Init(dest, "main", p->Ctx, dbName);
 		if (!backup)
 		{
-			fprintf(stderr, "Error: %s\n", Main::ErrMsg(dest));
-			Main::Close(dest);
+			fprintf(stderr, "Error: %s\n", DataEx::ErrMsg(dest));
+			DataEx::Close(dest);
 			return 1;
 		}
 		while ((rc = backup->Step(100)) == RC_OK) { }
@@ -1987,10 +1987,10 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			rc = 0;
 		else
 		{
-			fprintf(stderr, "Error: %s\n", Main::ErrMsg(dest));
+			fprintf(stderr, "Error: %s\n", DataEx::ErrMsg(dest));
 			rc = 1;
 		}
-		Main::Close(dest);
+		DataEx::Close(dest);
 #endif
 	}
 #pragma endregion
@@ -2025,7 +2025,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		data.ColWidth[2] = 58;
 		data.Cnt = 0;
 		char *errMsg = nullptr;
-		Main::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
+		DataEx::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
 		if (errMsg)
 		{
 			fprintf(stderr, "Error: %s\n", errMsg);
@@ -2048,7 +2048,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
 		fprintf(p->Out, "BEGIN TRANSACTION;\n");
 		p->WritableSchema = 0;
-		Main::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
 		p->Errs = 0;
 		if (argsLength == 1)
 		{
@@ -2084,8 +2084,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			fprintf(p->Out, "PRAGMA writable_schema=OFF;\n");
 			p->WritableSchema = 0;
 		}
-		Main::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
-		Main::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
 		fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
 #endif
 	}
@@ -2181,7 +2181,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		if (rc)
 		{
 			if (stmt) Vdbe::Finalize(stmt);
-			fprintf(stderr,"Error: %s\n", Main::ErrMsg(_ctx));
+			fprintf(stderr,"Error: %s\n", DataEx::ErrMsg(_ctx));
 			return 1;
 		}
 		int colsLength = Vdbe::Column_Count(stmt); // Number of columns in the table
@@ -2207,7 +2207,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		free(sql);
 		if (rc)
 		{
-			fprintf(stderr, "Error: %s\n", Main::ErrMsg(_ctx));
+			fprintf(stderr, "Error: %s\n", DataEx::ErrMsg(_ctx));
 			if (stmt) Vdbe::Finalize(stmt);
 			return 1;
 		}
@@ -2227,7 +2227,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			Vdbe::Finalize(stmt);
 			return 1;
 		}
-		Main::Exec(p->Ctx, "BEGIN", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "BEGIN", 0, 0, 0);
 		char *commit = "COMMIT"; // How to commit changes
 		int lineno = 0; // Line number of input file
 		char *line; // A single line of input from the file
@@ -2279,7 +2279,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			free(line);
 			if (rc != RC_OK)
 			{
-				fprintf(stderr,"Error: %s\n", Main::ErrMsg(_ctx));
+				fprintf(stderr,"Error: %s\n", DataEx::ErrMsg(_ctx));
 				commit = "ROLLBACK";
 				rc = 1;
 				break; // from while
@@ -2288,7 +2288,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		free(cols);
 		fclose(in);
 		Vdbe::Finalize(stmt);
-		Main::Exec(p->Ctx, commit, 0, 0, 0);
+		DataEx::Exec(p->Ctx, commit, 0, 0, 0);
 #endif
 	}
 #pragma endregion
@@ -2306,7 +2306,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		data.ShowHeader = 0;
 		data.Mode = MODE_List;
 		if (argsLength == 1)
-			rc = Main::Exec(p->Ctx,
+			rc = DataEx::Exec(p->Ctx,
 			"SELECT name FROM sqlite_master "
 			"WHERE type='index' AND name NOT LIKE 'sqlite_%' "
 			"UNION ALL "
@@ -2317,7 +2317,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		else
 		{
 			_shellStatic = args[1];
-			rc = Main::Exec(p->Ctx,
+			rc = DataEx::Exec(p->Ctx,
 				"SELECT name FROM sqlite_master "
 				"WHERE type='index' AND tbl_name LIKE shellstatic() "
 				"UNION ALL "
@@ -2523,19 +2523,19 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			dbName = args[1];
 		}
 		Context *src;
-		rc = Main::Open(srcFile, &src);
+		rc = DataEx::Open(srcFile, &src);
 		if (rc != RC_OK)
 		{
 			fprintf(stderr, "Error: cannot open \"%s\"\n", srcFile);
-			Main::Close(src);
+			DataEx::Close(src);
 			return 1;
 		}
 		_OpenCtx(p);
 		Backup *backup = Backup::Init(p->Ctx, dbName, src, "main");
 		if (!backup)
 		{
-			fprintf(stderr, "Error: %s\n", Main::ErrMsg(p->Ctx));
-			Main::Close(src);
+			fprintf(stderr, "Error: %s\n", DataEx::ErrMsg(p->Ctx));
+			DataEx::Close(src);
 			return 1;
 		}
 		int timeout = 0;
@@ -2550,8 +2550,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		Backup::Finish(backup);
 		if (rc == RC_DONE) rc = 0;
 		else if (rc == RC_BUSY || rc == RC_LOCKED) { fprintf(stderr, "Error: source database is busy\n"); rc = 1; }
-		else { fprintf(stderr, "Error: %s\n", Main::ErrMsg(p->Ctx)); rc = 1; }
-		Main::Close(src);
+		else { fprintf(stderr, "Error: %s\n", DataEx::ErrMsg(p->Ctx)); rc = 1; }
+		DataEx::Close(src);
 #endif
 	}
 #pragma endregion
@@ -2606,7 +2606,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			else
 			{
 				_shellStatic = args[1];
-				rc = Main::Exec(p->Ctx,
+				rc = DataEx::Exec(p->Ctx,
 					"SELECT sql FROM "
 					"  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
 					"     FROM sqlite_master UNION ALL"
@@ -2621,7 +2621,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		else
 		{
-			rc = Main::Exec(p->Ctx,
+			rc = DataEx::Exec(p->Ctx,
 				"SELECT sql FROM "
 				"  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
 				"     FROM sqlite_master UNION ALL"
@@ -2769,23 +2769,23 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		static const struct
 		{
 			const char *CtrlName;   // Name of a test-control option
-			Main::TESTCTRL CtrlCode;           // Integer code for that option
+			DataEx::TESTCTRL CtrlCode;           // Integer code for that option
 		} _ctrls[] = {
-			{ "prng_save",             Main::TESTCTRL_PRNG_SAVE              },
-			{ "prng_restore",          Main::TESTCTRL_PRNG_RESTORE           },
-			{ "prng_reset",            Main::TESTCTRL_PRNG_RESET             },
-			{ "bitvec_test",           Main::TESTCTRL_BITVEC_TEST            },
-			{ "fault_install",         Main::TESTCTRL_FAULT_INSTALL          },
-			{ "benign_malloc_hooks",   Main::TESTCTRL_BENIGN_MALLOC_HOOKS    },
-			{ "pending_byte",          Main::TESTCTRL_PENDING_BYTE           },
-			{ "assert",                Main::TESTCTRL_ASSERT                 },
-			{ "always",                Main::TESTCTRL_ALWAYS                 },
-			{ "reserve",               Main::TESTCTRL_RESERVE                },
-			{ "optimizations",         Main::TESTCTRL_OPTIMIZATIONS          },
-			{ "iskeyword",             Main::TESTCTRL_ISKEYWORD              },
-			{ "scratchmalloc",         Main::TESTCTRL_SCRATCHMALLOC          },
+			{ "prng_save",             DataEx::TESTCTRL_PRNG_SAVE              },
+			{ "prng_restore",          DataEx::TESTCTRL_PRNG_RESTORE           },
+			{ "prng_reset",            DataEx::TESTCTRL_PRNG_RESET             },
+			{ "bitvec_test",           DataEx::TESTCTRL_BITVEC_TEST            },
+			{ "fault_install",         DataEx::TESTCTRL_FAULT_INSTALL          },
+			{ "benign_malloc_hooks",   DataEx::TESTCTRL_BENIGN_MALLOC_HOOKS    },
+			{ "pending_byte",          DataEx::TESTCTRL_PENDING_BYTE           },
+			{ "assert",                DataEx::TESTCTRL_ASSERT                 },
+			{ "always",                DataEx::TESTCTRL_ALWAYS                 },
+			{ "reserve",               DataEx::TESTCTRL_RESERVE                },
+			{ "optimizations",         DataEx::TESTCTRL_OPTIMIZATIONS          },
+			{ "iskeyword",             DataEx::TESTCTRL_ISKEYWORD              },
+			{ "scratchmalloc",         DataEx::TESTCTRL_SCRATCHMALLOC          },
 		};
-		Main::TESTCTRL testctrl = (Main::TESTCTRL)-1;
+		DataEx::TESTCTRL testctrl = (DataEx::TESTCTRL)-1;
 
 		// convert testctrl text option to value. allow any unique prefix of the option name, or a numerical value.
 		int n = (int)strlen(args[1]);
@@ -2798,13 +2798,13 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 				else
 				{
 					fprintf(stderr, "ambiguous option name: \"%s\"\n", args[1]);
-					testctrl = (Main::TESTCTRL)-1;
+					testctrl = (DataEx::TESTCTRL)-1;
 					break;
 				}
 			}
 		}
-		if (testctrl < 0) testctrl = (Main::TESTCTRL)atoi(args[1]);
-		if ((testctrl < Main::TESTCTRL_FIRST) || (testctrl > Main::TESTCTRL_LAST))
+		if (testctrl < 0) testctrl = (DataEx::TESTCTRL)atoi(args[1]);
+		if ((testctrl < DataEx::TESTCTRL_FIRST) || (testctrl > DataEx::TESTCTRL_LAST))
 		{
 			fprintf(stderr, "Error: invalid testctrl option: %s\n", args[1]);
 			return 0;
@@ -2816,70 +2816,70 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 #else
 		switch (testctrl)
 		{
-		case Main::TESTCTRL_OPTIMIZATIONS:
-		case Main::TESTCTRL_RESERVE:
-			// Main::TestControl(int, db, int)
+		case DataEx::TESTCTRL_OPTIMIZATIONS:
+		case DataEx::TESTCTRL_RESERVE:
+			// DataEx::TestControl(int, db, int)
 			if (argsLength == 3)
 			{
 				int opt = (int)atoi(args[2]);
-				rc = Main::TestControl(testctrl, p->Ctx, opt);
+				rc = DataEx::TestControl(testctrl, p->Ctx, opt);
 				printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
 			break;
-		case Main::TESTCTRL_PRNG_SAVE:
-		case Main::TESTCTRL_PRNG_RESTORE:
-		case Main::TESTCTRL_PRNG_RESET:
-			// Main::TestControl(int)
+		case DataEx::TESTCTRL_PRNG_SAVE:
+		case DataEx::TESTCTRL_PRNG_RESTORE:
+		case DataEx::TESTCTRL_PRNG_RESET:
+			// DataEx::TestControl(int)
 			if (argsLength == 2)
 			{
-				rc = Main::TestControl(testctrl);
+				rc = DataEx::TestControl(testctrl);
 				printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				fprintf(stderr, "Error: testctrl %s takes no options\n", args[1]);
 			break;
-		case Main::TESTCTRL_PENDING_BYTE:
-			// Main::TestControl(int, uint)
+		case DataEx::TESTCTRL_PENDING_BYTE:
+			// DataEx::TestControl(int, uint)
 			if (argsLength == 3)
 			{
 				unsigned int opt = (unsigned int)atoi(args[2]);
-				rc = Main::TestControl(testctrl, opt);
+				rc = DataEx::TestControl(testctrl, opt);
 				printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				fprintf(stderr, "Error: testctrl %s takes a single unsigned int option\n", args[1]);
 			break;
-		case Main::TESTCTRL_ASSERT:
-		case Main::TESTCTRL_ALWAYS:
-			// Main::TestControl(int, int)
+		case DataEx::TESTCTRL_ASSERT:
+		case DataEx::TESTCTRL_ALWAYS:
+			// DataEx::TestControl(int, int)
 			if (argsLength == 3)
 			{
 				int opt = atoi(args[2]);        
-				rc = Main::TestControl(testctrl, opt);
+				rc = DataEx::TestControl(testctrl, opt);
 				printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
 			break;
 #ifdef N_KEYWORD
-		case Main::TESTCTRL_ISKEYWORD:
-			// Main::TestControl(int, char *)
+		case DataEx::TESTCTRL_ISKEYWORD:
+			// DataEx::TestControl(int, char *)
 			if (argsLength == 3)
 			{
 				const char *opt = args[2];
-				rc = Main::TestControl(testctrl, opt);
+				rc = DataEx::TestControl(testctrl, opt);
 				printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
 				fprintf(stderr, "Error: testctrl %s takes a single char * option\n", args[1]);
 			break;
 #endif
-		case Main::TESTCTRL_BITVEC_TEST:         
-		case Main::TESTCTRL_FAULT_INSTALL:       
-		case Main::TESTCTRL_BENIGN_MALLOC_HOOKS: 
-		case Main::TESTCTRL_SCRATCHMALLOC:       
+		case DataEx::TESTCTRL_BITVEC_TEST:         
+		case DataEx::TESTCTRL_FAULT_INSTALL:       
+		case DataEx::TESTCTRL_BENIGN_MALLOC_HOOKS: 
+		case DataEx::TESTCTRL_SCRATCHMALLOC:       
 		default:
 			fprintf(stderr, "Error: CLI support for testctrl %s not implemented\n", args[1]);
 			break;
@@ -2896,7 +2896,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		D_DATA(p); D_META(p, argsLength, args); H_DATA(p);
 		H_RETURN(); if (h_return) rc = h_return;
 #else
-		Main::BusyTimeout(p->Ctx, atoi(args[1]));
+		DataEx::BusyTimeout(p->Ctx, atoi(args[1]));
 #endif
 	}
 #pragma endregion
@@ -2918,9 +2918,9 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 #else
 #if !defined(OMIT_TRACE) && !defined(OMIT_FLOATING_POINT)
 		if (!p->TraceOut)
-			Main::Trace(p->Ctx, nullptr, nullptr);
+			DataEx::Trace(p->Ctx, nullptr, nullptr);
 		else
-			Main::Trace(p->Ctx, SqlTraceCallback, p->TraceOut);
+			DataEx::Trace(p->Ctx, SqlTraceCallback, p->TraceOut);
 #endif
 #endif
 	}
@@ -2942,7 +2942,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		char *vfsName = 0;
 		if (p->Ctx)
 		{
-			Main::FileControl(p->Ctx, dbName, VFile::FCNTL_VFSNAME, &vfsName);
+			DataEx::FileControl(p->Ctx, dbName, VFile::FCNTL_VFSNAME, &vfsName);
 			if (vfsName)
 			{
 				printf("%s\n", vfsName);
@@ -3059,7 +3059,7 @@ __global__ void d_ProcessInput_0(struct CallbackData *p, char *sql, int startlin
 			errMsg = nullptr;
 		}
 		else
-			_fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
+			_fprintf(stderr, "%s %s\n", prefix, DataEx::ErrMsg(p->Ctx));
 		d_return = -1;
 		return;
 	}
@@ -3164,7 +3164,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 					errMsg = nullptr;
 				}
 				else
-					fprintf(stderr, "%s %s\n", prefix, Main::ErrMsg(p->Ctx));
+					fprintf(stderr, "%s %s\n", prefix, DataEx::ErrMsg(p->Ctx));
 				errCnt++;
 			}
 #endif
@@ -3270,7 +3270,7 @@ static int ProcessSqliteRC(struct CallbackData *p, const char *sqliterc)
 
 #pragma endregion
 
-#pragma region Main
+#pragma region DataEx
 
 // Show available command line options
 static const char _options[] = 
@@ -3357,8 +3357,8 @@ static void MainInit()
 __global__ void d_MainShutdown_0(struct CallbackData *data)
 {
 	if (data->Ctx)
-		Main::Close(data->Ctx);
-	Main::Shutdown();
+		DataEx::Close(data->Ctx);
+	DataEx::Shutdown();
 }
 #endif
 static void MainShutdown()
@@ -3374,8 +3374,8 @@ static void MainShutdown()
 	cudaDeviceReset();
 #else
 	if (_data.Ctx)
-		Main::Close(_data.Ctx);
-	Main::Shutdown();
+		DataEx::Close(_data.Ctx);
+	DataEx::Shutdown();
 #endif
 }
 
@@ -3491,7 +3491,7 @@ int main(int argc, char **argv)
 			if (sizeHeap > 0x7fff0000) sizeHeap = 0x7fff0000;
 #if __CUDACC__
 #else
-			Main::Config(CONFIG_HEAP, malloc((int)sizeHeap), (int)sizeHeap, 64);
+			DataEx::Config(CONFIG_HEAP, malloc((int)sizeHeap), (int)sizeHeap, 64);
 #endif
 		}
 #else
@@ -3523,7 +3523,7 @@ int main(int argc, char **argv)
 			cudaFree(d_vfsName);
 			H_RETURN(); if (h_return) { fprintf(stderr, "no such VFS: \"%s\"\n", argv[i]); exit(1); }
 #else
-			Main::Initialize();
+			DataEx::Initialize();
 			VSystem *vfs = VSystem::FindVfs(CmdlineOptionValue(argc, argv, ++i));
 			if (vfs)
 				VSystem::RegisterVfs(vfs, true);

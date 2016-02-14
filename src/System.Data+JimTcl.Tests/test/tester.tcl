@@ -502,7 +502,6 @@ proc incr_ntest {} {
   set_test_counter count [expr [set_test_counter count] + 1]
 }
 
-
 # Invoke the do_test procedure to run a single test 
 #
 proc do_test {name cmd expected} {
@@ -1002,6 +1001,7 @@ proc fix_ifcapable_expr {expr} {
     set state $newstate
   }
   if {$state} {append ret )}
+  puts [$ret]
   return $ret
 }
 

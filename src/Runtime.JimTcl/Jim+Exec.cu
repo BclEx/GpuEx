@@ -61,7 +61,7 @@ __device__ static int Jim_ExecCmd(ClientData dummy, Jim_Interp *interp, int argc
 		Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, "CHILDSTATUS", -1));
 		Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, 0));
 		Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, rc));
-		Jim_SetGlobalVariableStr(interp, "errorCode", errorCode);
+		Jim_SetVariableStr(interp, "errorCode", errorCode, JIM_GLOBAL);
 		return JIM_ERROR;
 	}
 	return JIM_OK;

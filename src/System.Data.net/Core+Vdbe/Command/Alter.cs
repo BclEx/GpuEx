@@ -156,7 +156,7 @@ namespace Core.Command
   };
         public static void Functions()
         {
-            FuncDefHash hash = Main.GlobalFunctions;
+            FuncDefHash hash = DataEx.GlobalFunctions;
             FuncDef[] funcs = _alterTableFuncs;
             for (int i = 0; i < _alterTableFuncs.Length; i++)
                 Callback.FuncDefInsert(hash, funcs[i]);

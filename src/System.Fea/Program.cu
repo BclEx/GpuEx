@@ -17,12 +17,12 @@ __device__ static void TestDB()
 
 	// open
 	Context *ctx;
-	Main::Open("C:\\T_\\Test2.db", &ctx);
+	DataEx::Open("C:\\T_\\Test2.db", &ctx);
 
 	// run query
 	char *errMsg = nullptr;
-	//Main::Exec(ctx, "Select * From MyTable;", MyCallback, nullptr, &errMsg);
-	Main::Exec(ctx, "PRAGMA database_list;", MyCallback, nullptr, &errMsg);
+	//DataEx::Exec(ctx, "Select * From MyTable;", MyCallback, nullptr, &errMsg);
+	DataEx::Exec(ctx, "PRAGMA database_list;", MyCallback, nullptr, &errMsg);
 	if (errMsg)
 	{
 		_printf("Error: %s\n", errMsg);
@@ -30,7 +30,7 @@ __device__ static void TestDB()
 	}
 
 	// close
-	Main::Close(ctx);
+	DataEx::Close(ctx);
 }
 
 //__device__ static void TestVFS()
@@ -54,12 +54,12 @@ __global__ void GMain(void *r) { _runtimeSetHeap(r);
 #else
 __global__ void main(int argc, char **argv) {
 #endif
-	Main::Initialize();
+	DataEx::Initialize();
 	//
 	//TestVFS();
 	TestDB();
 	//
-	Main::Shutdown();
+	DataEx::Shutdown();
 }
 
 #if __CUDACC__
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	//cudaRuntimeExecute(runtimeHost);
 
 	// run
-	//Visual::Main();
+	//Visual::DataEx();
 
 	cudaDeviceHeapDestroy(runtimeHost);
 

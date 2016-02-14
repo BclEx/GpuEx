@@ -42,7 +42,7 @@ void __testSystem(cudaDeviceHeap &r)
 
 #pragma endregion
 
-#pragma region Main
+#pragma region DataEx
 
 //void __testSystem(cudaDeviceHeap &r);
 #if __CUDACC__
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 
 	// run
 	__main(_deviceHeap);
-	//Visual::Main();
+	//Visual::DataEx();
 	//Visual::Dispose();
 
 	cudaDeviceHeapDestroy(_deviceHeap);

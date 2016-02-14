@@ -168,7 +168,7 @@ namespace Core
                 rc = dbAsObj.Bt.BeginTrans(0);
                 if (rc != RC.OK)
                 {
-                    C._mtagassignf(ref errMsg, ctx, "%s", Main.ErrStr(rc));
+                    C._mtagassignf(ref errMsg, ctx, "%s", DataEx.ErrStr(rc));
                     goto initone_error_out;
                 }
                 openedTransaction = true;
@@ -272,7 +272,7 @@ namespace Core
             if (ctx.MallocFailed)
             {
                 rc = RC.NOMEM;
-                Main.ResetAllSchemasOfConnection(ctx);
+                DataEx.ResetAllSchemasOfConnection(ctx);
             }
             if (rc == RC.OK || (ctx.Flags & Context.FLAG.RecoveryMode) != 0)
             {

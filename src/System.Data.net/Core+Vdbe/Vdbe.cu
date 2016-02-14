@@ -286,7 +286,7 @@ namespace CORE_NAME
 
 #pragma endregion
 
-#pragma region Main
+#pragma region DataEx
 
 	__constant__ static const unsigned char _and_logic[] = { 0, 0, 0, 0, 1, 2, 0, 2, 2 };
 	__constant__ static const unsigned char _or_logic[] = { 0, 1, 2, 1, 1, 1, 2, 1, 2 };
@@ -369,7 +369,7 @@ namespace CORE_NAME
 			{
 				g_interrupt_count--;
 				if (g_interrupt_count == 0)
-					Main::Interrupt(ctx);
+					DataEx::Interrupt(ctx);
 			}
 #endif
 
@@ -2154,7 +2154,7 @@ op_column_out:
 						if (rollbackId)
 						{
 							_assert(desiredAutoCommit == 1);
-							Main::RollbackAll(ctx, RC_ABORT_ROLLBACK);
+							DataEx::RollbackAll(ctx, RC_ABORT_ROLLBACK);
 							ctx->AutoCommit = 1;
 						}
 						else if ((rc = CheckFk(true)) != RC_OK)
@@ -2171,7 +2171,7 @@ op_column_out:
 							}
 						}
 						_assert(ctx->Statements == 0);
-						Main::CloseSavepoints(ctx);
+						DataEx::CloseSavepoints(ctx);
 						rc = (RC_ == RC_OK ? RC_DONE : RC_ERROR);
 						goto vdbe_return;
 					}
@@ -3752,7 +3752,7 @@ op_column_out:
 						ctx->Init.Busy = true;
 						initData.RC = RC_OK;
 						_assert(!ctx->MallocFailed);
-						rc = Main::Exec(ctx, sql, Prepare::InitCallback, &initData, 0);
+						rc = DataEx::Exec(ctx, sql, Prepare::InitCallback, &initData, 0);
 						if (rc == RC_OK) rc = initData.RC;
 						_tagfree(ctx, sql);
 						ctx->Init.Busy = false;
@@ -4715,7 +4715,7 @@ abort_due_to_error:
 		_assert(!ErrMsg);
 		if (ctx->MallocFailed) rc = RC_NOMEM;
 		if (rc != RC_IOERR_NOMEM)
-			_mtagassignf(&ErrMsg, ctx, "%s", Main::ErrStr(rc));
+			_mtagassignf(&ErrMsg, ctx, "%s", DataEx::ErrStr(rc));
 		goto vdbe_error_halt;
 
 		// Jump to here if the sqlite3_interrupt() API sets the interrupt flag.
@@ -4723,7 +4723,7 @@ abort_due_to_interrupt:
 		_assert(ctx->u1.IsInterrupted);
 		rc = RC_INTERRUPT;
 		RC_ = rc;
-		_mtagassignf(&ErrMsg, ctx, "%s", Main::ErrStr(rc));
+		_mtagassignf(&ErrMsg, ctx, "%s", DataEx::ErrStr(rc));
 		goto vdbe_error_halt;
 	}
 

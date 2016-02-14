@@ -140,7 +140,7 @@ namespace Core.Command
         public static void DeleteFrom(Parse parse, SrcList tabList, Expr where_)
         {
             AuthContext sContext = new AuthContext(); // Authorization context
-            Context ctx = parse.Ctx; // Main database structure
+            Context ctx = parse.Ctx; // DataEx database structure
             if (parse.Errs != 0 || ctx.MallocFailed)
                 goto delete_from_cleanup;
             Debug.Assert(tabList.Srcs == 1);

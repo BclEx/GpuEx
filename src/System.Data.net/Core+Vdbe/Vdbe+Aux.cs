@@ -1733,8 +1733,8 @@ namespace Core
                         else
                         {
                             // We are forced to roll back the active transaction. Before doing so, abort any other statements this handle currently has active.
-                            Main.RollbackAll(ctx);
-                            Main.CloseSavepoints(ctx);
+                            DataEx.RollbackAll(ctx);
+                            DataEx.CloseSavepoints(ctx);
                             ctx.AutoCommit = 1;
                         }
                     }
@@ -1773,16 +1773,16 @@ namespace Core
                         else if (rc != RC.OK)
                         {
                             RC_ = rc;
-                            Main.RollbackAll(ctx);
+                            DataEx.RollbackAll(ctx);
                         }
                         else
                         {
                             ctx.DeferredCons = 0;
-                            Main.CommitInternalChanges(ctx);
+                            DataEx.CommitInternalChanges(ctx);
                         }
                     }
                     else
-                        Main.RollbackAll(ctx);
+                        DataEx.RollbackAll(ctx);
                     ctx.Statements = 0;
                 }
                 else if (statementOp == 0)
@@ -1793,8 +1793,8 @@ namespace Core
                         statementOp = IPager.SAVEPOINT.ROLLBACK;
                     else
                     {
-                        Main.RollbackAll(ctx);
-                        Main.CloseSavepoints(ctx);
+                        DataEx.RollbackAll(ctx);
+                        DataEx.CloseSavepoints(ctx);
                         ctx.AutoCommit = 1;
                     }
                 }
@@ -1813,8 +1813,8 @@ namespace Core
                             C._tagfree(ctx, ref ErrMsg);
                             ErrMsg = null;
                         }
-                        Main.RollbackAll(ctx);
-                        Main.CloseSavepoints(ctx);
+                        DataEx.RollbackAll(ctx);
+                        DataEx.CloseSavepoints(ctx);
                         ctx.AutoCommit = 1;
                     }
                 }

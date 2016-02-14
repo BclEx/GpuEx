@@ -37,7 +37,7 @@ namespace Core
             MutexEx.Enter(ctx.Mutex);
             RC rc = p.Finalize();
             rc = SysEx.ApiExit(ctx, rc);
-            Main.LeaveMutexAndCloseZombie(ctx);
+            DataEx.LeaveMutexAndCloseZombie(ctx);
             return rc;
         }
 

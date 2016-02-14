@@ -27,7 +27,7 @@ namespace Core
         }
     }
 
-    public partial class Main
+    public partial class DataEx
     {
         public static RC ApiExit(Context ctx, RC rc)
         {
@@ -98,7 +98,7 @@ namespace Core
 
     #endregion
 
-    public partial class Main
+    public partial class DataEx
     {
         #region Initialize/Shutdown/Config
 
@@ -222,7 +222,7 @@ namespace Core
             return RC.OK;
         }
 
-        public static RC Main.Config(CONFIG op, params object[] args)
+        public static RC DataEx.Config(CONFIG op, params object[] args)
         {
             if ((int)op < (int)CONFIG.PAGECACHE) return SysEx.Config((SysEx.CONFIG)op, args);
             RC rc = RC.OK;
@@ -1410,7 +1410,7 @@ namespace Core
             if (rc != RC.OK)
             {
                 if (rc == RC.NOMEM) ctx.MallocFailed = true;
-                Main.Error(ctx, rc, (errMsg.Length > 0 ? "%s" : null), errMsg);
+                DataEx.Error(ctx, rc, (errMsg.Length > 0 ? "%s" : null), errMsg);
                 C._free(ref errMsg);
                 goto opendb_out;
             }
@@ -1421,7 +1421,7 @@ namespace Core
             {
                 if (rc == RC.IOERR_NOMEM)
                     rc = RC.NOMEM;
-                Main.Error(ctx, rc, null);
+                DataEx.Error(ctx, rc, null);
                 goto opendb_out;
             }
             ctx.DBs[0].Schema = Callback.SchemaGet(ctx, ctx.DBs[0].Bt);
@@ -1438,15 +1438,15 @@ namespace Core
                 goto opendb_out;
 
             // Register all built-in functions, but do not attempt to read the database schema yet. This is delayed until the first time the database is accessed.
-            Main.Error(ctx, RC.OK, null);
+            DataEx.Error(ctx, RC.OK, null);
             Func.RegisterBuiltinFunctions(ctx);
 
             // Load automatic extensions - extensions that have been registered using the sqlite3_automatic_extension() API.
-            rc = Main.ErrCode(ctx);
+            rc = DataEx.ErrCode(ctx);
             if (rc != RC.OK)
             {
                 LoadExt.AutoLoadExtensions(ctx);
-                rc = Main.ErrCode(ctx);
+                rc = DataEx.ErrCode(ctx);
                 if (rc != RC.OK)
                     goto opendb_out;
             }
@@ -1476,7 +1476,7 @@ namespace Core
                 rc = sqlite3RtreeInit(db);
 #endif
 
-            Main.Error(ctx, rc, null);
+            DataEx.Error(ctx, rc, null);
 
             // -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
             // mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
@@ -1489,7 +1489,7 @@ namespace Core
             // Enable the lookaside-malloc subsystem
             SysEx.SetupLookaside(ctx, null, SysEx._GlobalStatics.LookasideSize, SysEx.GlobalStatics.Lookasides);
 
-            Main.WalAutocheckpoint(ctx, DEFAULT_WAL_AUTOCHECKPOINT);
+            DataEx.WalAutocheckpoint(ctx, DEFAULT_WAL_AUTOCHECKPOINT);
 
         opendb_out:
             C._free(ref open);
@@ -1498,10 +1498,10 @@ namespace Core
                 Debug.Assert(ctx.Mutex != null || !isThreadsafe || !SysEx._GlobalStatics.FullMutex);
                 MutexEx.Leave(ctx.Mutex);
             }
-            rc = Main.ErrCode(ctx);
+            rc = DataEx.ErrCode(ctx);
             if (rc == RC.NOMEM)
             {
-                Main.Close(ctx);
+                DataEx.Close(ctx);
                 ctx = null;
             }
             else if (rc != RC.OK)
@@ -1511,7 +1511,7 @@ namespace Core
 		if (SysEx._GlobalStatics.Sqllog)
 			SysEx._GlobalStatics.Sqllog(SysEx._GlobalStatics.SqllogArg, ctx, fileName, 0); // Opening a ctx handle. Fourth parameter is passed 0.
 #endif
-            return Main.ApiExit(null, rc);
+            return DataEx.ApiExit(null, rc);
         }
 
         public static RC Open(string fileName, out Context ctxOut) { return OpenDatabase(fileName, out ctxOut, VSystem.OPEN.READWRITE | VSystem.OPEN.CREATE, null); }

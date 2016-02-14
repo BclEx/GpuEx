@@ -6067,7 +6067,7 @@ namespace Core
             TextBuilder.Init(check.ErrMsg, 1000, 20000);
 
             // Check the integrity of the freelist
-            checkList(check, true, (Pid)ConvertEx.Get4(bt.Page1.Data, 32), (int)ConvertEx.Get4(bt.Page1.Data, 36), "Main freelist: ");
+            checkList(check, true, (Pid)ConvertEx.Get4(bt.Page1.Data, 32), (int)ConvertEx.Get4(bt.Page1.Data, 36), "DataEx freelist: ");
 
             // Check all the tables.
             for (i = 0; (int)i < rootsLength && check.MaxErrors != 0; i++)

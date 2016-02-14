@@ -190,7 +190,7 @@ __device__ static RC SqllogFindAttached(SLConn *p, const char *search, char *nam
 //    ATTACH 'zFile' AS 'zName';
 //
 // Otherwise, if bLog is false, a comment is added to the log file:
-//    -- Main database file is 'zFile'
+//    -- DataEx database file is 'zFile'
 //
 // The SLGlobal.mutex mutex is always held when this function is called.
 __device__ static void SqllogCopydb(SLConn *p, const char *search, bool log)
@@ -216,10 +216,10 @@ __device__ static void SqllogCopydb(SLConn *p, const char *search, bool log)
 			_assert(!_sqllogglobal.Rec);
 			_sqllogglobal.Rec = true;
 			Context *copy = nullptr;
-			rc = Main::Open(init, &copy);
+			rc = DataEx::Open(init, &copy);
 			if (rc == RC_OK)
 			{
-				Main::Exec(copy, "PRAGMA synchronous = 0", 0, 0, 0);
+				DataEx::Exec(copy, "PRAGMA synchronous = 0", 0, 0, 0);
 				Backup *bak = Backup::Init(copy, "main", p->Ctx, name);
 				if (bak)
 				{
@@ -227,8 +227,8 @@ __device__ static void SqllogCopydb(SLConn *p, const char *search, bool log)
 					rc = Backup::Finish(bak);
 				}
 				else
-					rc = Main::ErrCode(copy);
-				Main::Close(copy);
+					rc = DataEx::ErrCode(copy);
+				DataEx::Close(copy);
 			}
 			_sqllogglobal.Rec = false;
 
@@ -251,7 +251,7 @@ __device__ static void SqllogCopydb(SLConn *p, const char *search, bool log)
 	if (log)
 		free = _mprintf("ATTACH '%q' AS '%q'; -- clock=%d\n", init, name, _sqllogglobal.Clock++);
 	else
-		free = _mprintf("-- Main database is '%q'\n", init);
+		free = _mprintf("-- DataEx database is '%q'\n", init);
 	_fprintf(p->Fd, "%s", free);
 	_free(free);
 

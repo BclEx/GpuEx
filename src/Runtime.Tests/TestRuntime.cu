@@ -2,6 +2,18 @@
 #include <Runtime.h>
 
 // NATIVE: assert
+__global__ static void runtimeInit(void *r)
+{
+	_runtimeSetHeap(r);
+	_alloc_init();
+}
+
+__global__ static void runtimeShutdown(void *r)
+{
+	_runtimeSetHeap(r);
+	_alloc_shutdown();
+}
+
 __global__ static void runtime0(void *r)
 {
 	_runtimeSetHeap(r);
@@ -298,6 +310,7 @@ __global__ static void runtime15(void *r)
 void __testRuntime(cudaDeviceHeap &r)
 {
 	RuntimeSentinel::ServerInitialize();
+	runtimeInit<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime0<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime1<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime2<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
@@ -314,6 +327,7 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime13<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime14<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	runtime15<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
+	runtimeShutdown<<<1, 1>>>(r.heap); cudaDeviceHeapSynchronize(r);
 	RuntimeSentinel::ServerShutdown();
 }
 #else
@@ -322,6 +336,7 @@ void __testRuntime(cudaDeviceHeap &r)
 #if OS_MAP
 	RuntimeSentinel::ServerInitialize();
 #endif
+	runtimeInit(r.heap);
 	runtime0(r.heap);
 	runtime1(r.heap);
 	runtime2(r.heap);
@@ -338,6 +353,7 @@ void __testRuntime(cudaDeviceHeap &r)
 	runtime13(r.heap);
 	runtime14(r.heap);
 	runtime15(r.heap);
+	runtimeShutdown(r.heap);
 #if OS_MAP
 	RuntimeSentinel::ServerShutdown();
 #endif

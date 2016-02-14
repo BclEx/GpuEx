@@ -111,7 +111,7 @@ static int superlockWalLock(
   SuperlockBusy *pBusy            /* Busy handler wrapper object */
 ){
   int rc;                         /* Return code */
-  sqlite3_file *fd = 0;           /* Main database file handle */
+  sqlite3_file *fd = 0;           /* DataEx database file handle */
   void volatile *p = 0;           /* Pointer to first page of shared memory */
 
   /* Obtain a pointer to the sqlite3_file object open on the main db file. */

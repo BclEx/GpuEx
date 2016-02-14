@@ -131,23 +131,23 @@ namespace Core
             public int Lookasides;                      // Default lookaside buffer count
             //public sqlite3_mem_methods m;             // Low-level memory allocation interface
             //public sqlite3_mutex_methods mutex;       // Low-level mutex interface
-            //Main::sqlite3_pcache_methods pcache;      // Low-level page-cache interface
+            //DataEx::sqlite3_pcache_methods pcache;      // Low-level page-cache interface
             //public array_t<byte[]> Heap;              // Heap storage space
             //public int MaxReq, MaxReq;                // Min and max heap requests sizes
             public byte[][] Scratch, Scratch2;          // Scratch memory
             public int ScratchSize;                     // Size of each scratch buffer
             public int Scratchs;                        // Number of scratch buffers
-            //Main::MemPage Page;                       // Page cache memory
-            //Main::int PageSize;                       // Size of each page in pPage[]
-            //Main::int Pages;                          // Number of pages in pPage[]
-            //Main::int MaxParserStack;                 // maximum depth of the parser stack
+            //DataEx::MemPage Page;                       // Page cache memory
+            //DataEx::int PageSize;                       // Size of each page in pPage[]
+            //DataEx::int Pages;                          // Number of pages in pPage[]
+            //DataEx::int MaxParserStack;                 // maximum depth of the parser stack
             public bool SharedCacheEnabled;             // true if shared-cache mode enabled
             // The above might be initialized to non-zero.  The following need to always initially be zero, however.
             public bool IsInit;                         // True after initialization has finished
             public bool InProgress;                     // True while initialization in progress
             public bool IsMutexInit;                    // True after mutexes are initialized
             public bool IsMallocInit;                   // True after malloc is initialized
-            //Main::bool IsPCacheInit;                  // True after malloc is initialized
+            //DataEx::bool IsPCacheInit;                  // True after malloc is initialized
             public MutexEx InitMutex;                   // Mutex used by sqlite3_initialize()
             public int InitMutexRefs;                   // Number of users of pInitMutex
             public Action<object, int, string> Log;     // Function for logging
@@ -251,7 +251,7 @@ namespace Core
 		    false,						// FullMutex
 #endif
             CORE_USE_URI,				// OpenUri
-            // Main::UseCis
+            // DataEx::UseCis
             0x7ffffffe,					// MaxStrlen
             128,						// LookasideSize
             500,						// Lookasides
@@ -263,17 +263,17 @@ namespace Core
             null,			            // Scratch
             0,							// ScratchSize
             0,							// Scratchs
-            // Main::Page
-            // Main::PageSize
-            // Main::Pages
-            // Main::MaxParserStack
+            // DataEx::Page
+            // DataEx::PageSize
+            // DataEx::Pages
+            // DataEx::MaxParserStack
             false,						// SharedCacheEnabled
             // All the rest should always be initialized to zero
             false,						// IsInit
             false,						// InProgress
             false,						// IsMutexInit
             false,						// IsMallocInit
-            // Main::IsPCacheInit
+            // DataEx::IsPCacheInit
             default(MutexEx),			// InitMutex
             0,							// InitMutexRefs
             null,					    // Log

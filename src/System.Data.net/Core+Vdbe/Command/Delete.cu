@@ -138,7 +138,7 @@ limit_where_cleanup_2:
 	{
 		AuthContext sContext; // Authorization context
 		_memset(&sContext, 0, sizeof(sContext));
-		Context *ctx = parse->Ctx; // Main database structure
+		Context *ctx = parse->Ctx; // DataEx database structure
 		if (parse->Errs || ctx->MallocFailed)
 			goto delete_from_cleanup;
 		_assert(tabList->Srcs == 1);

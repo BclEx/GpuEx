@@ -15,7 +15,7 @@ static EXTENSION_INIT1
 static int sqr_init(Context *ctx, char **errMsg, const core_api_routines *api)
 {
 	EXTENSION_INIT2(api);
-	Main::CreateFunction(ctx, "sqr", 1, TEXTENCODE_ANY, 0, sqrFunc, 0, 0);
+	DataEx::CreateFunction(ctx, "sqr", 1, TEXTENCODE_ANY, 0, sqrFunc, 0, 0);
 	return 0;
 }
 
@@ -30,7 +30,7 @@ __device__ static void cubeFunc(FuncContext *fctx, int argc, Mem **args)
 __device__ static int cube_init(Context *ctx, char **errMsg, const core_api_routines *api)
 {
 	EXTENSION_INIT2(api);
-	Main::CreateFunction(ctx, "cube", 1, TEXTENCODE_ANY, 0, cubeFunc, 0, 0);
+	DataEx::CreateFunction(ctx, "cube", 1, TEXTENCODE_ANY, 0, cubeFunc, 0, 0);
 	return 0;
 }
 
@@ -48,7 +48,7 @@ __device__ static int broken_init(Context *ctx, char **errMsg, const core_api_ro
 // Register the "sqr" extension to be loaded automatically.
 __device__ static int autoExtSqrObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	RC rc = Main::AutoExtension((void(*)())sqr_init);
+	RC rc = DataEx::AutoExtension((void(*)())sqr_init);
 	Jim_SetResultInt(interp, rc);
 	return RC_OK;
 }
@@ -58,7 +58,7 @@ __device__ static int autoExtSqrObjCmd(ClientData clientData, Jim_Interp *interp
 // Register the "cube" extension to be loaded automatically.
 __device__ static int autoExtCubeObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	RC rc = Main::AutoExtension((void(*)())cube_init);
+	RC rc = DataEx::AutoExtension((void(*)())cube_init);
 	Jim_SetResultInt(interp, rc);
 	return RC_OK;
 }
@@ -68,7 +68,7 @@ __device__ static int autoExtCubeObjCmd(ClientData clientData, Jim_Interp *inter
 // Register the broken extension to be loaded automatically.
 __device__ static int autoExtBrokenObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	RC rc = Main::AutoExtension((void(*)())broken_init);
+	RC rc = DataEx::AutoExtension((void(*)())broken_init);
 	Jim_SetResultInt(interp, rc);
 	return RC_OK;
 }
@@ -80,7 +80,7 @@ __device__ static int autoExtBrokenObjCmd(ClientData clientData, Jim_Interp *int
 // Reset all auto-extensions
 __device__ static int resetAutoExtObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	Main::ResetAutoExtension();
+	DataEx::ResetAutoExtension();
 	return RC_OK;
 }
 

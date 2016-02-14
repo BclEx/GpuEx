@@ -1676,9 +1676,9 @@ namespace CORE_NAME {
 	}
 #pragma endregion
 
-#pragma region Main
+#pragma region DataEx
 
-	class Main
+	class DataEx
 	{
 	public:
 
@@ -1908,9 +1908,9 @@ namespace CORE_NAME {
 		__device__ inline static int CtxTotalChanges(Context *ctx) { return ctx->TotalChanges; }
 	};
 
-	__device__ extern _WSD Main::GlobalStatics g_globalStatics;
+	__device__ extern _WSD DataEx::GlobalStatics g_globalStatics;
 	__device__ extern _WSD FuncDefHash g_globalFunctions;
-#define Main_GlobalStatics _GLOBAL(Main::GlobalStatics, g_globalStatics)
+#define Main_GlobalStatics _GLOBAL(DataEx::GlobalStatics, g_globalStatics)
 #define Main_GlobalFunctions _GLOBAL(FuncDefHash, g_globalFunctions)
 
 #pragma endregion

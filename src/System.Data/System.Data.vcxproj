@@ -197,9 +197,9 @@
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Callback.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Context.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Expr.cu" />
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Main.cu" />
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu" />
-    <ClCompile Include="..\System.Data.net\Core+Vdbe\Main+LoadExt.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\DataEx.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\DataEx+Legacy.cu" />
+    <ClCompile Include="..\System.Data.net\Core+Vdbe\DataEx+LoadExt.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Build.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+Complete.cu" />
     <ClCompile Include="..\System.Data.net\Core+Vdbe\Parse+FKey.cu" />
@@ -252,9 +252,9 @@
     <None Include="..\System.Data.net\Core+Vdbe\Callback.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Context.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Expr.cu" />
-    <None Include="..\System.Data.net\Core+Vdbe\Main.cu" />
-    <None Include="..\System.Data.net\Core+Vdbe\Main+Legacy.cu" />
-    <None Include="..\System.Data.net\Core+Vdbe\Main+LoadExt.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\DataEx.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\DataEx+Legacy.cu" />
+    <None Include="..\System.Data.net\Core+Vdbe\DataEx+LoadExt.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Build.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Parse+Complete.cu" />
     <None Include="..\System.Data.net\Core+Vdbe\Parse+FKey.cu" />

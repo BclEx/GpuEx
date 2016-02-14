@@ -709,7 +709,7 @@ namespace Core
 
         public void CodeRowTriggerDirect(Parse parse, Table table, int reg, OE orconf, int ignoreJump)
         {
-            Vdbe v = parse.GetVdbe(); // Main VM
+            Vdbe v = parse.GetVdbe(); // DataEx VM
             TriggerPrg prg = GetRowTrigger(parse, this, table, orconf);
             Debug.Assert(prg != null || parse.Errs != 0 || parse.Ctx.MallocFailed);
 

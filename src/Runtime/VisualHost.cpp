@@ -135,7 +135,7 @@ bool Visual::InitGL(IVisualRender *render, int *argc, char **argv)
 	return true;
 }
 
-void Visual::Main()
+void Visual::DataEx()
 {
 	_render->Initialize();
 	// start rendering mainloop

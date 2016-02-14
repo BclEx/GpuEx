@@ -62,7 +62,7 @@ __device__ static char *JimFindPackage(Jim_Interp *interp, Jim_Obj *prefixListOb
 __device__ static int JimLoadPackage(Jim_Interp *interp, const char *name, int flags)
 {
 	int retCode = JIM_ERROR;
-	Jim_Obj *libPathObjPtr = Jim_GetGlobalVariableStr(interp, JIM_LIBPATH, JIM_NONE);
+	Jim_Obj *libPathObjPtr = Jim_GetVariableStr(interp, JIM_LIBPATH, JIM_GLOBAL);
 	if (libPathObjPtr) {
 		// Scan every directory for the the first match
 		char *path = JimFindPackage(interp, libPathObjPtr, name);

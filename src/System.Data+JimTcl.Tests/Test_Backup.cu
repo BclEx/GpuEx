@@ -42,10 +42,10 @@ __device__ static int backupTestCmd(ClientData clientData, Jim_Interp *interp, i
 	case BACKUP_FINISH: {
 		const char *cmdName = Jim_String(args[0]);
 		Jim_CmdInfo cmdInfo;
-		Jim_GetCommandInfo(interp, cmdName, &cmdInfo);
+		Jim_GetCommandInfo(interp, args[0], &cmdInfo);
 		cmdInfo.deleteProc = nullptr;
-		Jim_SetCommandInfo(interp, cmdName, &cmdInfo);
-		Jim_DeleteCommand(interp, (char *)cmdName);
+		Jim_SetCommandInfo(interp, args[0], &cmdInfo);
+		Jim_DeleteCommand(interp, cmdName);
 		rc = Backup::Finish(p);
 		Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
 		break; }

@@ -333,7 +333,7 @@ namespace CORE_NAME
 		//		core_wal_checkpoint_v2
 	};
 
-	__device__ RC Main::LoadExtension_(Context *ctx, const char *fileName, const char *procName, char **errMsgOut)
+	__device__ RC DataEx::LoadExtension_(Context *ctx, const char *fileName, const char *procName, char **errMsgOut)
 	{
 		if (errMsgOut) *errMsgOut = nullptr;
 
@@ -406,7 +406,7 @@ namespace CORE_NAME
 		return RC_OK;
 	}
 
-	__device__ RC Main::LoadExtension(Context *ctx, const char *fileName, const char *procName, char **errMsgOut)
+	__device__ RC DataEx::LoadExtension(Context *ctx, const char *fileName, const char *procName, char **errMsgOut)
 	{
 		_mutex_enter(ctx->Mutex);
 		RC rc = LoadExtension_(ctx, fileName, procName, errMsgOut);
@@ -415,7 +415,7 @@ namespace CORE_NAME
 		return rc;
 	}
 
-	__device__ void Main::CloseExtensions(Context *ctx)
+	__device__ void DataEx::CloseExtensions(Context *ctx)
 	{
 		_assert(_mutex_held(ctx->Mutex));
 		for (int i = 0; i < ctx->Extensions.length; i++)
@@ -423,7 +423,7 @@ namespace CORE_NAME
 		_tagfree(ctx, ctx->Extensions.data);
 	}
 
-	__device__ RC Main::EnableLoadExtension(Context *ctx, bool onoff)
+	__device__ RC DataEx::EnableLoadExtension(Context *ctx, bool onoff)
 	{
 		_mutex_enter(ctx->Mutex);
 		if (onoff)
@@ -454,7 +454,7 @@ namespace CORE_NAME
 #define WsdAutoext g_autoext
 #endif
 
-	__device__ RC Main::AutoExtension(void (*init)())
+	__device__ RC DataEx::AutoExtension(void (*init)())
 	{
 		RC rc = RC_OK;
 #ifndef OMIT_AUTOINIT
@@ -491,7 +491,7 @@ namespace CORE_NAME
 		}
 	}
 
-	__device__ void Main::ResetAutoExtension()
+	__device__ void DataEx::ResetAutoExtension()
 	{
 #ifndef OMIT_AUTOINIT
 		if (Initialize() == RC_OK)
@@ -509,7 +509,7 @@ namespace CORE_NAME
 		}
 	}
 
-	__device__ void Main::AutoLoadExtensions(Context *ctx)
+	__device__ void DataEx::AutoLoadExtensions(Context *ctx)
 	{
 		WsdAutoextInit;
 		if (WsdAutoext.ExtsLength == 0)

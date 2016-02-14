@@ -64,7 +64,7 @@ namespace Core
                     rc = RC.ERROR;
                 }
                 else
-                    err = C._mtagprintf(p.Ctx, "%s", Main.Errmsg(p.Ctx));
+                    err = C._mtagprintf(p.Ctx, "%s", DataEx.Errmsg(p.Ctx));
             }
 
             Debug.Assert(rc != RC.OK || err == null);

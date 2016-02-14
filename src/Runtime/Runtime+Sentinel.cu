@@ -5,6 +5,10 @@
 #undef __device__
 #define __device__
 #endif
+#ifdef __constant__
+#undef __constant__
+#define __constant__
+#endif
 #define SENTINEL
 #define RUNTIME_NAME RuntimeS
 #include "RuntimeHost.h"

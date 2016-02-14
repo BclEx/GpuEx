@@ -63,7 +63,7 @@ __device__ static int SimulateVtabError(echo_vtab *p, const char *methodName)
 	char varname[128];
 	varname[127] = '\0';
 	__snprintf(varname, sizeof(varname), "echo_module_fail(%s,%s)", methodName, p->TableName);
-	const char *err = Jim_String(Jim_GetGlobalVariableStr(p->Interp, varname, 0));
+	const char *err = Jim_String(Jim_GetVariableStr(p->Interp, varname, JIM_GLOBAL));
 	if (err)
 		p->base.ErrMsg = _mprintf("echo-vtab-error: %s", err);
 	return (err != nullptr);
@@ -223,7 +223,7 @@ get_index_array_out:
 // Global Tcl variable $echo_module is a list. This routine appends the string element zArg to that list in interpreter interp.
 __device__ static void AppendToEchoModule(Jim_Interp *interp, const char *arg)
 {
-	Jim_Obj *list = Jim_GetGlobalVariableStr(interp, "echo_module", JIM_ERRMSG);
+	Jim_Obj *list = Jim_GetVariableStr(interp, "echo_module", JIM_GLOBAL | JIM_ERRMSG);
 	Jim_ListAppendElement(interp, list, Jim_NewStringObj(interp, (arg ? arg : ""), -1));
 }
 
@@ -358,10 +358,10 @@ __device__ static RC EchoCreate(Context *ctx, void *aux, int argc, const char *c
 		echo_vtab *vtab = *(echo_vtab **)vtable;
 		vtab->LogName = _mprintf("%s", args[4]);
 		char *sql = _mprintf("CREATE TABLE %Q(logmsg)", vtab->LogName);
-		rc = Main::Exec(ctx, sql, nullptr, nullptr, nullptr);
+		rc = DataEx::Exec(ctx, sql, nullptr, nullptr, nullptr);
 		_free(sql);
 		if (rc != RC_OK)
-			*err = _mprintf("%s", Main::ErrMsg(ctx));
+			*err = _mprintf("%s", DataEx::ErrMsg(ctx));
 	}
 
 	if (*vtable && rc != RC_OK)
@@ -399,7 +399,7 @@ __device__ static RC EchoDestroy(IVTable *vtab)
 	if (p && p->LogName)
 	{
 		char *sql = _mprintf("DROP TABLE %Q", p->LogName);
-		rc = Main::Exec(p->Ctx, sql, nullptr, nullptr, nullptr);
+		rc = DataEx::Exec(p->Ctx, sql, nullptr, nullptr, nullptr);
 		_free(sql);
 	}
 
@@ -588,7 +588,7 @@ __device__ static RC EchoBestIndex(IVTable *tab, IIndexInfo *idxInfo)
 	Vdbe *stmt = nullptr;
 	Jim_Interp *interp = vtab->Interp;
 
-	bool isIgnoreUsable = (Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_ignore_usable", 0)) != nullptr);
+	bool isIgnoreUsable = (Jim_String(Jim_GetVariableStr(interp, "echo_module_ignore_usable", JIM_GLOBAL)) != nullptr);
 	if (SimulateVtabError(vtab, "xBestIndex"))
 		return RC_ERROR;
 
@@ -601,7 +601,7 @@ __device__ static RC EchoBestIndex(IVTable *tab, IIndexInfo *idxInfo)
 	bool useCost = false;
 	double cost;
 	char *query = nullptr;
-	const char *costAsString = Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_cost", 0));
+	const char *costAsString = Jim_String(Jim_GetVariableStr(interp, "echo_module_cost", JIM_GLOBAL));
 	if (costAsString)
 	{
 		cost = _atof(costAsString);
@@ -808,9 +808,9 @@ __device__ RC EchoUpdate(IVTable *tab, int dataLength, Mem **datas, int64 *rowid
 	}
 
 	if (rowid && rc == RC_OK)
-		*rowid = Main::CtxLastInsertRowid(ctx);
+		*rowid = DataEx::CtxLastInsertRowid(ctx);
 	if (rc != RC_OK)
-		tab->ErrMsg = _mprintf("echo-vtab-error: %s", Main::ErrMsg(ctx));
+		tab->ErrMsg = _mprintf("echo-vtab-error: %s", DataEx::ErrMsg(ctx));
 	return rc;
 }
 
@@ -841,7 +841,7 @@ __device__ static RC EchoBegin(IVTable *tab)
 	{
 		// Check if the $::echo_module_begin_fail variable is defined. If it is, and it is set to the name of the real table underlying this virtual
 		// echo module table, then cause this xSync operation to fail.
-		const char *val = Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_begin_fail", 0));
+		const char *val = Jim_String(Jim_GetVariableStr(interp, "echo_module_begin_fail", JIM_GLOBAL));
 		if (val && !_strcmp(val, vtab->TableName))
 			rc = RC_ERROR;
 	}
@@ -864,7 +864,7 @@ __device__ static RC EchoSync(IVTable *tab)
 	{
 		// Check if the $::echo_module_sync_fail variable is defined. If it is, and it is set to the name of the real table underlying this virtual
 		// echo module table, then cause this xSync operation to fail.
-		const char *val = Jim_String(Jim_GetGlobalVariableStr(interp, "echo_module_sync_fail", 0));
+		const char *val = Jim_String(Jim_GetVariableStr(interp, "echo_module_sync_fail", JIM_GLOBAL));
 		if (val && !_strcmp(val, vtab->TableName))
 			rc = RC_INVALID;
 	}
@@ -926,7 +926,7 @@ __device__ static bool EchoFindFunction(IVTable *tab, int args, const char *func
 	if (_strcmp(funcName, "glob"))
 		return false;
 	Jim_CmdInfo info;
-	if (!Jim_GetCommandInfo(interp, "::echo_glob_overload", &info))
+	if (!Jim_GetCommandInfoStr(interp, "::echo_glob_overload", &info))
 		return false;
 	*funcOut = OverloadedGlobFunction;
 	*argOut = interp;
@@ -944,7 +944,7 @@ __device__ static RC EchoRename(IVTable *vtab, const char *newName)
 	{
 		int thisLength = (int)_strlen(p->ThisName);
 		char *sql = _mprintf("ALTER TABLE %s RENAME TO %s%s", p->TableName, newName, &p->TableName[thisLength]);
-		rc = Main::Exec(p->Ctx, sql, nullptr, nullptr, nullptr);
+		rc = DataEx::Exec(p->Ctx, sql, nullptr, nullptr, nullptr);
 		_free(sql);
 	}
 	return rc;
@@ -1072,7 +1072,7 @@ __device__ static int declare_vtab(ClientData clientData, Jim_Interp *interp, in
 	RC rc = VTable::DeclareVTable(ctx, Jim_String(args[2]));
 	if (rc != RC_OK)
 	{
-		Jim_SetResultString(interp, (char *)Main::ErrMsg(ctx), -1);
+		Jim_SetResultString(interp, (char *)DataEx::ErrMsg(ctx), -1);
 		return JIM_ERROR;
 	}
 	return JIM_OK;

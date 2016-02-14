@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Core
 {
-    public partial class Main
+    public partial class DataEx
     {
 #if !APICORE
         const int APICORE = 1; // Disable the API redefinition in sqlite3ext.h

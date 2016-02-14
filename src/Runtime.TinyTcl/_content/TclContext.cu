@@ -44,7 +44,7 @@ __device__ static int IncrblobClose(ClientData instanceData, Tcl_Interp *interp)
 
 	if (rc != RC_OK)
 	{
-		Tcl_SetResult(interp, (char *)Main::ErrMsg(ctx), TCL_VOLATILE);
+		Tcl_SetResult(interp, (char *)DataEx::ErrMsg(ctx), TCL_VOLATILE);
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -149,7 +149,7 @@ __device__ static int CreateIncrblobChannel(Tcl_Interp *interp, TclContext *pDb,
 	RC rc = Vdbe::Blob_Open(ctx, dbName, tableName, columnName, row, !isReadonly, &blob);
 	if (rc != RC_OK)
 	{
-		Tcl_SetResult(interp, (char *)Main::ErrMsg(ctx), TCL_VOLATILE);
+		Tcl_SetResult(interp, (char *)DataEx::ErrMsg(ctx), TCL_VOLATILE);
 		return TCL_ERROR;
 	}
 
@@ -255,7 +255,7 @@ __device__ static void DbDeleteCmd(ClientData db)
 	TclContext *tctx = (TclContext *)db;
 	FlushStmtCache(tctx);
 	CloseIncrblobChannels(tctx);
-	Main::Close(tctx->Ctx);
+	DataEx::Close(tctx->Ctx);
 	while (tctx->Funcs)
 	{
 		SqlFunc *func = tctx->Funcs;
@@ -682,7 +682,7 @@ __device__ static int DbTransPostCmd(ClientData data[], Tcl_Interp *interp, int 
 	const char *end = _ends[(rc == RC_ERROR) * 2 + (tctx->Transactions == 0)];
 
 	tctx->DisableAuth++;
-	if (Main::Exec(ctx, end, nullptr, nullptr, nullptr))
+	if (DataEx::Exec(ctx, end, nullptr, nullptr, nullptr))
 	{
 		// This is a tricky scenario to handle. The most likely cause of an error is that the exec() above was an attempt to commit the 
 		// top-level transaction that returned SQLITE_BUSY. Or, less likely, that an IO-error has occurred. In either case, throw a Tcl exception
@@ -692,10 +692,10 @@ __device__ static int DbTransPostCmd(ClientData data[], Tcl_Interp *interp, int 
 		// this method's logic. Not clear how this would be best handled.
 		if (rc != RC_ERROR)
 		{
-			Tcl_AppendResult(interp, Main::ErrMsg(ctx), 0);
+			Tcl_AppendResult(interp, DataEx::ErrMsg(ctx), 0);
 			rc = RC_ERROR;
 		}
-		Main::Exec(ctx, "ROLLBACK", nullptr, nullptr, nullptr);
+		DataEx::Exec(ctx, "ROLLBACK", nullptr, nullptr, nullptr);
 	}
 	tctx->DisableAuth--;
 	return rc;
@@ -752,14 +752,14 @@ __device__ static RC DbPrepareAndBind(TclContext *tctx, char const *sql, char co
 	{
 		if (DbPrepare(tctx, sql, &stmt, out) != RC_OK)
 		{
-			Tcl_SetResult(interp, (char *)Main::ErrMsg(ctx), nullptr);
+			Tcl_SetResult(interp, (char *)DataEx::ErrMsg(ctx), nullptr);
 			return RC_ERROR;
 		}
 		if (!stmt)
 		{
-			if (Main::ErrCode(ctx) != RC_OK)
+			if (DataEx::ErrCode(ctx) != RC_OK)
 			{
-				Tcl_SetResult(interp, (char *)Main::ErrMsg(ctx), nullptr);
+				Tcl_SetResult(interp, (char *)DataEx::ErrMsg(ctx), nullptr);
 				return RC_ERROR; // A compile-time error in the statement.
 			}
 			else
@@ -1031,7 +1031,7 @@ __device__ static RC DbEvalStep(DbEvalContext *p)
 					continue;
 				}
 #endif
-				Tcl_SetResult(tctx->Interp, (char *)Main::ErrMsg(tctx->Ctx), TCL_VOLATILE);
+				Tcl_SetResult(tctx->Interp, (char *)DataEx::ErrMsg(tctx->Ctx), TCL_VOLATILE);
 				return RC_ERROR;
 			}
 			else
@@ -1267,18 +1267,18 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		}
 
 		Context *destCtx;
-		rc2 = Main::Open(destFile, &destCtx);
+		rc2 = DataEx::Open(destFile, &destCtx);
 		if (rc2 != RC_OK)
 		{
-			Tcl_AppendResult(interp, "cannot open target database: ", Main::ErrMsg(destCtx), nullptr);
-			Main::Close(destCtx);
+			Tcl_AppendResult(interp, "cannot open target database: ", DataEx::ErrMsg(destCtx), nullptr);
+			DataEx::Close(destCtx);
 			return TCL_ERROR;
 		}
 		Backup *backup = Backup::Init(destCtx, "main", p->Ctx, srcDb);
 		if (!backup)
 		{
-			Tcl_AppendResult(interp, "backup failed: ", Main::ErrMsg(destCtx), nullptr);
-			Main::Close(destCtx);
+			Tcl_AppendResult(interp, "backup failed: ", DataEx::ErrMsg(destCtx), nullptr);
+			DataEx::Close(destCtx);
 			return TCL_ERROR;
 		}
 		while ((rc2 = backup->Step(100)) == RC_OK) { }
@@ -1287,10 +1287,10 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			rc = TCL_OK;
 		else
 		{
-			Tcl_AppendResult(interp, "backup failed: ", Main::ErrMsg(destCtx), nullptr);
+			Tcl_AppendResult(interp, "backup failed: ", DataEx::ErrMsg(destCtx), nullptr);
 			rc = TCL_ERROR;
 		}
-		Main::Close(destCtx);
+		DataEx::Close(destCtx);
 		return rc; }
 
 	case DB_BUSY: {
@@ -1323,10 +1323,10 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			if (p->Busy)
 			{
 				p->Interp = interp;
-				Main::BusyHandler(p->Ctx, DbBusyHandler, p);
+				DataEx::BusyHandler(p->Ctx, DbBusyHandler, p);
 			}
 			else
-				Main::BusyHandler(p->Ctx, nullptr, nullptr);
+				DataEx::BusyHandler(p->Ctx, nullptr, nullptr);
 		}
 		return rc; }
 
@@ -1397,7 +1397,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			return TCL_ERROR;
 		}
 		char b[100];
-		Tcl_SetResult(interp, _itoa(Main::CtxChanges(p->Ctx), b), TCL_VOLATILE);
+		Tcl_SetResult(interp, _itoa(DataEx::CtxChanges(p->Ctx), b), TCL_VOLATILE);
 		return rc; }
 
 	case DB_CLOSE: {
@@ -1426,9 +1426,9 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		collate->Script = (char *)&collate[1];
 		p->Collates = collate;
 		_memcpy(collate->Script, script, scriptLength+1);
-		if (Main::CreateCollation(p->Ctx, name, TEXTENCODE_UTF8, collate, TclSqlCollate))
+		if (DataEx::CreateCollation(p->Ctx, name, TEXTENCODE_UTF8, collate, TclSqlCollate))
 		{
-			Tcl_SetResult(interp, (char *)Main::ErrMsg(p->Ctx), TCL_VOLATILE);
+			Tcl_SetResult(interp, (char *)DataEx::ErrMsg(p->Ctx), TCL_VOLATILE);
 			return TCL_ERROR;
 		}
 		return rc; }
@@ -1446,7 +1446,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			Tcl_DecrRefCount(p->CollateNeeded);
 		p->CollateNeeded = Tcl_DuplicateObj((char *)args[2]);
 		Tcl_IncrRefCount(p->CollateNeeded);
-		Main::CollationNeeded(p->Ctx, p, TclCollateNeeded);
+		DataEx::CollationNeeded(p->Ctx, p, TclCollateNeeded);
 		return rc; }
 
 	case DB_COMMIT_HOOK: {
@@ -1479,10 +1479,10 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			if (p->Commit)
 			{
 				p->Interp = interp;
-				Main::CommitHook(p->Ctx, DbCommitHandler, p);
+				DataEx::CommitHook(p->Ctx, DbCommitHandler, p);
 			}
 			else
-				Main::CommitHook(p->Ctx, nullptr, nullptr);
+				DataEx::CommitHook(p->Ctx, nullptr, nullptr);
 		}
 		return rc; }
 
@@ -1550,7 +1550,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		int cols;// Number of columns in the table
 		if (rc2)
 		{
-			Tcl_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), 0);
+			Tcl_AppendResult(interp, "Error: ", DataEx::ErrMsg(p->Ctx), 0);
 			cols = 0;
 		}
 		else
@@ -1577,7 +1577,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		_free(sql);
 		if (rc2)
 		{
-			Tcl_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), nullptr);
+			Tcl_AppendResult(interp, "Error: ", DataEx::ErrMsg(p->Ctx), nullptr);
 			Vdbe::Finalize(stmt);
 			return TCL_ERROR;
 		}
@@ -1595,7 +1595,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			_fclose(in);
 			return TCL_ERROR;
 		}
-		Main::Exec(p->Ctx, "BEGIN", 0, 0, 0);
+		DataEx::Exec(p->Ctx, "BEGIN", 0, 0, 0);
 		char *commit = "COMMIT"; // How to commit changes
 		char *line; // A single line of input from the file
 		int lineno = 0; // Line number of input file
@@ -1645,7 +1645,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			free(line);
 			if (rc2 != RC_OK)
 			{
-				Tcl_AppendResult(interp, "Error: ", Main::ErrMsg(p->Ctx), 0);
+				Tcl_AppendResult(interp, "Error: ", DataEx::ErrMsg(p->Ctx), 0);
 				commit = "ROLLBACK";
 				break;
 			}
@@ -1653,7 +1653,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		free(colNames);
 		_fclose(in);
 		Vdbe::Finalize(stmt);
-		Main::Exec(p->Ctx, commit, 0, 0, 0);
+		DataEx::Exec(p->Ctx, commit, 0, 0, 0);
 
 		if (commit[0] == 'C')
 		{
@@ -1683,7 +1683,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		bool onoff;
 		if (Tcl_GetBoolean(interp, args[2], &onoff))
 			return TCL_ERROR;
-		Main::EnableLoadExtension(p->Ctx, onoff);
+		DataEx::EnableLoadExtension(p->Ctx, onoff);
 #else
 		Tcl_AppendResult(interp, "extension loading is turned off at compile-time", 0);
 		return TCL_ERROR;
@@ -1695,7 +1695,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		//
 		// Return the numeric error code that was returned by the most recent call to sqlite3_exec().
 		char b[100];
-		Tcl_SetResult(interp, _itoa(Main::ErrCode(p->Ctx), b), TCL_VOLATILE);
+		Tcl_SetResult(interp, _itoa(DataEx::ErrCode(p->Ctx), b), TCL_VOLATILE);
 		return rc; }
 
 	case DB_EXISTS: 
@@ -1815,11 +1815,11 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		func->Script = script;
 		Tcl_IncrRefCount(script);
 		func->UseEvalObjv = SafeToUseEvalObjv(interp, script);
-		rc2 = Main::CreateFunction(p->Ctx, name, args4, TEXTENCODE_UTF8, func, TclSqlFunc, 0, 0);
+		rc2 = DataEx::CreateFunction(p->Ctx, name, args4, TEXTENCODE_UTF8, func, TclSqlFunc, 0, 0);
 		if (rc2 != RC_OK)
 		{
 			rc = TCL_ERROR;
-			Tcl_SetResult(interp, (char *)Main::ErrMsg(p->Ctx), TCL_VOLATILE);
+			Tcl_SetResult(interp, (char *)DataEx::ErrMsg(p->Ctx), TCL_VOLATILE);
 		}
 		return rc; }
 
@@ -1852,7 +1852,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		//     $db interrupt
 		//
 		// Interrupt the execution of the inner-most SQL interpreter.  This causes the SQL statement to return an error of SQLITE_INTERRUPT.
-		Main::Interrupt(p->Ctx);
+		DataEx::Interrupt(p->Ctx);
 		return rc; }
 
 	case DB_NULLVALUE: {
@@ -1892,7 +1892,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			Tcl_WrongNumArgs(interp, 2, args, "");
 			return TCL_ERROR;
 		}
-		int64 rowid = Main::CtxLastInsertRowid(p->Ctx);
+		int64 rowid = DataEx::CtxLastInsertRowid(p->Ctx);
 		Tcl_SetResult(interpt, _itoa64(rowid, b), TCL_VOLATILE);
 		return rc; }
 
@@ -1927,10 +1927,10 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			if (p->Progress)
 			{
 				p->Interp = interp;
-				Main::ProgressHandler(p->Ctx, N, DbProgressHandler, p);
+				DataEx::ProgressHandler(p->Ctx, N, DbProgressHandler, p);
 			}
 			else
-				Main::ProgressHandler(p->Ctx, 0, nullptr, nullptr);
+				DataEx::ProgressHandler(p->Ctx, 0, nullptr, nullptr);
 #endif
 		}
 		else
@@ -1972,10 +1972,10 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			if (p->Profile)
 			{
 				p->Interp = interp;
-				Main::Profile(p->Ctx, DbProfileHandler, p);
+				DataEx::Profile(p->Ctx, DbProfileHandler, p);
 			}
 			else
-				Main::Profile(p->Ctx, nullptr, nullptr);
+				DataEx::Profile(p->Ctx, nullptr, nullptr);
 #endif
 		}
 		return rc; }
@@ -1995,7 +1995,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		rc2 = sqlite3_rekey(p->Ctx, pKey, nKey);
 		if (rc2)
 		{
-			Tcl_AppendResult(interp, Main::ErrStr(rc2), 0);
+			Tcl_AppendResult(interp, DataEx::ErrStr(rc2), 0);
 			rc = TCL_ERROR;
 		}
 #endif
@@ -2022,18 +2022,18 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			return TCL_ERROR;
 		}
 		Context *src;
-		rc2 = Main::Open_v2(srcFile, &src, VSystem::OPEN::OPEN_READONLY, 0);
+		rc2 = DataEx::Open_v2(srcFile, &src, VSystem::OPEN::OPEN_READONLY, 0);
 		if (rc2 != RC_OK)
 		{
-			Tcl_AppendResult(interp, "cannot open source database: ", Main::ErrMsg(src), nullptr);
-			Main::Close(src);
+			Tcl_AppendResult(interp, "cannot open source database: ", DataEx::ErrMsg(src), nullptr);
+			DataEx::Close(src);
 			return TCL_ERROR;
 		}
 		Backup *backup = Backup::Init(p->Ctx, destDb, src, "main");
 		if (!backup)
 		{
-			Tcl_AppendResult(interp, "restore failed: ", Main::ErrMsg(p->Ctx), nullptr);
-			Main::Close(src);
+			Tcl_AppendResult(interp, "restore failed: ", DataEx::ErrMsg(p->Ctx), nullptr);
+			DataEx::Close(src);
 			return TCL_ERROR;
 		}
 		int timeout = 0;
@@ -2042,7 +2042,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			if (rc2 == RC_BUSY)
 			{
 				if (timeout++ >= 3) break;
-				Main::Sleep(100);
+				DataEx::Sleep(100);
 			}
 		}
 		Backup::Finish(backup);
@@ -2055,10 +2055,10 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		}
 		else
 		{
-			Tcl_AppendResult(interp, "restore failed: ", Main::ErrMsg(p->Ctx), nullptr);
+			Tcl_AppendResult(interp, "restore failed: ", DataEx::ErrMsg(p->Ctx), nullptr);
 			rc = TCL_ERROR;
 		}
-		Main::Close(src);
+		DataEx::Close(src);
 		return rc; }
 
 	case DB_STATUS: {
@@ -2094,7 +2094,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 		}
 		int ms;
 		if (Tcl_GetInt(interp, args[2], &ms)) return TCL_ERROR;
-		Main::BusyTimeout(p->Ctx, ms);
+		DataEx::BusyTimeout(p->Ctx, ms);
 		return rc; }
 
 	case DB_TOTAL_CHANGES: {
@@ -2106,7 +2106,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			Tcl_WrongNumArgs(interp, 2, args, "");
 			return TCL_ERROR;
 		}
-		Tcl_SetResult(interp, _itoa(Main::CtxTotalChanges(p->Ctx), b), TCL_VOLATILE);
+		Tcl_SetResult(interp, _itoa(DataEx::CtxTotalChanges(p->Ctx), b), TCL_VOLATILE);
 		return rc; }
 
 	case DB_TRACE: {
@@ -2141,10 +2141,10 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			if (p->Trace)
 			{
 				p->Interp = interp;
-				Main::Trace(p->Ctx, DbTraceHandler, p);
+				DataEx::Trace(p->Ctx, DbTraceHandler, p);
 			}
 			else
-				Main::Trace(p->Ctx, nullptr, nullptr);
+				DataEx::Trace(p->Ctx, nullptr, nullptr);
 #endif
 		}
 		return rc; }
@@ -2180,11 +2180,11 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 
 		// Run the SQLite BEGIN command to open a transaction or savepoint.
 		p->DisableAuth++;
-		rc2 = Main::Exec(p->Ctx, begin, 0, 0, 0);
+		rc2 = DataEx::Exec(p->Ctx, begin, 0, 0, 0);
 		p->DisableAuth--;
 		if (rc2 != RC_OK)
 		{
-			Tcl_AppendResult(interp, Main::ErrMsg(p->Ctx), nullptr);
+			Tcl_AppendResult(interp, DataEx::ErrMsg(p->Ctx), nullptr);
 			return TCL_ERROR;
 		}
 		p->Transactions++;
@@ -2229,9 +2229,9 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 				Tcl_IncrRefCount(p->UnlockNotify);
 			}
 
-			if (Main::UnlockNotify(p->Ctx, notify, notifyArg))
+			if (DataEx::UnlockNotify(p->Ctx, notify, notifyArg))
 			{
-				Tcl_AppendResult(interp, Main::ErrMsg(p->Ctx), nullptr);
+				Tcl_AppendResult(interp, DataEx::ErrMsg(p->Ctx), nullptr);
 				rc = TCL_ERROR;
 			}
 		}
@@ -2273,9 +2273,9 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 				Tcl_IncrRefCount(*hook);
 			}
 		}
-		Main::UpdateHook(p->Ctx, (p->UpdateHook?DbUpdateHandler:0), p);
-		Main::RollbackHook(p->Ctx, (p->RollbackHook?DbRollbackHandler:0), p);
-		Main::WalHook(p->Ctx, (p->WalHook?DbWalHandler:0), p);
+		DataEx::UpdateHook(p->Ctx, (p->UpdateHook?DbUpdateHandler:0), p);
+		DataEx::RollbackHook(p->Ctx, (p->RollbackHook?DbRollbackHandler:0), p);
+		DataEx::WalHook(p->Ctx, (p->WalHook?DbWalHandler:0), p);
 		return rc; }
 */
 
@@ -2428,18 +2428,18 @@ __device__ static int DbMain(void *cd, Tcl_Interp *interp, int argc, const char 
 	_memset(p, 0, sizeof(*p));
 	char *fileName = (char *)args[2];
 	//fileName = Tcl_TranslateFileName(interp, fileName, &translatedFilename);
-	RC rc = Main::Open_v2(fileName, &p->Ctx, flags, vfsName);
+	RC rc = DataEx::Open_v2(fileName, &p->Ctx, flags, vfsName);
 	if (p->Ctx)
 	{
-		if (Main::ErrCode(p->Ctx) != RC_OK)
+		if (DataEx::ErrCode(p->Ctx) != RC_OK)
 		{
-			errMsg = _mprintf("%s", Main::ErrMsg(p->Ctx));
-			Main::Close(p->Ctx);
+			errMsg = _mprintf("%s", DataEx::ErrMsg(p->Ctx));
+			DataEx::Close(p->Ctx);
 			p->Ctx = nullptr;
 		}
 	}
 	else
-		errMsg = _mprintf("%s", Main::ErrStr(rc));
+		errMsg = _mprintf("%s", DataEx::ErrStr(rc));
 #ifdef HAS_CODEC
 	if (p->Ctx)
 		sqlite3_key(p->Ctx, key, keyLength);

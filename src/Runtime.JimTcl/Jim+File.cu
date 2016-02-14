@@ -315,7 +315,7 @@ __device__ static int file_cmd_delete(Jim_Interp *interp, int argc, Jim_Obj *con
 	}
 	while (argc--) {
 		const char *path = Jim_String(argv[0]);
-		if (_unlink(path) == -1 && errno != ENOENT) {
+		if (_unlink(path) == -1 && __errno != ENOENT) {
 			if (__rmdir(path) == -1)
 				if (!force || Jim_EvalPrefix(interp, "file delete force", 1, argv) != JIM_OK) { // Maybe try using the script helper
 					Jim_SetResultFormatted(interp, "couldn't delete file \"%s\": %s", path, __strerror(__errno));

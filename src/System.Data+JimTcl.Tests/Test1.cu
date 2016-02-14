@@ -47,7 +47,6 @@ __device__ void *sqlite3TestTextToPtr(const char *z)
 	return p;
 }
 
-
 // A TCL command that returns the address of the sqlite* pointer for an sqlite connection instance.  Bad things happen if the
 // input is not an sqlite connection.
 __device__ static int get_sqlite_pointer(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
@@ -58,7 +57,7 @@ __device__ static int get_sqlite_pointer(ClientData clientData, Jim_Interp *inte
 		return JIM_ERROR;
 	}
 	Jim_CmdInfo cmdInfo;
-	if (!Jim_GetCommandInfo(interp, Jim_String(args[1]), &cmdInfo))
+	if (!Jim_GetCommandInfo(interp, args[1], &cmdInfo))
 	{
 		Jim_AppendResult(interp, "command not found: ", Jim_String(args[1]), nullptr);
 		return JIM_ERROR;
@@ -77,7 +76,7 @@ __device__ int GetDbPointer(Jim_Interp *interp, const char *a, Context **ctx)
 {
 	struct TclContext *p;
 	Jim_CmdInfo cmdInfo;
-	if (Jim_GetCommandInfo(interp, a, &cmdInfo))
+	if (Jim_GetCommandInfoStr(interp, a, &cmdInfo))
 	{
 		p = (struct TclContext *)cmdInfo.objClientData;
 		*ctx = p->Ctx;
@@ -162,10 +161,10 @@ __device__ const char *sqlite3TestErrorName(int rc)
 // Check a return value to make sure it agrees with the results from sqlite3_errcode.
 __device__ int sqlite3TestErrCode(Jim_Interp *interp, Context *ctx, int rc)
 {
-	if (THREADSAFE == 0 && rc != RC_MISUSE && rc != RC_OK && Main::ErrCode(ctx) != rc)
+	if (THREADSAFE == 0 && rc != RC_MISUSE && rc != RC_OK && DataEx::ErrCode(ctx) != rc)
 	{
 		char b[200];
-		int r2 = Main::ErrCode(ctx);
+		int r2 = DataEx::ErrCode(ctx);
 		_sprintf(b, "error code %s (%d) does not match sqlite3_errcode %s (%d)", t1ErrorName(rc), rc, t1ErrorName(r2), r2);
 		Jim_ResetResult(interp);
 		Jim_AppendResult(interp, b, nullptr);
@@ -266,7 +265,7 @@ __device__ static int test_exec_printf(ClientData notUsed, Jim_Interp *interp, i
 	TextBuilder str;
 	TextBuilder::Init(&str);
 	char *err = nullptr;
-	RC rc = Main::Exec(ctx, sql, exec_printf_cb, &str, &err);
+	RC rc = DataEx::Exec(ctx, sql, exec_printf_cb, &str, &err);
 	_free(sql);
 	char b[30];
 	_sprintf(b, "%d", rc);
@@ -305,7 +304,7 @@ __device__ static int test_exec_hex(ClientData notUsed, Jim_Interp *interp, int 
 	TextBuilder str;
 	TextBuilder::Init(&str);
 	char *err = nullptr;
-	RC rc = Main::Exec(ctx, sql, exec_printf_cb, &str, &err);
+	RC rc = DataEx::Exec(ctx, sql, exec_printf_cb, &str, &err);
 	char b[30];
 	_sprintf(b, "%d", rc);
 	Jim_AppendElement(interp, b);
@@ -371,7 +370,7 @@ __device__ static int test_exec(ClientData notUsed, Jim_Interp *interp, int argc
 	TextBuilder str;
 	TextBuilder::Init(&str);
 	char *err = nullptr;
-	RC rc = Main::Exec(ctx, sql, exec_printf_cb, &str, &err);
+	RC rc = DataEx::Exec(ctx, sql, exec_printf_cb, &str, &err);
 	_free(sql);
 	char b[30];
 	_sprintf(b, "%d", rc);
@@ -396,7 +395,7 @@ __device__ static int test_exec_nr(ClientData notUsed, Jim_Interp *interp, int a
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::Exec(ctx, Jim_String(args[2]), nullptr, nullptr, &err);
+	RC rc = DataEx::Exec(ctx, Jim_String(args[2]), nullptr, nullptr, &err);
 	if (sqlite3TestErrCode(interp, ctx, rc)) return JIM_ERROR;
 	return JIM_OK;
 }
@@ -516,7 +515,7 @@ __device__ static int test_last_rowid(ClientData notUsed, Jim_Interp *interp, in
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	char b[30];
-	_sprintf(b, "%lld", Main::CtxLastInsertRowid(ctx));
+	_sprintf(b, "%lld", DataEx::CtxLastInsertRowid(ctx));
 	Jim_AppendResult(interp, b, nullptr);
 	return RC_OK;
 }
@@ -573,7 +572,7 @@ __device__ static int sqlite_test_close(ClientData notUsed, Jim_Interp *interp, 
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::Close(ctx);
+	RC rc = DataEx::Close(ctx);
 	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
@@ -669,7 +668,7 @@ __device__ static void sqlite3ExecFunc(FuncContext *fctx, int argc, Mem **args)
 {
 	struct dstr x;
 	_memset(&x, 0, sizeof(x));
-	Main::Exec((Context *)Vdbe::User_Data(fctx), (char *)Vdbe::Value_Text(args[0]), execFuncCallback, &x, 0);
+	DataEx::Exec((Context *)Vdbe::User_Data(fctx), (char *)Vdbe::Value_Text(args[0]), execFuncCallback, &x, 0);
 	Vdbe::Result_Text(fctx, x.z, x.Used, DESTRUCTOR_TRANSIENT);
 	_free(x.z);
 }
@@ -768,17 +767,17 @@ __device__ static int test_create_function(ClientData notUsed, Jim_Interp *inter
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateFunction(ctx, "x_coalesce", -1, TEXTENCODE_ANY, 0, t1_ifnullFunc, 0, 0);
+	RC rc = DataEx::CreateFunction(ctx, "x_coalesce", -1, TEXTENCODE_ANY, 0, t1_ifnullFunc, 0, 0);
 	if (rc == RC_OK)
-		rc = Main::CreateFunction(ctx, "hex8", 1, TEXTENCODE_ANY, 0, hex8Func, 0, 0);
+		rc = DataEx::CreateFunction(ctx, "hex8", 1, TEXTENCODE_ANY, 0, hex8Func, 0, 0);
 #ifndef OMIT_UTF16
 	if (rc == RC_OK)
-		rc = Main::CreateFunction(ctx, "hex16", 1, TEXTENCODE_ANY, 0, hex16Func, 0, 0);
+		rc = DataEx::CreateFunction(ctx, "hex16", 1, TEXTENCODE_ANY, 0, hex16Func, 0, 0);
 #endif
 	if (rc == RC_OK)
-		rc = Main::CreateFunction(ctx, "tkt2213func", 1, TEXTENCODE_ANY, 0, tkt2213Function, 0, 0);
+		rc = DataEx::CreateFunction(ctx, "tkt2213func", 1, TEXTENCODE_ANY, 0, tkt2213Function, 0, 0);
 	if (rc == RC_OK)
-		rc = Main::CreateFunction(ctx, "pointer_change", 4, TEXTENCODE_ANY, 0, ptrChngFunction, 0, 0);
+		rc = DataEx::CreateFunction(ctx, "pointer_change", 4, TEXTENCODE_ANY, 0, ptrChngFunction, 0, 0);
 
 #ifndef OMIT_UTF16
 	// Use the sqlite3_create_function16() API here. Mainly for fun, but also because it is not tested anywhere else.
@@ -791,7 +790,7 @@ __device__ static int test_create_function(ClientData notUsed, Jim_Interp *inter
 		if (ctx->MallocFailed)
 			rc = RC_NOMEM;
 		else
-			rc = Main::CreateFunction16(ctx, utf16, 1, TEXTENCODE_UTF16, ctx, sqlite3ExecFunc, 0, 0);
+			rc = DataEx::CreateFunction16(ctx, utf16, 1, TEXTENCODE_UTF16, ctx, sqlite3ExecFunc, 0, 0);
 		Vdbe::ValueFree(val);
 		_mutex_leave(ctx->Mutex);
 	}
@@ -876,12 +875,12 @@ __device__ static int test_create_aggregate(ClientData notUsed, Jim_Interp *inte
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateFunction(ctx, "x_count", 0, TEXTENCODE_UTF8, nullptr, nullptr, t1CountStep, t1CountFinalize);
+	RC rc = DataEx::CreateFunction(ctx, "x_count", 0, TEXTENCODE_UTF8, nullptr, nullptr, t1CountStep, t1CountFinalize);
 	if (rc == RC_OK)
-		rc = Main::CreateFunction(ctx, "x_count", 1, TEXTENCODE_UTF8, nullptr, nullptr, t1CountStep, t1CountFinalize);
+		rc = DataEx::CreateFunction(ctx, "x_count", 1, TEXTENCODE_UTF8, nullptr, nullptr, t1CountStep, t1CountFinalize);
 #ifndef OMIT_DEPRECATED
 	//if (rc == RC_OK)
-	//	rc = Main::CreateFunction(ctx, "legacy_count", 0, TEXTENCODE_ANY, nullptr, nullptr, legacyCountStep, legacyCountFinalize);
+	//	rc = DataEx::CreateFunction(ctx, "legacy_count", 0, TEXTENCODE_ANY, nullptr, nullptr, legacyCountStep, legacyCountFinalize);
 #endif
 	if (sqlite3TestErrCode(interp, ctx, rc)) return JIM_ERROR;
 	Jim_SetResultString(interp, t1ErrorName(rc), -1);
@@ -1116,7 +1115,7 @@ __device__ static int test_enable_shared(ClientData clientData, Jim_Interp *inte
 		RC rc = Btree::EnableSharedCache(enable);
 		if (rc != RC_OK)
 		{
-			Jim_SetResultString(interp, (char *)Main::ErrStr(rc), -1);
+			Jim_SetResultString(interp, (char *)DataEx::ErrStr(rc), -1);
 			return JIM_ERROR;
 		}
 	}
@@ -1137,7 +1136,7 @@ __device__ static int test_extended_result_codes(ClientData clientData, Jim_Inte
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	bool enable;
 	if (Jim_GetBoolean(interp, args[2], &enable)) return JIM_ERROR;
-	Main::ExtendedResultCodes(ctx, enable);
+	DataEx::ExtendedResultCodes(ctx, enable);
 	return JIM_OK;
 }
 
@@ -1173,7 +1172,7 @@ __device__ static int test_table_column_metadata(ClientData clientData, Jim_Inte
 
 	if (rc != RC_OK)
 	{
-		Jim_AppendResult(interp, Main::ErrMsg(ctx), nullptr);
+		Jim_AppendResult(interp, DataEx::ErrMsg(ctx), nullptr);
 		return JIM_ERROR;
 	}
 	Jim_Obj *r = Jim_NewObj();
@@ -1364,13 +1363,13 @@ __device__ static int test_create_collation_v2(ClientData clientData, Jim_Interp
 	p->Interp = interp;
 	Jim_IncrRefCount(p->Cmp);
 	Jim_IncrRefCount(p->Del);
-	RC rc = Main::CreateCollation_v2(ctx, Jim_String(args[2]), (TEXTENCODE)16, (void *)p, testCreateCollationCmp, testCreateCollationDel);
+	RC rc = DataEx::CreateCollation_v2(ctx, Jim_String(args[2]), (TEXTENCODE)16, (void *)p, testCreateCollationCmp, testCreateCollationDel);
 	if (rc != RC_MISUSE)
 	{
 		Jim_AppendResult(interp, "sqlite3_create_collate_v2() failed to detect an invalid encoding", nullptr);
 		return JIM_ERROR;
 	}
-	rc = Main::CreateCollation_v2(ctx, Jim_String(args[2]), TEXTENCODE_UTF8, (void *)p, testCreateCollationCmp, testCreateCollationDel);
+	rc = DataEx::CreateCollation_v2(ctx, Jim_String(args[2]), TEXTENCODE_UTF8, (void *)p, testCreateCollationCmp, testCreateCollationDel);
 	return JIM_OK;
 }
 
@@ -1466,7 +1465,7 @@ __device__ static int test_create_function_v2(ClientData clientData, Jim_Interp 
 	if (p->Step) Jim_IncrRefCount(p->Step); 
 	if (p->Final) Jim_IncrRefCount(p->Final); 
 	if (p->Destroy) Jim_IncrRefCount(p->Destroy); 
-	RC rc = Main::CreateFunction_v2(ctx, funcName, argc2, (TEXTENCODE)enc, (void *)p, 
+	RC rc = DataEx::CreateFunction_v2(ctx, funcName, argc2, (TEXTENCODE)enc, (void *)p, 
 		(p->Func ? cf2Func : nullptr),
 		(p->Step ? cf2Step : nullptr),
 		(p->Final ? cf2Final : nullptr),
@@ -1493,7 +1492,7 @@ __device__ static int test_load_extension(ClientData clientData, Jim_Interp *int
 	char *procName = (argc == 4 ? (char *)Jim_String(args[3]) : nullptr);
 	// Extract the C database handle from the Tcl command name
 	Jim_CmdInfo cmdInfo;
-	if (!Jim_GetCommandInfo(interp, dbName, &cmdInfo))
+	if (!Jim_GetCommandInfo(interp, args[1], &cmdInfo))
 	{
 		Jim_AppendResult(interp, "command not found: ", dbName, nullptr);
 		return JIM_ERROR;
@@ -1508,7 +1507,7 @@ __device__ static int test_load_extension(ClientData clientData, Jim_Interp *int
 	rc = (int)RC_ERROR;
 	err = _mprintf("this build omits sqlite3_load_extension()");
 #else
-	rc = (int)Main::LoadExtension(ctx, fileName, procName, &err);
+	rc = (int)DataEx::LoadExtension(ctx, fileName, procName, &err);
 #endif
 	if (rc != RC_OK)
 	{
@@ -1533,7 +1532,7 @@ __device__ static int test_enable_load(ClientData clientData, Jim_Interp *interp
 
 	// Extract the C database handle from the Tcl command name
 	Jim_CmdInfo cmdInfo;
-	if (!Jim_GetCommandInfo(interp, dbName, &cmdInfo))
+	if (!Jim_GetCommandInfo(interp, args[1], &cmdInfo))
 	{
 		Jim_AppendResult(interp, "command not found: ", dbName, nullptr);
 		return JIM_ERROR;
@@ -1549,7 +1548,7 @@ __device__ static int test_enable_load(ClientData clientData, Jim_Interp *interp
 	Jim_AppendResult(interp, "this build omits sqlite3_load_extension()");
 	return JIM_ERROR;
 #else
-	Main::EnableLoadExtension(ctx, onoff);
+	DataEx::EnableLoadExtension(ctx, onoff);
 	return JIM_OK;
 #endif
 }
@@ -1605,10 +1604,10 @@ __device__ static int test_register_func(ClientData notUsed, Jim_Interp *interp,
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateFunction(ctx, Jim_String(args[2]), -1, TEXTENCODE_UTF8, nullptr, testFunc, nullptr, nullptr);
+	RC rc = DataEx::CreateFunction(ctx, Jim_String(args[2]), -1, TEXTENCODE_UTF8, nullptr, testFunc, nullptr, nullptr);
 	if (rc != 0)
 	{
-		Jim_AppendResult(interp, Main::ErrStr(rc), nullptr);
+		Jim_AppendResult(interp, DataEx::ErrStr(rc), nullptr);
 		return JIM_ERROR;
 	}
 	if (sqlite3TestErrCode(interp, ctx, rc)) return JIM_ERROR;
@@ -1816,7 +1815,7 @@ __device__ static int test_changes(ClientData clientData, Jim_Interp *interp, in
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	Jim_SetResultInt(interp, Main::CtxChanges(ctx));
+	Jim_SetResultInt(interp, DataEx::CtxChanges(ctx));
 	return JIM_OK;
 }
 
@@ -1858,7 +1857,7 @@ __device__ static int test_bind(ClientData notUsed, Jim_Interp *interp, int argc
 	{
 		char buf[50];
 		_sprintf(buf, "(%d) ", rc);
-		Jim_AppendResult(interp, buf, Main::ErrStr(rc), nullptr);
+		Jim_AppendResult(interp, buf, DataEx::ErrStr(rc), nullptr);
 		return JIM_ERROR;
 	}
 	return JIM_OK;
@@ -1924,11 +1923,11 @@ __device__ static int test_collate(ClientData clientData, Jim_Interp *interp, in
 	bool val;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	if (Jim_GetBoolean(interp, args[2], &val) != JIM_OK) return JIM_ERROR;
-	RC rc = Main::CreateCollation(ctx, "test_collate", TEXTENCODE_UTF8, (void *)TEXTENCODE_UTF8, (val ? test_collate_func : nullptr));
+	RC rc = DataEx::CreateCollation(ctx, "test_collate", TEXTENCODE_UTF8, (void *)TEXTENCODE_UTF8, (val ? test_collate_func : nullptr));
 	if (rc == RC_OK)
 	{
 		if (Jim_GetBoolean(interp, args[3], &val) != JIM_OK) return JIM_ERROR;
-		rc = Main::CreateCollation(ctx, "test_collate", TEXTENCODE_UTF16LE, (void *)TEXTENCODE_UTF16LE, (val ? test_collate_func : nullptr));
+		rc = DataEx::CreateCollation(ctx, "test_collate", TEXTENCODE_UTF16LE, (void *)TEXTENCODE_UTF16LE, (val ? test_collate_func : nullptr));
 		if (Jim_GetBoolean(interp, args[4], &val) != JIM_OK) return JIM_ERROR;
 #if 0
 		if (sqlite3_iMallocFail > 0) sqlite3_iMallocFail++;
@@ -1940,7 +1939,7 @@ __device__ static int test_collate(ClientData clientData, Jim_Interp *interp, in
 		if (ctx->MallocFailed)
 			rc = RC_NOMEM;
 		else
-			rc = Main::CreateCollation16(ctx, utf16, TEXTENCODE_UTF16BE, (void *)TEXTENCODE_UTF16BE, (val ? test_collate_func : nullptr));
+			rc = DataEx::CreateCollation16(ctx, utf16, TEXTENCODE_UTF16BE, (void *)TEXTENCODE_UTF16BE, (val ? test_collate_func : nullptr));
 		Vdbe::ValueFree(val2);
 		_mutex_leave(ctx->Mutex);
 	}
@@ -1970,7 +1969,7 @@ __device__ static void test_collate_needed_cb(void *ctx2, Context *ctx, TEXTENCO
 	for (z = (char *)name, i = 0; *z || z[1]; z++)
 		if (*z) _neededCollation[i++] = *z;
 	_neededCollation[i] = 0;
-	Main::CreateCollation(ctx, "test_collate", CTXENCODE(ctx), INT_TO_PTR(enc), test_collate_func);
+	DataEx::CreateCollation(ctx, "test_collate", CTXENCODE(ctx), INT_TO_PTR(enc), test_collate_func);
 }
 
 // Usage: add_test_collate_needed DB
@@ -1979,7 +1978,7 @@ __device__ static int test_collate_needed(ClientData clientData, Jim_Interp *int
 	if (argc != 2) goto bad_args;
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::CollationNeeded16(ctx, 0, test_collate_needed_cb);
+	RC rc = DataEx::CollationNeeded16(ctx, 0, test_collate_needed_cb);
 	_neededCollation[0] = 0;
 	if (sqlite3TestErrCode(interp, ctx, rc)) return JIM_ERROR;
 	return JIM_OK;
@@ -2014,8 +2013,8 @@ __device__ static int add_alignment_test_collations(ClientData clientData, Jim_I
 	{
 		Context *ctx;
 		if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-		Main::CreateCollation(ctx, "utf16_unaligned", TEXTENCODE_UTF16, nullptr, alignmentCollFunc);
-		Main::CreateCollation(ctx, "utf16_aligned", TEXTENCODE_UTF16_ALIGNED, nullptr, alignmentCollFunc);
+		DataEx::CreateCollation(ctx, "utf16_unaligned", TEXTENCODE_UTF16, nullptr, alignmentCollFunc);
+		DataEx::CreateCollation(ctx, "utf16_aligned", TEXTENCODE_UTF16_ALIGNED, nullptr, alignmentCollFunc);
 	}
 	return RC_OK;
 }
@@ -2092,13 +2091,13 @@ __device__ static int test_function(ClientData clientData, Jim_Interp *interp, i
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	if (Jim_GetBoolean(interp, args[2], &val) != JIM_OK) return JIM_ERROR;
 	if (val)
-		Main::CreateFunction(ctx, "test_function", 1, TEXTENCODE_UTF8, interp, test_function_utf8, 0, 0);
+		DataEx::CreateFunction(ctx, "test_function", 1, TEXTENCODE_UTF8, interp, test_function_utf8, 0, 0);
 	if (Jim_GetBoolean(interp, args[3], &val) != JIM_OK) return JIM_ERROR;
 	if (val)
-		Main::CreateFunction(ctx, "test_function", 1, TEXTENCODE_UTF16LE, interp, test_function_utf16le, 0, 0);
+		DataEx::CreateFunction(ctx, "test_function", 1, TEXTENCODE_UTF16LE, interp, test_function_utf16le, 0, 0);
 	if (Jim_GetBoolean(interp, args[4], &val) != JIM_OK) return JIM_ERROR;
 	if (val)
-		Main::CreateFunction(ctx, "test_function", 1, TEXTENCODE_UTF16BE, interp, test_function_utf16be, 0, 0);
+		DataEx::CreateFunction(ctx, "test_function", 1, TEXTENCODE_UTF16BE, interp, test_function_utf16be, 0, 0);
 	return JIM_OK;
 bad_args:
 	Jim_AppendResult(interp, "wrong # args: should be \"", Jim_String(args[0]), " <DB> <utf8> <utf16le> <utf16be>", nullptr);
@@ -2118,7 +2117,7 @@ __device__ static int test_errstr(ClientData clientData, Jim_Interp *interp, int
 	int i;
 	for (i = 0; i < 200; i++)
 		if (!_strcmp(t1ErrorName(i), code)) break;
-	Jim_SetResultString(interp, (char *)Main::ErrStr((RC)i), -1);
+	Jim_SetResultString(interp, (char *)DataEx::ErrStr((RC)i), -1);
 	return JIM_OK;
 }
 
@@ -2457,7 +2456,7 @@ __device__ static int test_sleep(ClientData clientData, Jim_Interp *interp, int 
 	}
 	int ms;
 	if (Jim_GetInt(interp, args[1], &ms)) return JIM_ERROR;
-	Jim_SetResultInt(interp, Main::Sleep(ms));
+	Jim_SetResultInt(interp, DataEx::Sleep(ms));
 	return JIM_OK;
 }
 
@@ -2473,7 +2472,7 @@ __device__ static int test_ex_errcode(ClientData clientData, Jim_Interp *interp,
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::ExtendedErrCode(ctx);
+	RC rc = DataEx::ExtendedErrCode(ctx);
 	Jim_AppendResult(interp, (char *)t1ErrorName(rc), nullptr);
 	return JIM_OK;
 }
@@ -2491,7 +2490,7 @@ __device__ static int test_errcode(ClientData clientData, Jim_Interp *interp, in
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::ErrCode(ctx);
+	RC rc = DataEx::ErrCode(ctx);
 	Jim_AppendResult(interp, (char *)t1ErrorName(rc), nullptr);
 	return JIM_OK;
 }
@@ -2508,7 +2507,7 @@ __device__ static int test_errmsg(ClientData clientData, Jim_Interp *interp, int
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	const char *err = Main::ErrMsg(ctx);
+	const char *err = DataEx::ErrMsg(ctx);
 	Jim_SetResultString(interp, err, -1);
 	return JIM_OK;
 }
@@ -2527,7 +2526,7 @@ __device__ static int test_errmsg16(ClientData clientData, Jim_Interp *interp, i
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	const void *err = Main::ErrMsg16(ctx);
+	const void *err = DataEx::ErrMsg16(ctx);
 	int bytes = _strlen16(err);
 	Jim_SetResultByteArray(interp, err, bytes);
 #endif
@@ -2569,7 +2568,7 @@ __device__ static int test_prepare(ClientData clientData, Jim_Interp *interp, in
 	{
 		_assert(!stmt);
 		_sprintf(buf, "(%d) ", rc);
-		Jim_AppendResult(interp, buf, Main::ErrMsg(ctx), nullptr);
+		Jim_AppendResult(interp, buf, DataEx::ErrMsg(ctx), nullptr);
 		return JIM_ERROR;
 	}
 	if (stmt)
@@ -2615,7 +2614,7 @@ __device__ static int test_prepare_v2(ClientData clientData, Jim_Interp *interp,
 	{
 		_assert(!stmt);
 		_sprintf(buf, "(%d) ", rc);
-		Jim_AppendResult(interp, buf, Main::ErrMsg(ctx), nullptr);
+		Jim_AppendResult(interp, buf, DataEx::ErrMsg(ctx), nullptr);
 		return JIM_ERROR;
 	}
 	if (stmt)
@@ -2649,7 +2648,7 @@ __device__ static int test_prepare_tkt3134(ClientData clientData, Jim_Interp *in
 	{
 		_assert(!stmt);
 		_sprintf(buf, "(%d) ", rc);
-		Jim_AppendResult(interp, buf, Main::ErrMsg(ctx), nullptr);
+		Jim_AppendResult(interp, buf, DataEx::ErrMsg(ctx), nullptr);
 		return JIM_ERROR;
 	}
 	if (stmt)
@@ -2746,7 +2745,7 @@ __device__ static int test_open(ClientData clientData, Jim_Interp *interp, int a
 	}
 	const char *filename = (argc > 1 ? Jim_String(args[1]) : nullptr);
 	Context *ctx;
-	Main::Open(filename, &ctx);
+	DataEx::Open(filename, &ctx);
 	char buf[100];
 	if (sqlite3TestMakePointerStr(interp, buf, ctx)) return JIM_ERROR;
 	Jim_AppendResult(interp, buf, nullptr);
@@ -2803,7 +2802,7 @@ __device__ static int test_open_v2(ClientData clientData, Jim_Interp *interp, in
 	}
 
 	Context *ctx;
-	rc = (int)Main::Open_v2(filename, &ctx, flags2, vfs);
+	rc = (int)DataEx::Open_v2(filename, &ctx, flags2, vfs);
 	char buf[100];
 	if (sqlite3TestMakePointerStr(interp, buf, ctx)) return JIM_ERROR;
 	Jim_AppendResult(interp, buf, nullptr);
@@ -2821,7 +2820,7 @@ __device__ static int test_open16(ClientData clientData, Jim_Interp *interp, int
 	}
 	const void *filename = Jim_GetByteArray(args[1], 0);
 	Context *ctx;
-	Main::Open16(filename, &ctx);
+	DataEx::Open16(filename, &ctx);
 
 	char buf[100];
 	if (sqlite3TestMakePointerStr(interp, buf, ctx)) return JIM_ERROR;
@@ -3113,7 +3112,7 @@ __device__ static int test_interrupt(ClientData clientData, Jim_Interp *interp, 
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	Main::Interrupt(ctx);
+	DataEx::Interrupt(ctx);
 	return JIM_OK;
 }
 
@@ -3148,7 +3147,7 @@ __device__ static int test_stack_used(ClientData clientData, Jim_Interp *interp,
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	prepStack();
-	Main::Exec(ctx, Jim_String(args[2]), 0, 0, 0);
+	DataEx::Exec(ctx, Jim_String(args[2]), 0, 0, 0);
 	int i;
 	for (i = 65535; i >= 0 && ((uint32 *)_stack_baseline)[-i] == 0xdeadbeef; i--) { }
 	Jim_SetResultInt(interp, i*4);
@@ -3168,7 +3167,7 @@ __device__ static int delete_function(ClientData clientData, Jim_Interp *interp,
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateFunction(ctx, Jim_String(args[2]), -1, TEXTENCODE_UTF8, 0, 0, 0, 0);
+	RC rc = DataEx::CreateFunction(ctx, Jim_String(args[2]), -1, TEXTENCODE_UTF8, 0, 0, 0, 0);
 	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
@@ -3186,7 +3185,7 @@ __device__ static int delete_collation(ClientData clientData, Jim_Interp *interp
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::CreateCollation(ctx, Jim_String(args[2]), TEXTENCODE_UTF8, nullptr, nullptr);
+	RC rc = DataEx::CreateCollation(ctx, Jim_String(args[2]), TEXTENCODE_UTF8, nullptr, nullptr);
 	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
@@ -3224,7 +3223,7 @@ __device__ static int test_busy_timeout(ClientData clientData, Jim_Interp *inter
 	int ms;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[2], &ms)) return JIM_ERROR;
-	RC rc = Main::BusyTimeout(ctx, ms);
+	RC rc = DataEx::BusyTimeout(ctx, ms);
 	Jim_AppendResult(interp, sqlite3TestErrorName(rc), nullptr);
 	return JIM_OK;
 }
@@ -3283,7 +3282,7 @@ __device__ static int test_db_release_memory(ClientData clientData, Jim_Interp *
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	int rc = (int)Main::CtxReleaseMemory(ctx);
+	int rc = (int)DataEx::CtxReleaseMemory(ctx);
 	Jim_SetResultInt(interp, rc);
 	return JIM_OK;
 }
@@ -3301,7 +3300,7 @@ __device__ static int test_db_filename(ClientData clientData, Jim_Interp *interp
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const char *dbName = Jim_String(args[2]);
-	Jim_AppendResult(interp, Main::CtxFilename(ctx, dbName), nullptr);
+	Jim_AppendResult(interp, DataEx::CtxFilename(ctx, dbName), nullptr);
 	return JIM_OK;
 }
 
@@ -3318,7 +3317,7 @@ __device__ static int test_db_readonly(ClientData clientData, Jim_Interp *interp
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const char *dbName = Jim_String(args[2]);
-	Jim_SetResultInt(interp, Main::CtxReadonly(ctx, dbName));
+	Jim_SetResultInt(interp, DataEx::CtxReadonly(ctx, dbName));
 	return JIM_OK;
 }
 
@@ -3551,13 +3550,13 @@ __device__ static int file_control_test(ClientData clientData, Jim_Interp *inter
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	int argId = 0;
-	RC rc = Main::FileControl(ctx, nullptr, (VFile::FCNTL)0, &argId);
+	RC rc = DataEx::FileControl(ctx, nullptr, (VFile::FCNTL)0, &argId);
 	_assert(rc == RC_NOTFOUND);
-	rc = Main::FileControl(ctx, "notadatabase", VFile::FCNTL_LOCKSTATE, &argId);
+	rc = DataEx::FileControl(ctx, "notadatabase", VFile::FCNTL_LOCKSTATE, &argId);
 	_assert(rc == RC_ERROR);
-	rc = Main::FileControl(ctx, "main", (VFile::FCNTL)-1, &argId);
+	rc = DataEx::FileControl(ctx, "main", (VFile::FCNTL)-1, &argId);
 	_assert(rc == RC_NOTFOUND);
-	rc = Main::FileControl(ctx, "temp", (VFile::FCNTL)-1, &argId);
+	rc = DataEx::FileControl(ctx, "temp", (VFile::FCNTL)-1, &argId);
 	_assert(rc == RC_NOTFOUND || rc == RC_ERROR);
 	return JIM_OK;
 }
@@ -3575,7 +3574,7 @@ __device__ static int file_control_lasterrno_test(ClientData clientData, Jim_Int
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	int argId = 0;
-	RC rc = Main::FileControl(ctx, nullptr, VFile::FCNTL_LAST_ERRNO, &argId);
+	RC rc = DataEx::FileControl(ctx, nullptr, VFile::FCNTL_LAST_ERRNO, &argId);
 	if (rc)
 	{ 
 		Jim_SetResultInt(interp, rc); 
@@ -3606,7 +3605,7 @@ __device__ static int file_control_chunksize_test(ClientData clientData, Jim_Int
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx) || Jim_GetInt(interp, args[3], &size)) return JIM_ERROR;
 	const char *dbName = Jim_String(args[2]); // Db name ("main", "temp" etc.)
 	if (dbName[0] == '\0') dbName = nullptr;
-	RC rc = Main::FileControl(ctx, dbName, VFile::FCNTL_CHUNK_SIZE, (void *)&size);
+	RC rc = DataEx::FileControl(ctx, dbName, VFile::FCNTL_CHUNK_SIZE, (void *)&size);
 	if (rc)
 	{
 		Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
@@ -3630,7 +3629,7 @@ __device__ static int file_control_sizehint_test(ClientData clientData, Jim_Inte
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx) || Jim_GetWide(interp, args[3], &size)) return JIM_ERROR;
 	const char *dbName = Jim_String(args[2]); // Db name ("main", "temp" etc.)
 	if (dbName[0] == '\0') dbName = nullptr;
-	RC rc = Main::FileControl(ctx, dbName, VFile::FCNTL_SIZE_HINT, (void *)&size);
+	RC rc = DataEx::FileControl(ctx, dbName, VFile::FCNTL_SIZE_HINT, (void *)&size);
 	if (rc)
 	{
 		Jim_SetResultString(interp, (char *)sqlite3TestErrorName(rc), -1);
@@ -3671,14 +3670,14 @@ __device__ static int file_control_lockproxy_test(ClientData clientData, Jim_Int
 			return JIM_ERROR;
 		}
 		_sprintf(proxyPath, "%s/test.proxy", pwd);
-		int rc = (int)Main::FileControl(ctx, nullptr, VFile::FCNTL_SET_LOCKPROXYFILE, proxyPath);
+		int rc = (int)DataEx::FileControl(ctx, nullptr, VFile::FCNTL_SET_LOCKPROXYFILE, proxyPath);
 		if (rc)
 		{
 			Jim_SetResultInt(interp, rc); 
 			return JIM_ERROR;
 		}
 		char *testPath;
-		rc = (int)Main::FileControl(ctx, nullptr, VFile::FCNTL_GET_LOCKPROXYFILE, &testPath);
+		rc = (int)DataEx::FileControl(ctx, nullptr, VFile::FCNTL_GET_LOCKPROXYFILE, &testPath);
 		if (_strncmp(proxyPath, testPath, 11))
 		{
 			Jim_AppendResult(interp, "Lock proxy file did not match the previously assigned value", nullptr);
@@ -3689,7 +3688,7 @@ __device__ static int file_control_lockproxy_test(ClientData clientData, Jim_Int
 			Jim_SetResultInt(interp, rc);
 			return JIM_ERROR;
 		}
-		rc = (int)Main::FileControl(ctx, nullptr, VFile::FCNTL_SET_LOCKPROXYFILE, proxyPath);
+		rc = (int)DataEx::FileControl(ctx, nullptr, VFile::FCNTL_SET_LOCKPROXYFILE, proxyPath);
 		if (rc)
 		{
 			Jim_SetResultInt(interp, rc);
@@ -3715,7 +3714,7 @@ __device__ static int file_control_win32_av_retry(ClientData clientData, Jim_Int
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[2], &a[0])) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[3], &a[1])) return JIM_ERROR;
-	RC rc = Main::FileControl(ctx, nullptr, VFile::FCNTL_WIN32_AV_RETRY, (void *)a);
+	RC rc = DataEx::FileControl(ctx, nullptr, VFile::FCNTL_WIN32_AV_RETRY, (void *)a);
 	char z[100];
 	__snprintf(z, sizeof(z), "%d %d %d", rc, a[0], a[1]);
 	Jim_AppendResult(interp, z, nullptr);
@@ -3736,7 +3735,7 @@ __device__ static int file_control_persist_wal(ClientData clientData, Jim_Interp
 	bool persist;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	if (Jim_GetBoolean(interp, args[2], &persist)) return JIM_ERROR;
-	RC rc = Main::FileControl(ctx, nullptr, VFile::FCNTL_PERSIST_WAL, (void *)&persist);
+	RC rc = DataEx::FileControl(ctx, nullptr, VFile::FCNTL_PERSIST_WAL, (void *)&persist);
 	char z[100];
 	__snprintf(z, sizeof(z), "%d %d", rc, persist);
 	Jim_AppendResult(interp, z, nullptr);
@@ -3757,7 +3756,7 @@ __device__ static int file_control_powersafe_overwrite(ClientData clientData, Ji
 	int b;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	if (Jim_GetInt(interp, args[2], &b)) return JIM_ERROR;
-	RC rc = Main::FileControl(ctx, nullptr, VFile::FCNTL_POWERSAFE_OVERWRITE, (void *)&b);
+	RC rc = DataEx::FileControl(ctx, nullptr, VFile::FCNTL_POWERSAFE_OVERWRITE, (void *)&b);
 	char z[100];
 	__snprintf(z, sizeof(z), "%d %d", rc, b);
 	Jim_AppendResult(interp, z, nullptr);
@@ -3778,7 +3777,7 @@ __device__ static int file_control_vfsname(ClientData clientData, Jim_Interp *in
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const char *dbName = (argc == 3 ? Jim_String(args[2]) : "main");
 	char *vfsName = nullptr;
-	Main::FileControl(ctx, dbName, VFile::FCNTL_VFSNAME, (void *)&vfsName);
+	DataEx::FileControl(ctx, dbName, VFile::FCNTL_VFSNAME, (void *)&vfsName);
 	Jim_AppendResult(interp, vfsName, nullptr);
 	_free(vfsName);
 	return JIM_OK;  
@@ -3798,7 +3797,7 @@ __device__ static int file_control_tempfilename(ClientData clientData, Jim_Inter
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const char *dbName = (argc == 3 ? Jim_String(args[2]) : "main");
 	char *tName = nullptr;
-	Main::FileControl(ctx, dbName, VFile::FCNTL_TEMPFILENAME, (void *)&tName);
+	DataEx::FileControl(ctx, dbName, VFile::FCNTL_TEMPFILENAME, (void *)&tName);
 	Jim_AppendResult(interp, tName, nullptr);
 	_free(tName);
 	return JIM_OK;  
@@ -3872,7 +3871,7 @@ __device__ static int test_limit(ClientData clientData, Jim_Interp *interp, int 
 	}
 	int val;
 	if (Jim_GetInt(interp, args[3], &val)) return JIM_ERROR;
-	int rc = Main::Limit(ctx, id, val);
+	int rc = DataEx::Limit(ctx, id, val);
 	Jim_SetResultInt(interp, rc);
 	return JIM_OK;  
 }
@@ -3883,23 +3882,23 @@ __device__ static int test_limit(ClientData clientData, Jim_Interp *interp, int 
 // called with an out-of-range opcode.
 __device__ static int save_prng_state(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	RC rc = Main::TestControl((Main::TESTCTRL)9999);
+	RC rc = DataEx::TestControl((DataEx::TESTCTRL)9999);
 	_assert(rc == RC_OK);
-	rc = Main::TestControl((Main::TESTCTRL)-1);
+	rc = DataEx::TestControl((DataEx::TESTCTRL)-1);
 	_assert(rc == RC_OK);
-	Main::TestControl(Main::TESTCTRL_PRNG_SAVE);
+	DataEx::TestControl(DataEx::TESTCTRL_PRNG_SAVE);
 	return JIM_OK;
 }
 // tclcmd:  restore_prng_state
 __device__ static int restore_prng_state(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	Main::TestControl(Main::TESTCTRL_PRNG_RESTORE);
+	DataEx::TestControl(DataEx::TESTCTRL_PRNG_RESTORE);
 	return JIM_OK;
 }
 // tclcmd:  reset_prng_state
 __device__ static int reset_prng_state(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
-	Main::TestControl(Main::TESTCTRL_PRNG_RESET);
+	DataEx::TestControl(DataEx::TESTCTRL_PRNG_RESET);
 	return JIM_OK;
 }
 
@@ -3942,7 +3941,7 @@ __device__ static int test_unlock_notify(ClientData clientData, Jim_Interp *inte
 	}
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
-	RC rc = Main::UnlockNotify(ctx, test_unlock_notify_cb, (void *)interp);
+	RC rc = DataEx::UnlockNotify(ctx, test_unlock_notify_cb, (void *)interp);
 	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
@@ -3959,7 +3958,7 @@ __device__ static int test_wal_checkpoint(ClientData clientData, Jim_Interp *int
 	Context *ctx;
 	if (GetDbPointer(interp, Jim_String(args[1]), &ctx)) return JIM_ERROR;
 	const char *dbName = (argc == 3 ? Jim_String(args[2]) : nullptr);
-	RC rc = Main::WalCheckpoint(ctx, dbName);
+	RC rc = DataEx::WalCheckpoint(ctx, dbName);
 	Jim_SetResultString(interp, (char *)t1ErrorName(rc), -1);
 	return JIM_OK;
 }
@@ -3994,10 +3993,10 @@ __device__ static int test_wal_checkpoint_v2(ClientData clientData, Jim_Interp *
 
 	int logs = -555;
 	int ckpts = -555;
-	RC rc = Main::WalCheckpoint_v2(ctx, dbName, mode, &logs, &ckpts);
+	RC rc = DataEx::WalCheckpoint_v2(ctx, dbName, mode, &logs, &ckpts);
 	if (rc != RC_OK && rc != RC_BUSY)
 	{
-		Jim_SetResultString(interp, (char *)Main::ErrMsg(ctx), -1);
+		Jim_SetResultString(interp, (char *)DataEx::ErrMsg(ctx), -1);
 		return JIM_ERROR;
 	}
 
@@ -4061,7 +4060,7 @@ __device__ static int runAsObjProc(ClientData clientData, Jim_Interp *interp, in
 		return JIM_ERROR;
 	}
 	Jim_CmdInfo cmdInfo;
-	if (!Jim_GetCommandInfo(interp, Jim_String(args[1]), &cmdInfo))
+	if (!Jim_GetCommandInfo(interp, args[1], &cmdInfo))
 	{
 		Jim_AppendResult(interp, "command not found: ", Jim_String(args[1]), nullptr);
 		return JIM_ERROR;
@@ -4125,7 +4124,7 @@ __constant__ struct Verb
 	const char *Name;
 	int Id;
 } _verbs[] = {
-	{ "SQLITE_TESTCTRL_LOCALTIME_FAULT", Main::TESTCTRL_LOCALTIME_FAULT }, 
+	{ "SQLITE_TESTCTRL_LOCALTIME_FAULT", DataEx::TESTCTRL_LOCALTIME_FAULT }, 
 };
 __device__ static int test_test_control(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
 {
@@ -4140,7 +4139,7 @@ __device__ static int test_test_control(ClientData clientData, Jim_Interp *inter
 	int flagId = _verbs[verbId].Id;
 	switch (flagId)
 	{
-	case Main::TESTCTRL_LOCALTIME_FAULT: {
+	case DataEx::TESTCTRL_LOCALTIME_FAULT: {
 		if (argc != 3)
 		{
 			Jim_WrongNumArgs(interp, 2, args, "ONOFF");
@@ -4148,7 +4147,7 @@ __device__ static int test_test_control(ClientData clientData, Jim_Interp *inter
 		}
 		bool val;
 		if (Jim_GetBoolean(interp, args[2], &val)) return JIM_ERROR;
-		Main::TestControl(Main::TESTCTRL_LOCALTIME_FAULT, val);
+		DataEx::TestControl(DataEx::TESTCTRL_LOCALTIME_FAULT, val);
 		break; }
 	}
 	Jim_ResetResult(interp);
@@ -4307,7 +4306,7 @@ __device__ static int optimization_control(ClientData clientData, Jim_Interp *in
 			Jim_AppendResult(interp, " ", _opts[i].OptName);
 		return JIM_ERROR;
 	}
-	Main::TestControl(Main::TESTCTRL_OPTIMIZATIONS, ctx, mask);
+	DataEx::TestControl(DataEx::TESTCTRL_OPTIMIZATIONS, ctx, mask);
 	return JIM_OK;
 }
 

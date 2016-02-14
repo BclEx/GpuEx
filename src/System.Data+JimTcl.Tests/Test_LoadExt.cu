@@ -71,9 +71,9 @@ __device__ RC testloadext_init(Context *ctx, char **errMsg, const core_api_routi
 {
 	int err = 0;
 	EXTENSION_INIT2(api);
-	err |= Main::CreateFunction(ctx, "half", 1, TEXTENCODE_ANY, 0, HalfFunc, 0, 0);
-	err |= Main::CreateFunction(ctx, "sqlite3_status", 1, TEXTENCODE_ANY, 0, StatusFunc, 0, 0);
-	err |= Main::CreateFunction(ctx, "sqlite3_status", 2, TEXTENCODE_ANY, 0, StatusFunc, 0, 0);
+	err |= DataEx::CreateFunction(ctx, "half", 1, TEXTENCODE_ANY, 0, HalfFunc, 0, 0);
+	err |= DataEx::CreateFunction(ctx, "sqlite3_status", 1, TEXTENCODE_ANY, 0, StatusFunc, 0, 0);
+	err |= DataEx::CreateFunction(ctx, "sqlite3_status", 2, TEXTENCODE_ANY, 0, StatusFunc, 0, 0);
 	return (err ? RC_ERROR : RC_OK);
 }
 

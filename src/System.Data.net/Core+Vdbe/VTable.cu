@@ -37,7 +37,7 @@ namespace CORE_NAME
 				}
 			}
 		}
-		rc = Main::ApiExit(ctx, rc);
+		rc = DataEx::ApiExit(ctx, rc);
 		if (rc != RC_OK && destroy) destroy(aux);
 		_mutex_leave(ctx->Mutex);
 		return rc;
@@ -472,7 +472,7 @@ namespace CORE_NAME
 		Table *table;
 		if (!ctx->VTableCtx || !(table = ctx->VTableCtx->Table))
 		{
-			Main::Error(ctx, RC_MISUSE, nullptr);
+			DataEx::Error(ctx, RC_MISUSE, nullptr);
 			_mutex_leave(ctx->Mutex);
 			return SysEx_MISUSE_BKPT;
 		}
@@ -501,7 +501,7 @@ namespace CORE_NAME
 			}
 			else
 			{
-				Main::Error(ctx, RC_ERROR, (error ? "%s" : 0), error);
+				DataEx::Error(ctx, RC_ERROR, (error ? "%s" : 0), error);
 				_tagfree(ctx, error);
 				rc = RC_ERROR;
 			}
@@ -514,7 +514,7 @@ namespace CORE_NAME
 		}
 
 		_assert((rc & 0xff) == rc);
-		rc = Main::ApiExit(ctx, rc);
+		rc = DataEx::ApiExit(ctx, rc);
 		_mutex_leave(ctx->Mutex);
 		return rc;
 	}
@@ -758,7 +758,7 @@ namespace CORE_NAME
 			rc = SysEx_MISUSE_BKPT;
 			break;
 		}
-		if (rc != RC_OK) Main::Error(ctx, rc, nullptr);
+		if (rc != RC_OK) DataEx::Error(ctx, rc, nullptr);
 		_mutex_leave(ctx->Mutex);
 		return rc;
 	}

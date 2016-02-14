@@ -331,14 +331,14 @@ __device__ void installTestPCache(bool installFlag, unsigned discardChance, unsi
 	{
 		if (installFlag)
 		{
-			Main::Config(Main::CONFIG_GETPCACHE2, &_defaultPCache);
+			DataEx::Config(DataEx::CONFIG_GETPCACHE2, &_defaultPCache);
 			_assert(_defaultPCache != &_testPCache);
-			Main::Config(Main::CONFIG_PCACHE2, &_testPCache);
+			DataEx::Config(DataEx::CONFIG_PCACHE2, &_testPCache);
 		}
 		else
 		{
 			_assert(_defaultPCache);
-			Main::Config(Main::CONFIG_PCACHE2, &_defaultPCache);
+			DataEx::Config(DataEx::CONFIG_PCACHE2, &_defaultPCache);
 		}
 		_isInstalled = installFlag;
 	}

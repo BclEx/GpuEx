@@ -409,7 +409,7 @@ __device__ static int btree_from_db(ClientData notUsed, Jim_Interp *interp, int 
 		return JIM_ERROR;
 	}
 	Jim_CmdInfo info;
-	if (Jim_GetCommandInfo(interp, Jim_String(args[1]), &info) != 1)
+	if (Jim_GetCommandInfo(interp, args[1], &info) != 1)
 	{
 		Jim_AppendResult(interp, "No such db-handle: \"", args[1], "\"", nullptr);
 		return JIM_ERROR;
