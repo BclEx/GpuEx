@@ -83,7 +83,7 @@ RUNTIME_NAMEBEGIN
 	// Like malloc(), but remember the size of the allocation so that we can find it later using sqlite3MemSize().
 	//
 	// For this low-level routine, we are guaranteed that nByte>0 because cases of nByte<=0 will be intercepted and dealt with by higher level routines.
-	__device__ void *__allocsystem_alloc(size_t size)
+	__device__ void *MemAlloc(size_t size)
 {
 #ifdef RUNTIME_ALLOCSIZE
 	void *p = RUNTIME_ALLOC(size);
@@ -115,7 +115,7 @@ RUNTIME_NAMEBEGIN
 //
 // For this low-level routine, we already know that pPrior!=0 since cases where pPrior==0 will have been intecepted and dealt with
 // by higher-level routines.
-__device__ void __allocsystem_free(void *prior)
+__device__ void MemFree(void *prior)
 {
 #ifdef RUNTIME_ALLOCSIZE
 	RUNTIME_FREE(prior);
@@ -128,7 +128,7 @@ __device__ void __allocsystem_free(void *prior)
 }
 
 // Report the allocated size of a prior return from xMalloc() or xRealloc().
-__device__ size_t __allocsystem_size(void *prior)
+__device__ size_t MemSize(void *prior)
 {
 #ifdef RUNTIME_ALLOCSIZE
 	return (prior ? (int)RUNTIME_ALLOCSIZE(prior) : 0);
@@ -145,7 +145,7 @@ __device__ size_t __allocsystem_size(void *prior)
 // For this low-level interface, we know that pPrior!=0.  Cases where pPrior==0 while have been intercepted by higher-level routine and
 // redirected to xMalloc.  Similarly, we know that nByte>0 becauses cases where nByte<=0 will have been intercepted by higher-level
 // routines and redirected to xFree.
-__device__ void *__allocsystem_realloc(void *prior, size_t size)
+__device__ void *MemRealloc(void *prior, size_t size)
 {
 #ifdef RUNTIME_ALLOCSIZE
 	void *p = RUNTIME_REALLOC(prior, size);
@@ -169,17 +169,17 @@ __device__ void *__allocsystem_realloc(void *prior, size_t size)
 	else
 	{
 		//ASSERTCOVERAGE(sqlite3GlobalConfig.xLog != 0);
-		_printf("failed memory resize %u to %u bytes", __allocsystem_size(prior), size);
+		_printf("failed memory resize %u to %u bytes", MemSize(prior), size);
 	}
 	return (void *)p;
 #endif
 }
 
 // Round up a request size to the next valid allocation size.
-__device__ size_t __allocsystem_roundup(size_t size) { return _ROUND8(size); }
+__device__ size_t MemRoundup(size_t size) { return _ROUND8(size); }
 
 // Initialize this module.
-__device__ int __allocsystem_init(void *notUsed1)
+__device__ int MemInit(void *notUsed1)
 {
 #if defined(__APPLE__) && !defined(RUNTIME_WITHOUT_ZONEMALLOC)
 	if (_zoneMalloc)
@@ -207,11 +207,30 @@ __device__ int __allocsystem_init(void *notUsed1)
 }
 
 // Deinitialize this module.
-__device__ void __allocsystem_shutdown(void *notUsed1)
+__device__ void MemShutdown(void *notUsed1)
 {
 	UNUSED_PARAMETER(notUsed1);
 	return;
 }
+
+// This routine is the only routine in this file with external linkage.
+// Populate the low-level memory allocation function pointers in sqlite3GlobalConfig.m with pointers to the routines in this file.
+__constant__ static const _mem_methods _defaultMethods = {
+	MemAlloc,
+	MemFree,
+	MemRealloc,
+	MemSize,
+	MemRoundup,
+	MemInit,
+	MemShutdown,
+	nullptr
+};
+
+__device__ void __allocsystem_setdefault()
+{
+	__allocsystem = _defaultMethods;
+}
+
 #endif /* RUNTIME_ALLOC_SYSTEM */
 
 RUNTIME_NAMEEND

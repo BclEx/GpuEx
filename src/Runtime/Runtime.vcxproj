@@ -68,6 +68,7 @@
     <ClCompile Include="Runtime+Math.cu" />
     <ClCompile Include="Runtime+Mem0.cu" />
     <ClCompile Include="Runtime+Mem1.cu" />
+    <ClCompile Include="Runtime+Mutex.cu" />
     <ClCompile Include="Runtime+Mutex-gpu.cu" />
     <ClCompile Include="Runtime+Mutex-noop.cu" />
     <ClCompile Include="Runtime+Mutex-unix.cu" />
@@ -96,6 +97,7 @@
     <None Include="Runtime+Math.cu" />
     <None Include="Runtime+Mem0.cu" />
     <None Include="Runtime+Mem1.cu" />
+    <None Include="Runtime+Mutex.cu" />
     <None Include="Runtime+Mutex-gpu.cu" />
     <None Include="Runtime+Mutex-noop.cu" />
     <None Include="Runtime+Mutex-unix.cu" />

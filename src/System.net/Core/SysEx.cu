@@ -189,18 +189,18 @@ namespace CORE_NAME
 			TagBase_RuntimeStatics.FullMutex = true;
 			break; }
 		case CONFIG_MUTEX: { // Specify an alternative mutex implementation
-			TagBase_RuntimeStatics.Mutex = _va_arg(args, _mutex_methods *);
+			__mutexsystem = *_va_arg(args, _mutex_methods *);
 			break; }
 		case CONFIG_GETMUTEX: { // Retrieve the current mutex implementation
-			*_va_arg(args, _mutex_methods *) = *TagBase_RuntimeStatics.Mutex;
+			*_va_arg(args, _mutex_methods *) = __mutexsystem;
 			break; }
 #endif
 		case CONFIG_MALLOC: { // Specify an alternative malloc implementation
-			TagBase_RuntimeStatics.Mem = _va_arg(args, _mem_methods *);
+			__allocsystem = *_va_arg(args, _mem_methods *);
 			break; }
 		case CONFIG_GETMALLOC: { // Retrieve the current malloc() implementation
-			//if (!TagBase_RuntimeStatics.Mem.Malloc) sqlite3MemSetDefault();
-			*_va_arg(args, _mem_methods *) = *TagBase_RuntimeStatics.Mem;
+			if (!__allocsystem.Alloc) __allocsystem_setdefault();
+			*_va_arg(args, _mem_methods *) = __allocsystem;
 			break; }
 		case CONFIG_MEMSTATUS: { // Enable or disable the malloc status collection
 			TagBase_RuntimeStatics.Memstat = _va_arg(args, bool);

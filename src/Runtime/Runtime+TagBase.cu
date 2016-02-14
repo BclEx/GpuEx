@@ -14,8 +14,6 @@ RUNTIME_NAMEBEGIN
 	//
 	RUNTIME_DEFAULT_MEMSTATUS,	// Memstat
 	true,						// RuntimeMutex
-	nullptr,					// Mem
-	nullptr,					// Mutex
 	128,						// LookasideSize
 	500,						// Lookasides
 	(void *)nullptr,			// Scratch

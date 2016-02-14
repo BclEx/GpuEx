@@ -3,10 +3,12 @@
 #include <stdarg.h>
 RUNTIME_NAMEBEGIN
 
-	// Attempt to release up to n bytes of non-essential memory currently held by SQLite. An example of non-essential memory is memory used to
-	// cache database pages that are not currently in use.
-	// SoftHeapLimitEnforcer::This routine runs when the memory allocator sees that the total memory allocation is about to exceed the soft heap limit.
-	__device__ static int __alloc_releasememory(void *arg, int64 used, int allocSize)
+	__device__ _mem_methods __allocsystem;	// Low-level mem interface
+
+// Attempt to release up to n bytes of non-essential memory currently held by SQLite. An example of non-essential memory is memory used to
+// cache database pages that are not currently in use.
+// SoftHeapLimitEnforcer::This routine runs when the memory allocator sees that the total memory allocation is about to exceed the soft heap limit.
+__device__ static int __alloc_releasememory(void *arg, int64 used, int allocSize)
 {
 #ifdef ENABLE_MEMORY_MANAGEMENT
 	return sqlite3PcacheReleaseMemory(allocSize);
@@ -117,7 +119,7 @@ __device__ int _alloc_initG()
 	//	TagBase_RuntimeStatics.PageSize = 0;
 	//	TagBase_RuntimeStatics.Pages = 0;
 	//}
-	return __allocsystem_init(nullptr);
+	return __allocsystem.Init(nullptr);
 }
 
 // Return true if the heap is currently under memory pressure - in other words if the amount of heap used is close to the limit set by sqlite3_soft_heap_limit().
@@ -129,7 +131,7 @@ __device__ bool _alloc_heapnearlyfull()
 // Deinitialize the memory allocation subsystem.
 __device__ void _alloc_shutdownG()
 {
-	__allocsystem_shutdown(nullptr);
+	__allocsystem.Shutdown(nullptr);
 	_memset(&mem0, 0, sizeof(mem0));
 }
 
@@ -168,7 +170,7 @@ __device__ static void __alloc_triggermemoryalarm(size_t size)
 __device__ static size_t AllocWithAlarm(size_t size, void **pp)
 {
 	_assert(_mutex_held(mem0.Mutex));
-	size_t fullSize = __allocsystem_roundup(size);
+	size_t fullSize = __allocsystem.Roundup(size);
 	_status_set(STATUS_MALLOC_SIZE, (int)size);
 	if (mem0.AlarmCallback)
 	{
@@ -181,7 +183,7 @@ __device__ static size_t AllocWithAlarm(size_t size, void **pp)
 		else
 			mem0.NearlyFull = false;
 	}
-	void *p = __allocsystem_alloc(fullSize);
+	void *p = __allocsystem.Alloc(fullSize);
 #ifdef ENABLE_MEMORY_MANAGEMENT
 	if (!p && mem0.AlarmCallback)
 	{
@@ -215,7 +217,7 @@ __device__ void *_allocG(size_t size)
 		_mutex_leave(mem0.Mutex);
 	}
 	else
-		p = __allocsystem_alloc(size);
+		p = __allocsystem.Alloc(size);
 	_assert(_HASALIGNMENT8(p)); // IMP: R-04675-44850
 	return p;
 }
@@ -255,7 +257,7 @@ __device__ void *_scratchallocG(size_t size)
 		else
 		{
 			_mutex_leave(mem0.Mutex);
-			p = __allocsystem_alloc(size);
+			p = __allocsystem.Alloc(size);
 		}
 		_memdbg_settype(p, MEMTYPE_LRATCH);
 	}
@@ -304,11 +306,11 @@ __device__ void _scratchfreeG(void *p)
 				_status_add(STATUS_SCRATCH_OVERFLOW, -(int)size2);
 				_status_add(STATUS_MEMORY_USED, -(int)size2);
 				_status_add(STATUS_MALLOC_COUNT, -1);
-				__allocsystem_free(p);
+				__allocsystem.Free(p);
 				_mutex_leave(mem0.Mutex);
 			}
 			else
-				__allocsystem_free(p);
+				__allocsystem.Free(p);
 		}
 	}
 }
@@ -325,7 +327,7 @@ __device__ size_t _allocsize(void *p)
 {
 	_assert(_memdbg_hastype(p, MEMTYPE_HEAP));
 	_assert(_memdbg_nottype(p, MEMTYPE_DB));
-	return __allocsystem_size(p);
+	return __allocsystem.Size(p);
 }
 
 __device__ size_t _tagallocsize(TagBase *tag, void *p)
@@ -336,7 +338,7 @@ __device__ size_t _tagallocsize(TagBase *tag, void *p)
 	_assert(_memdbg_hastype(p, MEMTYPE_DB));
 	_assert(_memdbg_hastype(p, (MEMTYPE)(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)));
 	_assert(tag || _memdbg_nottype(p, MEMTYPE_LOOKASIDE));
-	return __allocsystem_size(p);
+	return __allocsystem.Size(p);
 }
 
 // Free memory previously obtained from sqlite3Malloc().
@@ -350,11 +352,11 @@ __device__ void _freeG(void *p)
 		_mutex_enter(mem0.Mutex);
 		_status_add(STATUS_MEMORY_USED, -(int)_allocsize(p));
 		_status_add(STATUS_MALLOC_COUNT, -1);
-		__allocsystem_free(p);
+		__allocsystem.Free(p);
 		_mutex_leave(mem0.Mutex);
 	}
 	else
-		__allocsystem_free(p);
+		__allocsystem.Free(p);
 }
 
 // Free memory that might be associated with a particular database connection.
@@ -396,7 +398,7 @@ __device__ void *_reallocG(void *old, size_t newSize)
 	size_t oldSize = _allocsize(old);
 	// IMPLEMENTATION-OF: R-46199-30249 SQLite guarantees that the second argument to xRealloc is always a value returned by a prior call to xRoundup.
 	void *p;
-	size_t newSize2 = __allocsystem_roundup(newSize);
+	size_t newSize2 = __allocsystem.Roundup(newSize);
 	if (oldSize == newSize2)
 		p = old;
 	else if (TagBase_RuntimeStatics.Memstat)
@@ -408,11 +410,11 @@ __device__ void *_reallocG(void *old, size_t newSize)
 			__alloc_triggermemoryalarm(sizeDiff);
 		_assert(_memdbg_hastype(old, MEMTYPE_HEAP));
 		_assert(_memdbg_nottype(old, ~MEMTYPE_HEAP));
-		p = __allocsystem_realloc(old, newSize2);
+		p = __allocsystem.Realloc(old, newSize2);
 		if (!p && mem0.AlarmCallback)
 		{
 			__alloc_triggermemoryalarm(newSize);
-			p = __allocsystem_realloc(old, newSize2);
+			p = __allocsystem.Realloc(old, newSize2);
 		}
 		if (p)
 		{
@@ -422,7 +424,7 @@ __device__ void *_reallocG(void *old, size_t newSize)
 		_mutex_leave(mem0.Mutex);
 	}
 	else
-		p = __allocsystem_realloc(old, newSize2);
+		p = __allocsystem.Realloc(old, newSize2);
 	_assert(_HASALIGNMENT8(p)); // IMP: R-04675-44850
 	return p;
 }

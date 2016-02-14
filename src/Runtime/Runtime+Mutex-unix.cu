@@ -30,14 +30,14 @@ static _mutex_obj g_mutex_Statics[] = { MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTE
 #undef MUTEX_INIT
 
 #if !defined(NDEBUG) || defined(_DEBUG)
-bool _mutex_held(MutexEx p) { return (p->Refs != 0 && pthread_equal(p->Owner, pthread_self())); }
-bool _mutex_notheld(MutexEx p) { return p->Refs == 0 || pthread_equal(p->Owner, pthread_self()) == 0; }
+bool MutexHeld(MutexEx p) { return (p->Refs != 0 && pthread_equal(p->Owner, pthread_self())); }
+bool MutexNotHeld(MutexEx p) { return p->Refs == 0 || pthread_equal(p->Owner, pthread_self()) == 0; }
 #endif
 
-int _mutex_init() { return 0; }
-void _mutex_shutdown() { }
+int MutexInit() { return 0; }
+void MutexShutdown() { }
 
-MutexEx _mutex_alloc(MUTEX id)
+MutexEx MutexAlloc(MUTEX id)
 {
 	if (!g_RuntimeStatics.CoreMutex)
 		return nullptr;
@@ -86,7 +86,7 @@ MutexEx _mutex_alloc(MUTEX id)
 	return p;
 }
 
-void _mutex_free(MutexEx p)
+void MutexFree(MutexEx p)
 {
 	if (!p) return;
 	_assert(p->Refs == 0);
@@ -95,7 +95,7 @@ void _mutex_free(MutexEx p)
 	_free(p);
 }
 
-void _mutex_enter(MutexEx p)
+void MutexEnter(MutexEx p)
 {
 	if (!p) return;
 	_assert(p->Id == MUTEX_RECURSIVE || pthreadMutexNotheld(p));
@@ -132,7 +132,7 @@ void _mutex_enter(MutexEx p)
 #endif
 }
 
-bool _mutex_tryenter(MutexEx p)
+bool MutexTryEnter(MutexEx p)
 {
 	if (!p) return true;
 	_assert(p->Id == MUTEX_RECURSIVE || pthreadMutexNotheld(p));
@@ -180,7 +180,7 @@ bool _mutex_tryenter(MutexEx p)
 	return rc;
 }
 
-void _mutex_leave(MutexEx p)
+void MutexLeave(MutexEx p)
 {
 	if (!p) return;
 	_assert(pthreadMutexHeld(p));

@@ -12,12 +12,12 @@ static struct MemFault
 	bool Enable;            // True if enabled
 	bool IsInstalled;		// True if the fault simulation layer is installed
 	int IsBenignMode;		// True if malloc failures are considered benign
-	_mem_methods m;	// 'Real' malloc implementation
+	_mem_methods m;			// 'Real' malloc implementation
 } _memfault;
 
 // This routine exists as a place to set a breakpoint that will fire on any simulated malloc() failure.
 __device__ static int _fault_cnt = 0;
-__device__ static void sqlite3Fault() { _fault_cnt++; }
+__device__ static void onfault() { _fault_cnt++; }
 
 // Check to see if a fault should be simulated.  Return true to simulate the fault.  Return false if the fault should not be simulated.
 __device__ static bool faultsimStep()
@@ -29,7 +29,7 @@ __device__ static bool faultsimStep()
 		_memfault.Countdown--;
 		return false;
 	}
-	sqlite3Fault();
+	onfault();
 	_memfault.Fails++;
 	if (_memfault.IsBenignMode > 0)
 		_memfault.Benigns++;
@@ -40,10 +40,10 @@ __device__ static bool faultsimStep()
 }
 
 // A version of sqlite3_mem_methods.xMalloc() that includes fault simulation logic.
-__device__ static void *faultsimMalloc(int n) { return (!faultsimStep() ? _memfault.m.Malloc(n): nullptr); }
+__device__ static void *faultsimAlloc(size_t n) { return (!faultsimStep() ? _memfault.m.Alloc(n): nullptr); }
 
 // A version of sqlite3_mem_methods.xRealloc() that includes fault simulation logic.
-__device__ static void *faultsimRealloc(void *pOld, int n) { return (!faultsimStep() ? _memfault.m.Realloc(pOld, n) : nullptr); }
+__device__ static void *faultsimRealloc(void *old, size_t n) { return (!faultsimStep() ? _memfault.m.Realloc(old, n) : nullptr); }
 
 // The following method calls are passed directly through to the underlying malloc system:
 //     xFree
@@ -52,8 +52,8 @@ __device__ static void *faultsimRealloc(void *pOld, int n) { return (!faultsimSt
 //     xInit
 //     xShutdown
 __device__ static void faultsimFree(void *p) { _memfault.m.Free(p); }
-__device__ static int faultsimSize(void *p) { return _memfault.m.Size(p); }
-__device__ static int faultsimRoundup(int n) { return _memfault.m.Roundup(n); }
+__device__ static size_t faultsimSize(void *p) { return _memfault.m.Size(p); }
+__device__ static size_t faultsimRoundup(size_t n) { return _memfault.m.Roundup(n); }
 __device__ static int faultsimInit(void *p) { return _memfault.m.Init(_memfault.m.AppData); }
 __device__ static void faultsimShutdown(void *p) { _memfault.m.Shutdown(_memfault.m.AppData); }
 
@@ -83,7 +83,7 @@ __device__ static void faultsimEndBenign() { _memfault.IsBenignMode--; }
 
 // Add or remove the fault-simulation layer using sqlite3_config(). If the argument is non-zero, the 
 __device__ static _mem_methods _m = {
-	faultsimMalloc,					// xMalloc
+	faultsimAlloc,					// xMalloc
 	faultsimFree,					// xFree
 	faultsimRealloc,				// xRealloc
 	faultsimSize,					// xSize
@@ -101,7 +101,7 @@ __device__ static RC faultsimInstall(bool install)
 	if (install)
 	{
 		rc = SysEx::Config(SysEx::CONFIG_GETMALLOC, &_memfault.m);
-		_assert(_memfault.m.Malloc);
+		_assert(_memfault.m.Alloc);
 		if (rc == RC_OK)
 			rc = SysEx::Config(SysEx::CONFIG_MALLOC, &_m);
 		Main::TestControl(Main::TESTCTRL_BENIGN_MALLOC_HOOKS, faultsimBeginBenign, faultsimEndBenign);
@@ -109,7 +109,7 @@ __device__ static RC faultsimInstall(bool install)
 	else
 	{
 		_mem_methods m;
-		_assert(_memfault.m.Malloc);
+		_assert(_memfault.m.Alloc);
 		// One should be able to reset the default memory allocator by storing a zeroed allocator then calling GETMALLOC. */
 		_memset(&m, 0, sizeof(m));
 		SysEx::Config(SysEx::CONFIG_MALLOC, &m);

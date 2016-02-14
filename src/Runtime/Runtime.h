@@ -415,6 +415,7 @@ __device__ void _mutex_leave(MutexEx p);
 #define MUTEX_LOGIC(X) X
 #endif
 
+// MutexSystem
 struct _mutex_methods
 {
 	int (*Init)();
@@ -427,6 +428,7 @@ struct _mutex_methods
 	bool (*Held)(MutexEx);
 	bool (*NotHeld)(MutexEx);
 };
+__device__ extern _mutex_methods __mutexsystem; // Low-level mutex interface
 
 #ifdef GANGING
 // NOT GANG-SAFE
@@ -466,7 +468,6 @@ extern "C" __device__ bool _status(STATUS op, int *current, int *highwater, bool
 RUNTIME_NAMEBEGIN
 
 class TextBuilder;
-struct _mem_methods;
 class TagBase
 {
 public:
@@ -478,8 +479,6 @@ public:
 		//
 		bool Memstat;						// True to enable memory status
 		bool RuntimeMutex;					// True to enable core mutexing
-		_mem_methods *Mem;					// Low-level mutex interface
-		_mutex_methods *Mutex;				// Low-level mutex interface
 		size_t LookasideSize;				// Default lookaside buffer size
 		int Lookasides;						// Default lookaside buffer count
 		void *Scratch;						// Scratch memory
@@ -903,17 +902,21 @@ __device__ inline static bool _memdbg_nottype(void *p, MEMTYPE memType) { return
 #define _memdbg_nottype(X,Y) true
 #endif
 
+// AllocSystem
 struct _mem_methods
 {
-	void *(*Malloc)(int);         // Memory allocation function
-	void (*Free)(void*);          // Free a prior allocation
-	void *(*Realloc)(void*,int);  // Resize an allocation
-	int (*Size)(void*);           // Return the size of an allocation
-	int (*Roundup)(int);          // Round up request size to allocation size
-	int (*Init)(void*);           // Initialize the memory allocator
-	void (*Shutdown)(void*);      // Deinitialize the memory allocator
-	void *AppData;                // Argument to xInit() and xShutdown()
+	void *(*Alloc)(size_t);        // Memory allocation function
+	void (*Free)(void*);			// Free a prior allocation
+	void *(*Realloc)(void*,size_t); // Resize an allocation
+	size_t (*Size)(void*);          // Return the size of an allocation
+	size_t (*Roundup)(size_t);      // Round up request size to allocation size
+	int (*Init)(void*);				// Initialize the memory allocator
+	void (*Shutdown)(void*);		// Deinitialize the memory allocator
+	void *AppData;					// Argument to xInit() and xShutdown()
 };
+
+__device__ void __allocsystem_setdefault();		// Default mem interface
+__device__ extern _mem_methods __allocsystem;	// Low-level mem interface
 
 // BenignMallocHooks
 #ifndef OMIT_BUILTIN_TEST
@@ -924,14 +927,6 @@ __device__ void _benignalloc_end();
 #define _benignalloc_begin()
 #define _benignalloc_end()
 #endif
-//
-__device__ void *__allocsystem_alloc(size_t size);
-__device__ void __allocsystem_free(void *prior);
-__device__ void *__allocsystem_realloc(void *prior, size_t size);
-__device__ size_t __allocsystem_size(void *prior);
-__device__ size_t __allocsystem_roundup(size_t size);
-__device__ int __allocsystem_init(void *p);
-__device__ void __allocsystem_shutdown(void *p);
 //
 //__device__ void __alloc_setmemoryalarm(int (*callback)(void*,long long,int), void *arg, long long threshold);
 //__device__ long long __alloc_softheaplimit64(long long n);

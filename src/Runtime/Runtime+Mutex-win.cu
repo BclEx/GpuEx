@@ -21,52 +21,52 @@ struct _mutex_obj
 #else
 #define MUTEX_INIT { 0, 0 }
 #endif
-static _mutex_obj g_mutex_Statics[6] = { MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT };
+static _mutex_obj MutexStatics[6] = { MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT };
 #undef MUTEX_INIT
-static bool g_mutex_IsInit = false;
-static long g_mutex_Lock = 0;
+static bool MutexIsInit = false;
+static long MutexLock = 0;
 
 #ifdef _DEBUG
-bool _mutex_held(MutexEx p) { return (!p || (p->Refs != 0 && p->Owner == GetCurrentThreadId())); }
-bool _mutex_notheld(MutexEx p, DWORD tid) { return (!p || p->Refs == 0 || p->Owner != tid); }
-bool _mutex_notheld(MutexEx p) { DWORD tid = GetCurrentThreadId(); return (!p || _mutex_notheld(p, tid)); }
+bool MutexHeld(MutexEx p) { return (!p || (p->Refs != 0 && p->Owner == GetCurrentThreadId())); }
+bool MutexNotHeld2(MutexEx p, DWORD tid) { return (!p || p->Refs == 0 || p->Owner != tid); }
+bool MutexNotHeld(MutexEx p) { DWORD tid = GetCurrentThreadId(); return (!p || MutexNotHeld2(p, tid)); }
 #endif
 
-int _mutex_init()
+int MutexInit()
 { 
 	// The first to increment to 1 does actual initialization
-	if (InterlockedCompareExchange(&g_mutex_Lock, 1, 0) == 0)
+	if (InterlockedCompareExchange(&MutexLock, 1, 0) == 0)
 	{
-		for (int i = 0; i < _lengthof(g_mutex_Statics); i++)
+		for (int i = 0; i < _lengthof(MutexStatics); i++)
 		{
 #if OS_WINRT
-			InitializeCriticalSectionEx(&g_mutex_Statics[i].Mutex, 0, 0);
+			InitializeCriticalSectionEx(&MutexStatics[i].Mutex, 0, 0);
 #else
-			InitializeCriticalSection(&g_mutex_Statics[i].Mutex);
+			InitializeCriticalSection(&MutexStatics[i].Mutex);
 #endif
 		}
-		g_mutex_IsInit = true;
+		MutexIsInit = true;
 	}
-	else while (!g_mutex_IsInit) // Someone else is in the process of initing the static mutexes
+	else while (!MutexIsInit) // Someone else is in the process of initing the static mutexes
 		Sleep(1);
 	return 0; 
 }
 
-void _mutex_shutdown()
+void MutexShutdown()
 {
 	// The first to decrement to 0 does actual shutdown (which should be the last to shutdown.)
-	if (InterlockedCompareExchange(&g_mutex_Lock, 0, 1) == 1)
+	if (InterlockedCompareExchange(&MutexLock, 0, 1) == 1)
 	{
-		if (g_mutex_IsInit)
+		if (MutexIsInit)
 		{
-			for (int i =0 ; i < _lengthof(g_mutex_Statics); i++)
-				DeleteCriticalSection(&g_mutex_Statics[i].Mutex);
-			g_mutex_IsInit = false;
+			for (int i =0 ; i < _lengthof(MutexStatics); i++)
+				DeleteCriticalSection(&MutexStatics[i].Mutex);
+			MutexIsInit = false;
 		}
 	}
 }
 
-MutexEx _mutex_alloc(MUTEX id)
+MutexEx MutexAlloc(MUTEX id)
 {
 	if (!g_RuntimeStatics.CoreMutex)
 		return nullptr;
@@ -89,10 +89,10 @@ MutexEx _mutex_alloc(MUTEX id)
 		}
 		break; }
 	default: {
-		_assert(g_mutex_IsInit);
+		_assert(MutexIsInit);
 		_assert(id-2 >= 0);
-		_assert(id-2 < _lengthof(g_mutex_Statics));
-		p = &g_mutex_Statics[id-2];
+		_assert(id-2 < _lengthof(MutexStatics));
+		p = &MutexStatics[id-2];
 #ifdef _DEBUG
 		p->Id = id;
 #endif
@@ -101,7 +101,7 @@ MutexEx _mutex_alloc(MUTEX id)
 	return p;
 }
 
-void _mutex_free(MutexEx p)
+void MutexFree(MutexEx p)
 {
 	if (!p) return;
 	_assert(p->Refs == 0 && p->Owner == 0);
@@ -110,7 +110,7 @@ void _mutex_free(MutexEx p)
 	_free(p);
 }
 
-void _mutex_enter(MutexEx p)
+void MutexEnter(MutexEx p)
 {
 	if (!p) return;
 #ifdef _DEBUG
@@ -127,7 +127,7 @@ void _mutex_enter(MutexEx p)
 #endif
 }
 
-bool _mutex_tryenter(MutexEx p)
+bool MutexTryEnter(MutexEx p)
 {
 	if (!p) return true;
 #ifndef NDEBUG
@@ -154,7 +154,7 @@ bool _mutex_tryenter(MutexEx p)
 	return rc;
 }
 
-void _mutex_leave(MutexEx p)
+void MutexLeave(MutexEx p)
 {
 	if (!p) return;
 #ifndef NDEBUG
@@ -170,6 +170,27 @@ void _mutex_leave(MutexEx p)
 	if (p->Trace)
 		printf("leave mutex %p (%d) with nRef=%d\n", p, p->Trace, p->Refs);
 #endif
+}
+
+static const _mutex_methods _defaultMethods = {
+	MutexInit,
+	MutexShutdown,
+	MutexAlloc,
+	MutexFree,
+	MutexEnter,
+	MutexTryEnter,
+	MutexLeave,
+#ifdef _DEBUG
+	MutexHeld,
+	MutexNotHeld
+#else
+	nullptr,
+	nullptr
+#endif
+};
+void __mutexsystem_setdefault()
+{
+	__mutexsystem = _defaultMethods;
 }
 
 #pragma endregion

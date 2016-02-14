@@ -1,19 +1,37 @@
 #include "Runtime.h"
 RUNTIME_NAMEBEGIN
 
+#define MUTEX_NOOP
 #ifdef MUTEX_NOOP
 #pragma region MUTEX_NOOP
 
-#if !_DEBUG
+#ifndef _DEBUG
 struct _mutex_obj { };
-__device__ int _mutex_init() { return 0; }
-__device__ void _mutex_shutdown() { }
+__device__ int MutexInit() { return 0; }
+__device__ void MutexShutdown() { }
 
-__device__ _mutex_obj *_mutex_alloc(int id) { return (_mutex_obj *)1;  }
-__device__ void _mutex_free(_mutex_obj *p) { }
-__device__ void _mutex_enter(_mutex_obj *p) { }
-__device__ bool _mutex_tryenter(_mutex_obj *p) { return true; }
-__device__ void noopMutexLeave(_mutex_obj *p) { }
+__device__ _mutex_obj *MutexAlloc(MUTEX id) { return (_mutex_obj *)8;  }
+__device__ void MutexFree(_mutex_obj *p) { }
+__device__ void MutexEnter(_mutex_obj *p) { }
+__device__ bool MutexTryEnter(_mutex_obj *p) { return true; }
+__device__ void MutexLeave(_mutex_obj *p) { }
+
+static const _mutex_methods _defaultMethods = {
+	(int (*)())MutexInit,
+	(void (*)())MutexShutdown,
+	(MutexEx (*)(MUTEX))MutexAlloc,
+	(void (*)(MutexEx))MutexFree,
+	(void (*)(MutexEx))MutexEnter,
+	(bool (*)(MutexEx))MutexTryEnter,
+	(void (*)(MutexEx))MutexLeave,
+	nullptr,
+	nullptr,
+};
+__device__ void __mutexsystem_setdefault()
+{
+	__mutexsystem = _defaultMethods;
+}
+
 #else
 struct _mutex_obj
 {
@@ -21,19 +39,17 @@ struct _mutex_obj
 	int Refs;	// Number of entries without a matching leave
 };
 #define MUTEX_INIT { (MUTEX)0, 0 }
-__device__ static _mutex_obj g_mutex_Statics[6] = { MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT };
+__device__ static _mutex_obj MutexStatics[6] = { MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT, MUTEX_INIT };
 #undef MUTEX_INIT
 
-__device__ bool _mutex_held(_mutex_obj *p) { return (!p || p->Refs != 0); }
-__device__ bool _mutex_notheld(_mutex_obj *p) { return (!p || p->Refs == 0); }
+__device__ bool MutexHeld(_mutex_obj *p) { return (!p || p->Refs != 0); }
+__device__ bool MutexNotHeld(_mutex_obj *p) { return (!p || p->Refs == 0); }
 
-__device__ int _mutex_init() {  return 0;  }
-__device__ void _mutex_shutdown() { }
+__device__ int MutexInit() { return 0; }
+__device__ void MutexShutdown() { }
 
-__device__ _mutex_obj *_mutex_alloc(MUTEX id)
+__device__ _mutex_obj *MutexAlloc(MUTEX id)
 {
-	if (!g_RuntimeStatics.CoreMutex)
-		return nullptr;
 	_mutex_obj *p;
 	switch (id)
 	{
@@ -48,15 +64,15 @@ __device__ _mutex_obj *_mutex_alloc(MUTEX id)
 		break; }
 	default: {
 		_assert(id-2 >= 0);
-		_assert(id-2 < _lengthof(g_mutex_Statics));
-		p = &g_mutex_Statics[id-2];
+		_assert(id-2 < _lengthof(MutexStatics));
+		p = &MutexStatics[id-2];
 		p->Id = id;
 		break; }
 	}
 	return p;
 }
 
-__device__ void _mutex_free(_mutex_obj *p)
+__device__ void MutexFree(_mutex_obj *p)
 {
 	if (!p) return;
 	_assert(p);
@@ -65,14 +81,14 @@ __device__ void _mutex_free(_mutex_obj *p)
 	_free(p);
 }
 
-__device__ void _mutex_enter(_mutex_obj *p)
+__device__ void MutexEnter(_mutex_obj *p)
 {
 	if (!p) return;
 	_assert(p->Id == MUTEX_RECURSIVE || _mutex_notheld(p));
 	p->Refs++;
 }
 
-__device__ bool _mutex_tryenter(_mutex_obj *p)
+__device__ bool MutexTryEnter(_mutex_obj *p)
 {
 	if (!p) return true;
 	_assert(p->Id == MUTEX_RECURSIVE || _mutex_notheld(p));
@@ -80,7 +96,7 @@ __device__ bool _mutex_tryenter(_mutex_obj *p)
 	return true;
 }
 
-__device__ void _mutex_leave(_mutex_obj *p)
+__device__ void MutexLeave(_mutex_obj *p)
 {
 	if (!p) return;
 	_assert(p->Refs > 0);
@@ -88,6 +104,23 @@ __device__ void _mutex_leave(_mutex_obj *p)
 	_assert(p->Refs == 0 || p->Id == MUTEX_RECURSIVE);
 }
 #endif
+
+__constant__ static const _mutex_methods _defaultMethods = {
+	(int (*)())MutexInit,
+	(void (*)())MutexShutdown,
+	(MutexEx (*)(MUTEX))MutexAlloc,
+	(void (*)(MutexEx))MutexFree,
+	(void (*)(MutexEx))MutexEnter,
+	(bool (*)(MutexEx))MutexTryEnter,
+	(void (*)(MutexEx))MutexLeave,
+	(bool (*)(MutexEx))MutexHeld,
+	(bool (*)(MutexEx))MutexNotHeld
+};
+
+__device__ void __mutexsystem_setdefault()
+{
+	__mutexsystem = _defaultMethods;
+}
 
 #pragma endregion
 #endif
