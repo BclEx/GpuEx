@@ -1879,7 +1879,7 @@ __device__ static int JimParseListStr(struct JimParserCtx *pc)
 // -----------------------------------------------------------------------------
 // Jim_Obj related functions
 // -----------------------------------------------------------------------------
-#pragma region Jib_Obj related functions
+#pragma region Jim_Obj related functions
 
 // Return a new initialized object.
 __device__ Jim_Obj *Jim_NewObj(Jim_Interp *interp)
@@ -11463,7 +11463,7 @@ __device__ static int Jim_SubstCoreCommand(ClientData dummy, Jim_Interp *interp,
 	return JIM_OK;
 }
 
-/* [info] */
+// [info]
 __constant__ static const char *const _info_commands[] = {
 	"body", "statics", "commands", "procs", "channels", "exists", "globals", "level", "frame", "locals",
 	"vars", "version", "patchlevel", "complete", "args", "hostname",
@@ -11711,8 +11711,7 @@ __constant__ static const char *const _exists_options[] = {
 };
 __device__ static int Jim_ExistsCoreCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	enum
-	{
+	enum {
 		OPT_COMMAND, OPT_PROC, OPT_ALIAS, OPT_VAR
 	};
 	int option;
@@ -12154,6 +12153,105 @@ __device__ static int Jim_RandCoreCommand(ClientData dummy, Jim_Interp *interp, 
 	}
 }
 
+__device__ static int InterpObjCmd(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const args[])
+{
+	if (argc < 2)
+	{
+		Jim_WrongNumArgs(interp, 1, args, "SUBCOMMAND ...");
+		return JIM_ERROR;
+	}
+	return JIM_OK;
+}
+
+__device__ static void InterpDeleteCmd(ClientData data, Jim_Interp *interp)
+{
+	Jim_Interp *p = (Jim_Interp *)data;
+	Jim_FreeInterp(p);
+}
+
+// [interp] *added*
+__constant__ static const char *const _interp_commands[] = {
+	"create", "alias", "eval", "delete", NULL
+};
+__device__ static int Jim_InterpCoreCommand(ClientData dummy, Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+	enum {
+		INTERP_CREATE, INTERP_ALIAS, INTERP_EVAL, INTERP_DELETE
+	};
+	if (argc < 2) {
+		Jim_WrongNumArgs(interp, 1, argv, "subcommand ?args ...?");
+		return JIM_ERROR;
+	}
+	int cmd;
+	if (Jim_GetEnum(interp, argv[1], _interp_commands, &cmd, "subcommand", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK)
+		return JIM_ERROR;
+	switch (cmd) {
+	case INTERP_CREATE: {
+		const char *arg;
+		bool safe = false;
+		if (argc == 4)
+		{
+			arg = Jim_String(argv[1]);
+			if (!_strcmp(arg, "-safe")) {
+				argc--;
+				safe = true;
+			}
+		}
+		if (argc < 3)
+		{
+			Jim_WrongNumArgs(interp, 2, argv, "CREATE ?-safe? path");
+			return JIM_ERROR;
+		}
+		Jim_Interp *p = Jim_CreateInterp();
+		if (!p)
+		{
+			Jim_SetResultString(interp, "malloc failed", -1);
+			return JIM_ERROR;
+		}
+		Jim_RegisterCoreCommands(p);
+		arg = Jim_String(argv[2]);
+		Jim_CreateCommand(interp, arg, (Jim_CmdProc *)InterpObjCmd, (ClientData)p, InterpDeleteCmd);
+		return JIM_OK; }
+	case INTERP_ALIAS: {
+		return JIM_OK; }
+	case INTERP_EVAL: {
+		if (argc < 3) {
+			Jim_WrongNumArgs(interp, 2, argv, "name arg ?arg ...?");
+			return JIM_ERROR;
+		}
+		Jim_Cmd *cmdPtr;
+		if ((cmdPtr = Jim_GetCommand(interp, argv[2], JIM_ERRMSG)) == NULL) {
+			Jim_SetResultFormatted(interp, "Unable to find interp \"%#s\"", Jim_String(argv[2]));
+			return JIM_ERROR;
+		}
+		if (cmdPtr->isproc) {
+			Jim_SetResultFormatted(interp, "Variable \"%#s\" is a procedure", Jim_String(argv[2]));
+			return JIM_ERROR;
+		}
+		Jim_Interp *p = (Jim_Interp *)cmdPtr->u.native.privData;
+		int rc = Jim_EvalObj(p, argc == 4 ? argv[3] : Jim_ConcatObj(p, argc - 3, argv + 3));
+		// eval is "interesting", so add a stack frame here
+		if (rc == JIM_ERROR) {
+			Jim_Obj *scriptObjPtr = p->currentScriptObj;
+			ScriptObj *script = JimGetScript(p, scriptObjPtr);
+			if (!JimScriptValid(p, script)) {
+				Jim_DecrRefCount(p, scriptObjPtr);
+				return JIM_ERROR;
+			}
+			//interp->errorFileNameObj = p->errorFileNameObj;
+			//interp->errorFlag = p->errorFlag;
+			//interp->errorLine = p->errorLine;
+			//interp->errorProc = p->errorProc;
+			JimAddErrorToStack(interp, script);
+		}
+		return rc; }
+	case INTERP_DELETE: {
+		Jim_DeleteCommand(interp, Jim_String(argv[2]));
+		return JIM_OK; }
+	}
+	return JIM_OK;
+}
+
 __constant__ static const struct {
 	const char *name;
 	Jim_CmdProc *cmdProc;
@@ -12228,6 +12326,7 @@ __constant__ static const struct {
 	{"local", Jim_LocalCoreCommand},
 	{"upcall", Jim_UpcallCoreCommand},
 	{"apply", Jim_ApplyCoreCommand},
+	{"interp", Jim_InterpCoreCommand},
 	{NULL, NULL},
 };
 

@@ -459,11 +459,15 @@ __device__ static void init_all(Jim_Interp *interp)
 #if 1
 __device__ static char *tclsh_main_loop()
 {
-	//return "puts here\n"
-	//	"if {1!=1 && 2!=2} {\n"
-	//	"}\n"
-	//	"puts done\n";
-	return "cd test; source veryquick.test;";
+	return "puts start\n"
+		"proc test_suite {name args} {\n"
+		"set default(-description) \"no description supplied (fixme)\"\n"
+		"set default(-prefix)      \"${name}.\"\n"
+		"puts $default\n"
+		"}\n"
+		"test_suite \"veryquick\" -prefix \"\" -description {Blah}\n"
+		"puts done\n";
+	//return "cd test; source veryquick.test;";
 	//return
 	//	"set line {}\n"
 	//	"while {![eof stdin]} {\n"
@@ -563,6 +567,7 @@ int main(int argc, char **argv)
 	}
 #endif
 
+	Jim_FreeInterp(interp);
 #if __CUDACC__
 	CudaShutdown(deviceHeap);
 #endif

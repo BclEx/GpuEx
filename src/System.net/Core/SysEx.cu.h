@@ -5,7 +5,7 @@ namespace CORE_NAME
 
 #if _DEBUG
 	__device__ extern bool IOTrace;
-#define SysEx_LOG(RC, X, ...) { _dprintf(X, __VA_ARGS__); }
+#define SysEx_LOG(RC, X, ...) { _dprintf(X"\n", __VA_ARGS__); }
 #define SysEx_IOTRACE(X, ...) if (IOTrace) { _dprintf("IO: "X, __VA_ARGS__); }
 #else
 #define SysEx_LOG(RC, X, ...) ((void)0)
@@ -98,24 +98,24 @@ namespace CORE_NAME
 
 #pragma region BKPT
 #if _DEBUG
-		__device__ inline static RC CORRUPT_BKPT_(int line)
+		__device__ __forceinline static RC CORRUPT_BKPT_(int line, char *file)
 		{
-			SysEx_LOG(RC_CORRUPT, "database corruption at line %d of [%.10s]", line, "src");
+			SysEx_LOG(RC_CORRUPT, "database corruption at line %d of [%.10s]", line, file);
 			return RC_CORRUPT;
 		}
-		__device__ inline static RC MISUSE_BKPT_(int line)
+		__device__ __forceinline static RC MISUSE_BKPT_(int line, char *file)
 		{
-			SysEx_LOG(RC_MISUSE, "misuse at line %d of [%.10s]", line, "src");
+			SysEx_LOG(RC_MISUSE, "misuse at line %d of [%.10s]", line, file);
 			return RC_MISUSE;
 		}
-		__device__ inline static RC CANTOPEN_BKPT_(int line)
+		__device__ __forceinline static RC CANTOPEN_BKPT_(int line, char *file)
 		{
-			SysEx_LOG(RC_CANTOPEN, "cannot open file at line %d of [%.10s]", line, "src");
+			SysEx_LOG(RC_CANTOPEN, "cannot open file at line %d of [%.10s]", line, file);
 			return RC_CANTOPEN;
 		}
-#define SysEx_CORRUPT_BKPT SysEx::CORRUPT_BKPT_(__LINE__)
-#define SysEx_MISUSE_BKPT SysEx::MISUSE_BKPT_(__LINE__)
-#define SysEx_CANTOPEN_BKPT SysEx::CANTOPEN_BKPT_(__LINE__)
+#define SysEx_CORRUPT_BKPT SysEx::CORRUPT_BKPT_(__LINE__, __FILE__)
+#define SysEx_MISUSE_BKPT SysEx::MISUSE_BKPT_(__LINE__, __FILE__)
+#define SysEx_CANTOPEN_BKPT SysEx::CANTOPEN_BKPT_(__LINE__, __FILE__)
 #else
 #define SysEx_CORRUPT_BKPT RC_CORRUPT
 #define SysEx_MISUSE_BKPT RC_MISUSE

@@ -464,7 +464,7 @@ __device__ static void set_options(Jim_Interp *interp)
 	Jim_SetVar2(interp, "sqlite_options", "tclvar", "1", JIM_GLOBAL);
 #endif
 
-	Jim_SetVar2(interp, "sqlite_options", "threadsafe", STRINGVALUE(_THREADSAFE), JIM_GLOBAL);
+	Jim_SetVar2(interp, "sqlite_options", "threadsafe", STRINGVALUE(THREADSAFE), JIM_GLOBAL);
 	//_assert(sqlite3_threadsafe() == _THREADSAFE);
 
 #ifdef OMIT_TEMPDB

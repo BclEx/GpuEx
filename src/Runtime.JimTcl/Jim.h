@@ -140,7 +140,7 @@ extern "C" {
 
 #define JIM_NONE 0              // no flags set
 #define JIM_ERRMSG 1            // set an error message in the interpreter
-#define JIM_GLOBAL 10            // set an error message in the interpreter
+#define JIM_GLOBAL 16           // set an error message in the interpreter
 #define JIM_ENUM_ABBREV 2       // Jim_GetEnum() - Allow unambiguous abbreviation
 #define JIM_UNSHARED 4          // Jim_GetVariable() - return unshared object
 #define JIM_MUSTEXIST 8         // Jim_SetDictKeysVector() - fail if non-existent

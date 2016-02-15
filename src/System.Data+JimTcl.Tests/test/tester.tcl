@@ -1001,7 +1001,6 @@ proc fix_ifcapable_expr {expr} {
     set state $newstate
   }
   if {$state} {append ret )}
-  puts [$ret]
   return $ret
 }
 
