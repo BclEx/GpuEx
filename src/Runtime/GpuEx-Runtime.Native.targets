@@ -17,7 +17,8 @@ if (item != null) {
   if (item.IndexOf("compute_20") != -1 || item.IndexOf("compute_21") != -1) itemAsName = "20";
   if (item.IndexOf("compute_30") != -1 || item.IndexOf("compute_32") != -1) itemAsName = "30";
   if (item.IndexOf("compute_35") != -1 || item.IndexOf("compute_37") != -1) itemAsName = "35";
-  if (item.IndexOf("compute_50") != -1 || item.IndexOf("compute_52") != -1 || item.IndexOf("compute_53") != -1) itemAsName = "50";
+  if (item.IndexOf("compute_50") != -1) itemAsName = "50";
+  if (item.IndexOf("compute_52") != -1 || item.IndexOf("compute_53") != -1) itemAsName = "52";
   if (item.IndexOf("compute_60") != -1) itemAsName = "60";
 }
 RuntimeArch = itemAsName;
@@ -27,8 +28,6 @@ RuntimeArch = itemAsName;
   </UsingTask>
   <ItemDefinitionGroup>
     <ClCompile>
-      <!--<PreprocessorDefinitions Condition="'$(RuntimeArch)'!='cpu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HASRUNTIME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -39,7 +38,7 @@ RuntimeArch = itemAsName;
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
   </ItemDefinitionGroup>
-  <Target Name="RuntimeLinkBefore" BeforeTargets="Link;Lib">
+  <Target Name="RuntimeLinkBefore" BeforeTargets="Link;CudaLink">
     <GetRuntimeArch CudaCompile="@(CudaCompile)">
       <Output TaskParameter="RuntimeArch" PropertyName="RuntimeArch" />
     </GetRuntimeArch>
@@ -47,6 +46,9 @@ RuntimeArch = itemAsName;
       <Link>
         <AdditionalDependencies>Runtime.$(RuntimeArch).lib;%(AdditionalDependencies)</AdditionalDependencies>
       </Link>
+      <CudaLink>
+        <AdditionalDependencies>Runtime.$(RuntimeArch).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      </CudaLink>
     </ItemGroup>
   </Target>
 </Project>

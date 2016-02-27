@@ -1374,7 +1374,7 @@ static int CleanupChildren(Tcl_Interp *interp, int numPids, HANDLE *pidPtr, HAND
 *      Standard TCL result.
 *-----------------------------------------------------------------------------
 */
-int Tcl_PidCmd (ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
+int Tcl_PidCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[])
 {
 	char buf[10];
 	if (argc != 1) {

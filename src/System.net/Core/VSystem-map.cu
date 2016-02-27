@@ -388,7 +388,7 @@ namespace CORE_NAME
 
 	__device__ static unsigned char _mapVfsBuf[sizeof(MapVSystem)];
 	__device__ static MapVSystem *_mapVfs;
-#if _GPU
+#ifdef _GPU
 	__device__ RC VSystem::Initialize()
 	{
 		_mapVfs = new (_mapVfsBuf) MapVSystem();

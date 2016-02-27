@@ -31,6 +31,10 @@ typedef struct
 } cudaDeviceHeap;
 #endif
 
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 100
+#define _GPU
+#endif
+
 #if __CUDACC__
 #define __forceinline __forceinline__
 #define __host_device__ __host__ __device__
@@ -1228,7 +1232,7 @@ namespace Messages
 		FILE *File; const char *Format;
 		__device__ Stdio_fprintf(bool async, FILE *file, const char *format)
 			: Base(async, 1, 1024, RUNTIMESENTINELPREPARE(Prepare)), File(file), Format(format) { RuntimeSentinel::Send(this, sizeof(Stdio_fprintf)); }
-		int RC; 
+		int RC;
 	};
 
 	struct Stdio_fopen
@@ -1251,7 +1255,7 @@ namespace Messages
 		const char *Filename; const char *Mode;
 		__device__ Stdio_fopen(const char *filename, const char *mode)
 			: Base(false, 2, 1024, RUNTIMESENTINELPREPARE(Prepare)), Filename(filename), Mode(mode) { RuntimeSentinel::Send(this, sizeof(Stdio_fopen)); }
-		FILE *RC; 
+		FILE *RC;
 	};
 
 	struct Stdio_fflush
@@ -1260,7 +1264,7 @@ namespace Messages
 		FILE *File;
 		__device__ Stdio_fflush(bool async, FILE *file)
 			: Base(async, 3, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fflush)); }
-		int RC; 
+		int RC;
 	};
 
 	struct Stdio_fclose
@@ -1269,7 +1273,7 @@ namespace Messages
 		FILE *File;
 		__device__ Stdio_fclose(bool async, FILE *file)
 			: Base(async, 4, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fclose)); }
-		int RC; 
+		int RC;
 	};
 
 	struct Stdio_fgetc
@@ -1278,7 +1282,7 @@ namespace Messages
 		FILE *File;
 		__device__ Stdio_fgetc(FILE *file)
 			: Base(false, 5, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fgetc)); }
-		int RC; 
+		int RC;
 	};
 
 	struct Stdio_fgets
@@ -1295,7 +1299,7 @@ namespace Messages
 		__device__ Stdio_fgets(char *str, int num, FILE *file)
 			: Base(false, 6, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fgets)); }
 		char *Str; 
-		char *RC; 
+		char *RC;
 	};
 
 	struct Stdio_fputc
@@ -1304,7 +1308,7 @@ namespace Messages
 		int Ch; FILE *File;
 		__device__ Stdio_fputc(bool async, int ch, FILE *file)
 			: Base(async, 7, 0, nullptr), Ch(ch), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputc)); }
-		int RC; 
+		int RC;
 	};
 
 	struct Stdio_fputs
@@ -1323,7 +1327,7 @@ namespace Messages
 		const char *Str; FILE *File;
 		__device__ Stdio_fputs(bool async, const char *str, FILE *file)
 			: Base(async, 8, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fputs)); }
-		int RC; 
+		int RC;
 	};
 
 	struct Stdio_fread
@@ -1340,7 +1344,7 @@ namespace Messages
 		__device__ Stdio_fread(bool async, size_t size, size_t num, FILE *file)
 			: Base(async, 9, 1024, RUNTIMESENTINELPREPARE(Prepare)), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fread)); }
 		size_t RC;
-		void *Ptr; 
+		void *Ptr;
 	};
 
 	struct Stdio_fwrite
@@ -1359,7 +1363,121 @@ namespace Messages
 		const void *Ptr; size_t Size; size_t Num; FILE *File;
 		__device__ Stdio_fwrite(bool async, const void *ptr, size_t size, size_t num, FILE *file)
 			: Base(async, 10, 1024, RUNTIMESENTINELPREPARE(Prepare)), Ptr(ptr), Size(size), Num(num), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_fwrite)); }
-		size_t RC; 
+		size_t RC;
+	};
+
+	struct Stdio_fseek
+	{
+		RuntimeSentinelMessage Base;
+		FILE *File; long int Offset; int Origin;
+		__device__ Stdio_fseek(bool async, FILE *file, long int offset, int origin)
+			: Base(async, 11, 0, nullptr), File(file), Offset(offset), Origin(origin) { RuntimeSentinel::Send(this, sizeof(Stdio_fseek)); }
+		int RC;
+	};
+
+	struct Stdio_ftell
+	{
+		RuntimeSentinelMessage Base;
+		FILE *File;
+		__device__ Stdio_ftell(FILE *file)
+			: Base(false, 12, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_ftell)); }
+		int RC;
+	};
+
+	struct Stdio_feof
+	{
+		RuntimeSentinelMessage Base;
+		FILE *File;
+		__device__ Stdio_feof(FILE *file)
+			: Base(false, 13, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_feof)); }
+		int RC;
+	};
+
+	struct Stdio_ferror
+	{
+		RuntimeSentinelMessage Base;
+		FILE *File;
+		__device__ Stdio_ferror(FILE *file)
+			: Base(false, 14, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_ferror)); }
+		int RC;
+	};
+
+	struct Stdio_clearerr
+	{
+		RuntimeSentinelMessage Base;
+		FILE *File;
+		__device__ Stdio_clearerr(FILE *file)
+			: Base(true, 15, 0, nullptr), File(file) { RuntimeSentinel::Send(this, sizeof(Stdio_clearerr)); }
+	};
+
+	struct Stdio_rename
+	{
+		__device__ __forceinline static char *Prepare(Stdio_rename *t, char *data, char *dataEnd)
+		{
+			int oldnameLength = (t->Oldname ? _strlen(t->Oldname) + 1 : 0);
+			int newnameLength = (t->Newname ? _strlen(t->Newname) + 1 : 0);
+			char *oldname = (char *)(data += _ROUND8(sizeof(*t)));
+			char *newname = (char *)(data += oldnameLength);
+			char *end = (char *)(data += newnameLength);
+			if (end > dataEnd) return nullptr;
+			memcpy(oldname, t->Oldname, oldnameLength);
+			memcpy(newname, t->Newname, newnameLength);
+			t->Oldname = oldname;
+			t->Newname = newname;
+			return end;
+		}
+		RuntimeSentinelMessage Base;
+		const char *Oldname; const char *Newname;
+		__device__ Stdio_rename(const char *oldname, const char *newname)
+			: Base(false, 16, 1024, RUNTIMESENTINELPREPARE(Prepare)), Oldname(oldname), Newname(newname) { RuntimeSentinel::Send(this, sizeof(Stdio_rename)); }
+		int RC;
+	};
+
+	struct Stdio_unlink
+	{
+		__device__ __forceinline static char *Prepare(Stdio_unlink *t, char *data, char *dataEnd)
+		{
+			int strLength = (t->Str ? _strlen(t->Str) + 1 : 0);
+			char *str = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += strLength);
+			if (end > dataEnd) return nullptr;
+			memcpy(str, t->Str, strLength);
+			t->Str = str;
+			return end;
+		}
+		RuntimeSentinelMessage Base;
+		const char *Str;
+		__device__ Stdio_unlink(const char *str)
+			: Base(false, 17, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str) { RuntimeSentinel::Send(this, sizeof(Stdio_unlink)); }
+		int RC;
+	};
+
+	struct Stdio_close
+	{
+		RuntimeSentinelMessage Base;
+		int Handle;
+		__device__ Stdio_close(int handle)
+			: Base(false, 18, 0, nullptr), Handle(handle) { RuntimeSentinel::Send(this, sizeof(Stdio_close)); }
+		int RC;
+	};
+
+	struct Stdio_system
+	{
+		__device__ __forceinline static char *Prepare(Stdio_system *t, char *data, char *dataEnd)
+		{
+			int strLength = (t->Str ? _strlen(t->Str) + 1 : 0);
+			char *str = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += strLength);
+			if (end > dataEnd) return nullptr;
+			memcpy(str, t->Str, strLength);
+			t->Str = str;
+			return end;
+		}
+		RuntimeSentinelMessage Base;
+		const char *Str;
+		__device__ Stdio_system(const char *str)
+			: Base(false, 19, 1024, RUNTIMESENTINELPREPARE(Prepare)), Str(str) { RuntimeSentinel::Send(this, sizeof(Stdio_system)); }
+		int RC;
 	};
 }
 
@@ -1460,7 +1578,7 @@ extern __constant__ FILE _stderr_file;
 #define _stderr stderr
 #endif
 
-#if 0 && OS_MAP
+#if OS_MAP
 extern "C" __device__ inline int __fileno(FILE *f) { return -1; }
 //#define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
 //#define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
@@ -1472,22 +1590,22 @@ extern "C" __device__ inline int _fflushR(FILE *f) { Messages::Stdio_fflush msg(
 extern "C" __device__ inline void _fclose(FILE *f) { Messages::Stdio_fclose msg(true, f); }
 extern "C" __device__ inline int _fcloseR(FILE *f) { Messages::Stdio_fclose msg(false, f); return msg.RC; }
 extern "C" __device__ inline int _fgetc(FILE *f) { Messages::Stdio_fgetc msg(f); return msg.RC; }
-extern "C" __device__ inline int _fgets(char *c, int n, FILE *f) { Messages::Stdio_fgets msg(c, n, f); return msg.RC; }
+extern "C" __device__ inline char *_fgets(char *c, int n, FILE *f) { Messages::Stdio_fgets msg(c, n, f); return msg.RC; }
 extern "C" __device__ inline void _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(true, c, f); }
 extern "C" __device__ inline int _fputcR(int c, FILE *f) { Messages::Stdio_fputc msg(false, c, f); return msg.RC; }
 extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(true, s, f); }
 extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Stdio_fputs msg(false, s, f); return msg.RC; }
 extern "C" __device__ inline size_t _fread(void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fread msg(false, s, n, f); memcpy(p, msg.Ptr, msg.RC); return msg.RC; }
 extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fwrite msg(false, p, s, n, f); return msg.RC; }
-extern "C" __device__ inline int _fseek(FILE *f, long int o, int s) { }
-extern "C" __device__ inline int _ftell(FILE *f) { }
-extern "C" __device__ inline int _feof(FILE *f) { }
-extern "C" __device__ inline int _ferror(FILE *f) { }
-extern "C" __device__ inline void _clearerr(FILE *f) { }
-extern "C" __device__ inline int _rename(const char *a, const char *b) { }
-extern "C" __device__ inline int _unlink(const char *a) { }
-extern "C" __device__ inline int __close(int a) { }
-extern "C" __device__ inline int _system(const char *c) { }
+extern "C" __device__ inline int _fseek(FILE *f, long int o, int s) { Messages::Stdio_fseek msg(true, f, o, s); return msg.RC; }
+extern "C" __device__ inline int _ftell(FILE *f) { Messages::Stdio_ftell msg(f); return msg.RC; }
+extern "C" __device__ inline int _feof(FILE *f) { Messages::Stdio_feof msg(f); return msg.RC; }
+extern "C" __device__ inline int _ferror(FILE *f) { Messages::Stdio_ferror msg(f); return msg.RC; }
+extern "C" __device__ inline void _clearerr(FILE *f) { Messages::Stdio_clearerr msg(f); }
+extern "C" __device__ inline int _rename(const char *a, const char *b) { Messages::Stdio_rename msg(a, b); return msg.RC; }
+extern "C" __device__ inline int _unlink(const char *a) { Messages::Stdio_unlink msg(a); return msg.RC; }
+extern "C" __device__ inline int __close(int a) { Messages::Stdio_close msg(a); return msg.RC; }
+extern "C" __device__ inline int _system(const char *c) { Messages::Stdio_system msg(c); return msg.RC; }
 extern "C" __device__ inline void _puts(const char *s) { printf("%s\n", s); }
 #else
 #define _fprintfR _fprintf

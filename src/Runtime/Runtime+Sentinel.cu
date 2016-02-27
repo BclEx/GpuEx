@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <process.h>
 #include <assert.h>
+#include <io.h>
 #ifdef __device__
 #undef __device__
 #define __device__
@@ -67,6 +68,42 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 	case 10: {
 		Messages::Stdio_fwrite *msg = (Messages::Stdio_fwrite *)data;
 		msg->RC = fwrite(msg->Ptr, msg->Size, msg->Num, msg->File);
+		return true; }
+	case 11: {
+		Messages::Stdio_fseek *msg = (Messages::Stdio_fseek *)data;
+		msg->RC = fseek(msg->File, msg->Offset, msg->Origin);
+		return true; }
+	case 12: {
+		Messages::Stdio_ftell *msg = (Messages::Stdio_ftell *)data;
+		msg->RC = ftell(msg->File);
+		return true; }
+	case 13: {
+		Messages::Stdio_feof *msg = (Messages::Stdio_feof *)data;
+		msg->RC = feof(msg->File);
+		return true; }
+	case 14: {
+		Messages::Stdio_ferror *msg = (Messages::Stdio_ferror *)data;
+		msg->RC = ferror(msg->File);
+		return true; }
+	case 15: {
+		Messages::Stdio_clearerr *msg = (Messages::Stdio_clearerr *)data;
+		clearerr(msg->File);
+		return true; }
+	case 16: {
+		Messages::Stdio_rename *msg = (Messages::Stdio_rename *)data;
+		msg->RC = rename(msg->Oldname, msg->Newname);
+		return true; }
+	case 17: {
+		Messages::Stdio_unlink *msg = (Messages::Stdio_unlink *)data;
+		msg->RC = unlink(msg->Str);
+		return true; }
+	case 18: {
+		Messages::Stdio_close *msg = (Messages::Stdio_close *)data;
+		msg->RC = close(msg->Handle);
+		return true; }
+	case 19: {
+		Messages::Stdio_system *msg = (Messages::Stdio_system *)data;
+		msg->RC = system(msg->Str);
 		return true; }
 	}
 	return false;
@@ -141,6 +178,7 @@ static int *_hostMap = nullptr;
 #endif
 static int *_deviceMap[SENTINEL_DEVICEMAPS];
 
+#if 0
 // https://msdn.microsoft.com/en-us/library/windows/hardware/ff569918(v=vs.85).aspx
 // http://www.dreamincode.net/forums/topic/171917-how-to-setread-registry-key-in-c/
 DWORD _savedTdrDelay = -2;
@@ -177,7 +215,7 @@ void TdrShutdown()
 	}
 	RegCloseKey(key);
 }
-
+#endif
 
 void RuntimeSentinel::ServerInitialize(RuntimeSentinelExecutor *executor, char *mapHostName)
 {
