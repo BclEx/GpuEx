@@ -1588,7 +1588,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			Vdbe::Finalize(stmt);
 			return TCL_ERROR;
 		}
-		char **colNames = (char **)malloc(sizeof(colNames[0]) * (cols+1)); // zLine[] broken up into columns
+		char **colNames = (char **)_alloc(sizeof(colNames[0]) * (cols+1)); // zLine[] broken up into columns
 		if (!colNames)
 		{
 			Tcl_AppendResult(interp, "Error: can't malloc()", 0);
@@ -1622,7 +1622,7 @@ __device__ static int DbObjCmd(void *cd, Tcl_Interp *interp, int argc, const cha
 			if (i+1 != cols)
 			{
 				int errLength = _strlen(file) + 200;
-				char *err = (char *)malloc(errLength);
+				char *err = (char *)_alloc(errLength);
 				if (err)
 				{
 					__snprintf(err, errLength, "Error: %s line %d: expected %d columns of data but found %d", file, lineno, cols, i+1);

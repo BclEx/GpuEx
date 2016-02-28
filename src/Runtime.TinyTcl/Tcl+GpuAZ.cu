@@ -80,12 +80,12 @@ __device__ int Tcl_CloseCmd(ClientData dummy, Tcl_Interp *interp, int argc, cons
 	// First close the file (in the case of a process pipeline, there may be two files, one for the pipe at each end of the pipeline).
 	int result = TCL_OK;
 	if (filePtr->f2 != NULL) {
-		if (_fclose(filePtr->f2)) {
+		if (_fcloseR(filePtr->f2)) {
 			Tcl_AppendResult(interp, "error closing \"", args[1], "\": ", Tcl_OSError(interp), "\n", (char *)NULL);
 			result = TCL_ERROR;
 		}
 	}
-	if (_fclose(filePtr->f)) {
+	if (_fcloseR(filePtr->f)) {
 		Tcl_AppendResult(interp, "error closing \"", args[1], "\": ", Tcl_OSError(interp), "\n", (char *)NULL);
 		result = TCL_ERROR;
 	}
@@ -367,7 +367,7 @@ checkAccess:
 			args[1] = "delete";
 			goto not3Args;
 		}
-		if (_unlink(fileName) == -1 && __errno != ENOENT) {
+		if (__unlink(fileName) == -1 && __errno != ENOENT) {
 			Tcl_AppendResult(interp, "couldn't delete \"", args[2], "\": ", Tcl_OSError(interp), (char *)NULL);
 			return TCL_ERROR;
 		}
@@ -636,7 +636,7 @@ __device__ int Tcl_FlushCmd(ClientData notUsed, Tcl_Interp *interp, int argc, co
 	if (f == NULL) {
 		f = filePtr->f;
 	}
-	if (_fflush(f) == EOF) {
+	if (_fflushR(f) == EOF) {
 		Tcl_AppendResult(interp, "error flushing \"", args[1], "\": ", Tcl_OSError(interp), (char *)NULL);
 		_clearerr(f);
 		return TCL_ERROR;

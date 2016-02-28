@@ -4633,7 +4633,7 @@ op_column_out:
 				}
 #ifdef _DEBUG
 				if ((ctx->Flags & Context::FLAG_SqlTrace) != 0 && (trace = (op->P4.Z ? op->P4.Z : Sql_)) != nullptr)
-					_fprintf(stdout, "SQL-trace: %s\n", trace);
+					_fprintf(_stdout, "SQL-trace: %s\n", trace);
 #endif
 				break; }
 #endif

@@ -1359,7 +1359,7 @@ __global__ static void OpenCtx(struct CallbackData *p)
 			DataEx::CreateFunction(_ctx, "shellstatic", 0, TEXTENCODE_UTF8, 0, ShellStaticFunc, 0, 0);
 		if (!_ctx || DataEx::ErrCode(_ctx) != RC_OK)
 		{
-			_fprintf(stderr, "Error: unable to open database \"%s\": %s\n", p->DbFilename, DataEx::ErrMsg(_ctx));
+			_fprintf(_stderr, "Error: unable to open database \"%s\": %s\n", p->DbFilename, DataEx::ErrMsg(_ctx));
 #if __CUDACC__
 			d_return = -1; return;
 #else
@@ -1505,7 +1505,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		DataEx::Exec(p->Ctx, "PRAGMA database_list;", ::Callback, &data, &errMsg);
 		if (errMsg)
 		{
-			_fprintf(stderr, "Error: %s\n", errMsg);
+			_fprintf(_stderr, "Error: %s\n", errMsg);
 			_free(errMsg);
 			rc = 1;
 		}
@@ -1594,13 +1594,13 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		}
 		if (errMsg)
 		{
-			_fprintf(stderr, "Error: %s\n", errMsg);
+			_fprintf(_stderr, "Error: %s\n", errMsg);
 			_free(errMsg);
 			rc = 1;
 		}
 		else if (rc != RC_OK)
 		{
-			_fprintf(stderr, "Error: querying sqlite_master and sqlite_temp_master\n");
+			_fprintf(_stderr, "Error: querying sqlite_master and sqlite_temp_master\n");
 			rc = 1;
 		}
 	}
@@ -1678,8 +1678,8 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 				" CASE type WHEN 'view' THEN rowid ELSE name END",
 				::Callback, &data, &errMsg);
 		}
-		if (errMsg) { _fprintf(stderr, "Error: %s\n", errMsg); _free(errMsg); rc = 1; }
-		else if (rc != RC_OK) { _fprintf(stderr, "Error: querying schema information\n"); rc = 1; }
+		if (errMsg) { _fprintf(_stderr, "Error: %s\n", errMsg); _free(errMsg); rc = 1; }
+		else if (rc != RC_OK) { _fprintf(_stderr, "Error: querying schema information\n"); rc = 1; }
 		else rc = 0;
 	}
 #pragma endregion
@@ -1733,7 +1733,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 				char **newResults = (char **)_realloc(results, sizeof(results[0])*n);
 				if (!newResults)
 				{
-					_fprintf(stderr, "Error: out_ of memory\n");
+					_fprintf(_stderr, "Error: out_ of memory\n");
 					break;
 				}
 				allocs = n;
@@ -1786,7 +1786,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
-				_fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
+				_fprintf(_stderr, "Error: testctrl %s takes a single int option\n", args[1]);
 			break;
 		case DataEx::TESTCTRL_PRNG_SAVE:
 		case DataEx::TESTCTRL_PRNG_RESTORE:
@@ -1798,7 +1798,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
-				_fprintf(stderr, "Error: testctrl %s takes no options\n", args[1]);
+				_fprintf(_stderr, "Error: testctrl %s takes no options\n", args[1]);
 			break;
 		case DataEx::TESTCTRL_PENDING_BYTE:
 			// DataEx::TestControl(int, uint)
@@ -1809,7 +1809,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
-				_fprintf(stderr, "Error: testctrl %s takes a single unsigned int option\n", args[1]);
+				_fprintf(_stderr, "Error: testctrl %s takes a single unsigned int option\n", args[1]);
 			break;
 		case DataEx::TESTCTRL_ASSERT:
 		case DataEx::TESTCTRL_ALWAYS:
@@ -1821,7 +1821,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 				_printf("%d (0x%08x)\n", rc, rc);
 			}
 			else
-				_fprintf(stderr, "Error: testctrl %s takes a single int option\n", args[1]);
+				_fprintf(_stderr, "Error: testctrl %s takes a single int option\n", args[1]);
 			break;
 #ifdef N_KEYWORD
 		case DataEx::TESTCTRL_ISKEYWORD:
@@ -1841,7 +1841,7 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		case DataEx::TESTCTRL_BENIGN_MALLOC_HOOKS: 
 		case DataEx::TESTCTRL_SCRATCHMALLOC:       
 		default:
-			_fprintf(stderr, "Error: CLI support for testctrl %s not implemented\n", args[1]);
+			_fprintf(_stderr, "Error: CLI support for testctrl %s not implemented\n", args[1]);
 			break;
 		}
 	}
@@ -3054,12 +3054,12 @@ __global__ void d_ProcessInput_0(struct CallbackData *p, char *sql, int startlin
 			__snprintf(prefix, sizeof(prefix), "Error:");
 		if (errMsg)
 		{
-			_fprintf(stderr, "%s %s\n", prefix, errMsg);
+			_fprintf(_stderr, "%s %s\n", prefix, errMsg);
 			_free(errMsg);
 			errMsg = nullptr;
 		}
 		else
-			_fprintf(stderr, "%s %s\n", prefix, DataEx::ErrMsg(p->Ctx));
+			_fprintf(_stderr, "%s %s\n", prefix, DataEx::ErrMsg(p->Ctx));
 		d_return = -1;
 		return;
 	}
@@ -3409,13 +3409,13 @@ __global__ void d_main_ShellExec(struct CallbackData *p, char *sql)
 	int rc = ShellExec(p->Ctx, sql, ShellCallback, p, &errMsg);
 	if (errMsg)
 	{
-		_fprintf(stderr, "Error: %s\n", errMsg);
+		_fprintf(_stderr, "Error: %s\n", errMsg);
 		d_return = (rc ? rc : 1);
 		return;
 	}
 	else if (rc)
 	{
-		_fprintf(stderr, "Error: unable to process SQL \"%s\"\n", sql);
+		_fprintf(_stderr, "Error: unable to process SQL \"%s\"\n", sql);
 		d_return = rc;
 		return;
 	}

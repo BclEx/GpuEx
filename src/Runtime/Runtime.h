@@ -1231,7 +1231,26 @@ namespace Messages
 		RuntimeSentinelMessage Base;
 		FILE *File; const char *Format;
 		__device__ Stdio_fprintf(bool async, FILE *file, const char *format)
-			: Base(async, 1, 1024, RUNTIMESENTINELPREPARE(Prepare)), File(file), Format(format) { RuntimeSentinel::Send(this, sizeof(Stdio_fprintf)); }
+			: Base(async, 0, 1024, RUNTIMESENTINELPREPARE(Prepare)), File(file), Format(format) { RuntimeSentinel::Send(this, sizeof(Stdio_fprintf)); }
+		int RC;
+	};
+
+	struct Stdio_setvbuf
+	{
+		__device__ __forceinline static char *Prepare(Stdio_setvbuf *t, char *data, char *dataEnd)
+		{
+			int bufferLength = (t->Buffer ? _strlen(t->Buffer) + 1 : 0);
+			char *buffer = (char *)(data += _ROUND8(sizeof(*t)));
+			char *end = (char *)(data += bufferLength);
+			if (end > dataEnd) return nullptr;
+			memcpy(buffer, t->Buffer, bufferLength);
+			t->Buffer = buffer;
+			return end;
+		}
+		RuntimeSentinelMessage Base;
+		FILE *File; char *Buffer; int Mode; size_t Size;
+		__device__ Stdio_setvbuf(FILE *file, char *buffer, int mode, size_t size)
+			: Base(false, 1, 1024, RUNTIMESENTINELPREPARE(Prepare)), File(file), Buffer(buffer), Mode(mode), Size(size) { RuntimeSentinel::Send(this, sizeof(Stdio_setvbuf)); }
 		int RC;
 	};
 
@@ -1580,10 +1599,11 @@ extern __constant__ FILE _stderr_file;
 
 #if OS_MAP
 extern "C" __device__ inline int __fileno(FILE *f) { return -1; }
-//#define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
-//#define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
-extern "C" __device__ inline void _fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
-extern "C" __device__ inline int _fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
+#define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
+#define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
+extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
+extern "C" __device__ inline int __fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
+extern "C" __device__ inline int _setvbuf(FILE *f, char *b, int m, size_t s) { Messages::Stdio_setvbuf msg(f, b, m, s); return msg.RC; }
 extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }
 extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(true, f); }
 extern "C" __device__ inline int _fflushR(FILE *f) { Messages::Stdio_fflush msg(false, f); return msg.RC; }
@@ -1603,7 +1623,7 @@ extern "C" __device__ inline int _feof(FILE *f) { Messages::Stdio_feof msg(f); r
 extern "C" __device__ inline int _ferror(FILE *f) { Messages::Stdio_ferror msg(f); return msg.RC; }
 extern "C" __device__ inline void _clearerr(FILE *f) { Messages::Stdio_clearerr msg(f); }
 extern "C" __device__ inline int _rename(const char *a, const char *b) { Messages::Stdio_rename msg(a, b); return msg.RC; }
-extern "C" __device__ inline int _unlink(const char *a) { Messages::Stdio_unlink msg(a); return msg.RC; }
+extern "C" __device__ inline int __unlink(const char *a) { Messages::Stdio_unlink msg(a); return msg.RC; }
 extern "C" __device__ inline int __close(int a) { Messages::Stdio_close msg(a); return msg.RC; }
 extern "C" __device__ inline int _system(const char *c) { Messages::Stdio_system msg(c); return msg.RC; }
 extern "C" __device__ inline void _puts(const char *s) { printf("%s\n", s); }
@@ -1633,7 +1653,7 @@ extern "C" __device__ inline void _puts(const char *s) { printf("%s\n", s); }
 #define _ferror(f) (int)0
 #define _clearerr(f) (void)0
 #define _rename(a, b) (int)0
-#define _unlink(a) (int)0
+#define __unlink(a) (int)0
 #define __close(a) (int)0
 #define _system(c) (int)0
 #define _puts(s) printf("%s\n", s)
@@ -1656,7 +1676,7 @@ extern "C" __device__ inline void _puts(const char *s) { printf("%s\n", s); }
 #define _ferror(f) ferror(f)
 #define _clearerr(f) clearerr(f)
 #define _rename(a, b) rename(a, b)
-#define _unlink(a) remove(a)
+#define __unlink(a) remove(a)
 #define __close(a) close(a)
 #define _system(c) system(c)
 #define _puts(s) puts(s)

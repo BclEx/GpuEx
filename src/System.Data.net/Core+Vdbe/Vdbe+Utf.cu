@@ -113,7 +113,7 @@ namespace CORE_NAME
 		{
 			char buf[100];
 			MemPrettyPrint(mem, buf);
-			_fprintf(stderr, "INPUT:  %s\n", buf);
+			_fprintf(_stderr, "INPUT:  %s\n", buf);
 		}
 #endif
 
@@ -225,7 +225,7 @@ translate_out:
 		{
 			char buf[100];
 			MemPrettyPrint(mem, buf);
-			_fprintf(stderr, "OUTPUT: %s\n", buf);
+			_fprintf(_stderr, "OUTPUT: %s\n", buf);
 		}
 #endif
 		return RC_OK;

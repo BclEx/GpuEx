@@ -255,7 +255,7 @@ __device__ int Tcl_MemFree(char *ptr, char *file, int line)
 		memp->blink->flink = memp->flink;
 	if (_allocHead == memp)
 		_allocHead = memp->flink;
-	_free((char *)memp);
+	free((char *)memp);
 	return 0;
 }
 

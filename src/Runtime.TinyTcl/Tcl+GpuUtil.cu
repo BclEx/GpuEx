@@ -69,7 +69,7 @@ __device__ int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 		_freeFast(cmdBuffer);
 		goto error;
 	}
-	if (_fclose(file) != 0) {
+	if (_fcloseR(file) != 0) {
 		Tcl_AppendResult(interp, "error closing file \"", fileName, "\": ", Tcl_OSError(interp), (char *)NULL);
 		_freeFast(cmdBuffer);
 		goto error;

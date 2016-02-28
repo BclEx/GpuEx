@@ -438,7 +438,7 @@ __device__ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const 
 	while (count < maxlen) {
 		int ch = _fgetc(af->fp);
 
-		if (ch == EOF || _fputc(ch, outfh) == EOF) {
+		if (ch == EOF || _fputcR(ch, outfh) == EOF) {
 			break;
 		}
 		count++;
@@ -536,7 +536,7 @@ __device__ static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const 
 
 	wdata = Jim_GetString(strObj, &wlen);
 	if (_fwrite((void *)wdata, 1, wlen, af->fp) == (unsigned)wlen) {
-		if (argc == 2 || _fputc('\n', af->fp) != EOF) {
+		if (argc == 2 || _fputcR('\n', af->fp) != EOF) {
 			return JIM_OK;
 		}
 	}
@@ -664,7 +664,7 @@ __device__ static int aio_cmd_flush(Jim_Interp *interp, int argc, Jim_Obj *const
 {
 	AioFile *af = (AioFile *)Jim_CmdPrivData(interp);
 
-	if (_fflush(af->fp) == EOF) {
+	if (_fflushR(af->fp) == EOF) {
 		JimAioSetError(interp, af->filename);
 		return JIM_ERROR;
 	}

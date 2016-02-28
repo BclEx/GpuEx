@@ -29,9 +29,13 @@ static bool Executor(void *tag, RuntimeSentinelMessage *data, int length)
 {
 	switch (data->OP)
 	{
-	case 1: {
+	case 0: {
 		Messages::Stdio_fprintf *msg = (Messages::Stdio_fprintf *)data;
 		msg->RC = fprintf(msg->File, msg->Format);
+		return true; }
+	case 1: {
+		Messages::Stdio_setvbuf *msg = (Messages::Stdio_setvbuf *)data;
+		msg->RC = setvbuf(msg->File, msg->Buffer, msg->Mode, msg->Size);
 		return true; }
 	case 2: {
 		Messages::Stdio_fopen *msg = (Messages::Stdio_fopen *)data;

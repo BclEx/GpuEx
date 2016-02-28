@@ -9116,7 +9116,7 @@ __device__ static int Jim_PutsCoreCommand(ClientData dummy, Jim_Interp *interp, 
 			return JIM_ERROR;
 		}
 		else
-			_fputs(Jim_String(argv[2]), stdout);
+			_fputs(Jim_String(argv[2]), _stdout);
 	}
 	else
 		_puts(Jim_String(argv[1]));
