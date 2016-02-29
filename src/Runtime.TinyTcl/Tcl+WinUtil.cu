@@ -556,7 +556,7 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for reading", (char *)NULL);
 				goto error;
 			}
-			inputId = TclDupFd(TclFileno(filePtr->f2 ? nullptr : filePtr->f));
+			inputId = TclDupFd(TclFileno(filePtr->f2 ? filePtr->f2 : filePtr->f));
 		} else {
 			// File redirection.  Just open the file.
 			inputId = TclFileno(fopen(input, "rb"));
@@ -587,8 +587,8 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for writing", (char *)NULL);
 				goto error;
 			}
-			fflush(filePtr->f2 ? nullptr : filePtr->f);
-			lastOutputId = TclDupFd(TclFileno(filePtr->f2 ? nullptr : filePtr->f));
+			fflush(filePtr->f2 ? filePtr->f2 : filePtr->f);
+			lastOutputId = TclDupFd(TclFileno(filePtr->f2 ? filePtr->f2 : filePtr->f));
 		}
 		else {
 			// Output is to go to a file.
@@ -685,7 +685,6 @@ errFileError:
 			outputId = pipeIds[1];
 		}
 		char *execName = Tcl_TildeSubst(interp, (char *)args[firstArg]);
-
 
 #if 0
 		int pid = -1; //Tcl_Fork();

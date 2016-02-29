@@ -874,7 +874,7 @@ error:
 	}
 #endif
 	if (filePtr->errorId) {
-		_fclose(filePtr->errorId);
+		__close(filePtr->errorId);
 	}
 	_freeFast((char *)filePtr);
 	return TCL_ERROR;

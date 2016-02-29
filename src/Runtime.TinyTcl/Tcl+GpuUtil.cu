@@ -148,6 +148,31 @@ __device__ void mktemp(char *buf, int size)
 	_panic("mktemp failed");
 }
 
+__device__ static int TclPipe(HANDLE pipefd[2])
+{
+	//if (CreatePipe(&pipefd[0], &pipefd[1], NULL, 0)) {
+	//	return 0;
+	//}
+	return -1;
+}
+
+__device__ static HANDLE TclDupFd(HANDLE fd)
+{
+	//HANDLE dupfd;
+	//HANDLE pid = GetCurrentProcess();
+	//if (DuplicateHandle(pid, fd, pid, &dupfd, 0, TRUE, DUPLICATE_SAME_ACCESS)) {
+	//	return dupfd;
+	//}
+	return INVALID_HANDLE_VALUE;
+}
+
+__device__ static HANDLE TclFileno(FILE *f)
+{
+    return (HANDLE)__fileno(f);
+}
+
+#define TclClose __close
+
 /*
 *----------------------------------------------------------------------
 *
@@ -268,23 +293,25 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 	}
 
 	// Set up the redirected input source for the pipeline, if so requested.
-	FILE *inputId = NULL; // Readable file id input to current command in pipeline (could be file or pipe).  -1 means use stdin.
+	HANDLE inputId = INVALID_HANDLE_VALUE; // Readable file id input to current command in pipeline (could be file or pipe).  -1 means use stdin.
 	if (input != NULL) {
 		if (inputFile == 0) {
 			// Immediate data in command.  Create temporary file and put data into file.
 			char inName[MAX_PATH];
 			mktemp(inName, sizeof(inName));
-			inputId = _fopen(inName, "rw");
+			FILE *inputF = _fopen(inName, "w+");
+			inputId = TclFileno(inputF);
+			//TclFdOpenForWrite(TclDupFd(handle))
 			if (inputId < 0) {
 				Tcl_AppendResult(interp, "couldn't create input file for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
 			int length = (int)_strlen(input);
-			if (_fwrite(input, length, 1, inputId) != length) {
+			if (_fwrite(input, length, 1, inputF) != length) {
 				Tcl_AppendResult(interp, "couldn't write file input for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
-			if (_fseek(inputId, 0L, 0) == -1 || !DeleteFile(inName)) {
+			if (_fseek(inputF, 0L, 0) == -1 || !DeleteFile(inName)) {
 				Tcl_AppendResult(interp, "couldn't reset or remove input file for command: ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
@@ -298,27 +325,27 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for reading", (char *)NULL);
 				goto error;
 			}
-			inputId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
+			inputId = TclDupFd(TclFileno(filePtr->f2 ? filePtr->f2 : filePtr->f));
 		} else {
 			// File redirection.  Just open the file.
-			inputId = _fopen(input, "rb");
+			inputId = TclFileno(_fopen(input, "rb"));
 			if (!inputId) {
 				Tcl_AppendResult(interp, "couldn't read file \"", input, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
 		}
-		//} else if (inPipePtr != NULL) {
-		//	if (pipe(pipeIds) != 0) {
-		//		Tcl_AppendResult(interp, "couldn't create input pipe for command: ", Tcl_OSError(interp), (char *)NULL);
-		//		goto error;
-		//	}
-		//	inputId = pipeIds[0];
-		//	*inPipePtr = pipeIds[1];
-		//	pipeIds[0] = pipeIds[1] = NULL;
+	} else if (inPipePtr != NULL) {
+		if (TclPipe(pipeIds) != 0) {
+			Tcl_AppendResult(interp, "couldn't create input pipe for command: ", Tcl_OSError(interp), (char *)NULL);
+			goto error;
+		}
+		inputId = pipeIds[0];
+		*inPipePtr = pipeIds[1];
+		pipeIds[0] = pipeIds[1] = NULL;
 	}
 
 	// Set up the redirected output sink for the pipeline from one of two places, if requested.
-	FILE *lastOutputId = NULL; // Write file id for output from last command in pipeline (could be file or pipe). -1 means use stdout.
+	HANDLE lastOutputId = INVALID_HANDLE_VALUE; // Write file id for output from last command in pipeline (could be file or pipe). -1 means use stdout.
 	if (output != NULL) {
 		if (outputFile == 2) {
 			OpenFile_ *filePtr;
@@ -330,7 +357,7 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 				goto error;
 			}
 			_fflush(filePtr->f2 ? filePtr->f2 : filePtr->f);
-			lastOutputId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
+			lastOutputId = TclDupFd(TclFileno(filePtr->f2 ? filePtr->f2 : filePtr->f));
 		}
 		else {
 			// Output is to go to a file.
@@ -338,24 +365,24 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 			if (outputFile == 1) {
 				mode = "w+";
 			}
-			lastOutputId = _fopen(output, mode);
+			lastOutputId = TclFileno(_fopen(output, mode));
 			if (lastOutputId < 0) {
 				Tcl_AppendResult(interp, "couldn't write file \"", output, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
 			}
 		}
-		//} else if (outPipePtr != NULL) {
-		//	// Output is to go to a pipe.
-		//	if (pipe(pipeIds) != 0) {
-		//		Tcl_AppendResult(interp, "couldn't create output pipe: ", Tcl_OSError(interp), (char *)NULL);
-		//		goto error;
-		//	}
-		//	lastOutputId = pipeIds[1];
-		//	*outPipePtr = pipeIds[0];
-		//	pipeIds[0] = pipeIds[1] = NULL;
+	} else if (outPipePtr != NULL) {
+		// Output is to go to a pipe.
+		if (TclPipe(pipeIds) != 0) {
+			Tcl_AppendResult(interp, "couldn't create output pipe: ", Tcl_OSError(interp), (char *)NULL);
+			goto error;
+		}
+		lastOutputId = pipeIds[1];
+		*outPipePtr = pipeIds[0];
+		pipeIds[0] = pipeIds[1] = NULL;
 	}
 	// If we are redirecting stderr with 2>filename or 2>@fileId, then we ignore errFilePtr
-	FILE *errorId = NULL; // Writable file id for all standard error output from all commands in pipeline.  -1 means use stderr.
+	HANDLE errorId = INVALID_HANDLE_VALUE; // Writable file id for all standard error output from all commands in pipeline.  -1 means use stderr.
 	if (error != NULL) {
 		if (errorFile == 2) {
 			OpenFile_ *filePtr;
@@ -366,8 +393,8 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 				Tcl_AppendResult(interp, "\"", input, "\" wasn't opened for writing", (char *)NULL);
 				goto error;
 			}
-			_fflush(filePtr->f2 ? filePtr->f2 : filePtr->f);
-			errorId = (filePtr->f2 ? filePtr->f2 : filePtr->f);
+			_fflush(filePtr->f2 ? nullptr : filePtr->f);
+			errorId = TclDupFd(TclFileno(filePtr->f2 ? nullptr : filePtr->f));
 		}
 		else {
 			// Output is to go to a file.
@@ -375,7 +402,7 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 			if (errorFile == 1) {
 				mode = "w+";
 			}
-			errorId = _fopen(error, mode);
+			errorId = TclFileno(_fopen(error, mode));
 			if (errorId < 0) {
 				Tcl_AppendResult(interp, "couldn't write file \"", error, "\": ", Tcl_OSError(interp), (char *)NULL);
 				goto error;
@@ -387,13 +414,13 @@ __device__ int Tcl_CreatePipeline(Tcl_Interp *interp, int argc, const char *args
 		// to complete before reading stderr, and processes couldn't complete because stderr was backed up.
 		char errName[MAX_PATH];
 		mktemp(errName, sizeof(errName));
-		errorId = _fopen(errName, "w");
+		errorId = TclFileno(_fopen(errName, "w"));
 		if (errorId < 0) {
 errFileError:
 			Tcl_AppendResult(interp, "couldn't create error file for command: ", Tcl_OSError(interp), (char *)NULL);
 			goto error;
 		}
-		*errFilePtr = __fileno(_fopen(errName, "rb"));
+		*errFilePtr = TclFileno(_fopen(errName, "rb"));
 		if (*errFilePtr < 0) {
 			goto errFileError;
 		}
@@ -406,9 +433,9 @@ errFileError:
 	// Scan through the argc array, forking off a process for each group of arguments between "|" arguments.
 	HANDLE *pidPtr = (HANDLE *)_allocFast((unsigned)(cmdCount * sizeof(HANDLE))); // Points to malloc-ed array holding all the pids of child processes.
 	for (i = 0; i < numPids; i++) {
-		pidPtr[i] = -1;
+		pidPtr[i] = INVALID_HANDLE_VALUE;
 	}
-	FILE *outputId = NULL; // Writable file id for output from current command in pipeline (could be file or pipe). -1 means use stdout.
+	HANDLE outputId = INVALID_HANDLE_VALUE; // Writable file id for output from current command in pipeline (could be file or pipe). -1 means use stdout.
 	int lastArg;
 	for (int firstArg = 0; firstArg < argc; numPids++, firstArg = lastArg+1) {
 		for (lastArg = firstArg; lastArg < argc; lastArg++) {
@@ -419,12 +446,12 @@ errFileError:
 		args[lastArg] = NULL;
 		if (lastArg == argc) {
 			outputId = lastOutputId;
-			//} else {
-			//	if (pipe(pipeIds) != 0) {
-			//		Tcl_AppendResult(interp, "couldn't create pipe: ", Tcl_OSError(interp), (char *)NULL);
-			//		goto error;
-			//	}
-			//	outputId = pipeIds[1];
+		} else {
+			if (TclPipe(pipeIds) != 0) {
+				Tcl_AppendResult(interp, "couldn't create pipe: ", Tcl_OSError(interp), (char *)NULL);
+				goto error;
+			}
+			outputId = pipeIds[1];
 		}
 		char *execName = Tcl_TildeSubst(interp, (char *)args[firstArg]);
 		int pid = -1; //Tcl_Fork();
@@ -444,17 +471,17 @@ errFileError:
 			//}
 			//execvp(execName, &args[firstArg]);
 			_sprintf(errSpace, "couldn't find \"%.150s\" to execute\n", args[firstArg]);
-			_fwrite(errSpace, strlen(errSpace), 1, stderr);
+			_fwrite(errSpace, _strlen(errSpace), 1, _stderr);
 			_exit(1);
 		} else {
 			pidPtr[numPids] = pid;
 		}
 		// Close off our copies of file descriptors that were set up for this child, then set up the input for the next child.
 		if (inputId) {
-			_fclose(inputId);
+			TclClose(inputId);
 		}
 		if (outputId) {
-			_fclose(outputId);
+			TclClose(outputId);
 		}
 		//inputId = pipeIds[0];
 		pipeIds[0] = pipeIds[1] = NULL;
@@ -464,35 +491,35 @@ errFileError:
 	// All done.  Cleanup open files lying around and then return.
 cleanup:
 	if (inputId) {
-		_fclose(inputId);
+		TclClose(inputId);
 	}
 	if (lastOutputId) {
-		_fclose(lastOutputId);
+		TclClose(lastOutputId);
 	}
 	if (errorId) {
-		_fclose(errorId);
+		TclClose(errorId);
 	}
 	return numPids;
 
 	// An error occurred.  There could have been extra files open, such as pipes between children.  Clean them all up.  Detach any child processes that have been created.
 error:
 	if (inPipePtr != NULL && *inPipePtr) {
-		_fclose(*inPipePtr);
+		TclClose(*inPipePtr);
 		*inPipePtr = NULL;
 	}
 	if (outPipePtr != NULL && *outPipePtr) {
-		_fclose(*outPipePtr);
+		TclClose(*outPipePtr);
 		*outPipePtr = NULL;
 	}
 	if (errFilePtr != NULL && *errFilePtr) {
-		_fclose(*errFilePtr);
+		TclClose(*errFilePtr);
 		*errFilePtr = NULL;
 	}
 	if (pipeIds[0]) {
-		_fclose(pipeIds[0]);
+		TclClose(pipeIds[0]);
 	}
 	if (pipeIds[1]) {
-		_fclose(pipeIds[1]);
+		TclClose(pipeIds[1]);
 	}
 	if (pidPtr != NULL) {
 		for (i = 0; i < numPids; i++) {
