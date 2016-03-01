@@ -215,7 +215,7 @@ __device__ void MemShutdown(void *notUsed1)
 
 // This routine is the only routine in this file with external linkage.
 // Populate the low-level memory allocation function pointers in sqlite3GlobalConfig.m with pointers to the routines in this file.
-__constant__ static const _mem_methods _mem1DefaultMethods = {
+__constant__ const _mem_methods _mem1DefaultMethods = {
 	MemAlloc,
 	MemFree,
 	MemRealloc,

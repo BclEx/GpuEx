@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Program.cpp" />
+    <ClCompile Include="RuntimeHost.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GpuEx-Runtime.Native.nuspec">

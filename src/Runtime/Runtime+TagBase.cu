@@ -5,6 +5,8 @@ RUNTIME_NAMEBEGIN
 #define RUNTIME_DEFAULT_MEMSTATUS false
 #endif
 
+	__constant__ extern const _mem_methods _mem1DefaultMethods;
+
 	// The following singleton contains the global configuration for the SQLite library.
 	__device__ _WSD TagBase::RuntimeStatics g_RuntimeStatics =
 {
@@ -14,7 +16,7 @@ RUNTIME_NAMEBEGIN
 	//
 	RUNTIME_DEFAULT_MEMSTATUS,	// Memstat
 	true,						// RuntimeMutex
-	{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },				// AllocSystem
+	_mem1DefaultMethods, //{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },				// AllocSystem
 	{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },	// MutexSystem
 	128,						// LookasideSize
 	500,						// Lookasides
