@@ -1,4 +1,3 @@
-#ifdef VISUAL
 #include <cstdlib>
 #include "VisualHost.h"
 
@@ -141,4 +140,3 @@ void Visual::DataEx()
 	// start rendering mainloop
 	glutMainLoop();
 }
-#endif

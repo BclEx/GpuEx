@@ -187,27 +187,4 @@ inline int gpuGetMaxGflopsDeviceId()
 
 #pragma endregion
 
-///////////////////////////////////////////////////////////////////////////////
-// VISUAL
-// Visual render for host-side code
-#pragma region VISUAL
-#ifdef VISUAL
-#include "VisualHost.h"
-
-class RuntimeVisualRender : public IVisualRender
-{
-private:
-	cudaDeviceHeap _runtimeHost;
-public:
-	RuntimeVisualRender(cudaDeviceHeap runtimeHost)
-		: _runtimeHost(runtimeHost) { }
-	virtual void Dispose();
-	virtual void Keyboard(unsigned char key);
-	virtual void Display();
-	virtual void Initialize();
-};
-
-#endif
-#pragma endregion
-
 #endif // __RUNTIMEHOST_H__

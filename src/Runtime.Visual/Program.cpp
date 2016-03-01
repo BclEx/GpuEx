@@ -14,7 +14,6 @@ int main(int argc, char **argv)
 
 	_deviceHeap = cudaDeviceHeapCreate(256, 100);
 
-#if VISUAL
 	// First initialize OpenGL context, so we can properly set the GL for CUDA. This is necessary in order to achieve optimal performance with OpenGL/CUDA interop.
 	//IVisualRender* render = new RuntimeVisualRender(deviceHeap);
 	//if (!Visual::InitGL(render, &argc, argv))
@@ -24,7 +23,6 @@ int main(int argc, char **argv)
 	//Visual::DataEx();
 	//Visual::Dispose();
 	//cudaErrorCheck(cudaDeviceHeapSynchronize(deviceHeap));
-#endif
 
 	RuntimeSentinel::Initialize();
 
