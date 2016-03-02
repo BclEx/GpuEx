@@ -20,9 +20,14 @@ __global__ void addKernel(int *c, const int *a, const int *b)
 	// file writing example
 #if 0
 	if (threadIdx.x != 0) return;
-	FILE *f = _fopen("fopen.txt", "w");
+	FILE *f = _fopen("C:\\T_\\fopen.txt", "w");
 	_fprintfR(f, "The quick brown fox jumps over the lazy dog");
-	_fclose(f);
+	_fflushR(f);
+	_fcloseR(f);
+
+	//FILE *f = _fopen("fopen.txt", "w");
+	//_fprintfR(f, "The quick brown fox jumps over the lazy dog");
+	//_fclose(f);
 #endif
 }
 

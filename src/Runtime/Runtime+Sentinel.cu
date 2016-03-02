@@ -132,11 +132,11 @@ static unsigned int __stdcall SentinelHostThread(void *data)
 			printf("Bad Sentinel Magic");
 			exit(1);
 		}
-		map->Dump();
-		cmd->Dump();
+		//map->Dump();
+		//cmd->Dump();
 		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
 		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
-		printf(".");
+		//printf(".");
 		*status = (!msg->Async ? 4 : 0);
 		map->GetId += SENTINEL_MSGSIZE;
 	}
@@ -164,10 +164,10 @@ static unsigned int __stdcall SentinelDeviceThread(void *data)
 			exit(1);
 		}
 		//map->Dump();
-		//cmd->Dump();
+		cmd->Dump();
 		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
 		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
-		//printf(".");
+		printf(".");
 		*status = (!msg->Async ? 4 : 0);
 		map->GetId += SENTINEL_MSGSIZE;
 	}
@@ -221,13 +221,10 @@ void TdrShutdown()
 }
 #endif
 
+// https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
+// https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
 void RuntimeSentinel::ServerInitialize(RuntimeSentinelExecutor *executor, char *mapHostName)
 {
-	// initialize TDR
-	//TdrInitialize();
-
-	// https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85).aspx
-	// https://github.com/pathscale/nvidia_sdk_samples/blob/master/simpleStreams/0_Simple/simpleStreams/simpleStreams.cu
 	// create host map
 #if HAS_HOSTSENTINEL
 	_hostMapHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(RuntimeSentinelMap) + MEMORY_ALIGNMENT, mapHostName);
@@ -294,9 +291,6 @@ initialize_error:
 
 void RuntimeSentinel::ServerShutdown()
 {
-	// shutdown TDR
-	//TdrShutdown();
-
 	// close host map
 #if HAS_HOSTSENTINEL
 	if (_threadHostHandle) { CloseHandle(_threadHostHandle); _threadHostHandle = NULL; }
@@ -317,6 +311,7 @@ void RuntimeSentinel::ServerShutdown()
 
 void RuntimeSentinel::ClientInitialize(char *mapHostName)
 {
+#if HAS_HOSTSENTINEL
 	_hostMapHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, mapHostName);
 	if (!_hostMapHandle)
 	{
@@ -331,12 +326,15 @@ void RuntimeSentinel::ClientInitialize(char *mapHostName)
 		exit(1);
 	}
 	_runtimeSentinelHostMap = _ctx.HostMap = (RuntimeSentinelMap *)_ROUNDN(_hostMap, MEMORY_ALIGNMENT);
+#endif
 }
 
 void RuntimeSentinel::ClientShutdown()
 {
+#if HAS_HOSTSENTINEL
 	if (_hostMap) { UnmapViewOfFile(_hostMap); _hostMap = nullptr; }
 	if (_hostMapHandle) { CloseHandle(_hostMapHandle); _hostMapHandle = NULL; }
+#endif
 }
 
 RuntimeSentinelExecutor *RuntimeSentinel::FindExecutor(const char *name)

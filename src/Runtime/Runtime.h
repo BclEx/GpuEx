@@ -82,11 +82,11 @@ typedef struct
 #if defined(_GPU) || defined(_SENTINEL)
 //#pragma message("OS_MAP:HAS_HOSTSENTINEL")
 #define OS_MAP 1
-#define HAS_HOSTSENTINEL 1
+#define HAS_HOSTSENTINEL 0 // 1 for IPC
 #else
 //#pragma message("OS_MAP:HAS_HOSTSENTINEL")
 #define OS_MAP 0
-#define HAS_HOSTSENTINEL 1
+#define HAS_HOSTSENTINEL 0 // 1 for IPC
 #endif
 
 #if __CUDACC__
@@ -1581,7 +1581,7 @@ extern "C" __device__ __forceinline int __snprintf(const char *buf, size_t bufLe
 // FPRINTF
 #pragma region FPRINTF
 
-#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 200
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 200
 //#undef stdin
 //#undef stdout
 //#undef stderr
