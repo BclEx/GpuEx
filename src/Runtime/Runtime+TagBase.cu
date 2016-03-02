@@ -5,10 +5,28 @@ RUNTIME_NAMEBEGIN
 #define RUNTIME_DEFAULT_MEMSTATUS false
 #endif
 
-	__constant__ extern const _mem_methods _mem1DefaultMethods;
+	__device__ void *MemAlloc(size_t size);
+__device__ void MemFree(void *prior);
+__device__ size_t MemSize(void *prior);
+__device__ void *MemRealloc(void *prior, size_t size);
+__device__ size_t MemRoundup(size_t size);
+__device__ int MemInit(void *notUsed1);
+__device__ void MemShutdown(void *notUsed1);
+//
+//__device__ int MutexInit();
+//__device__ void MutexShutdown();
+//__device__ MutexEx MutexAlloc(MUTEX id);
+//__device__ void MutexFree(MutexEx p);
+//__device__ void MutexEnter(MutexEx p);
+//__device__ bool MutexTryEnter(MutexEx p);
+//__device__ void MutexLeave(MutexEx p);
+//#ifdef _DEBUG
+//__device__ bool MutexHeld(MutexEx p);
+//__device__ bool MutexNotHeld(MutexEx p);
+//#endif
 
-	// The following singleton contains the global configuration for the SQLite library.
-	__device__ _WSD TagBase::RuntimeStatics g_RuntimeStatics =
+// The following singleton contains the global configuration for the SQLite library.
+__device__ _WSD TagBase::RuntimeStatics g_RuntimeStatics =
 {
 	false,						// CoreMutex
 	THREADSAFE == 1,			// FullMutex
@@ -16,8 +34,14 @@ RUNTIME_NAMEBEGIN
 	//
 	RUNTIME_DEFAULT_MEMSTATUS,	// Memstat
 	true,						// RuntimeMutex
-	_mem1DefaultMethods, //{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },				// AllocSystem
-	{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr },	// MutexSystem
+	{ MemAlloc, MemFree, MemRealloc, MemSize, MemRoundup, MemInit, MemShutdown, nullptr }, // AllocSystem
+	//	{ MutexInit, MutexShutdown, MutexAlloc, MutexFree, MutexEnter, MutexTryEnter, MutexLeave,
+	//#ifdef _DEBUG
+	//	MutexHeld, MutexNotHeld }, // MutexSystem
+	//#else
+	//	nullptr, nullptr }, // MutexSystem
+	//#endif
+	{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr }, // MutexSystem
 	128,						// LookasideSize
 	500,						// Lookasides
 	(void *)nullptr,			// Scratch

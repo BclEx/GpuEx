@@ -61,6 +61,10 @@ void addWithCuda(int *c, const int *a, const int *b, unsigned int size)
 	deviceHeap = cudaDeviceHeapCreate();
 	cudaDeviceHeapSelect(deviceHeap);
 
+#if OS_MAP
+	RuntimeSentinel::ServerInitialize();
+#endif
+
 	// Allocate GPU buffers for three vectors (two input, one output)    .
 	cudaErrorCheckF(cudaMalloc((void**)&dev_c, size * sizeof(int)), goto Error);
 	cudaErrorCheckF(cudaMalloc((void**)&dev_a, size * sizeof(int)), goto Error);
@@ -90,6 +94,10 @@ Error:
 	cudaFree(dev_c);
 	cudaFree(dev_a);
 	cudaFree(dev_b);
+
+#if OS_MAP
+	RuntimeSentinel::ServerShutdown();
+#endif
 	cudaDeviceHeapDestroy(deviceHeap);
 }
 
