@@ -35,8 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="UserMacros">
-    <LD>
-    </LD>
     <CUARCH Condition="'$(CUARCH)'==''">35</CUARCH>
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
     <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>
@@ -157,10 +155,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
-    <TargetName>$(ProjectName).$(CUARCH)$(LD)</TargetName>
+    <TargetName>$(ProjectName).$(CUARCH)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release.cpu' Or '$(Configuration)'=='Release.cu'">
-    <TargetName>$(ProjectName).$(CUARCH)$(LD)</TargetName>
+    <TargetName>$(ProjectName).$(CUARCH)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug.cpu' Or '$(Configuration)'=='Debug.cu'">
     <ClCompile>
@@ -171,15 +169,14 @@
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.JimTcl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(CUARCH)$(LD).lib;Runtime.JimTcl.$(CUARCH)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Runtime.$(CUARCH).lib;Runtime.JimTcl.$(CUARCH).lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
@@ -203,7 +200,6 @@
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(LD)'=='V'">_VISUAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.JimTcl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -212,8 +208,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
-      <AdditionalDependencies>Runtime.$(CUARCH)$(LD).lib;Runtime.JimTcl.$(CUARCH)$(LD).lib;cudart.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);$(SolutionDir)packages\freeglut.2.8.0\lib\$(ShortPlatform);$(SolutionDir)packages\glew.1.9.0\lib\$(ShortPlatform);</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Runtime.$(CUARCH).lib;Runtime.JimTcl.$(CUARCH).lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>

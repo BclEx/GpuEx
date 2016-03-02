@@ -35,8 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="UserMacros">
-    <LD>
-    </LD>
     <CUARCH Condition="'$(CUARCH)'==''">35</CUARCH>
     <ShortPlatform Condition="'$(Platform)'=='Win32'">x86</ShortPlatform>
     <ShortPlatform Condition="'$(Platform)'=='x64'">x64</ShortPlatform>
@@ -79,7 +77,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>WIN32;_TEST;OMIT_INCRBLOB;HASJIMTCL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.JimTcl;$(SolutionDir)src\System.net;$(SolutionDir)src\System.Data.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -105,7 +103,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;WIN32;OMIT_INCRBLOB;HASJIMTCL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\Runtime.JimTcl;$(SolutionDir)src\System.net;$(SolutionDir)src\System.Data.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

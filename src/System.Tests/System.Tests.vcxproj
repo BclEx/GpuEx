@@ -100,7 +100,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -109,7 +109,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(CUARCH).lib;System.$(CUARCH).lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
@@ -129,7 +129,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -138,7 +138,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(CUARCH).lib;System.$(CUARCH).lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>

@@ -29,6 +29,7 @@ RuntimeArch = itemAsName;
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>HASRUNTIME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

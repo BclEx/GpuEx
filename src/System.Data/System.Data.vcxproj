@@ -86,7 +86,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_LIB;_TEST;ENABLE_IOTRACE;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)src\Runtime.JimTcl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -120,7 +120,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>NDEBUG;_LIB;ENABLE_ATOMIC_WRITE;OMIT_WAL;EXPENSIVE_ASSERT;CHECK_PAGES;ENABLE_MEMORY_MANAGEMENT;xHAS_CODEC;ENABLE_OVERSIZE_CELL_CHECK;ENABLE_STAT3;SOUNDEX;ENABLE_TREE_EXPLAIN;ENABLE_UNLOCK_NOTIFY;xOMIT_GET_TABLE;xOMIT_VIRTUALTABLE;xOMIT_INCRBLOB;xOMIT_TRACE;VDBE_PROFILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)src\System.net;$(SolutionDir)src\Runtime.JimTcl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

@@ -93,7 +93,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(CUARCH).lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>

@@ -110,7 +110,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>_LIB;_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -141,7 +141,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ExceptionHandling>false</ExceptionHandling>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--<PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release.cu'">_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src\Runtime;$(SolutionDir)lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

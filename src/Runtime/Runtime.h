@@ -31,9 +31,9 @@ typedef struct
 } cudaDeviceHeap;
 #endif
 
-#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 100
-#define _GPU
-#endif
+//#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ > 100
+//#define _GPU
+//#endif
 
 #if __CUDACC__
 #define __forceinline __forceinline__
