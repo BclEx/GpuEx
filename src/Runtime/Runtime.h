@@ -1174,9 +1174,9 @@ typedef struct
 	char Data[SENTINEL_MSGSIZE*SENTINEL_MSGCOUNT];
 	inline void Dump()
 	{
-		register char *b2 = (char *)this;
-		register int l2 = sizeof(RuntimeSentinelMap);
-		printf("Map: 0x%x[%d] '", b2, l2); for (int i = 0; i < l2; i++) printf("%02x", b2[i] & 0xff); printf("'\n");
+		register char *b = (char *)this;
+		register int l = sizeof(RuntimeSentinelMap);
+		printf("Map: 0x%x[%d] '", b, l); for (int i = 0; i < l; i++) printf("%02x", b[i] & 0xff); printf("'\n");
 	}
 } RuntimeSentinelMap;
 

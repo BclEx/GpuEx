@@ -7,6 +7,10 @@ __device__ volatile unsigned int _runtimeSentinelMapId;
 __constant__ RuntimeSentinelMap *_runtimeSentinelDeviceMap[SENTINEL_DEVICEMAPS];
 __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 {
+#ifndef _WIN64
+	printf("Sentinel currently only works in x64.\n");
+	_abort();
+#endif
 	RuntimeSentinelMap *map = _runtimeSentinelDeviceMap[_runtimeSentinelMapId++ % SENTINEL_DEVICEMAPS];
 	RuntimeSentinelMessage *msg2 = (RuntimeSentinelMessage *)msg;
 	int length = msgLength + msg2->Size;
@@ -20,9 +24,11 @@ __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 	if (msg2->Prepare && !msg2->Prepare(msg, cmd->Data, cmd->Data+length))
 	{
 		printf("msg too long");
-		asm("trap;"); //_trap();
+		asm("trap;"); //_abort();
 	}
 	memcpy(cmd->Data, msg, msgLength);
+	//printf("Msg2: 0x%x[%d] '", cmd->Data, msgLength); for (int i = 0; i < msgLength; i++) printf("%02x", ((char *)cmd->Data)[i] & 0xff); printf("'\n");
+
 	*status = 2;
 	if (!msg2->Async)
 	{

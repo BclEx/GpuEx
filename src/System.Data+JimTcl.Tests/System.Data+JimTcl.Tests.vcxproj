@@ -83,12 +83,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <TargetMachine>MachineX64</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(CUARCH).lib;System.$(CUARCH).lib;System.Data.$(CUARCH).lib;Runtime.JimTcl.$(CUARCH).lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
-      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
       <CodeGeneration>compute_$(CUARCH),sm_$(CUARCH)</CodeGeneration>
       <Include>$(SolutionDir)lib;%(Include)</Include>
       <GenerateRelocatableDeviceCode Condition="'$(CUARCH)'!='11'">true</GenerateRelocatableDeviceCode>
@@ -110,12 +110,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>MachineX64</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <AdditionalDependencies>Runtime.$(CUARCH).lib;System.$(CUARCH).lib;System.Data.$(CUARCH).lib;Runtime.JimTcl.$(CUARCH).lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
-      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <TargetMachinePlatform Condition="'$(Platform)'=='x64'">64</TargetMachinePlatform>
       <CodeGeneration>compute_$(CUARCH),sm_$(CUARCH)</CodeGeneration>
       <GenerateRelocatableDeviceCode Condition="'$(CUARCH)'!='11'">true</GenerateRelocatableDeviceCode>
     </CudaCompile>

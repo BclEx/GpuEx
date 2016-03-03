@@ -164,10 +164,10 @@ static unsigned int __stdcall SentinelDeviceThread(void *data)
 			exit(1);
 		}
 		//map->Dump();
-		cmd->Dump();
+		//cmd->Dump();
 		RuntimeSentinelMessage *msg = (RuntimeSentinelMessage *)cmd->Data;
 		for (RuntimeSentinelExecutor *exec = _ctx.List; exec && exec->Executor && !exec->Executor(exec->Tag, msg, cmd->Length); exec = exec->Next) { }
-		printf(".");
+		//printf(".");
 		*status = (!msg->Async ? 4 : 0);
 		map->GetId += SENTINEL_MSGSIZE;
 	}

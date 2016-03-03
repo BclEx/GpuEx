@@ -78,6 +78,7 @@
     <ClCompile Include="Runtime+Sentinel.cu" />
     <ClCompile Include="RuntimeEx.cu" />
     <ClCompile Include="RuntimeOS.cu" />
+    <ClCompile Include="Program.cu" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug.cu' Or '$(Configuration)'=='Release.cu'">
     <CudaCompile Include="RT.cu" />
@@ -107,9 +108,9 @@
     <CudaCompile Include="Runtime+Sentinel.cu" />
     <None Include="RuntimeEx.cu" />
     <None Include="RuntimeOS.cu" />
+    <CudaCompile Include="Program.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Program.cpp" />
     <ClCompile Include="RuntimeHost.cpp" />
   </ItemGroup>
   <ItemGroup>
