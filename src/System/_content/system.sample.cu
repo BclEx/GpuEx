@@ -1,3 +1,5 @@
+#if 0
+
 #include <RuntimeHost.h>
 #include <Core\Core.cu.h>
 
@@ -27,7 +29,7 @@ __global__ void fileAccessKernel(const char *path)
 int main()
 {	
 	// Write values to filesytem.
-	fileAccessWithCuda("C:\\T_\\Test.db");
+	fileAccessWithCuda("fwrite.dat");
 
 	// cudaDeviceReset must be called before exiting in order for profiling and
 	// tracing tools such as Nsight and Visual Profiler to show complete traces.
@@ -51,8 +53,6 @@ void fileAccessWithCuda(const char *path)
 
 	deviceHeap = cudaDeviceHeapCreate();
 	cudaDeviceHeapSelect(deviceHeap);
-
-	// Initialize Sentinel if required.
 #if OS_MAP
 	CoreS::VSystemSentinel::Initialize();
 #endif
@@ -73,11 +73,6 @@ void fileAccessWithCuda(const char *path)
 	// Launch a kernel on the GPU.
 	systemShutdown<<<1, 1>>>();
 
-	// Shutdown Sentinel if required.
-#if OS_MAP
-	CoreS::VSystemSentinel::Shutdown();
-#endif
-
 	// Check for any errors launching the kernel
 	cudaErrorCheckF(cudaGetLastError(), goto Error);
 
@@ -89,5 +84,10 @@ void fileAccessWithCuda(const char *path)
 	cudaErrorCheckF(cudaDeviceSynchronize(), goto Error);
 
 Error:
+#if OS_MAP
+	CoreS::VSystemSentinel::Shutdown();
+#endif
 	cudaDeviceHeapDestroy(deviceHeap);
 }
+
+#endif

@@ -21,7 +21,7 @@
     <file src="_build\**\Runtime.TinyTcl.*.lib" target="build\native\lib" />
     <file src="src\Runtime.TinyTcl\*.targets" target="build\native" />
     <file src="src\Runtime.TinyTcl\**\*.h" exclude="src\Runtime.TinyTcl\_*\*" target="build\native\include" />
-    <file src="src\Runtime.TinyTcl\_content\*" target="content" />
+    <!--<file src="src\Runtime.TinyTcl\_content\*" target="content" />-->
     <file src="src\Runtime.TinyTcl\**\*.cu" exclude="src\Runtime.TinyTcl\_*\*" target="src" />
     <file src="src\Runtime.TinyTcl\**\*.h" exclude="src\Runtime.TinyTcl\_*\*" target="src" />
     <file src="src\Runtime.TinyTcl\**\*.tcl" target="src" />

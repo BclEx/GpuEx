@@ -25,7 +25,19 @@ __device__ int cmdCheckmem(ClientData clientData, Tcl_Interp *interp, int argc, 
 }
 #endif
 
-#pragma region Startup/Interactive/Shutdown
+// SAMPLE COMMAND
+#if 0
+__device__ int SampleCommand(ClientData clientData, Tcl_Interp *interp, int argc, const char *args[]) {
+	if (argc != 2) {
+		Tcl_AppendResult(interp, "wrong # args: should be \"", args[0], " Msg\"", (char *)NULL);
+		return TCL_ERROR;
+	}
+	printf("%s\n", args[1]);
+	return TCL_OK;
+}
+#endif
+
+#pragma region Startup + Shutdown
 
 struct PrimaryData {
 	Tcl_Interp *interp;
@@ -83,6 +95,10 @@ static void MainInit(int argc, char *const argv[]) {
 	TclEx_InitExtensions(interp);
 #ifdef TCL_MEM_DEBUG
 	Tcl_CreateCommand(interp, "checkmem", cmdCheckmem, (ClientData)0, (Tcl_CmdDeleteProc *)NULL);
+#endif
+	// SAMPLE COMMAND
+#if 0
+	Tcl_CreateCommand(interp, "sample", SampleCommand, nullptr, nullptr);
 #endif
 	_dataP.buffer = Tcl_CreateCmdBuf();
 

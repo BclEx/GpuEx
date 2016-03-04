@@ -1,17 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" >
+  <UsingTask TaskName="GetRuntimeArch" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <CudaCompile ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <RuntimeArch ParameterType="System.String" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.Linq" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+var itemAsName = "cpu";
+var item = CudaCompile.Select(x=>x.GetMetadata("CodeGeneration")).FirstOrDefault();
+if (item != null) {
+  if (item.IndexOf("compute_10") != -1) itemAsName = "ERR";
+  if (item.IndexOf("compute_11") != -1 || item.IndexOf("compute_12") != -1 || item.IndexOf("compute_13") != -1) itemAsName = "11";
+  if (item.IndexOf("compute_20") != -1 || item.IndexOf("compute_21") != -1) itemAsName = "20";
+  if (item.IndexOf("compute_30") != -1 || item.IndexOf("compute_32") != -1) itemAsName = "30";
+  if (item.IndexOf("compute_35") != -1 || item.IndexOf("compute_37") != -1) itemAsName = "35";
+  if (item.IndexOf("compute_50") != -1) itemAsName = "50";
+  if (item.IndexOf("compute_52") != -1 || item.IndexOf("compute_53") != -1) itemAsName = "52";
+  if (item.IndexOf("compute_60") != -1) itemAsName = "60";
+}
+RuntimeArch = itemAsName;
+]]>
+      </Code>
+    </Task>
+  </UsingTask>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HASJIMTCL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='cpu'">Runtime.JimTcl.cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_11'">Runtime.JimTcl.11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_20'">Runtime.JimTcl.20.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'==''">Runtime.JimTcl.30.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'%(CudaCompile.CodeGeneration)'=='compute_35'">Runtime.JimTcl.35.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)lib\$(Platform).$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
+  <Target Name="RuntimeLinkBefore" BeforeTargets="Link;CudaLink">
+    <GetRuntimeArch CudaCompile="@(CudaCompile)">
+      <Output TaskParameter="RuntimeArch" PropertyName="RuntimeArch" />
+    </GetRuntimeArch>
+    <ItemGroup>
+      <Link>
+        <AdditionalDependencies>Runtime.JimTcl.$(RuntimeArch).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      </Link>
+      <CudaLink>
+        <AdditionalDependencies>Runtime.JimTcl.$(RuntimeArch).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      </CudaLink>
+    </ItemGroup>
+  </Target>
 </Project>

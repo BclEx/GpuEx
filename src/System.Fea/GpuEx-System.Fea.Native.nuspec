@@ -21,7 +21,7 @@
     <file src="_build\**\System.Fea.*.lib" target="build\native\lib" />
     <file src="src\System.Fea\*.targets" target="build\native" />
     <file src="src\System.Fea.net\**\*.h" target="build\native\include" />
-    <file src="src\System.Fea\_content\*" target="content" />
+    <!--<file src="src\System.Fea\_content\*" target="content" />-->
     <file src="src\System.Fea.net\**\*.cu" target="src" />
     <file src="src\System.Fea.net\**\*.h" target="src" />
   </files>

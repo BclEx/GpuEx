@@ -1,5 +1,6 @@
 // set to 1 for examples
 #if 0
+
 #include <RuntimeHost.h>
 #include <Runtime.h>
 
@@ -17,17 +18,12 @@ __global__ void addKernel(int *c, const int *a, const int *b)
 	printf(buf);
 #endif
 
-	// file writing example
+	// file writing example (x64)
 #if 0
 	if (threadIdx.x != 0) return;
-	FILE *f = _fopen("C:\\T_\\fopen.txt", "w");
+	FILE *f = _fopen("fopen.txt", "w");
 	_fprintfR(f, "The quick brown fox jumps over the lazy dog");
-	_fflushR(f);
 	_fcloseR(f);
-
-	//FILE *f = _fopen("fopen.txt", "w");
-	//_fprintfR(f, "The quick brown fox jumps over the lazy dog");
-	//_fclose(f);
 #endif
 }
 
@@ -64,7 +60,6 @@ void addWithCuda(int *c, const int *a, const int *b, unsigned int size)
 
 	deviceHeap = cudaDeviceHeapCreate();
 	cudaDeviceHeapSelect(deviceHeap);
-
 #if OS_MAP
 	RuntimeSentinel::ServerInitialize();
 #endif

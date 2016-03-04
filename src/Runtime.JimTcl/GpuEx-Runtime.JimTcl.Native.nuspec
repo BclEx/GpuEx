@@ -21,7 +21,7 @@
     <file src="_build\**\Runtime.JimTcl.*.lib" target="build\native\lib" />
     <file src="src\Runtime.JimTcl\*.targets" target="build\native" />
     <file src="src\Runtime.JimTcl\**\*.h" exclude="src\Runtime.JimTcl\_*\*" target="build\native\include" />
-    <file src="src\Runtime.JimTcl\_content\*" target="content" />
+    <!--<file src="src\Runtime.JimTcl\_content\*" target="content" />-->
     <file src="src\Runtime.JimTcl\**\*.cu" exclude="src\Runtime.JimTcl\_*\*" target="src" />
     <file src="src\Runtime.JimTcl\**\*.h" exclude="src\Runtime.JimTcl\_*\*" target="src" />
     <file src="src\Runtime.JimTcl\**\*.tcl" target="src" />
