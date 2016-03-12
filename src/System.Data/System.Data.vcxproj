@@ -279,7 +279,7 @@
     <None Include="GpuEx-System.Data.Native.targets">
       <SubType>Designer</SubType>
     </None>
-    <None Include="_content\system.data.sample.cu" />
+    <None Include="_content\sample.system.data.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

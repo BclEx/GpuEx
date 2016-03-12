@@ -31,17 +31,8 @@
   <ItemGroup>
     <None Include="GpuEx-System.Native.nuspec" />
     <None Include="GpuEx-System.Native.targets" />
-    <None Include="..\System.net\Core\SysEx.cu" />
-    <None Include="..\System.net\Core\SysEx+Random.cu" />
-    <None Include="..\System.net\Core\VFile+JournalVFile.cu" />
-    <None Include="..\System.net\Core\VFile+MemoryVFile.cu" />
-    <None Include="..\System.net\Core\VFile.cu" />
-    <None Include="..\System.net\Core\VSystem.cu" />
-    <None Include="..\System.net\Core\VSystem-gpu.cu" />
-    <None Include="..\System.net\Core\VSystem-map.cu" />
-    <None Include="..\System.net\Core\VSystem-unix.cu" />
-    <None Include="..\System.net\Core\VSystem-win.cu" />
-    <None Include="_content\system.sample.cu">
+    <None Include="System.cu" />
+    <None Include="_content\sample.system.cu">
       <Filter>_content</Filter>
     </None>
   </ItemGroup>
@@ -49,9 +40,16 @@
     <ClCompile Include="..\System.net\Core\VSystem+Sentinel.cu">
       <Filter>Core</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="System.cu" />
-    <CudaCompile Include="Program.cu" />
+    <ClCompile Include="Program.cu" />
+    <ClCompile Include="..\System.net\Core\SysEx.cu" />
+    <ClCompile Include="..\System.net\Core\SysEx+Random.cu" />
+    <ClCompile Include="..\System.net\Core\VFile+JournalVFile.cu" />
+    <ClCompile Include="..\System.net\Core\VFile+MemoryVFile.cu" />
+    <ClCompile Include="..\System.net\Core\VFile.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-gpu.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-map.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-unix.cu" />
+    <ClCompile Include="..\System.net\Core\VSystem-win.cu" />
   </ItemGroup>
 </Project>

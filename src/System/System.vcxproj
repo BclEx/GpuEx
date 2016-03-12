@@ -186,7 +186,7 @@
   <ItemGroup>
     <None Include="GpuEx-System.Native.nuspec" />
     <None Include="GpuEx-System.Native.targets" />
-    <None Include="_content\system.sample.cu" />
+    <None Include="_content\sample.system.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

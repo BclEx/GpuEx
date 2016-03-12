@@ -50,7 +50,7 @@
   <ItemGroup>
     <None Include="GpuEx-System.Fea.Native.nuspec" />
     <None Include="GpuEx-System.Fea.Native.targets" />
-    <None Include="_content\system.fea.cu.sample" />
+    <None Include="_content\sample.system.fea.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E12FCAFC-B881-41D2-BA5B-72A5AF25E655}</ProjectGuid>
