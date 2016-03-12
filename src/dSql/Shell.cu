@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <RuntimeHost.h>
-#include "..\System.Data.net\Core+Vdbe\VdbeInt.cu.h"
+#include <Core+Vdbe\VdbeInt.cu.h>
 
 #if !defined(_WIN32) && !defined(WIN32)
 #include <signal.h>
@@ -2372,20 +2372,20 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 #pragma endregion
 #pragma region .load
 #ifndef OMIT_LOAD_EXTENSION
-	else if (c == 'l' && !strncmp(args[0], "load", n) && argsLength >= 2)
-	{
-		const char *file = args[1];
-		const char *proc = (argsLength >= 3 ? args[2] : 0);
-		_OpenCtx(p);
-		char *errMsg = 0;
-		rc = sqlite3_load_extension(p->Ctx, file, proc, &errMsg);
-		if (rc != RC_OK)
-		{
-			fprintf(stderr, "Error: %s\n", errMsg);
-			_free(errMsg);
-			rc = 1;
-		}
-	}
+	//else if (c == 'l' && !strncmp(args[0], "load", n) && argsLength >= 2)
+	//{
+	//	const char *file = args[1];
+	//	const char *proc = (argsLength >= 3 ? args[2] : 0);
+	//	_OpenCtx(p);
+	//	char *errMsg = 0;
+	//	rc = DataEx::LoadExtension(p->Ctx, file, proc, &errMsg);
+	//	if (rc != RC_OK)
+	//	{
+	//		fprintf(stderr, "Error: %s\n", errMsg);
+	//		_free(errMsg);
+	//		rc = 1;
+	//	}
+	//}
 #endif
 #pragma endregion
 #pragma region .log
@@ -3445,7 +3445,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, InterruptHandler);
 #endif
 	H_DIRTY(&_data);
-	_data.DbFilename = "\\T_\\t.db";
+	//_data.DbFilename = "\\T_\\t.db";
 
 	// Do an initial pass through the command-line argument to locate the name of the database file, the name of the initialization file,
 	// the size of the alternative malloc heap, and the first command to execute.

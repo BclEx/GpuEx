@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>GpuEx-Falloc.Native</id>
-    <version>1.0.0</version>
+    <version>0.5.0</version>
     <title>GpuEx Falloc</title>
     <authors>Contoso</authors>
     <owners>Contoso</owners>

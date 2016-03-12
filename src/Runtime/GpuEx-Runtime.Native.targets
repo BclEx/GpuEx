@@ -39,7 +39,7 @@ RuntimeArch = itemAsName;
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
   </ItemDefinitionGroup>
-  <Target Name="RuntimeLinkBefore" BeforeTargets="Link;CudaLink">
+  <Target Name="RuntimeLink" BeforeTargets="Link;CudaLink">
     <GetRuntimeArch CudaCompile="@(CudaCompile)">
       <Output TaskParameter="RuntimeArch" PropertyName="RuntimeArch" />
     </GetRuntimeArch>

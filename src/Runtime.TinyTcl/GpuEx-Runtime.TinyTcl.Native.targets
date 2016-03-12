@@ -35,7 +35,7 @@ RuntimeArch = itemAsName;
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)lib\$(Platform).$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <Target Name="RuntimeLinkBefore" BeforeTargets="Link;CudaLink">
+  <Target Name="RuntimeJimLink" BeforeTargets="Link;CudaLink">
     <GetRuntimeArch CudaCompile="@(CudaCompile)">
       <Output TaskParameter="RuntimeArch" PropertyName="RuntimeArch" />
     </GetRuntimeArch>

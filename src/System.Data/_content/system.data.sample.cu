@@ -1,3 +1,5 @@
+#if 0
+
 #include <RuntimeHost.h>
 #include <Core\Core.cu.h>
 
@@ -91,3 +93,5 @@ void fileAccessWithCuda(const char *path)
 Error:
 	cudaDeviceHeapDestroy(deviceHeap);
 }
+
+#endif

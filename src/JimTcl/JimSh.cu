@@ -64,12 +64,12 @@ extern __device__ int Jim_initjimshInit(Jim_Interp *interp);
 
 // SAMPLE COMMAND
 #if 0
-__device__ int SampleCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv) {
+__device__ int SampleCommand(ClientData clientData, Jim_Interp *interp, int argc, Jim_Obj *const argv[]) {
 	if (argc != 2) {
-		Jim_WrongNumArgs(interp, 1, objv, "msg");
+		Jim_WrongNumArgs(interp, 1, argv, "msg");
 		return JIM_ERROR;
 	}
-	printf("%s\n", Jim_String(args[1]));
+	printf("%s\n", Jim_String(argv[1]));
 	return JIM_OK;
 }
 #endif
@@ -120,7 +120,6 @@ static int MainInit(int argc, char *const argv[]) {
 #if 0
 	Jim_CreateCommand(interp, "sample", SampleCommand, nullptr, nullptr);
 #endif
-
 
 	// Register static extensions
 	if (Jim_InitStaticExtensions(interp) != JIM_OK)

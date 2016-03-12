@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>GpuEx-System.Data.Native</id>
-    <version>1.0.0</version>
+    <version>0.5.0</version>
     <title>GpuEx System.Data</title>
     <authors>Contoso</authors>
     <owners>Contoso</owners>
@@ -14,7 +14,7 @@
     <tags>native cuda gpu sql</tags>
     <language>en-US</language>
     <dependencies>
-      <dependency id="GpuEx-System.Native" version="1.0.0" />
+      <dependency id="GpuEx-System.Native" version="0.5.0" />
     </dependencies>
   </metadata>
   <files>

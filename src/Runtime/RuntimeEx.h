@@ -197,7 +197,7 @@ __device__ int __access(const char *p, int flags);
 #endif
 
 #if OS_GPU
-extern __device__ char **__environ;
+extern __device__ char *__environ[];
 __device__ char *_getenv(const char *name);
 __device__ void _setenv(const char *name, const char *value);
 #define _unsetenv(name) _setenv(name, "")

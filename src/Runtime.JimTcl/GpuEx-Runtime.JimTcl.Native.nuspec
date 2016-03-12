@@ -2,8 +2,8 @@
 <package>
   <metadata>
     <id>GpuEx-Runtime.JimTcl.Native</id>
-    <version>1.0.0</version>
-    <title>GpuEx JimTcl</title>
+    <version>0.5.0</version>
+    <title>GpuEx Runtime.JimTcl</title>
     <authors>Contoso</authors>
     <owners>Contoso</owners>
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
@@ -14,7 +14,7 @@
     <tags>native cuda gpu tcl jimtcl</tags>
     <language>en-US</language>
     <dependencies>
-      <dependency id="GpuEx-Runtime.Native" version="1.0.0" />
+      <dependency id="GpuEx-Runtime.Native" version="0.5.0" />
     </dependencies>
   </metadata>
   <files>
