@@ -4,8 +4,9 @@ namespace CORE_NAME
 #pragma region Log & Trace
 
 #if _DEBUG
+	__device__ extern bool SysTrace;
 	__device__ extern bool IOTrace;
-#define SysEx_LOG(RC, X, ...) { _dprintf(X"\n", __VA_ARGS__); }
+#define SysEx_LOG(RC, X, ...) if (SysTrace) { _dprintf(X"\n", __VA_ARGS__); }
 #define SysEx_IOTRACE(X, ...) if (IOTrace) { _dprintf("IO: "X, __VA_ARGS__); }
 #else
 #define SysEx_LOG(RC, X, ...) ((void)0)

@@ -111,7 +111,7 @@ namespace CORE_NAME
 		if (affinity == AFF_TEXT)
 		{
 			// Only attempt the conversion to TEXT if there is an integer or real representation (blob and NULL do not get converted) but no string representation.
-			if ((rec->Flags & MEM_Str) == 0 && ((rec->Flags & (MEM_Real | MEM_Int)) == 0))
+			if ((rec->Flags & MEM_Str) == 0 && ((rec->Flags & (MEM_Real | MEM_Int)) != 0))
 				Vdbe::MemStringify(rec, encode);
 			rec->Flags &= ~(MEM_Real|MEM_Int);
 		}
@@ -3635,8 +3635,10 @@ op_column_out:
 #ifndef OMIT_VIRTUALTABLE
 				cnt = 0;
 				for (Vdbe *v = ctx->Vdbes; v; v = v->Next)
+				{
 					if (v->Magic == VDBE_MAGIC_RUN && v->InVtabMethod < 2 && v->PC >= 0)
 						cnt++;
+				}
 #else
 				cnt = ctx->ActiveVdbeCnt;
 #endif
@@ -3649,7 +3651,7 @@ op_column_out:
 				else
 				{
 					int db = op->P3;
-					_assert(cnt == 1 );
+					_assert(cnt == 1);
 					_assert((BtreeMask & (((yDbMask)1) << db)) != 0);
 					int moved;
 					rc = ctx->DBs[db].Bt->DropTable(op->P1, &moved);

@@ -2588,7 +2588,7 @@ set_child_ptrmaps_out:
 
 	__device__ void Btree::CursorZero(BtCursor *p)
 	{
-		_memset(p, 0, offsetof(BtCursor, Pages));
+		_memset(p, 0, offsetof(BtCursor, ID));
 	}
 
 	__device__ void Btree::SetCachedRowID(BtCursor *cur, int64 rowid)
@@ -3801,7 +3801,7 @@ end_allocate_page:
 		if (memPage)
 		{
 			page = memPage;
-			Pager::get_PageRefs(page->DBPage);
+			Pager::Ref(page->DBPage);
 		}
 		else
 			page = BtreePageLookup(bt, pageID);

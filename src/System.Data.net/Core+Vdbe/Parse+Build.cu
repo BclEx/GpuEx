@@ -204,7 +204,7 @@ namespace CORE_NAME
 		return table;
 	}
 
-	__device__ Table *Parse::LocateTableItem(bool isView,  SrcList::SrcListItem *item)
+	__device__ Table *Parse::LocateTableItem(bool isView, SrcList::SrcListItem *item)
 	{
 		_assert(!item->Schema || !item->Database);
 		const char *dbName;
@@ -2001,7 +2001,7 @@ fk_end:
 		}
 
 		// Link the new Index structure to its table and to the other in-memory database structures. 
-		if (!ctx->Init.Busy)
+		if (ctx->Init.Busy)
 		{
 			_assert(Btree::SchemaMutexHeld(ctx, 0, index->Schema));
 			Index *p = (Index *)index->Schema->IndexHash.Insert(index->Name, _strlen(index->Name), index);
@@ -2106,7 +2106,7 @@ exit_create_index:
 		rowEsts[0] = index->Table->RowEst;
 		if (rowEsts[0] < 10) rowEsts[0] = 10;
 		tRowcnt n = 10;
-		for(int i = 1; i <= index->Columns.length; i++)
+		for (int i = 1; i <= index->Columns.length; i++)
 		{
 			rowEsts[i] = n;
 			if (n > 5) n--;

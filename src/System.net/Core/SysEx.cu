@@ -3,6 +3,7 @@
 
 namespace CORE_NAME
 {
+	__device__ bool SysTrace = false;
 	__device__ bool IOTrace = false;
 
 #pragma region Initialize/Shutdown/Config
@@ -48,6 +49,7 @@ namespace CORE_NAME
 	__device__ RC SysEx::PreInitialize(MutexEx &masterMutex)
 	{
 #if _DEBUG
+		//SysTrace = true;
 		//IOTrace = true;
 #endif
 		// If SQLite is already completely initialized, then this call to sqlite3_initialize() should be a no-op.  But the initialization

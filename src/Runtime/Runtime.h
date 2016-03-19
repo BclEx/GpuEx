@@ -1599,10 +1599,12 @@ extern __constant__ FILE _stderr_file;
 
 #if OS_MAP
 extern "C" __device__ inline int __fileno(FILE *f) { return -1; }
-#define _fprintf(f, ...) __fprintf(f, _mprintf("%s", __VA_ARGS__))
-#define _fprintfR(f, ...) __fprintfR(f, _mprintf("%s", __VA_ARGS__))
-extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
-extern "C" __device__ inline int __fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
+#define _fprintfR _fprintf
+#define _fprintf(f, ...) printf(__VA_ARGS__)
+//#define _fprintf(f, ...) (f == _stdout || f == _stderr ? printf(__VA_ARGS__) : __fprintf(f, _mprintf("%s", __VA_ARGS__)))
+//#define _fprintfR(f, ...) (f == _stdout || f == _stderr ? printf(__VA_ARGS__) : __fprintfR(f, _mprintf("%s", __VA_ARGS__)))
+//extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
+//extern "C" __device__ inline int __fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
 extern "C" __device__ inline int _setvbuf(FILE *f, char *b, int m, size_t s) { Messages::Stdio_setvbuf msg(f, b, m, s); return msg.RC; }
 extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }
 extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(true, f); }
@@ -1635,7 +1637,6 @@ extern "C" __device__ inline void _puts(const char *s) { printf("%s\n", s); }
 #define _fputsR _fputs
 #if __CUDACC__
 #define __fileno(f) (int)-1
-#define _fprintf(f, ...) printf(__VA_ARGS__)
 #define _fprintf(f, ...) printf(__VA_ARGS__)
 #define _setvbuf(f, b, m, s) (int)0
 #define _fopen(f, m) (FILE *)0
