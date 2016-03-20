@@ -1585,12 +1585,10 @@ extern "C" __device__ __forceinline int __snprintf(const char *buf, size_t bufLe
 //#undef stdin
 //#undef stdout
 //#undef stderr
-extern __constant__ FILE _stdin_file;
-extern __constant__ FILE _stdout_file;
-extern __constant__ FILE _stderr_file;
-#define _stdin &_stdin_file
-#define _stdout &_stdout_file
-#define _stderr &_stderr_file
+extern __constant__ FILE __iob_file[3];
+#define _stdin  (&__iob_file[0])
+#define _stdout (&__iob_file[1])
+#define _stderr (&__iob_file[2])
 #else
 #define _stdin stdin
 #define _stdout stdout
