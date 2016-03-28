@@ -428,6 +428,7 @@ void D_DATA(struct CallbackData *p)
 	memcpy(h, p, sizeof(CallbackData));
 	h->DestTable = destTable;
 	h->DbFilename = dbFilename;
+	//h->Out = cudaIobTranslate(h->Out, cudaMemcpyHostToDevice);
 	cudaErrorCheck(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice));
 }
 
@@ -3343,6 +3344,7 @@ static void MainInit()
 	//
 	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	cudaDeviceHeapSynchronize(_deviceHeap);
+	cudaIobSelect();
 #else
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, _data);

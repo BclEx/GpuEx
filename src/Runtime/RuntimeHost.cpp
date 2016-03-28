@@ -267,6 +267,36 @@ extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value
 
 #pragma endregion
 
+
+//////////////////////
+// IOB
+#pragma region IOB
+
+extern "C" const FILE *__curtIob[3] = { nullptr, nullptr, nullptr };
+
+//
+//	cudaIobSelect
+//
+//	Selects stdin/stdout/stdio from device
+//
+extern "C" cudaError_t cudaIobSelect()
+{
+	return cudaGetSymbolAddress((void **)&__curtIob, "__iob_file");
+}
+
+//
+//	cudaIobTranslate
+//
+//	Translates stdin/stdout/stdio to device files
+//
+extern "C" FILE *cudaIobTranslate(FILE *file, enum cudaMemcpyKind kind)
+{
+	//if (file == stdin || file == stdout || file == stderr)
+	return file;
+}
+
+#pragma endregion
+
 //////////////////////
 // PRINTF
 #pragma region PRINTF

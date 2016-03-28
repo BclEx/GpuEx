@@ -94,8 +94,28 @@ extern "C" cudaError_t cudaDeviceHeapSynchronize(cudaDeviceHeap &host, void *str
 //
 extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value[], cudaError_t *error = nullptr);
 
-#pragma endregion
+//
+//	cudaDeviceTransferStringArray
+//
+//	Re-encodes and transfers string array
+//
+extern "C" FILE *cudaFileSelect();
 
+//
+//	cudaIobSelect
+//
+//	Selects stdin/stdout/stdio from device
+//
+extern "C" cudaError_t cudaIobSelect();
+
+//
+//	cudaIobTranslate
+//
+//	Translates stdin/stdout/stdio to device files
+//
+extern "C" FILE *cudaIobTranslate(FILE *file, enum cudaMemcpyKind kind);
+
+#pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////
 // EX
