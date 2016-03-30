@@ -106,7 +106,7 @@ extern "C" FILE *cudaFileSelect();
 //
 //	Selects stdin/stdout/stdio from device
 //
-extern "C" cudaError_t cudaIobSelect();
+//extern "C" cudaError_t cudaIobSelect();
 
 //
 //	cudaIobTranslate

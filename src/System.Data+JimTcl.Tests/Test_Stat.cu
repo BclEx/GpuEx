@@ -183,7 +183,6 @@ __device__ static RC statClose(IVTableCursor *cursor)
 
 __device__ static void getLocalPayload(int usable, uint8 flags, int total, int *localOut)
 {
-	int local;
 	int minLocal;
 	int maxLocal;
 	if (flags == 0x0D)
@@ -198,7 +197,7 @@ __device__ static void getLocalPayload(int usable, uint8 flags, int total, int *
 		minLocal = (usable - 12) * 32 / 255 - 23;
 		maxLocal = (usable - 12) * 64 / 255 - 23;
 	}
-	int nLocal = minLocal + (total - minLocal) % (usable - 4);
+	int local = minLocal + (total - minLocal) % (usable - 4);
 	if (local > maxLocal) local = minLocal;
 	*localOut = local;
 }

@@ -26,8 +26,8 @@ namespace CORE_NAME
 	__device__ void DisableSimulatedIOErrors(int *pending = nullptr, int *hit = nullptr);
 	__device__ void EnableSimulatedIOErrors(int *pending = nullptr, int *hit = nullptr);
 #else
-#define DisableSimulatedIOErrors(pending, hit)
-#define EnableSimulatedIOErrors(pending, hit)
+#define DisableSimulatedIOErrors(...)
+#define EnableSimulatedIOErrors(...)
 #endif
 
 	typedef void (*syscall_ptr)();

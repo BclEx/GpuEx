@@ -272,17 +272,21 @@ extern "C" char **cudaDeviceTransferStringArray(size_t length, char *const value
 // IOB
 #pragma region IOB
 
-extern "C" const FILE *__curtIob[3] = { nullptr, nullptr, nullptr };
+extern "C" const FILE *__curtIob[3] = { (FILE *)1, (FILE *)2, (FILE *)3 };
 
 //
 //	cudaIobSelect
 //
 //	Selects stdin/stdout/stdio from device
 //
-extern "C" cudaError_t cudaIobSelect()
-{
-	return cudaGetSymbolAddress((void **)&__curtIob, "__iob_file");
-}
+//extern "C" cudaError_t cudaIobSelect()
+//{
+//	FILE *file0, *file1, *file2;
+//	cudaError_t error;
+//	if ((error = cudaGetSymbolAddress((void **)&file0, "__iob_file0")) != cudaSuccess)
+//		return error;
+//	return error;
+//}
 
 //
 //	cudaIobTranslate
@@ -291,8 +295,10 @@ extern "C" cudaError_t cudaIobSelect()
 //
 extern "C" FILE *cudaIobTranslate(FILE *file, enum cudaMemcpyKind kind)
 {
-	//if (file == stdin || file == stdout || file == stderr)
-	return file;
+	//if (kind == cudaMemcpyDeviceToHost)
+	return (FILE *)(file == stdin ? __curtIob[0] : (file == stdout ? __curtIob[1] : (file == stderr ? __curtIob[2] : file)));
+	//else
+	//	return (FILE *)(file == __curtIob[0] ? stdin : file == __curtIob[1] ? stdout : file == __curtIob[2] ? stderr : file);
 }
 
 #pragma endregion

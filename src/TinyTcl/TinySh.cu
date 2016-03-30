@@ -167,7 +167,13 @@ void InteractivePrompt() {
 #if __CUDACC__
 __global__ void g_InteractiveExecute(char *line);
 static void InteractiveExecute(char *line) {
-	D_DATAP(); g_InteractiveExecute<<<1,1>>>(line); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAP();
+	char *d_line;
+	int size = strlen(line) + 1;
+	cudaErrorCheck(cudaMalloc((void **)&d_line, size));
+	memcpy((void *)d_line, line, size);
+	cudaErrorCheck(cudaMemcpy(d_line, line, size, cudaMemcpyHostToDevice));
+	D_DATAP(); g_InteractiveExecute<<<1,1>>>(d_line); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAP();
+	cudaFree(d_line);
 }
 
 __global__ void g_InteractiveExecute(char *line) {

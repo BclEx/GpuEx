@@ -700,7 +700,7 @@ __device__ static int test_alt_pcache(ClientData clientData, Jim_Interp *interp,
 		Jim_AppendResult(interp, "discard-chance should be between 0 and 100", nullptr);
 		return JIM_ERROR;
 	}
-	installTestPCache(installFlag, (unsigned)discardChance, (unsigned)prngSeed, (unsigned)highStress);
+	installTestPCache(installFlag != 0, (unsigned)discardChance, (unsigned)prngSeed, (unsigned)highStress);
 	return JIM_OK;
 }
 

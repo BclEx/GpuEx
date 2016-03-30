@@ -421,6 +421,7 @@ void D_DATA(struct CallbackData *p)
 		dbFilename = (char *)(ptr += destTableLength);
 		h->DestTable = (p->DestTable ? destTable : nullptr);
 		h->DbFilename = (p->DbFilename ? dbFilename : nullptr);
+		h->Out = cudaIobTranslate(p->Out, cudaMemcpyHostToDevice);
 	}
 	//
 	destTable = h->DestTable;
@@ -428,7 +429,6 @@ void D_DATA(struct CallbackData *p)
 	memcpy(h, p, sizeof(CallbackData));
 	h->DestTable = destTable;
 	h->DbFilename = dbFilename;
-	//h->Out = cudaIobTranslate(h->Out, cudaMemcpyHostToDevice);
 	cudaErrorCheck(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice));
 }
 
@@ -3344,7 +3344,7 @@ static void MainInit()
 	//
 	D_DATA(&_data); d_MainInit_0<<<1,1>>>(_data.D_); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATA(&_data);
 	cudaDeviceHeapSynchronize(_deviceHeap);
-	cudaIobSelect();
+	//cudaErrorCheck(cudaIobSelect());
 #else
 	SysEx::Config(SysEx::CONFIG_URI, 1);
 	SysEx::Config(SysEx::CONFIG_LOG, ShellLog, _data);
@@ -3548,6 +3548,7 @@ int main(int argc, char **argv)
 #endif
 	}
 	_data.Out = stdout;
+	H_DIRTY(&_data);
 
 	// Go ahead and open the database file if it already exists.  If the file does not exist, delay opening it.  This prevents empty database
 	// files from being created if a user mistypes the database name argument to the sqlite command-line tool.

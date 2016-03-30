@@ -1582,13 +1582,10 @@ extern "C" __device__ __forceinline int __snprintf(const char *buf, size_t bufLe
 #pragma region FPRINTF
 
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 200
-//#undef stdin
-//#undef stdout
-//#undef stderr
-extern __constant__ FILE __iob_file[3];
-#define _stdin  (&__iob_file[0])
-#define _stdout (&__iob_file[1])
-#define _stderr (&__iob_file[2])
+extern __constant__ FILE *__iob_file[3];
+#define _stdin  (__iob_file[0])
+#define _stdout (__iob_file[1])
+#define _stderr (__iob_file[2])
 #else
 #define _stdin stdin
 #define _stdout stdout
@@ -1596,31 +1593,31 @@ extern __constant__ FILE __iob_file[3];
 #endif
 
 #if OS_MAP
-extern "C" __device__ inline int __fileno(FILE *f) { return -1; }
-#define _fprintfR _fprintf
-#define _fprintf(f, ...) printf(__VA_ARGS__)
-//#define _fprintf(f, ...) (f == _stdout || f == _stderr ? printf(__VA_ARGS__) : __fprintf(f, _mprintf("%s", __VA_ARGS__)))
-//#define _fprintfR(f, ...) (f == _stdout || f == _stderr ? printf(__VA_ARGS__) : __fprintfR(f, _mprintf("%s", __VA_ARGS__)))
-//extern "C" __device__ inline void __fprintf(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
-//extern "C" __device__ inline int __fprintfR(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
+//#define _fprintfR _fprintf
+//#define _fprintf(f, ...) printf(__VA_ARGS__)
+extern "C" __device__ inline int __fileno(FILE *f) { return (f == _stdin ? 0 : f == _stdout ? 1 : f == _stderr ? 2 : -1); }
+#define _fprintf(f, ...) (f == _stdout || f == _stderr ? printf(__VA_ARGS__) : _fprintf_(f, _mprintf("%s", __VA_ARGS__)))
+#define _fprintfR(f, ...) (f == _stdout || f == _stderr ? printf(__VA_ARGS__) : _fprintfR_(f, _mprintf("%s", __VA_ARGS__)))
+extern "C" __device__ inline void _fprintf_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(true, f, v); _free((void *)v); }
+extern "C" __device__ inline int _fprintfR_(FILE *f, const char *v) { Messages::Stdio_fprintf msg(false, f, v); _free((void *)v); return msg.RC; }
 extern "C" __device__ inline int _setvbuf(FILE *f, char *b, int m, size_t s) { Messages::Stdio_setvbuf msg(f, b, m, s); return msg.RC; }
 extern "C" __device__ inline FILE *_fopen(const char *f, const char *m) { Messages::Stdio_fopen msg(f, m); return msg.RC; }
-extern "C" __device__ inline void _fflush(FILE *f) { Messages::Stdio_fflush msg(true, f); }
-extern "C" __device__ inline int _fflushR(FILE *f) { Messages::Stdio_fflush msg(false, f); return msg.RC; }
-extern "C" __device__ inline void _fclose(FILE *f) { Messages::Stdio_fclose msg(true, f); }
-extern "C" __device__ inline int _fcloseR(FILE *f) { Messages::Stdio_fclose msg(false, f); return msg.RC; }
+extern "C" __device__ inline void _fflush(FILE *f) { if (f == _stdout || f == _stderr) return; Messages::Stdio_fflush msg(true, f); }
+extern "C" __device__ inline int _fflushR(FILE *f) { if (f == _stdout || f == _stderr) return 0; Messages::Stdio_fflush msg(false, f); return msg.RC; }
+extern "C" __device__ inline void _fclose(FILE *f) { if (f == _stdout || f == _stderr) return; Messages::Stdio_fclose msg(true, f); }
+extern "C" __device__ inline int _fcloseR(FILE *f) { if (f == _stdout || f == _stderr) return 0; Messages::Stdio_fclose msg(false, f); return msg.RC; }
 extern "C" __device__ inline int _fgetc(FILE *f) { Messages::Stdio_fgetc msg(f); return msg.RC; }
 extern "C" __device__ inline char *_fgets(char *c, int n, FILE *f) { Messages::Stdio_fgets msg(c, n, f); return msg.RC; }
-extern "C" __device__ inline void _fputc(int c, FILE *f) { Messages::Stdio_fputc msg(true, c, f); }
-extern "C" __device__ inline int _fputcR(int c, FILE *f) { Messages::Stdio_fputc msg(false, c, f); return msg.RC; }
-extern "C" __device__ inline void _fputs(const char *s, FILE *f) { Messages::Stdio_fputs msg(true, s, f); }
-extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { Messages::Stdio_fputs msg(false, s, f); return msg.RC; }
+extern "C" __device__ inline void _fputc(int c, FILE *f) { if (f == _stdout || f == _stderr) { printf("%c", c); return; } Messages::Stdio_fputc msg(true, c, f); }
+extern "C" __device__ inline int _fputcR(int c, FILE *f) { if (f == _stdout || f == _stderr) { printf("%c", c); return 0; } Messages::Stdio_fputc msg(false, c, f); return msg.RC; }
+extern "C" __device__ inline void _fputs(const char *s, FILE *f) { if (f == _stdout || f == _stderr) { printf(s); return; } Messages::Stdio_fputs msg(true, s, f); }
+extern "C" __device__ inline int _fputsR(const char *s, FILE *f) { if (f == _stdout || f == _stderr) { printf(s); return 0; } Messages::Stdio_fputs msg(false, s, f); return msg.RC; }
 extern "C" __device__ inline size_t _fread(void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fread msg(false, s, n, f); memcpy(p, msg.Ptr, msg.RC); return msg.RC; }
 extern "C" __device__ inline size_t _fwrite(const void *p, size_t s, size_t n, FILE *f) { Messages::Stdio_fwrite msg(false, p, s, n, f); return msg.RC; }
 extern "C" __device__ inline int _fseek(FILE *f, long int o, int s) { Messages::Stdio_fseek msg(true, f, o, s); return msg.RC; }
 extern "C" __device__ inline int _ftell(FILE *f) { Messages::Stdio_ftell msg(f); return msg.RC; }
 extern "C" __device__ inline int _feof(FILE *f) { Messages::Stdio_feof msg(f); return msg.RC; }
-extern "C" __device__ inline int _ferror(FILE *f) { Messages::Stdio_ferror msg(f); return msg.RC; }
+extern "C" __device__ inline int _ferror(FILE *f) { if (f == _stdout || f == _stderr) return 0; Messages::Stdio_ferror msg(f); return msg.RC; }
 extern "C" __device__ inline void _clearerr(FILE *f) { Messages::Stdio_clearerr msg(f); }
 extern "C" __device__ inline int _rename(const char *a, const char *b) { Messages::Stdio_rename msg(a, b); return msg.RC; }
 extern "C" __device__ inline int __unlink(const char *a) { Messages::Stdio_unlink msg(a); return msg.RC; }
@@ -1634,7 +1631,7 @@ extern "C" __device__ inline void _puts(const char *s) { printf("%s\n", s); }
 #define _fputcR _fputc
 #define _fputsR _fputs
 #if __CUDACC__
-#define __fileno(f) (int)-1
+#define __fileno(f) (int)(f == _stdin ? 0 : f == _stdout ? 1 : f == _stderr ? 2 : -1)
 #define _fprintf(f, ...) printf(__VA_ARGS__)
 #define _setvbuf(f, b, m, s) (int)0
 #define _fopen(f, m) (FILE *)0
