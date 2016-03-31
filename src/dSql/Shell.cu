@@ -2463,6 +2463,7 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 			else
 				_snprintf(p->Outfile, sizeof(p->Outfile), "%s", args[1]);
 		}
+		H_DIRTY(p);
 	}
 #pragma endregion
 #pragma region .print
