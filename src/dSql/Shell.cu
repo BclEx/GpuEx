@@ -391,6 +391,7 @@ void D_DATA(struct CallbackData *p)
 	CallbackData *h = p->H_;
 	char *destTable;
 	const char *dbFilename;
+	FILE *out;
 	if (!p->H_size)
 	{
 		D_FREE(p);
@@ -426,9 +427,11 @@ void D_DATA(struct CallbackData *p)
 	//
 	destTable = h->DestTable;
 	dbFilename = h->DbFilename;
+	out = h->Out;
 	memcpy(h, p, sizeof(CallbackData));
 	h->DestTable = destTable;
 	h->DbFilename = dbFilename;
+	h->Out = out;
 	cudaErrorCheck(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice));
 }
 
