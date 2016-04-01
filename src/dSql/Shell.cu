@@ -337,7 +337,8 @@ struct CallbackData
 	int EchoOn;					// True to echo input commands
 	int StatsOn;				// True to display memory stats before each finalize
 	int Cnt;					// Number of records displayed so far
-	FILE *Out;					// Write results here
+	FILE *H_Out;				// Write results here
+	FILE *D_Out;				// Write results here
 	FILE *TraceOut;				// Output for sqlite3_trace()
 	int Errs;					// Number of errors seen
 	MODE Mode;					// An output mode setting
@@ -422,16 +423,16 @@ void D_DATA(struct CallbackData *p)
 		dbFilename = (char *)(ptr += destTableLength);
 		h->DestTable = (p->DestTable ? destTable : nullptr);
 		h->DbFilename = (p->DbFilename ? dbFilename : nullptr);
-		h->Out = cudaIobTranslate(p->Out, cudaMemcpyHostToDevice);
+		h->D_Out = cudaIobTranslate(p->H_Out, cudaMemcpyHostToDevice);
 	}
 	//
 	destTable = h->DestTable;
 	dbFilename = h->DbFilename;
-	out = h->Out;
+	out = h->D_Out;
 	memcpy(h, p, sizeof(CallbackData));
 	h->DestTable = destTable;
 	h->DbFilename = dbFilename;
-	h->Out = out;
+	h->D_Out = out;
 	cudaErrorCheck(cudaMemcpy(p->D_, h, p->H_size, cudaMemcpyHostToDevice));
 }
 
@@ -603,7 +604,7 @@ __constant__ static const char _needCsvQuote[] = {
 
 __device__ static void OutputCsv(struct CallbackData *p, const char *z, bool sep)
 {
-	FILE *out_ = p->Out;
+	FILE *out_ = p->D_Out;
 	if (!z) _fprintf(out_, "%s", p->NullValue);
 	else
 	{
@@ -660,9 +661,9 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 			int len = _strlen(colNames[i] ? colNames[i] : "");
 			if (len > w) w = len;
 		}
-		if (p->Cnt++ > 0) _fprintf(p->Out, "\n");
+		if (p->Cnt++ > 0) _fprintf(p->D_Out, "\n");
 		for (i = 0; i < colLength; i++)
-			_fprintf(p->Out, "%*s = %s\n", w, colNames[i], colValues[i] ? colValues[i] : p->NullValue);
+			_fprintf(p->D_Out, "%*s = %s\n", w, colNames[i], colValues[i] ? colValues[i] : p->NullValue);
 		break; }
 	case MODE_Explain:
 	case MODE_Column: {
@@ -686,10 +687,10 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 #if __CUDACC__
 					char w_;
 					if (_strlen(colNames[i]) > w) { w_ = colNames[i][w]; colNames[i][w] = 0; } else w_ = 0;
-					_fprintf(p->Out, "%-*s%s", w, colNames[i], (i == colLength-1 ? "\n": "  "));
+					_fprintf(p->D_Out, "%-*s%s", w, colNames[i], (i == colLength-1 ? "\n": "  "));
 					if (w_) colNames[i][w] = w_;
 #else
-					_fprintf(p->Out, "%-*.*s%s", w, w, colNames[i], (i == colLength-1 ? "\n": "  "));
+					_fprintf(p->D_Out, "%-*.*s%s", w, w, colNames[i], (i == colLength-1 ? "\n": "  "));
 #endif
 				}
 			}
@@ -707,10 +708,10 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 #if __CUDACC__
 					char w_;
 					if (_lineSpacerLength > w) { w_ = _lineSpacer[w]; _lineSpacer[w] = 0; } else w_ = 0;
-					_fprintf(p->Out, "%-*s%s", w, _lineSpacer, (i == colLength-1 ? "\n" : "  "));
+					_fprintf(p->D_Out, "%-*s%s", w, _lineSpacer, (i == colLength-1 ? "\n" : "  "));
 					if (w_) _lineSpacer[w] = '-';
 #else
-					_fprintf(p->Out, "%-*.*s%s", w, w, _lineSpacer, (i == colLength-1 ? "\n" : "  "));
+					_fprintf(p->D_Out, "%-*.*s%s", w, w, _lineSpacer, (i == colLength-1 ? "\n" : "  "));
 #endif
 				}
 		}
@@ -724,10 +725,10 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 #if __CUDACC__
 			char w_;
 			if (_strlen(colValues[i]) > w) { w_ = colValues[i][w]; colValues[i][w] = 0; } else w_ = 0;
-			_fprintf(p->Out, "%-*s%s", w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
+			_fprintf(p->D_Out, "%-*s%s", w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
 			if (w_) colValues[i][w] = w_;
 #else
-			_fprintf(p->Out, "%-*.*s%s", w, w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
+			_fprintf(p->D_Out, "%-*.*s%s", w, w, (colValues[i] ? colValues[i] : p->NullValue), (i == colLength-1 ? "\n" : "  "));
 #endif
 		}
 		break; }
@@ -735,102 +736,102 @@ __device__ static bool ShellCallback(void *arg, int colLength, char **colValues,
 	case MODE_List: {
 		if (p->Cnt++ == 0 && p->ShowHeader)
 			for (i = 0; i < colLength; i++)
-				_fprintf(p->Out, "%s%s", colNames[i], (i == colLength-1 ? "\n" : p->Separator));
+				_fprintf(p->D_Out, "%s%s", colNames[i], (i == colLength-1 ? "\n" : p->Separator));
 		if (colValues == 0) break;
 		for (i = 0; i < colLength; i++)
 		{
 			char *z = colValues[i];
 			if (!z) z = p->NullValue;
-			_fprintf(p->Out, "%s", z);
-			if (i < colLength-1) _fprintf(p->Out, "%s", p->Separator);
-			else if (p->Mode == MODE_Semi) _fprintf(p->Out, ";\n");
-			else _fprintf(p->Out, "\n");
+			_fprintf(p->D_Out, "%s", z);
+			if (i < colLength-1) _fprintf(p->D_Out, "%s", p->Separator);
+			else if (p->Mode == MODE_Semi) _fprintf(p->D_Out, ";\n");
+			else _fprintf(p->D_Out, "\n");
 		}
 		break; }
 	case MODE_Html: {
 		if (p->Cnt++ == 0 && p->ShowHeader)
 		{
-			_fprintf(p->Out, "<TR>");
+			_fprintf(p->D_Out, "<TR>");
 			for (i = 0; i < colLength; i++)
 			{
-				_fprintf(p->Out, "<TH>");
-				OutputHtmlString(p->Out, colNames[i]);
-				_fprintf(p->Out, "</TH>\n");
+				_fprintf(p->D_Out, "<TH>");
+				OutputHtmlString(p->D_Out, colNames[i]);
+				_fprintf(p->D_Out, "</TH>\n");
 			}
-			_fprintf(p->Out, "</TR>\n");
+			_fprintf(p->D_Out, "</TR>\n");
 		}
 		if (colValues == 0) break;
-		_fprintf(p->Out, "<TR>");
+		_fprintf(p->D_Out, "<TR>");
 		for (i = 0; i < colLength; i++)
 		{
-			_fprintf(p->Out, "<TD>");
-			OutputHtmlString(p->Out, (colValues[i] ? colValues[i] : p->NullValue));
-			_fprintf(p->Out, "</TD>\n");
+			_fprintf(p->D_Out, "<TD>");
+			OutputHtmlString(p->D_Out, (colValues[i] ? colValues[i] : p->NullValue));
+			_fprintf(p->D_Out, "</TD>\n");
 		}
-		_fprintf(p->Out, "</TR>\n");
+		_fprintf(p->D_Out, "</TR>\n");
 		break; }
 	case MODE_Tcl: {
 		if (p->Cnt++ == 0 && p->ShowHeader)
 		{
 			for (i = 0; i < colLength; i++)
 			{
-				OutputCString(p->Out, (colNames[i] ? colNames[i] : ""));
-				if (i < colLength-1) _fprintf(p->Out, "%s", p->Separator);
+				OutputCString(p->D_Out, (colNames[i] ? colNames[i] : ""));
+				if (i < colLength-1) _fprintf(p->D_Out, "%s", p->Separator);
 			}
-			_fprintf(p->Out, "\n");
+			_fprintf(p->D_Out, "\n");
 		}
 		if (colValues == 0) break;
 		for (i = 0; i < colLength; i++)
 		{
-			OutputCString(p->Out, (colValues[i] ? colValues[i] : p->NullValue));
-			if (i < colLength-1) _fprintf(p->Out, "%s", p->Separator);
+			OutputCString(p->D_Out, (colValues[i] ? colValues[i] : p->NullValue));
+			if (i < colLength-1) _fprintf(p->D_Out, "%s", p->Separator);
 		}
-		_fprintf(p->Out, "\n");
+		_fprintf(p->D_Out, "\n");
 		break; }
 	case MODE_Csv: {
 		if (p->Cnt++ == 0 && p->ShowHeader)
 		{
 			for (i = 0; i < colLength; i++)
 				OutputCsv(p, (colNames[i] ? colNames[i] : ""), i < colLength-1);
-			_fprintf(p->Out, "\n");
+			_fprintf(p->D_Out, "\n");
 		}
 		if (colValues == 0) break;
 		for (i = 0; i < colLength; i++)
 			OutputCsv(p, colValues[i], i < colLength-1);
-		_fprintf(p->Out, "\n");
+		_fprintf(p->D_Out, "\n");
 		break; }
 	case MODE_Insert: {
 		p->Cnt++;
 		if (colValues == 0) break;
-		_fprintf(p->Out, "INSERT INTO %s VALUES(", p->DestTable);
+		_fprintf(p->D_Out, "INSERT INTO %s VALUES(", p->DestTable);
 		for (i = 0; i < colLength; i++)
 		{
 			char *sep = (i > 0 ? "," : "");
 			if ((colValues[i] == 0) || (colTypes && colTypes[i] == TYPE_NULL))
-				_fprintf(p->Out, "%sNULL", sep);
+				_fprintf(p->D_Out, "%sNULL", sep);
 			else if (colTypes && colTypes[i] == TYPE_TEXT)
 			{
-				if (sep[0]) _fprintf(p->Out, "%s", sep);
-				OutputQuotedString(p->Out, colValues[i]);
+				if (sep[0]) _fprintf(p->D_Out, "%s", sep);
+				OutputQuotedString(p->D_Out, colValues[i]);
 			}
 			else if (colTypes && (colTypes[i] == TYPE_INTEGER || colTypes[i] == TYPE_FLOAT))
-				_fprintf(p->Out, "%s%s", sep, colValues[i]);
+				_fprintf(p->D_Out, "%s%s", sep, colValues[i]);
 			else if (colTypes && colTypes[i] == TYPE_BLOB && p->Stmt)
 			{
 				const void *blob = Vdbe::Column_Blob(p->Stmt, i);
 				int blobLength = Vdbe::Column_Bytes(p->Stmt, i);
-				if (sep[0]) _fprintf(p->Out, "%s", sep);
-				OutputHexBlob(p->Out, blob, blobLength);
+				if (sep[0]) _fprintf(p->D_Out, "%s", sep);
+				OutputHexBlob(p->D_Out, blob, blobLength);
 			}
 			else if (isNumber(colValues[i], 0))
-				_fprintf(p->Out, "%s%s", sep, colValues[i]);
+				_fprintf(p->D_Out, "%s%s", sep, colValues[i]);
 			else
 			{
-				if (sep[0]) _fprintf(p->Out, "%s", sep);
-				OutputQuotedString(p->Out, colValues[i]);
+				if (sep[0]) _fprintf(p->D_Out, "%s", sep);
+				OutputQuotedString(p->D_Out, colValues[i]);
 			}
 		}
-		_fprintf(p->Out, ");\n");
+		_fprintf(p->D_Out, ");\n");
 		break; }
 	}
 	return false;
@@ -922,7 +923,7 @@ __device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *sql, 
 	RC rc = Prepare::Prepare_(p->Ctx, sql, -1, &select, 0);
 	if (rc != RC_OK || !select)
 	{
-		_fprintf(p->Out, "/**** ERROR: (%d) %s *****/\n", rc, DataEx::ErrMsg(p->Ctx));
+		_fprintf(p->D_Out, "/**** ERROR: (%d) %s *****/\n", rc, DataEx::ErrMsg(p->Ctx));
 		p->Errs++;
 		return rc;
 	}
@@ -932,23 +933,23 @@ __device__ static RC RunTableDumpQuery(struct CallbackData *p, const char *sql, 
 	{
 		if (firstRow)
 		{
-			_fprintf(p->Out, "%s", firstRow);
+			_fprintf(p->D_Out, "%s", firstRow);
 			firstRow = nullptr;
 		}
 		const char *z = (const char *)Vdbe::Column_Text(select, 0);
-		_fprintf(p->Out, "%s", z);
+		_fprintf(p->D_Out, "%s", z);
 		for (i = 1; i < results; i++)
-			_fprintf(p->Out, ",%s", Vdbe::Column_Text(select, i));
+			_fprintf(p->D_Out, ",%s", Vdbe::Column_Text(select, i));
 		if (!z) z = "";
 		while (z[0] && (z[0] != '-' || z[1] != '-')) z++;
-		if (z[0]) _fprintf(p->Out, "\n;\n");
-		else _fprintf(p->Out, ";\n");
+		if (z[0]) _fprintf(p->D_Out, "\n;\n");
+		else _fprintf(p->D_Out, ";\n");
 		rc = select->Step();
 	}
 	rc = Vdbe::Finalize(select);
 	if (rc != RC_OK)
 	{
-		_fprintf(p->Out, "/**** ERROR: (%d) %s *****/\n", rc, DataEx::ErrMsg(p->Ctx));
+		_fprintf(p->D_Out, "/**** ERROR: (%d) %s *****/\n", rc, DataEx::ErrMsg(p->Ctx));
 		p->Errs++;
 	}
 	return rc;
@@ -967,83 +968,83 @@ __device__ static int DisplayStats(Context *ctx, struct CallbackData *arg, bool 
 {
 	int cur;
 	int high;
-	if (arg && arg->Out)
+	if (arg && arg->D_Out)
 	{
 		high = cur = -1;
 		_status(STATUS_MEMORY_USED, &cur, &high, reset);
-		_fprintf(arg->Out, "Memory Used:                         %d (max %d) bytes\n", cur, high);
+		_fprintf(arg->D_Out, "Memory Used:                         %d (max %d) bytes\n", cur, high);
 		high = cur = -1;
 		_status(STATUS_MALLOC_COUNT, &cur, &high, reset);
-		_fprintf(arg->Out, "Number of Outstanding Allocations:   %d (max %d)\n", cur, high);
+		_fprintf(arg->D_Out, "Number of Outstanding Allocations:   %d (max %d)\n", cur, high);
 		// Not currently used by the CLI.
 		//    high = cur = -1;
 		//    _status(STATUS_PAGECACHE_USED, &cur, &high, reset);
-		//    _fprintf(arg->Out, "Number of Pcache Pages Used:         %d (max %d) pages\n", cur, high);
+		//    _fprintf(arg->D_Out, "Number of Pcache Pages Used:         %d (max %d) pages\n", cur, high);
 		high = cur = -1;
 		_status(STATUS_PAGECACHE_OVERFLOW, &cur, &high, reset);
-		_fprintf(arg->Out, "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n", cur, high);
+		_fprintf(arg->D_Out, "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n", cur, high);
 		// Not currently used by the CLI.
 		//    high = cur = -1;
 		//    _status(STATUS_SCRATCH_USED, &cur, &high, reset);
-		//    _fprintf(arg->Out, "Number of Scratch Allocations Used:  %d (max %d)\n", cur, high);
+		//    _fprintf(arg->D_Out, "Number of Scratch Allocations Used:  %d (max %d)\n", cur, high);
 		high = cur = -1;
 		_status(STATUS_SCRATCH_OVERFLOW, &cur, &high, reset);
-		_fprintf(arg->Out, "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n", cur, high);
+		_fprintf(arg->D_Out, "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n", cur, high);
 		high = cur = -1;
 		_status(STATUS_MALLOC_SIZE, &cur, &high, reset);
-		_fprintf(arg->Out, "Largest Allocation:                  %d bytes\n", high);
+		_fprintf(arg->D_Out, "Largest Allocation:                  %d bytes\n", high);
 		high = cur = -1;
 		_status(STATUS_PAGECACHE_SIZE, &cur, &high, reset);
-		_fprintf(arg->Out, "Largest Pcache Allocation:           %d bytes\n", high);
+		_fprintf(arg->D_Out, "Largest Pcache Allocation:           %d bytes\n", high);
 		high = cur = -1;
 		_status(STATUS_SCRATCH_SIZE, &cur, &high, reset);
-		_fprintf(arg->Out, "Largest Scratch Allocation:          %d bytes\n", high);
+		_fprintf(arg->D_Out, "Largest Scratch Allocation:          %d bytes\n", high);
 #ifdef YYTRACKMAXSTACKDEPTH
 		high = cur = -1;
 		_status(STATUS_PARSER_STACK, &cur, &high, reset);
-		_fprintf(arg->Out, "Deepest Parser Stack:                %d (max %d)\n", cur, high);
+		_fprintf(arg->D_Out, "Deepest Parser Stack:                %d (max %d)\n", cur, high);
 #endif
 	}
 
-	if (arg && arg->Out && ctx)
+	if (arg && arg->D_Out && ctx)
 	{
 		high = cur = -1;
 		ctx->Status(Context::CTXSTATUS_LOOKASIDE_USED, &cur, &high, reset);
-		_fprintf(arg->Out, "Lookaside Slots Used:                %d (max %d)\n", cur, high);
+		_fprintf(arg->D_Out, "Lookaside Slots Used:                %d (max %d)\n", cur, high);
 		ctx->Status(Context::CTXSTATUS_LOOKASIDE_HIT, &cur, &high, reset);
-		_fprintf(arg->Out, "Successful lookaside attempts:       %d\n", high);
+		_fprintf(arg->D_Out, "Successful lookaside attempts:       %d\n", high);
 		ctx->Status(Context::CTXSTATUS_LOOKASIDE_MISS_SIZE, &cur, &high, reset);
-		_fprintf(arg->Out, "Lookaside failures due to size:      %d\n", high);
+		_fprintf(arg->D_Out, "Lookaside failures due to size:      %d\n", high);
 		ctx->Status(Context::CTXSTATUS_LOOKASIDE_MISS_FULL, &cur, &high, reset);
-		_fprintf(arg->Out, "Lookaside failures due to OOM:       %d\n", high);
+		_fprintf(arg->D_Out, "Lookaside failures due to OOM:       %d\n", high);
 		high = cur = -1;
 		ctx->Status(Context::CTXSTATUS_CACHE_USED, &cur, &high, reset);
-		_fprintf(arg->Out, "Pager Heap Usage:                    %d bytes\n", cur);
+		_fprintf(arg->D_Out, "Pager Heap Usage:                    %d bytes\n", cur);
 		high = cur = -1;
 		ctx->Status(Context::CTXSTATUS_CACHE_HIT, &cur, &high, 1);
-		_fprintf(arg->Out, "Page cache hits:                     %d\n", cur);
+		_fprintf(arg->D_Out, "Page cache hits:                     %d\n", cur);
 		high = cur = -1;
 		ctx->Status(Context::CTXSTATUS_CACHE_MISS, &cur, &high, 1);
-		_fprintf(arg->Out, "Page cache misses:                   %d\n", cur); 
+		_fprintf(arg->D_Out, "Page cache misses:                   %d\n", cur); 
 		high = cur = -1;
 		ctx->Status(Context::CTXSTATUS_CACHE_WRITE, &cur, &high, 1);
-		_fprintf(arg->Out, "Page cache writes:                   %d\n", cur); 
+		_fprintf(arg->D_Out, "Page cache writes:                   %d\n", cur); 
 		high = cur = -1;
 		ctx->Status(Context::CTXSTATUS_SCHEMA_USED, &cur, &high, reset);
-		_fprintf(arg->Out, "Schema Heap Usage:                   %d bytes\n", cur); 
+		_fprintf(arg->D_Out, "Schema Heap Usage:                   %d bytes\n", cur); 
 		high = cur = -1;
 		ctx->Status(Context::CTXSTATUS_STMT_USED, &cur, &high, reset);
-		_fprintf(arg->Out, "Statement Heap/Lookaside Usage:      %d bytes\n", cur); 
+		_fprintf(arg->D_Out, "Statement Heap/Lookaside Usage:      %d bytes\n", cur); 
 	}
 
-	if (arg && arg->Out && ctx && arg->Stmt)
+	if (arg && arg->D_Out && ctx && arg->Stmt)
 	{
 		cur = Vdbe::Stmt_Status(arg->Stmt, Vdbe::STMTSTATUS_FULLSCAN_STEP, reset);
-		_fprintf(arg->Out, "Fullscan Steps:                      %d\n", cur);
+		_fprintf(arg->D_Out, "Fullscan Steps:                      %d\n", cur);
 		cur = Vdbe::Stmt_Status(arg->Stmt, Vdbe::STMTSTATUS_SORT, reset);
-		_fprintf(arg->Out, "Sort Operations:                     %d\n", cur);
+		_fprintf(arg->D_Out, "Sort Operations:                     %d\n", cur);
 		cur = Vdbe::Stmt_Status(arg->Stmt, Vdbe::STMTSTATUS_AUTOINDEX, reset);
-		_fprintf(arg->Out, "Autoindex Inserts:                   %d\n", cur);
+		_fprintf(arg->D_Out, "Autoindex Inserts:                   %d\n", cur);
 	}
 	return 0;
 }
@@ -1089,7 +1090,7 @@ __device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(
 			if (arg && arg->EchoOn)
 			{
 				const char *stmtSql = Vdbe::Sql(stmt);
-				_fprintf(arg->Out, "%s\n", (stmtSql ? stmtSql : sql));
+				_fprintf(arg->D_Out, "%s\n", (stmtSql ? stmtSql : sql));
 			}
 
 			// Output TESTCTRL_EXPLAIN text of requested
@@ -1098,7 +1099,7 @@ __device__ static int ShellExec(Context *ctx, const char *sql, bool (*callback)(
 				const char *explain = nullptr;
 				//DataEx::TestControl(DataEx::TESTCTRL_EXPLAIN_STMT, stmt, &explain);
 				if (explain && explain[0])
-					_fprintf(arg->Out, "%s", explain);
+					_fprintf(arg->D_Out, "%s", explain);
 			}
 
 			// perform the first step.  this will tell us if we have a result set or not and how wide it is.
@@ -1186,24 +1187,24 @@ __device__ static bool DumpCallback(void *arg, int colLength, char **colValues, 
 	const char *sql = colValues[2];
 
 	if (!_strcmp(tableName, "sqlite_sequence")) prepStmt = "DELETE FROM sqlite_sequence;\n";
-	else if (!_strcmp(tableName, "sqlite_stat1")) _fprintf(p->Out, "ANALYZE sqlite_master;\n");
+	else if (!_strcmp(tableName, "sqlite_stat1")) _fprintf(p->D_Out, "ANALYZE sqlite_master;\n");
 	else if (!_strncmp(tableName, "sqlite_", 7)) return false;
 	else if (!_strncmp(sql, "CREATE VIRTUAL TABLE", 20))
 	{
 		if (!p->WritableSchema)
 		{
-			_fprintf(p->Out, "PRAGMA writable_schema=ON;\n");
+			_fprintf(p->D_Out, "PRAGMA writable_schema=ON;\n");
 			p->WritableSchema = 1;
 		}
 		char *ins = _mprintf(
 			"INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
 			"VALUES('table','%q','%q',0,'%q');",
 			tableName, tableName, sql);
-		_fprintf(p->Out, "%s\n", ins);
+		_fprintf(p->D_Out, "%s\n", ins);
 		_free(ins);
 		return false;
 	}
-	else _fprintf(p->Out, "%s;\n", sql);
+	else _fprintf(p->D_Out, "%s;\n", sql);
 
 	if (!_strcmp(typeName, "table"))
 	{
@@ -1269,10 +1270,10 @@ __device__ static int RunSchemaDumpQuery(struct CallbackData *p, const char *que
 	if (rc == RC_CORRUPT)
 	{
 		int length = _strlen(query);
-		_fprintf(p->Out, "/****** CORRUPTION ERROR *******/\n");
+		_fprintf(p->D_Out, "/****** CORRUPTION ERROR *******/\n");
 		if (err)
 		{
-			_fprintf(p->Out, "/****** %s ******/\n", err);
+			_fprintf(p->D_Out, "/****** %s ******/\n", err);
 			_free(err);
 			err = nullptr;
 		}
@@ -1281,7 +1282,7 @@ __device__ static int RunSchemaDumpQuery(struct CallbackData *p, const char *que
 		__snprintf(q2, length+100, "%s ORDER BY rowid DESC", query);
 		rc = DataEx::Exec(p->Ctx, q2, DumpCallback, p, &err);
 		if (rc)
-			_fprintf(p->Out, "/****** ERROR: %s ******/\n", err);
+			_fprintf(p->D_Out, "/****** ERROR: %s ******/\n", err);
 		else
 			rc = RC_CORRUPT;
 		_free(err);
@@ -1520,8 +1521,8 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 	{
 		// When playing back a "dump", the content might appear in an order which causes immediate foreign key constraints to be violated.
 		// So disable foreign-key constraint enforcement to prevent problems.
-		_fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
-		_fprintf(p->Out, "BEGIN TRANSACTION;\n");
+		_fprintf(p->D_Out, "PRAGMA foreign_keys=OFF;\n");
+		_fprintf(p->D_Out, "BEGIN TRANSACTION;\n");
 		p->WritableSchema = 0;
 		DataEx::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
 		p->Errs = 0;
@@ -1556,12 +1557,12 @@ __global__ void d_DoMetaCommand(struct CallbackData *p, int argsLength, char **a
 		}
 		if (p->WritableSchema)
 		{
-			_fprintf(p->Out, "PRAGMA writable_schema=OFF;\n");
+			_fprintf(p->D_Out, "PRAGMA writable_schema=OFF;\n");
 			p->WritableSchema = 0;
 		}
 		DataEx::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
 		DataEx::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
-		_fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
+		_fprintf(p->D_Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
 	}
 #pragma endregion
 #pragma region .import
@@ -2049,8 +2050,8 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 #else
 		// When playing back a "dump", the content might appear in an order which causes immediate foreign key constraints to be violated.
 		// So disable foreign-key constraint enforcement to prevent problems.
-		fprintf(p->Out, "PRAGMA foreign_keys=OFF;\n");
-		fprintf(p->Out, "BEGIN TRANSACTION;\n");
+		fprintf(p->H_Out, "PRAGMA foreign_keys=OFF;\n");
+		fprintf(p->H_Out, "BEGIN TRANSACTION;\n");
 		p->WritableSchema = 0;
 		DataEx::Exec(p->Ctx, "SAVEPOINT dump; PRAGMA writable_schema=ON", 0, 0, 0);
 		p->Errs = 0;
@@ -2085,12 +2086,12 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		if (p->WritableSchema)
 		{
-			fprintf(p->Out, "PRAGMA writable_schema=OFF;\n");
+			fprintf(p->H_Out, "PRAGMA writable_schema=OFF;\n");
 			p->WritableSchema = 0;
 		}
 		DataEx::Exec(p->Ctx, "PRAGMA writable_schema=OFF;", 0, 0, 0);
 		DataEx::Exec(p->Ctx, "RELEASE dump;", 0, 0, 0);
-		fprintf(p->Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
+		fprintf(p->H_Out, (p->Errs ? "ROLLBACK; -- due to errors\n" : "COMMIT;\n"));
 #endif
 	}
 #pragma endregion
@@ -2438,16 +2439,16 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 #pragma region .output
 	else if (c == 'o' && !strncmp(args[0], "output", n) && argsLength == 2)
 	{
-		if (p->Outfile[0] == '|') pclose(p->Out);
-		else OutputFileClose(p->Out);
+		if (p->Outfile[0] == '|') pclose(p->H_Out);
+		else OutputFileClose(p->H_Out);
 		p->Outfile[0] = 0;
 		if (args[1][0] == '|')
 		{
-			p->Out = popen(&args[1][1], "w");
-			if (!p->Out)
+			p->H_Out = popen(&args[1][1], "w");
+			if (!p->H_Out)
 			{
 				fprintf(stderr,"Error: cannot open pipe \"%s\"\n", &args[1][1]);
-				p->Out = stdout;
+				p->H_Out = stdout;
 				rc = 1;
 			}
 			else
@@ -2455,12 +2456,12 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 		}
 		else
 		{
-			p->Out = OutputFileOpen(args[1]);
-			if (!p->Out)
+			p->H_Out = OutputFileOpen(args[1]);
+			if (!p->H_Out)
 			{
 				if (strcmp(args[1], "off"))
 					fprintf(stderr, "Error: cannot write to \"%s\"\n", args[1]);
-				p->Out = stdout;
+				p->H_Out = stdout;
 				rc = 1;
 			}
 			else
@@ -2474,10 +2475,10 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 	{
 		for (int i = 1; i < argsLength; i++)
 		{
-			if (i > 1) fprintf(p->Out, " ");
-			fprintf(p->Out, "%s", args[i]);
+			if (i > 1) fprintf(p->H_Out, " ");
+			fprintf(p->H_Out, "%s", args[i]);
 		}
-		fprintf(p->Out, "\n");
+		fprintf(p->H_Out, "\n");
 	}
 #pragma endregion
 #pragma region .prompt
@@ -2651,22 +2652,22 @@ static int DoMetaCommand(char *line, struct CallbackData *p)
 #pragma region .show
 	else if (c == 's' && !strncmp(args[0], "show", n) && argsLength == 1)
 	{
-		fprintf(p->Out,"%9.9s: %s\n","echo", p->EchoOn ? "on" : "off");
-		fprintf(p->Out,"%9.9s: %s\n","explain", p->ExplainPrev.Valid ? "on" :"off");
-		fprintf(p->Out,"%9.9s: %s\n","headers", p->ShowHeader ? "on" : "off");
-		fprintf(p->Out,"%9.9s: %s\n","mode", _modeDescr[p->Mode]);
-		fprintf(p->Out,"%9.9s: ", "nullvalue");
-		fOutputCString(p->Out, p->NullValue);
-		fprintf(p->Out, "\n");
-		fprintf(p->Out,"%9.9s: %s\n","output", strlen(p->Outfile) ? p->Outfile : "stdout");
-		fprintf(p->Out,"%9.9s: ", "separator");
-		fOutputCString(p->Out, p->Separator);
-		fprintf(p->Out, "\n");
-		fprintf(p->Out,"%9.9s: %s\n","stats", p->StatsOn ? "on" : "off");
-		fprintf(p->Out,"%9.9s: ","width");
+		fprintf(p->H_Out,"%9.9s: %s\n","echo", p->EchoOn ? "on" : "off");
+		fprintf(p->H_Out,"%9.9s: %s\n","explain", p->ExplainPrev.Valid ? "on" :"off");
+		fprintf(p->H_Out,"%9.9s: %s\n","headers", p->ShowHeader ? "on" : "off");
+		fprintf(p->H_Out,"%9.9s: %s\n","mode", _modeDescr[p->Mode]);
+		fprintf(p->H_Out,"%9.9s: ", "nullvalue");
+		fOutputCString(p->H_Out, p->NullValue);
+		fprintf(p->H_Out, "\n");
+		fprintf(p->H_Out,"%9.9s: %s\n","output", strlen(p->Outfile) ? p->Outfile : "stdout");
+		fprintf(p->H_Out,"%9.9s: ", "separator");
+		fOutputCString(p->H_Out, p->Separator);
+		fprintf(p->H_Out, "\n");
+		fprintf(p->H_Out,"%9.9s: %s\n","stats", p->StatsOn ? "on" : "off");
+		fprintf(p->H_Out,"%9.9s: ","width");
 		for (int i = 0; i < (int)_lengthof(p->ColWidth) && p->ColWidth[i] != 0; i++)
-			fprintf(p->Out, "%d ", p->ColWidth[i]);
-		fprintf(p->Out,"\n");
+			fprintf(p->H_Out, "%d ", p->ColWidth[i]);
+		fprintf(p->H_Out,"\n");
 	}
 #pragma endregion
 #pragma region .stats
@@ -3083,7 +3084,7 @@ static bool ProcessInput(struct CallbackData *p, FILE *in)
 	int startline = 0;
 	while (errCnt == 0 || !_bailOnError || (in == 0 && _stdinIsInteractive))
 	{
-		fflush(p->Out);
+		fflush(p->H_Out);
 		free(line);
 		line = OneInputLine(sql, in);
 		if (!line) // End of input
@@ -3551,7 +3552,7 @@ int main(int argc, char **argv)
 		return 1;
 #endif
 	}
-	_data.Out = stdout;
+	_data.H_Out = stdout;
 	H_DIRTY(&_data);
 
 	// Go ahead and open the database file if it already exists.  If the file does not exist, delay opening it.  This prevents empty database
