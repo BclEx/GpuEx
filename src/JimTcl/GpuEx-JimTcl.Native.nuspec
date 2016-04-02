@@ -19,5 +19,6 @@
   </metadata>
   <files>
     <file src="src\JimTcl\**\*.cu" target="content" />
+    <file src="src\JimTcl\**\*.cu" target="src" />
   </files>
 </package>

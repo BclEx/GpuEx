@@ -19,5 +19,6 @@
   </metadata>
   <files>
     <file src="src\TinyTcl\**\*.cu" target="content" />
+    <file src="src\TinyTcl\**\*.cu" target="src" />
   </files>
 </package>

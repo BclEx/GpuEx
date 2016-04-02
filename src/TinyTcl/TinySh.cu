@@ -170,7 +170,6 @@ static void InteractiveExecute(char *line) {
 	char *d_line;
 	int size = strlen(line) + 1;
 	cudaErrorCheck(cudaMalloc((void **)&d_line, size));
-	memcpy((void *)d_line, line, size);
 	cudaErrorCheck(cudaMemcpy(d_line, line, size, cudaMemcpyHostToDevice));
 	D_DATAP(); g_InteractiveExecute<<<1,1>>>(d_line); cudaErrorCheck(cudaDeviceHeapSynchronize(_deviceHeap)); H_DATAP();
 	cudaFree(d_line);

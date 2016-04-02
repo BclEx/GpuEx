@@ -19,5 +19,6 @@
   </metadata>
   <files>
     <file src="src\dSql\**\*.cu" target="content" />
+    <file src="src\dSql\**\*.cu" target="src" />
   </files>
 </package>

@@ -6,6 +6,7 @@ RUNTIME_NAMEBEGIN
 #pragma region MUTEX_NOOP
 
 #ifndef _DEBUG
+
 struct _mutex_obj { };
 __device__ int MutexInit() { return 0; }
 __device__ void MutexShutdown() { }
@@ -27,12 +28,9 @@ __constant__ static const _mutex_methods _noopDefaultMethods = {
 	nullptr,
 	nullptr,
 };
-__device__ void __mutexsystem_setdefault()
-{
-	__mutexsystem = _noopDefaultMethods;
-}
 
 #else
+
 struct _mutex_obj
 {
 	MUTEX Id;	// Mutex type
@@ -103,7 +101,6 @@ __device__ void MutexLeave(_mutex_obj *p)
 	p->Refs--;
 	_assert(p->Refs == 0 || p->Id == MUTEX_RECURSIVE);
 }
-#endif
 
 __constant__ static const _mutex_methods _noopDefaultMethods = {
 	(int (*)())MutexInit,
@@ -116,6 +113,8 @@ __constant__ static const _mutex_methods _noopDefaultMethods = {
 	(bool (*)(MutexEx))MutexHeld,
 	(bool (*)(MutexEx))MutexNotHeld
 };
+
+#endif
 
 __device__ void __mutexsystem_setdefault()
 {

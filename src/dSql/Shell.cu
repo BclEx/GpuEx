@@ -331,14 +331,18 @@ static const char *_modeDescr[] =
 struct CallbackData
 {
 	int H_size;
+#if __CUDACC__
 	struct CallbackData *H_;
 	struct CallbackData *D_;
+#endif
 	Context *Ctx;				// The database
 	int EchoOn;					// True to echo input commands
 	int StatsOn;				// True to display memory stats before each finalize
 	int Cnt;					// Number of records displayed so far
 	FILE *H_Out;				// Write results here
+#if __CUDACC__
 	FILE *D_Out;				// Write results here
+#endif
 	FILE *TraceOut;				// Output for sqlite3_trace()
 	int Errs;					// Number of errors seen
 	MODE Mode;					// An output mode setting
@@ -496,6 +500,7 @@ void D_META(struct CallbackData *p, int argsLength, char *args[50], int tag = 0,
 }
 
 #else
+#define D_Out H_Out
 #define H_DIRTY(p) 0
 #endif
 #pragma endregion
@@ -3343,7 +3348,7 @@ static void MainInit()
 	//cudaErrorCheck(cudaSetDeviceFlags(cudaDeviceMapHost | cudaDeviceLmemResizeToMax));
 	int deviceId = gpuGetMaxGflopsDeviceId();
 	cudaErrorCheck(cudaSetDevice(deviceId));
-	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*15));
+	cudaErrorCheck(cudaDeviceSetLimit(cudaLimitStackSize, 1024*20));
 	_deviceHeap = cudaDeviceHeapCreate(256, 100);
 	cudaErrorCheck(cudaDeviceHeapSelect(_deviceHeap));
 	//
