@@ -138,10 +138,10 @@ task Package -depends Dependency, Compile, Test {
 	#cd $old
 }
 
-task Push -depends Package {
-	$spec_files = @(Get-ChildItem $release_dir -include *.nupkg -recurse)
+task Push {
+	$spec_files = @(Get-ChildItem $base_dir -include *.nupkg -recurse)
 	foreach ($spec in $spec_files)
 	{
-		& $tools_dir\NuGet.exe push $spec.FullName -s {NuGetServerUrl}
+		& $tools_dir\NuGet.exe push $spec.FullName
 	}
 }
