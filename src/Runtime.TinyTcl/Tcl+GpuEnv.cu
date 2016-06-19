@@ -13,7 +13,7 @@ __device__ static EnvInterp *_firstInterpPtr;
 // First in list of all managed interpreters, or NULL if none.
 
 // Declarations for local procedures defined in this file:
-static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags);
+__device__ static char *EnvTraceProc(ClientData clientData, Tcl_Interp *interp, char *name1, char *name2, int flags);
 
 /*
 *----------------------------------------------------------------------

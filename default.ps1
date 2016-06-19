@@ -9,7 +9,7 @@ properties {
   $config_cu = "Release.cu"
   $config_cuD = "Debug.cu"
   $run_tests = $false
-  $full_compile = $true
+  $full_compile = $false
 }
 Framework "4.0"
 	
@@ -95,10 +95,10 @@ task Compile -depends Init {
 		#xcopy "$build_dir\60.x64.Release\." "$build_dir\x64.Release\" /Y ; rm "$build_dir\60.x64.Release\" -force -recurse
 		#xcopy "$build_dir\60.x64.Debug\." "$build_dir\x64.Debug\" /Y ; rm "$build_dir\60.x64.Debug\" -force -recurse
 	} else {
-		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cpuD;Platform=Win32;CUARCH=cpu" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Debug\;Configuration=$config_cuD;Platform=Win32;CUARCH=52" /m
-		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cpuD;Platform=x64;CUARCH=cpu" /m
-		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Debug\;Configuration=$config_cuD;Platform=x64;CUARCH=52" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cpu;Platform=Win32;CUARCH=cpu" /m
+		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\Win32.Release\;Configuration=$config_cu;Platform=Win32;CUARCH=52" /m
+		#msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cpu;Platform=x64;CUARCH=cpu" /m
+		msbuild $sln_file /target:Rebuild /p:"OutDir=$build_dir\x64.Release\;Configuration=$config_cu;Platform=x64;CUARCH=52" /m
 	}
 }
 

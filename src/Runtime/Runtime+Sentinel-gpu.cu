@@ -14,7 +14,7 @@ __device__ void RuntimeSentinel::Send(void *msg, int msgLength)
 	RuntimeSentinelMap *map = _runtimeSentinelDeviceMap[_runtimeSentinelMapId++ % SENTINEL_DEVICEMAPS];
 	RuntimeSentinelMessage *msg2 = (RuntimeSentinelMessage *)msg;
 	int length = msgLength + msg2->Size;
-	long id = __iAtomicAdd((int *)&map->SetId, SENTINEL_MSGSIZE);
+	long id = atomicAdd((int *)&map->SetId, SENTINEL_MSGSIZE);
 	RuntimeSentinelCommand *cmd = (RuntimeSentinelCommand *)&map->Data[id%sizeof(map->Data)];
 	volatile long *status = (volatile long *)&cmd->Status;
 	//while (atomicCAS((unsigned int *)status, 1, 0) != 0) { __syncthreads(); }
